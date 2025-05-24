@@ -439,7 +439,10 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
 
         foreach (var repository in dto)
         {
-            var info = repositoryInfo.FirstOrDefault(x => x.RepoUrl.Replace(".git", "") == repository.Address.Replace(".git", ""));
+            var info = repositoryInfo.FirstOrDefault(x =>
+                x.RepoUrl.Replace(".git", "").Equals(repository.Address.Replace(".git", ""),
+                    StringComparison.InvariantCultureIgnoreCase));
+            
             if (info != null)
             {
                 repository.Stars = info.Stars;
