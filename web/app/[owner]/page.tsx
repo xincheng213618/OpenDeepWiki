@@ -41,6 +41,7 @@ import { Repository } from '../types';
 import { getWarehouse } from '../services/warehouseService';
 import RepositoryList from '../components/RepositoryList';
 import { usePathname } from 'next/navigation';
+import { useTranslation } from '../i18n/client';
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
@@ -48,6 +49,7 @@ const { useToken } = theme;
 
 export default function OrganizationPage({ params }: any) {
   const { token } = useToken();
+  const { t } = useTranslation();
   const pathname = usePathname();
   const pathParts = pathname.split('/').filter(Boolean);
   const owner = pathParts[0] || '';
@@ -107,14 +109,14 @@ export default function OrganizationPage({ params }: any) {
         }
       }
     } catch (error) {
-      console.error('获取组织信息出错:', error);
-      // 如果获取失败，设置一些默认信息
-      setOrgInfo({
-        name: owner,
-        description: `${owner} 的代码仓库`,
-        created_at: null,
-        isDefault: true
-      });
+      console.error(t('organization.errors.fetch_org_info'), error);
+              // 如果获取失败，设置一些默认信息
+        setOrgInfo({
+          name: owner,
+          description: t('organization.description', { name: owner }),
+          created_at: null,
+          isDefault: true
+        });
     } finally {
       setOrgInfoLoading(false);
     }
@@ -148,7 +150,7 @@ export default function OrganizationPage({ params }: any) {
         setTotal(orgRepos.length);
       }
     } catch (error) {
-      console.error('获取仓库列表出错:', error);
+      console.error(t('organization.errors.fetch_repos'), error);
     } finally {
       setLoading(false);
     }
@@ -161,13 +163,13 @@ export default function OrganizationPage({ params }: any) {
     completedRepos: repositories.filter(repo => repo.status === 2).length,
     lastUpdated: repositories.length ? new Date(
       Math.max(...repositories.map(repo => new Date(repo.updatedAt || repo.createdAt).getTime()))
-    ).toLocaleDateString('zh-CN') : '-'
+    ).toLocaleDateString() : '-'
   };
 
   // 格式化日期
   const formatDate = (dateString: string) => {
-    if (!dateString) return '未知';
-    return new Date(dateString).toLocaleDateString('zh-CN');
+    if (!dateString) return t('organization.info.unknown');
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
@@ -208,10 +210,10 @@ export default function OrganizationPage({ params }: any) {
                       {orgInfo?.name || owner}
                     </Title>
                     <Tag color="blue" icon={orgInfo?.isUser ? <UserOutlined /> : <TeamOutlined />}>
-                      {orgInfo?.isUser ? '个人用户' : '组织'}
+                      {orgInfo?.isUser ? t('organization.tags.personal_user') : t('organization.tags.organization')}
                     </Tag>
                     {!orgInfo?.isDefault && (
-                      <Tooltip title="访问 GitHub">
+                      <Tooltip title={t('organization.tooltips.visit_github')}>
                         <a
                           href={`https://github.com/${owner}`}
                           target="_blank"
@@ -231,7 +233,7 @@ export default function OrganizationPage({ params }: any) {
                       maxWidth: '100%'
                     }}
                   >
-                    {orgInfo?.description || `${owner} 的代码仓库知识库，一站式查看所有代码文档`}
+                    {orgInfo?.description || t('organization.description', { name: owner })}
                   </Paragraph>
                 </div>
               </Space>
@@ -240,21 +242,21 @@ export default function OrganizationPage({ params }: any) {
               <Row gutter={[16, 16]}>
                 <Col span={8}>
                   <Statistic
-                    title={<Typography.Text type="secondary">仓库总数</Typography.Text>}
+                    title={<Typography.Text type="secondary">{t('organization.stats.total_repositories')}</Typography.Text>}
                     value={stats.totalRepositories}
                     prefix={<DatabaseOutlined style={{ color: token.colorPrimary }} />}
                   />
                 </Col>
                 <Col span={8}>
                   <Statistic
-                    title={<Typography.Text type="secondary">Git仓库</Typography.Text>}
+                    title={<Typography.Text type="secondary">{t('organization.stats.git_repos')}</Typography.Text>}
                     value={stats.gitRepos}
                     prefix={<GithubOutlined style={{ color: token.colorPrimary }} />}
                   />
                 </Col>
                 <Col span={8}>
                   <Statistic
-                    title={<Typography.Text type="secondary">已完成</Typography.Text>}
+                    title={<Typography.Text type="secondary">{t('organization.stats.completed_repos')}</Typography.Text>}
                     value={stats.completedRepos}
                     prefix={<CodeOutlined style={{ color: token.colorPrimary }} />}
                   />
@@ -267,23 +269,23 @@ export default function OrganizationPage({ params }: any) {
           <Divider style={{ margin: `${token.marginMD}px 0` }} />
 
           <Descriptions
-            title="详细信息"
+            title={t('organization.info.title')}
             bordered
             column={{ xs: 1, sm: 2, md: 3 }}
             size="small"
             labelStyle={{ width: '120px' }}
           >
             <Descriptions.Item
-              label="创建时间"
+              label={t('organization.info.created_time')}
               span={1}
             >
               <Space>
                 <CalendarOutlined style={{ color: token.colorPrimary }} />
-                {orgInfo?.created_at ? formatDate(orgInfo.created_at) : '未知'}
+                {orgInfo?.created_at ? formatDate(orgInfo.created_at) : t('organization.info.unknown')}
               </Space>
             </Descriptions.Item>
             <Descriptions.Item
-              label="最近更新"
+              label={t('organization.info.last_update')}
               span={1}
             >
               <Space>
@@ -292,17 +294,17 @@ export default function OrganizationPage({ params }: any) {
               </Space>
             </Descriptions.Item>
             <Descriptions.Item
-              label="类型"
+              label={t('organization.info.type')}
               span={1}
             >
               <Space>
                 {orgInfo?.isUser ? <UserOutlined style={{ color: token.colorPrimary }} /> : <TeamOutlined style={{ color: token.colorPrimary }} />}
-                {orgInfo?.isUser ? '个人用户' : '组织账户'}
+                {orgInfo?.isUser ? t('organization.tags.personal_user') : t('organization.tags.organization_account')}
               </Space>
             </Descriptions.Item>
 
             {orgInfo?.location && (
-              <Descriptions.Item label="位置" span={orgInfo?.blog ? 2 : 3}>
+              <Descriptions.Item label={t('organization.info.location')} span={orgInfo?.blog ? 2 : 3}>
                 <Space>
                   <GlobalOutlined style={{ color: token.colorPrimary }} />
                   {orgInfo.location}
@@ -311,7 +313,7 @@ export default function OrganizationPage({ params }: any) {
             )}
 
             {orgInfo?.blog && (
-              <Descriptions.Item label="网站" span={orgInfo?.location ? 1 : 3}>
+              <Descriptions.Item label={t('organization.info.website')} span={orgInfo?.location ? 1 : 3}>
                 <Space>
                   <LinkOutlined style={{ color: token.colorPrimary }} />
                   <a href={orgInfo.blog.startsWith('http') ? orgInfo.blog : `https://${orgInfo.blog}`} target="_blank" rel="noopener noreferrer">
@@ -322,7 +324,7 @@ export default function OrganizationPage({ params }: any) {
             )}
 
             {orgInfo?.bio && (
-              <Descriptions.Item label="简介" span={3}>
+              <Descriptions.Item label={t('organization.info.bio')} span={3}>
                 {orgInfo.bio}
               </Descriptions.Item>
             )}
@@ -334,7 +336,7 @@ export default function OrganizationPage({ params }: any) {
           title={
             <Space>
               <FileTextOutlined style={{ color: token.colorPrimary }} />
-              <span>文档概览</span>
+              <span>{t('organization.docs.title')}</span>
             </Space>
           }
           style={{
@@ -345,14 +347,14 @@ export default function OrganizationPage({ params }: any) {
         >
           <Row gutter={[24, 24]}>
             <Col xs={24} md={16}>
-              <Title level={4}>关于 {orgInfo?.name || owner}</Title>
+              <Title level={4}>{t('organization.docs.about_title', { name: orgInfo?.name || owner })}</Title>
               <Paragraph>
-                {orgInfo?.description || orgInfo?.bio || `${owner} 是一个代码仓库集合，提供了各种项目的源代码和文档。`}
+                {orgInfo?.description || orgInfo?.bio || t('organization.default_description', { name: owner })}
               </Paragraph>
 
               <Divider style={{ margin: `${token.marginMD}px 0` }} />
 
-              <Title level={4}>快速链接</Title>
+              <Title level={4}>{t('organization.docs.quick_links')}</Title>
               <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12}>
                   <Card
@@ -360,15 +362,15 @@ export default function OrganizationPage({ params }: any) {
                     hoverable
                     onClick={() => window.open(`https://github.com/${owner}`, '_blank')}
                   >
-                    <Space>
-                      <GithubOutlined style={{ fontSize: 20, color: token.colorPrimary }} />
-                      <div>
-                        <Text strong>GitHub 主页</Text>
-                        <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                          访问 {owner} 的 GitHub 主页
-                        </Paragraph>
-                      </div>
-                    </Space>
+                                          <Space>
+                        <GithubOutlined style={{ fontSize: 20, color: token.colorPrimary }} />
+                        <div>
+                          <Text strong>{t('organization.docs.github_homepage')}</Text>
+                          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                            {t('organization.docs.visit_github', { name: owner })}
+                          </Paragraph>
+                        </div>
+                      </Space>
                   </Card>
                 </Col>
 
@@ -387,15 +389,15 @@ export default function OrganizationPage({ params }: any) {
                         }
                       }}
                     >
-                      <Space>
-                        <CodeOutlined style={{ fontSize: 20, color: token.colorPrimary }} />
-                        <div>
-                          <Text strong>热门仓库</Text>
-                          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                            查看最新更新的仓库文档
-                          </Paragraph>
-                        </div>
-                      </Space>
+                                              <Space>
+                          <CodeOutlined style={{ fontSize: 20, color: token.colorPrimary }} />
+                          <div>
+                            <Text strong>{t('organization.docs.popular_repo')}</Text>
+                            <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                              {t('organization.docs.view_latest_docs')}
+                            </Paragraph>
+                          </div>
+                        </Space>
                     </Card>
                   </Col>
                 )}
@@ -403,43 +405,43 @@ export default function OrganizationPage({ params }: any) {
 
               <Divider style={{ margin: `${token.marginMD}px 0` }} />
 
-              <Title level={4}>使用指南</Title>
+              <Title level={4}>{t('organization.docs.usage_guide')}</Title>
               <Paragraph>
-                您可以通过点击下方仓库列表中的仓库查看详细文档。每个仓库都包含了由 AI 自动生成的全面文档，帮助您理解代码结构和工作原理。
+                {t('organization.docs.usage_description')}
               </Paragraph>
               <Paragraph>
-                文档内容包括：
+                {t('organization.docs.doc_includes')}
               </Paragraph>
               <ul>
                 <li>
-                  <Text strong>代码结构解析</Text> - 详细说明项目的组织结构和主要组件
+                  <Text strong>{t('organization.docs.code_structure')}</Text> - {t('organization.docs.code_structure_desc')}
                 </li>
                 <li>
-                  <Text strong>API 文档</Text> - 关键功能和接口的详细说明
+                  <Text strong>{t('organization.docs.api_docs')}</Text> - {t('organization.docs.api_docs_desc')}
                 </li>
                 <li>
-                  <Text strong>实现细节</Text> - 核心算法和设计模式的实现说明
+                  <Text strong>{t('organization.docs.implementation')}</Text> - {t('organization.docs.implementation_desc')}
                 </li>
                 <li>
-                  <Text strong>使用示例</Text> - 如何使用和集成项目的示例
+                  <Text strong>{t('organization.docs.examples')}</Text> - {t('organization.docs.examples_desc')}
                 </li>
               </ul>
             </Col>
 
             <Col xs={24} md={8}>
               <Card
-                title="文档统计"
+                title={t('organization.sidebar.doc_stats')}
                 size="small"
                 style={{ marginBottom: token.marginMD }}
               >
                 <Statistic
-                  title="仓库总数"
+                  title={t('organization.sidebar.total_repos')}
                   value={stats.totalRepositories}
                   prefix={<DatabaseOutlined style={{ color: token.colorPrimary }} />}
                   style={{ marginBottom: token.marginSM }}
                 />
                 <Statistic
-                  title="已完成文档"
+                  title={t('organization.sidebar.completed_docs')}
                   value={stats.completedRepos}
                   prefix={<FileTextOutlined style={{ color: token.colorPrimary }} />}
                   style={{ marginBottom: token.marginSM }}
@@ -454,7 +456,7 @@ export default function OrganizationPage({ params }: any) {
                 <Spin />
               ) : repositories.length > 0 ? (
                 <Card
-                  title="最近更新"
+                  title={t('organization.sidebar.recent_updates')}
                   size="small"
                 >
                   <List
@@ -494,7 +496,7 @@ export default function OrganizationPage({ params }: any) {
                               </Tag>
                               <Text ellipsis style={{ maxWidth: '150px' }}>{repo.name}</Text>
                               <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                                {new Date(repo.updatedAt || repo.createdAt).toLocaleDateString('zh-CN')}
+                                {new Date(repo.updatedAt || repo.createdAt).toLocaleDateString()}
                               </Text>
                             </Space>
                           </Link>
@@ -508,12 +510,12 @@ export default function OrganizationPage({ params }: any) {
           </Row>
         </Card>
 
-        {/* 仓库列表 */}
+        {/* Repository List */}
         <div style={{ marginBottom: token.marginMD }}>
           <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: token.marginMD }}>
-            <Title level={3} style={{ margin: 0 }}>仓库列表</Title>
+            <Title level={3} style={{ margin: 0 }}>{t('organization.repo_list.title')}</Title>
             <Search
-              placeholder="搜索仓库名称或地址"
+              placeholder={t('organization.repo_list.search_placeholder')}
               allowClear
               onSearch={value => setSearchValue(value)}
               onChange={e => setSearchValue(e.target.value)}
@@ -532,7 +534,7 @@ export default function OrganizationPage({ params }: any) {
             <Card style={{ background: token.colorBgContainer, borderRadius: token.borderRadiusLG }}>
               <Empty
                 description={
-                  searchValue ? `没有找到与"${searchValue}"相关的仓库` : `${owner} 组织下暂无仓库数据`
+                  searchValue ? t('organization.repo_list.not_found', { keyword: searchValue }) : t('organization.repo_list.empty_message', { owner })
                 }
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               />

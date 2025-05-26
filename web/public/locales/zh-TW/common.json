@@ -154,6 +154,24 @@
     "privacy": "隱私政策",
     "terms": "服務條款"
   },
+  "changelog": {
+    "title": "更新日誌",
+    "github_message": "可在 GitHub 上查看完整提交歷史",
+    "commit": "提交",
+    "types": {
+      "feature": "新功能",
+      "fix": "修復",
+      "docs": "文檔",
+      "refactor": "重構",
+      "chore": "雜項",
+      "style": "樣式",
+      "perf": "性能",
+      "test": "測試",
+      "build": "構建",
+      "ci": "CI/CD",
+      "revert": "回滾"
+    }
+  },
   "language": {
     "zh-CN": "简体中文",
     "en-US": "英文(美国)",

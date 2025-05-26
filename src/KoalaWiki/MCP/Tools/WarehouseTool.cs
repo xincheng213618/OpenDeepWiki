@@ -1,10 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text;
-using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Domains.MCP;
 using KoalaWiki.Functions;
-using KoalaWiki.KoalaWarehouse;
-using KoalaWiki.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -99,8 +96,6 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
         var sw = Stopwatch.StartNew();
         var sb = new StringBuilder();
 
-        var files = new List<string>();
-
         try
         {
             await foreach (var chatItem in chat.GetStreamingChatMessageContentsAsync(history,
@@ -127,7 +122,6 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
             }
 
             sw.Stop();
-
 
             var mcpHistory = new MCPHistory()
             {

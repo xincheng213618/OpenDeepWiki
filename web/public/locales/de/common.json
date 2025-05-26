@@ -111,6 +111,24 @@
     "privacy": "Datenschutzrichtlinie",
     "terms": "Nutzungsbedingungen"
   },
+  "changelog": {
+    "title": "Änderungsprotokoll",
+    "github_message": "Vollständige Commit-Historie auf GitHub anzeigen",
+    "commit": "Commit",
+    "types": {
+      "feature": "Feature",
+      "fix": "Bugfix",
+      "docs": "Dokumentation",
+      "refactor": "Refactoring",
+      "chore": "Wartung",
+      "style": "Stil",
+      "perf": "Performance",
+      "test": "Test",
+      "build": "Build",
+      "ci": "CI/CD",
+      "revert": "Rückgängig"
+    }
+  },
   "language": {
     "zh-CN": "Chinesisch (Vereinfacht)",
     "en-US": "Englisch (USA)",

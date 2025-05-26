@@ -6,6 +6,7 @@ import {
   ClockCircleOutlined,
   GithubOutlined
 } from '@ant-design/icons';
+import { useTranslation } from '../../i18n/client';
 
 const { Title, Text, Paragraph } = Typography;
 const { useToken } = theme;
@@ -45,11 +46,12 @@ const getTagColor = (type: string) => {
 
 const ChangelogContent: React.FC<ChangelogContentProps> = ({ items, repoUrl }) => {
   const { token } = useToken();
+  const { t } = useTranslation();
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
       <Title level={2} style={{ marginBottom: token.marginLG, color: token.colorTextHeading }}>
-        更新日志
+        {t('changelog.title')}
       </Title>
       
       {repoUrl && (
@@ -57,7 +59,7 @@ const ChangelogContent: React.FC<ChangelogContentProps> = ({ items, repoUrl }) =
           message={
             <Flex align="center" gap={token.marginXS}>
               <GithubOutlined />
-              <Text>可在 GitHub 上查看完整提交历史</Text>
+              <Text>{t('changelog.github_message')}</Text>
               <a href={repoUrl} target="_blank" rel="noopener noreferrer">
                 {repoUrl.replace(/^https?:\/\/(www\.)?github\.com\//, '')}
               </a>
@@ -113,7 +115,7 @@ const ChangelogContent: React.FC<ChangelogContentProps> = ({ items, repoUrl }) =
                     fontSize: token.fontSizeSM
                   }}
                 >
-                  {item.type}
+                  {t(`changelog.types.${item.type}`)}
                 </Tag>
               </Flex>
               
@@ -124,7 +126,7 @@ const ChangelogContent: React.FC<ChangelogContentProps> = ({ items, repoUrl }) =
               {item.commitHash && (
                 <Text type="secondary" style={{ fontSize: token.fontSizeSM, marginTop: token.marginSM, display: 'block' }}>
                   <ClockCircleOutlined style={{ marginRight: token.marginXS }} />
-                  提交: {item.commitHash.substring(0, 7)}
+                  {t('changelog.commit')}: {item.commitHash.substring(0, 7)}
                 </Text>
               )}
             </Card>

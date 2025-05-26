@@ -168,6 +168,90 @@
     "privacy": "隐私政策",
     "terms": "服务条款"
   },
+  "changelog": {
+    "title": "更新日志",
+    "github_message": "可在 GitHub 上查看完整提交历史",
+    "commit": "提交",
+    "types": {
+      "feature": "新功能",
+      "fix": "修复",
+      "docs": "文档",
+      "refactor": "重构",
+      "chore": "杂项",
+      "style": "样式",
+      "perf": "性能",
+      "test": "测试",
+      "build": "构建",
+      "ci": "CI/CD",
+      "revert": "回滚"
+    }
+  },
+  "organization": {
+    "title": "{{name}} 的代码仓库",
+    "description": "{{name}} 的代码仓库知识库，一站式查看所有代码文档",
+    "default_description": "{{name}} 是一个代码仓库集合，提供了各种项目的源代码和文档。",
+    "tags": {
+      "organization": "组织",
+      "personal_user": "个人用户",
+      "organization_account": "组织账户"
+    },
+    "stats": {
+      "total_repositories": "仓库总数",
+      "git_repos": "Git仓库",
+      "completed_repos": "已完成",
+      "last_updated": "最近更新"
+    },
+    "info": {
+      "title": "详细信息",
+      "created_time": "创建时间",
+      "last_update": "最近更新",
+      "type": "类型",
+      "location": "位置",
+      "website": "网站",
+      "bio": "简介",
+      "unknown": "未知"
+    },
+    "docs": {
+      "title": "文档概览",
+      "about_title": "关于 {{name}}",
+      "quick_links": "快速链接",
+      "github_homepage": "GitHub 主页",
+      "visit_github": "访问 {{name}} 的 GitHub 主页",
+      "popular_repo": "热门仓库",
+      "view_latest_docs": "查看最新更新的仓库文档",
+      "usage_guide": "使用指南",
+      "usage_description": "您可以通过点击下方仓库列表中的仓库查看详细文档。每个仓库都包含了由 AI 自动生成的全面文档，帮助您理解代码结构和工作原理。",
+      "doc_includes": "文档内容包括：",
+      "code_structure": "代码结构解析",
+      "code_structure_desc": "详细说明项目的组织结构和主要组件",
+      "api_docs": "API 文档",
+      "api_docs_desc": "关键功能和接口的详细说明",
+      "implementation": "实现细节",
+      "implementation_desc": "核心算法和设计模式的实现说明",
+      "examples": "使用示例",
+      "examples_desc": "如何使用和集成项目的示例"
+    },
+    "sidebar": {
+      "doc_stats": "文档统计",
+      "total_repos": "仓库总数",
+      "completed_docs": "已完成文档",
+      "recent_updates": "最近更新"
+    },
+    "repo_list": {
+      "title": "仓库列表",
+      "search_placeholder": "搜索仓库名称或地址",
+      "empty_message": "{{owner}} 组织下暂无仓库数据",
+      "not_found": "没有找到与\"{{keyword}}\"相关的仓库"
+    },
+    "tooltips": {
+      "visit_github": "访问 GitHub",
+      "github_homepage": "GitHub 主页"
+    },
+    "errors": {
+      "fetch_org_info": "获取组织信息出错:",
+      "fetch_repos": "获取仓库列表出错:"
+    }
+  },
   "language": {
     "zh-CN": "中文(简体)",
     "en-US": "英文(美国)",

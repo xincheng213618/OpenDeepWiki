@@ -168,6 +168,90 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"
   },
+  "changelog": {
+    "title": "Changelog",
+    "github_message": "View complete commit history on GitHub",
+    "commit": "Commit",
+    "types": {
+      "feature": "Feature",
+      "fix": "Fix",
+      "docs": "Docs",
+      "refactor": "Refactor",
+      "chore": "Chore",
+      "style": "Style",
+      "perf": "Performance",
+      "test": "Test",
+      "build": "Build",
+      "ci": "CI/CD",
+      "revert": "Revert"
+    }
+  },
+  "organization": {
+    "title": "{{name}}'s Code Repositories",
+    "description": "{{name}}'s code repository knowledge base, view all code documentation in one place",
+    "default_description": "{{name}} is a collection of code repositories providing various project source codes and documentation.",
+    "tags": {
+      "organization": "Organization",
+      "personal_user": "Personal User",
+      "organization_account": "Organization Account"
+    },
+    "stats": {
+      "total_repositories": "Total Repositories",
+      "git_repos": "Git Repositories",
+      "completed_repos": "Completed",
+      "last_updated": "Last Updated"
+    },
+    "info": {
+      "title": "Details",
+      "created_time": "Created",
+      "last_update": "Last Update",
+      "type": "Type",
+      "location": "Location",
+      "website": "Website",
+      "bio": "Bio",
+      "unknown": "Unknown"
+    },
+    "docs": {
+      "title": "Documentation Overview",
+      "about_title": "About {{name}}",
+      "quick_links": "Quick Links",
+      "github_homepage": "GitHub Homepage",
+      "visit_github": "Visit {{name}}'s GitHub homepage",
+      "popular_repo": "Popular Repository",
+      "view_latest_docs": "View latest updated repository documentation",
+      "usage_guide": "Usage Guide",
+      "usage_description": "You can view detailed documentation by clicking on repositories in the list below. Each repository contains comprehensive AI-generated documentation to help you understand code structure and functionality.",
+      "doc_includes": "Documentation includes:",
+      "code_structure": "Code Structure Analysis",
+      "code_structure_desc": "Detailed explanation of project organization and main components",
+      "api_docs": "API Documentation",
+      "api_docs_desc": "Detailed description of key functions and interfaces",
+      "implementation": "Implementation Details",
+      "implementation_desc": "Implementation description of core algorithms and design patterns",
+      "examples": "Usage Examples",
+      "examples_desc": "Examples of how to use and integrate the project"
+    },
+    "sidebar": {
+      "doc_stats": "Documentation Statistics",
+      "total_repos": "Total Repositories",
+      "completed_docs": "Completed Documentation",
+      "recent_updates": "Recent Updates"
+    },
+    "repo_list": {
+      "title": "Repository List",
+      "search_placeholder": "Search repository name or address",
+      "empty_message": "No repository data found under {{owner}} organization",
+      "not_found": "No repositories matching \"{{keyword}}\" found"
+    },
+    "tooltips": {
+      "visit_github": "Visit GitHub",
+      "github_homepage": "GitHub Homepage"
+    },
+    "errors": {
+      "fetch_org_info": "Error fetching organization info:",
+      "fetch_repos": "Error fetching repository list:"
+    }
+  },
   "language": {
     "zh-CN": "Chinese (Simplified)",
     "en-US": "English (US)",

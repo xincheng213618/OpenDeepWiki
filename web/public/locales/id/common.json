@@ -1,5 +1,23 @@
 {
   "title": "OpenDeekWiki - Basis Pengetahuan Kode Bertenaga AI",
+  "changelog": {
+    "title": "Log Perubahan",
+    "github_message": "Lihat riwayat commit lengkap di GitHub",
+    "commit": "Commit",
+    "types": {
+      "feature": "Fitur",
+      "fix": "Perbaikan",
+      "docs": "Dokumentasi",
+      "refactor": "Refaktor",
+      "chore": "Pemeliharaan",
+      "style": "Gaya",
+      "perf": "Kinerja",
+      "test": "Tes",
+      "build": "Build",
+      "ci": "CI/CD",
+      "revert": "Kembalikan"
+    }
+  },
   "language": {
     "zh-CN": "Mandarin (Sederhana)",
     "en-US": "Inggris (AS)",

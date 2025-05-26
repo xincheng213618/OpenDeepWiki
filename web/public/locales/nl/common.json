@@ -1,5 +1,23 @@
 {
   "title": "OpenDeekWiki - AI-gestuurde codeconnaissancebase",
+  "changelog": {
+    "title": "Wijzigingslogboek",
+    "github_message": "Bekijk volledige commit geschiedenis op GitHub",
+    "commit": "Commit",
+    "types": {
+      "feature": "Functie",
+      "fix": "Reparatie",
+      "docs": "Documentatie",
+      "refactor": "Refactoring",
+      "chore": "Onderhoud",
+      "style": "Stijl",
+      "perf": "Prestaties",
+      "test": "Test",
+      "build": "Build",
+      "ci": "CI/CD",
+      "revert": "Terugdraaien"
+    }
+  },
   "language": {
     "zh-CN": "Chinees (vereenvoudigd)",
     "en-US": "Engels (VS)",

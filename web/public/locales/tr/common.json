@@ -1,5 +1,23 @@
 {
   "title": "OpenDeekWiki - Yapay Zeka Destekli Kod Bilgi Tabanı",
+  "changelog": {
+    "title": "Değişiklik Günlüğü",
+    "github_message": "GitHub'da tam commit geçmişini görüntüle",
+    "commit": "Commit",
+    "types": {
+      "feature": "Özellik",
+      "fix": "Düzeltme",
+      "docs": "Dokümantasyon",
+      "refactor": "Yeniden Düzenleme",
+      "chore": "Bakım",
+      "style": "Stil",
+      "perf": "Performans",
+      "test": "Test",
+      "build": "Yapı",
+      "ci": "CI/CD",
+      "revert": "Geri Alma"
+    }
+  },
   "language": {
     "zh-CN": "Çince (Basitleştirilmiş)",
     "en-US": "İngilizce (ABD)",

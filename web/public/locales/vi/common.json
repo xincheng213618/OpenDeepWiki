@@ -1,5 +1,23 @@
 {
   "title": "OpenDeekWiki - Cơ sở kiến thức mã nguồn được hỗ trợ bởi AI",
+  "changelog": {
+    "title": "Nhật ký thay đổi",
+    "github_message": "Xem lịch sử commit đầy đủ trên GitHub",
+    "commit": "Commit",
+    "types": {
+      "feature": "Tính năng",
+      "fix": "Sửa lỗi",
+      "docs": "Tài liệu",
+      "refactor": "Tái cấu trúc",
+      "chore": "Bảo trì",
+      "style": "Phong cách",
+      "perf": "Hiệu suất",
+      "test": "Kiểm thử",
+      "build": "Xây dựng",
+      "ci": "CI/CD",
+      "revert": "Hoàn nguyên"
+    }
+  },
   "language": {
     "zh-CN": "Tiếng Trung (Giản thể)",
     "en-US": "Tiếng Anh (Mỹ)",

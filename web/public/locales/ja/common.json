@@ -154,6 +154,90 @@
     "privacy": "プライバシーポリシー",
     "terms": "利用規約"
   },
+  "changelog": {
+    "title": "変更履歴",
+    "github_message": "GitHubで完全なコミット履歴を確認",
+    "commit": "コミット",
+    "types": {
+      "feature": "新機能",
+      "fix": "修正",
+      "docs": "ドキュメント",
+      "refactor": "リファクタリング",
+      "chore": "雑務",
+      "style": "スタイル",
+      "perf": "パフォーマンス",
+      "test": "テスト",
+      "build": "ビルド",
+      "ci": "CI/CD",
+      "revert": "リバート"
+    }
+  },
+  "organization": {
+    "title": "{{name}}のコードリポジトリ",
+    "description": "{{name}}のコードリポジトリ知識ベース、すべてのコードドキュメントを一箇所で確認",
+    "default_description": "{{name}}は様々なプロジェクトのソースコードとドキュメントを提供するコードリポジトリのコレクションです。",
+    "tags": {
+      "organization": "組織",
+      "personal_user": "個人ユーザー",
+      "organization_account": "組織アカウント"
+    },
+    "stats": {
+      "total_repositories": "リポジトリ総数",
+      "git_repos": "Gitリポジトリ",
+      "completed_repos": "完了済み",
+      "last_updated": "最終更新"
+    },
+    "info": {
+      "title": "詳細情報",
+      "created_time": "作成日時",
+      "last_update": "最終更新",
+      "type": "タイプ",
+      "location": "場所",
+      "website": "ウェブサイト",
+      "bio": "プロフィール",
+      "unknown": "不明"
+    },
+    "docs": {
+      "title": "ドキュメント概要",
+      "about_title": "{{name}}について",
+      "quick_links": "クイックリンク",
+      "github_homepage": "GitHubホームページ",
+      "visit_github": "{{name}}のGitHubホームページを訪問",
+      "popular_repo": "人気リポジトリ",
+      "view_latest_docs": "最新更新されたリポジトリドキュメントを表示",
+      "usage_guide": "使用ガイド",
+      "usage_description": "下記のリポジトリリストからリポジトリをクリックして詳細ドキュメントを確認できます。各リポジトリにはAIが自動生成した包括的なドキュメントが含まれており、コード構造と動作原理の理解に役立ちます。",
+      "doc_includes": "ドキュメント内容には以下が含まれます：",
+      "code_structure": "コード構造解析",
+      "code_structure_desc": "プロジェクトの組織構造と主要コンポーネントの詳細説明",
+      "api_docs": "APIドキュメント",
+      "api_docs_desc": "主要機能とインターフェースの詳細説明",
+      "implementation": "実装詳細",
+      "implementation_desc": "コアアルゴリズムとデザインパターンの実装説明",
+      "examples": "使用例",
+      "examples_desc": "プロジェクトの使用と統合方法の例"
+    },
+    "sidebar": {
+      "doc_stats": "ドキュメント統計",
+      "total_repos": "リポジトリ総数",
+      "completed_docs": "完了済みドキュメント",
+      "recent_updates": "最近の更新"
+    },
+    "repo_list": {
+      "title": "リポジトリリスト",
+      "search_placeholder": "リポジトリ名またはアドレスを検索",
+      "empty_message": "{{owner}}組織下にリポジトリデータがありません",
+      "not_found": "「{{keyword}}」に関連するリポジトリが見つかりません"
+    },
+    "tooltips": {
+      "visit_github": "GitHubを訪問",
+      "github_homepage": "GitHubホームページ"
+    },
+    "errors": {
+      "fetch_org_info": "組織情報の取得でエラーが発生しました:",
+      "fetch_repos": "リポジトリリストの取得でエラーが発生しました:"
+    }
+  },
   "language": {
     "zh-CN": "中国語(簡体)",
     "en-US": "英語(米国)",

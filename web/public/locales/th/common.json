@@ -1,5 +1,23 @@
 {
   "title": "OpenDeekWiki - ฐานความรู้โค้ดที่ขับเคลื่อนด้วย AI",
+  "changelog": {
+    "title": "บันทึกการเปลี่ยนแปลง",
+    "github_message": "ดูประวัติ commit ทั้งหมดบน GitHub",
+    "commit": "Commit",
+    "types": {
+      "feature": "คุณสมบัติ",
+      "fix": "แก้ไข",
+      "docs": "เอกสาร",
+      "refactor": "ปรับโครงสร้าง",
+      "chore": "การบำรุงรักษา",
+      "style": "สไตล์",
+      "perf": "ประสิทธิภาพ",
+      "test": "การทดสอบ",
+      "build": "การสร้าง",
+      "ci": "CI/CD",
+      "revert": "ย้อนกลับ"
+    }
+  },
   "language": {
     "zh-CN": "จีน (ประยุกต์)",
     "en-US": "อังกฤษ (สหรัฐอเมริกา)",

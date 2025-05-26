@@ -1,5 +1,23 @@
 {
   "title": "OpenDeekWiki - Base de conocimiento de código impulsada por IA",
+  "changelog": {
+    "title": "Registro de cambios",
+    "github_message": "Ver historial completo de commits en GitHub",
+    "commit": "Commit",
+    "types": {
+      "feature": "Característica",
+      "fix": "Corrección",
+      "docs": "Documentación",
+      "refactor": "Refactorización",
+      "chore": "Mantenimiento",
+      "style": "Estilo",
+      "perf": "Rendimiento",
+      "test": "Prueba",
+      "build": "Construcción",
+      "ci": "CI/CD",
+      "revert": "Reversión"
+    }
+  },
   "language": {
     "zh-CN": "Chino (simplificado)",
     "en-US": "Inglés (EE.UU.)",

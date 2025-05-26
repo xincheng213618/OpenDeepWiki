@@ -241,7 +241,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, IMemoryC
         await access.Warehouses.AddAsync(entity);
 
         await access.SaveChangesAsync();
-        
+
         await context.Response.WriteAsJsonAsync(new
         {
             code = 200,
@@ -256,6 +256,8 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, IMemoryC
     {
         try
         {
+            input.Address = input.Address.TrimEnd('/');
+
             if (!input.Address.EndsWith(".git"))
             {
                 input.Address += ".git";
@@ -268,7 +270,8 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, IMemoryC
             var repositoryName = names[^1].Replace(".git", "");
 
             var value = await access.Warehouses.FirstOrDefaultAsync(x =>
-                x.OrganizationName == organization && x.Name == repositoryName && x.Branch == input.Branch);
+                x.OrganizationName == organization && x.Name == repositoryName && x.Branch == input.Branch &&
+                x.Status == WarehouseStatus.Completed);
 
             // 判断这个仓库是否已经添加
             if (value?.Status is WarehouseStatus.Completed)
