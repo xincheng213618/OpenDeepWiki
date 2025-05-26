@@ -208,6 +208,10 @@ docker-compose build --build-arg ARCH=arm64
 docker-compose build --build-arg ARCH=amd64
 ```
 
+
+### Deploy to Sealos with Public Internet Access
+For detailed steps, refer to:[One-Click Deployment of OpenDeepWiki as a Sealos Application Exposed to the Public Network Using Templates](scripts/sealos/README.zh-CN.md)
+
 ## 🔍 How It Works
 
 OpenDeepWiki uses AI to:
