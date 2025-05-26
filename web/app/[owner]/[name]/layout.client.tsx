@@ -240,7 +240,7 @@ export default function RepositoryLayoutClient({
             <span className="tree-item-label">
               {item.label}
               {isRecentlyUpdated(item.lastUpdate) && (
-                <Tooltip title={`最近更新: ${formatUpdateDate(item.lastUpdate)}`}>
+                <Tooltip title={t('repository_layout.update_tooltip', { time: formatUpdateDate(item.lastUpdate) })}>
                   <span className="update-dot" />
                 </Tooltip>
               )}
@@ -514,16 +514,16 @@ export default function RepositoryLayoutClient({
               </div>
 
               <Flex vertical gap={minimalistDesign.spacing.sm}>
-                <Text strong>配置说明：</Text>
+                <Text strong>{t('repository_layout.mcp.config.description_title')}</Text>
                 <ul style={{ paddingLeft: minimalistDesign.spacing.lg, margin: 0 }}>
-                  <li><Text code>owner</Text>: 是仓库组织或拥有者的名称</li>
-                  <li><Text code>name</Text>: 是仓库的名称</li>
+                  <li><Text code>owner</Text>: {t('repository_layout.mcp.config.owner_desc')}</li>
+                  <li><Text code>name</Text>: {t('repository_layout.mcp.config.name_desc')}</li>
                 </ul>
               </Flex>
             </Card>
 
             <Card
-              title="测试案例"
+              title={t('repository_layout.mcp.test.title')}
               style={{
                 borderRadius: minimalistDesign.borderRadius.lg,
                 border: `1px solid ${minimalistDesign.colors.border}`,
@@ -531,10 +531,10 @@ export default function RepositoryLayoutClient({
               }}
             >
               <Paragraph>
-                添加好仓库以后尝试进行测试提问（注意，请保证仓库已经处理完成）：
+                {t('repository_layout.mcp.test.description')}
               </Paragraph>
               <Paragraph strong style={{ color: minimalistDesign.colors.primary }}>
-                OpenDeepWiki是什么？
+                {t('repository_layout.mcp.test.question')}
               </Paragraph>
               <div style={{
                 width: '100%',
@@ -547,7 +547,7 @@ export default function RepositoryLayoutClient({
               }}>
                 <img
                   src="/mcp.png"
-                  alt="MCP测试效果"
+                  alt={t('repository_layout.mcp.test.image_alt')}
                   style={{
                     width: '100%',
                     height: 'auto',
@@ -598,10 +598,10 @@ export default function RepositoryLayoutClient({
                   icon={<SaveAll size={14} />}
                   onClick={() =>
                     Modal.confirm({
-                      title: '导出Markdown',
-                      content: '是否将当前文档导出为Markdown格式？',
-                      okText: '导出',
-                      cancelText: '取消',
+                      title: t('repository_layout.sidebar.export.modal_title'),
+                      content: t('repository_layout.sidebar.export.modal_content'),
+                      okText: t('repository_layout.sidebar.export.ok_text'),
+                      cancelText: t('repository_layout.sidebar.export.cancel_text'),
                       onOk: () => {
                         ExportMarkdownZip(initialCatalogData.warehouseId)
                           .then(response => {
@@ -616,7 +616,7 @@ export default function RepositoryLayoutClient({
                               document.body.removeChild(a);
                               URL.revokeObjectURL(url);
                             } else {
-                              message.error('导出失败，请稍后再试。');
+                              message.error(t('repository_layout.sidebar.export.failed_message'));
                             }
                           })
                       },
@@ -631,7 +631,7 @@ export default function RepositoryLayoutClient({
                     fontWeight: '500',
                   }}
                 >
-                  导出文档
+                  {t('repository_layout.sidebar.export.button')}
                 </Button>
               </div>
 
@@ -641,7 +641,7 @@ export default function RepositoryLayoutClient({
                   className={`tree-item overview-item ${pathname === `/${owner}/${name}` ? 'active' : ''}`}
                   style={{ paddingLeft: '12px' }}
                 >
-                  <span className="tree-item-label">概览</span>
+                  <span className="tree-item-label">{t('repository_layout.sidebar.overview')}</span>
                 </Link>
 
                 <div className="menu-divider"></div>
@@ -655,7 +655,7 @@ export default function RepositoryLayoutClient({
                   className={`tree-item changelog-item ${pathname === `/${owner}/${name}/changelog` ? 'active' : ''}`}
                   style={{ paddingLeft: '12px' }}
                 >
-                  <span className="tree-item-label">更新日志</span>
+                  <span className="tree-item-label">{t('repository_layout.sidebar.changelog')}</span>
                 </Link>
               </div>
             </div>) : (

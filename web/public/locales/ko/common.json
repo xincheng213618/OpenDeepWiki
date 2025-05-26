@@ -217,5 +217,52 @@
     "asia": "아시아",
     "europe": "유럽 및 미주",
     "middle_east": "중동"
+  },
+  "repository_layout": {
+    "branch": {
+      "select_placeholder": "브랜치 선택"
+    },
+    "header": {
+      "add_mcp": "MCP 추가",
+      "last_updated": "마지막 업데이트: {{time}}"
+    },
+    "mcp": {
+      "modal_title": "MCP 통합 튜토리얼",
+      "support_message": "OpenDeepWiki는 MCP(Model Context Protocol)를 지원합니다",
+      "features": {
+        "single_repo": "단일 저장소 MCP 서버를 지원하여 개별 저장소 분석을 수행합니다",
+        "analysis": "OpenDeepWiki를 MCP 서버로 사용하여 오픈 소스 프로젝트를 쉽게 분석하고 이해할 수 있습니다"
+      },
+      "config": {
+        "title": "사용 구성",
+        "cursor_usage": "Cursor에서 사용하는 방법:",
+        "copy_success": "구성이 클립보드에 복사되었습니다",
+        "copy_failed": "복사 실패, 수동으로 복사해주세요",
+        "copy_tooltip": "구성 복사",
+        "copied_tooltip": "복사됨",
+        "description_title": "구성 설명:",
+        "owner_desc": "저장소 조직 또는 소유자의 이름",
+        "name_desc": "저장소의 이름"
+      },
+      "test": {
+        "title": "테스트 케이스",
+        "description": "저장소를 추가한 후 테스트 질문을 시도해보세요 (참고: 저장소가 처리 완료되었는지 확인하세요):",
+        "question": "OpenDeepWiki란 무엇인가요?",
+        "image_alt": "MCP 테스트 효과"
+      }
+    },
+    "sidebar": {
+      "export": {
+        "button": "문서 내보내기",
+        "modal_title": "Markdown 내보내기",
+        "modal_content": "현재 문서를 Markdown 형식으로 내보내시겠습니까?",
+        "ok_text": "내보내기",
+        "cancel_text": "취소",
+        "failed_message": "내보내기 실패, 나중에 다시 시도해주세요."
+      },
+      "overview": "개요",
+      "changelog": "변경 로그"
+    },
+    "update_tooltip": "마지막 업데이트: {{time}}"
   }
 } 

@@ -239,9 +239,9 @@
     }
   },
   "language": {
-    "zh-CN": "中国語(簡体)",
-    "en-US": "英語(米国)",
-    "zh-TW": "中国語(繁体)",
+    "zh-CN": "中国語（簡体字）",
+    "en-US": "英語（米国）",
+    "zh-TW": "中国語（繁体字）",
     "ja": "日本語",
     "ko": "韓国語",
     "de": "ドイツ語",
@@ -258,7 +258,54 @@
     "id": "インドネシア語",
     "th": "タイ語",
     "asia": "アジア",
-    "europe": "欧米",
+    "europe": "ヨーロッパ・アメリカ",
     "middle_east": "中東"
+  },
+  "repository_layout": {
+    "branch": {
+      "select_placeholder": "ブランチを選択"
+    },
+    "header": {
+      "add_mcp": "MCPを追加",
+      "last_updated": "最終更新: {{time}}"
+    },
+    "mcp": {
+      "modal_title": "MCP統合チュートリアル",
+      "support_message": "OpenDeepWikiはMCP（Model Context Protocol）をサポートしています",
+      "features": {
+        "single_repo": "単一リポジトリMCPサーバーをサポートし、個別のリポジトリ分析を行います",
+        "analysis": "OpenDeepWikiをMCPサーバーとして使用することで、オープンソースプロジェクトを簡単に分析・理解できます"
+      },
+      "config": {
+        "title": "使用設定",
+        "cursor_usage": "Cursorでの使用方法：",
+        "copy_success": "設定をクリップボードにコピーしました",
+        "copy_failed": "コピーに失敗しました、手動でコピーしてください",
+        "copy_tooltip": "設定をコピー",
+        "copied_tooltip": "コピー済み",
+        "description_title": "設定説明：",
+        "owner_desc": "リポジトリの組織または所有者の名前",
+        "name_desc": "リポジトリの名前"
+      },
+      "test": {
+        "title": "テストケース",
+        "description": "リポジトリを追加した後、テスト質問を試してください（注意：リポジトリが処理完了していることを確認してください）：",
+        "question": "OpenDeepWikiとは何ですか？",
+        "image_alt": "MCPテスト効果"
+      }
+    },
+    "sidebar": {
+      "export": {
+        "button": "ドキュメントをエクスポート",
+        "modal_title": "Markdownをエクスポート",
+        "modal_content": "現在のドキュメントをMarkdown形式でエクスポートしますか？",
+        "ok_text": "エクスポート",
+        "cancel_text": "キャンセル",
+        "failed_message": "エクスポートに失敗しました、後で再試行してください。"
+      },
+      "overview": "概要",
+      "changelog": "変更履歴"
+    },
+    "update_tooltip": "最終更新: {{time}}"
   }
 } 
