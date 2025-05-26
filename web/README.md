@@ -375,6 +375,55 @@ npm run build
 - **问题反馈**: [GitHub Issues](https://github.com/AIDotNet/OpenDeepWiki/issues)
 - **邮箱**: 239573049@qq.com
 
+## 管理后台角色权限控制
+
+管理后台现在支持基于用户角色的菜单权限控制。
+
+### 使用方法
+
+1. 在localStorage中存储用户信息：
+```javascript
+// 管理员用户
+localStorage.setItem('userInfo', JSON.stringify({
+  role: 'admin',
+  name: '管理员',
+  // 其他用户信息...
+}));
+
+// 普通用户
+localStorage.setItem('userInfo', JSON.stringify({
+  role: 'user',
+  name: '普通用户',
+  // 其他用户信息...
+}));
+```
+
+2. 权限说明：
+- **admin角色**：可以访问所有菜单项
+  - 数据统计
+  - 用户管理
+  - 仓库管理
+  - 微调数据
+  - 系统管理
+
+- **其他角色**：只能访问受限菜单
+  - 数据统计
+  - 微调数据
+
+### 测试
+
+可以在浏览器控制台中运行以下代码来测试不同角色：
+
+```javascript
+// 设置为管理员
+localStorage.setItem('userInfo', JSON.stringify({ role: 'admin' }));
+location.reload();
+
+// 设置为普通用户
+localStorage.setItem('userInfo', JSON.stringify({ role: 'user' }));
+location.reload();
+```
+
 ---
 
 <div align="center">

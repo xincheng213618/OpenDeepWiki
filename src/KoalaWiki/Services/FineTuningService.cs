@@ -285,7 +285,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
                 ? dataset.Prompt.Replace("{{markdown_content}}", fileItem.Content)
                 : input.Prompt.Replace("{{markdown_content}}", fileItem.Content);
 
-            if (string.IsNullOrEmpty(input.Prompt) && input.Prompt != dataset.Prompt)
+            if (!string.IsNullOrEmpty(input.Prompt) && input.Prompt != dataset.Prompt)
             {
                 await koala.TrainingDatasets.Where(x => x.Id == dataset.Id)
                     .ExecuteUpdateAsync(x => x.SetProperty(a => a.Prompt, input.Prompt));

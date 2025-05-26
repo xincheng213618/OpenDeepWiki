@@ -486,26 +486,7 @@ export default function DatasetDetailPage() {
       message.warning('任务正在运行中，请稍后再试');
       return;
     }
-
-    Modal.confirm({
-      title: '确认启动',
-      icon: <PlayCircleOutlined />,
-      content: (
-        <div>
-          <p>确定要立即在后台启动此微调任务吗？</p>
-        </div>
-      ),
-      okText: '确定',
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          startTask(taskId)
-        } catch (error) {
-          console.error('启动任务失败:', error);
-          message.error('启动任务失败');
-        }
-      }
-    });
+    await startTask(taskId);
   };
 
   // 关闭高级启动界面
@@ -1148,9 +1129,9 @@ export default function DatasetDetailPage() {
                       onChange={(e) => setTaskPrompt(e.target.value)}
                       rows={4}
                       placeholder="输入用于微调的提示词模板，使用{{markdown_content}}作为特殊变量"
-                      style={{ 
-                        resize: 'none', 
-                        width: '100%', 
+                      style={{
+                        resize: 'none',
+                        width: '100%',
                         height: '100%',
                         fontFamily: 'monospace',
                         position: 'absolute',

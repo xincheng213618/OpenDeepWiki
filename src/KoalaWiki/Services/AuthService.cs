@@ -58,7 +58,7 @@ public class AuthService(
             user.LastLoginIp = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
             dbContext.Users.Update(user);
             await dbContext.SaveChangesAsync();
-            
+
             user.Password = string.Empty; // 清空密码
 
             // 生成JWT令牌
@@ -81,50 +81,49 @@ public class AuthService(
     /// <param name="email">邮箱</param>
     /// <param name="password">密码</param>
     /// <returns>注册结果</returns>
-    public async Task<(bool Success, string? ErrorMessage)> RegisterAsync(string username, string email,
-        string password)
+    public async Task<LoginDto> RegisterAsync(RegisterInput input)
     {
         try
         {
             // 验证用户名格式
-            if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_-]{3,16}$"))
+            if (!Regex.IsMatch(input.UserName, @"^[a-zA-Z0-9_-]{3,16}$"))
             {
-                return (false, "用户名格式不正确，只能包含字母、数字、下划线和连字符，长度3-16位");
+                throw new ArgumentException("用户名格式不正确，必须是3-16位的字母、数字、下划线或连字符");
             }
 
             // 验证邮箱格式
-            if (!Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"))
+            if (!Regex.IsMatch(input.Email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"))
             {
-                return (false, "邮箱格式不正确");
+                throw new ArgumentException("邮箱格式不正确");
             }
 
             // 验证密码强度
-            if (password.Length < 6)
+            if (input.Password.Length < 6)
             {
-                return (false, "密码长度不能小于6位");
+                throw new ArgumentException("密码长度不能小于6位");
             }
 
             // 检查用户名是否已存在
-            var existingUsername = await dbContext.Users.AnyAsync(u => u.Name == username);
+            var existingUsername = await dbContext.Users.AnyAsync(u => u.Name == input.UserName);
             if (existingUsername)
             {
-                return (false, "用户名已存在");
+                throw new ArgumentException("用户名已存在");
             }
 
             // 检查邮箱是否已存在
-            var existingEmail = await dbContext.Users.AnyAsync(u => u.Email == email);
+            var existingEmail = await dbContext.Users.AnyAsync(u => u.Email == input.Email);
             if (existingEmail)
             {
-                return (false, "邮箱已被注册");
+                throw new ArgumentException("邮箱已被注册");
             }
 
             // 创建用户
             var user = new User
             {
                 Id = Guid.NewGuid().ToString("N"),
-                Name = username,
-                Email = email,
-                Password = Guid.NewGuid().ToString(), // 随机密码
+                Name = input.UserName,
+                Email = input.Email,
+                Password = input.Password, // 随机密码
                 CreatedAt = DateTime.UtcNow,
                 Role = "user" // 默认角色
             };
@@ -133,12 +132,16 @@ public class AuthService(
             await dbContext.Users.AddAsync(user);
             await dbContext.SaveChangesAsync();
 
-            return (true, null);
+            user.Password = string.Empty; // 清空密码
+            // 创建token
+            var token = GenerateJwtToken(user);
+            var refreshToken = GenerateRefreshToken(user);
+            return new LoginDto(true, token, refreshToken, user, null);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "用户注册失败");
-            return (false, "注册失败，请稍后再试");
+            throw;
         }
     }
 
