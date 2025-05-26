@@ -1,4 +1,5 @@
 import { getWarehouse } from './services/warehouseService';
+import { getBasicHomeStats } from './services/statsService';
 import HomeClient from './components/HomeClient';
 import { Suspense } from 'react';
 import { Spin } from 'antd';
@@ -11,8 +12,13 @@ export default async function Home({ searchParams = {} }: any) {
   const page = Number(resolvedSearchParams?.page) || 1;
   const pageSize = Number(resolvedSearchParams?.pageSize) || 20;
   const keyword = resolvedSearchParams?.keyword || '';
-  // 在服务端获取初始数据
-  const response = await getWarehouse(page, pageSize,keyword);
+  
+  // 并行获取初始数据和统计数据
+  const [response, statsData] = await Promise.all([
+    getWarehouse(page, pageSize, keyword),
+    getBasicHomeStats()
+  ]);
+  
   const initialRepositories = response.success ? response.data.items : [];
   const initialTotal = response.success ? response.data.total : 0;
 
@@ -24,6 +30,7 @@ export default async function Home({ searchParams = {} }: any) {
         initialPage={page}
         initialPageSize={pageSize}
         initialSearchValue={keyword}
+        initialStats={statsData}
       />
     </Suspense>
   );

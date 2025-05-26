@@ -34,7 +34,11 @@
       "total_repos": "Total Repositories",
       "processing_tasks": "Processing Tasks",
       "completed_tasks": "Completed",
-      "git_repos": "Git Repositories"
+      "git_repos": "Git Repositories",
+      "total_repositories": "Total Repositories",
+      "completed_repositories": "Completed",
+      "processing_repositories": "Processing",
+      "github_stars": "GitHub Stars"
     },
     "sponsors": {
       "title": "Thanks to Our Sponsors",
@@ -45,6 +49,10 @@
       "302ai": {
         "name": "302.AI",
         "description": "AI Application Development Platform"
+      },
+      "whuanle": {
+        "name": "痴者工良",
+        "description": "Senior Developer & Tech Blogger, focusing on .NET, Go, AI"
       }
     },
     "repo_list": {

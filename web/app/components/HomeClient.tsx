@@ -14,6 +14,7 @@ import {
   FireOutlined,
   TrophyOutlined,
   TeamOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import RepositoryForm from './RepositoryForm';
 import RepositoryList from './RepositoryList';
@@ -21,6 +22,7 @@ import LastRepoModal from './LastRepoModal';
 import LanguageSwitcher from './LanguageSwitcher';
 import { Repository, RepositoryFormValues } from '../types';
 import { submitWarehouse } from '../services/warehouseService';
+import { HomeStats } from '../services/statsService';
 import { unstableSetRender } from 'antd';
 import { createRoot } from 'react-dom/client';
 import { homepage } from '../const/urlconst';
@@ -190,34 +192,12 @@ const sponsors = [
     logo: 'https://302.ai/logo.ico',
     url: 'https://302.ai/',
     descriptionKey: 'home.sponsors.302ai.description'
-  }
-];
-
-// 特性卡片配置
-const features = [
-  {
-    icon: <RocketOutlined className="text-2xl text-blue-500" />,
-    titleKey: 'home.features.fast_conversion.title',
-    descriptionKey: 'home.features.fast_conversion.description',
-    color: 'blue'
   },
   {
-    icon: <CodeOutlined className="text-2xl text-green-500" />,
-    titleKey: 'home.features.multi_language.title',
-    descriptionKey: 'home.features.multi_language.description',
-    color: 'green'
-  },
-  {
-    icon: <BranchesOutlined className="text-2xl text-purple-500" />,
-    titleKey: 'home.features.code_structure.title',
-    descriptionKey: 'home.features.code_structure.description',
-    color: 'purple'
-  },
-  {
-    icon: <FireOutlined className="text-2xl text-orange-500" />,
-    titleKey: 'home.features.ai_analysis.title',
-    descriptionKey: 'home.features.ai_analysis.description',
-    color: 'orange'
+    name: '痴者工良',
+    logo: 'https://www.whuanle.cn/wp-content/uploads/2020/04/image-1586681324216.png',
+    url: 'https://www.whuanle.cn/',
+    descriptionKey: 'home.sponsors.whuanle.description'
   }
 ];
 
@@ -239,9 +219,10 @@ interface HomeClientProps {
   initialPage: number;
   initialPageSize: number;
   initialSearchValue: string;
+  initialStats?: Partial<HomeStats>;
 }
 
-export default function HomeClient({ initialRepositories, initialTotal, initialPage, initialPageSize, initialSearchValue }: HomeClientProps) {
+export default function HomeClient({ initialRepositories, initialTotal, initialPage, initialPageSize, initialSearchValue, initialStats }: HomeClientProps) {
   const repositories = initialRepositories;
   const [formVisible, setFormVisible] = useState(false);
   const [lastRepoModalVisible, setLastRepoModalVisible] = useState(false);
@@ -311,7 +292,8 @@ export default function HomeClient({ initialRepositories, initialTotal, initialP
 
   // 计算统计数据
   const stats = {
-    totalRepositories: initialTotal || repositories.length,
+    totalRepositories: initialStats?.totalRepositories || initialTotal || repositories.length,
+    openDeepWikiStars: initialStats?.openDeepWikiStars || 0,
   };
 
   return (
@@ -625,8 +607,61 @@ export default function HomeClient({ initialRepositories, initialTotal, initialP
               </div>
             </div>
 
+            {/* 统计数据展示区域 */}
+            <div className="mb-16">
+              <Row gutter={[32, 24]} justify="center">
+                <Col xs={24} sm={12} lg={8}>
+                  <Card className="stat-card text-center border-0 shadow-sm">
+                    <Statistic
+                      title={
+                        <Text className="text-slate-600 font-medium">
+                          {t('home.stats.total_repositories')}
+                        </Text>
+                      }
+                      value={stats.totalRepositories}
+                      prefix={<DatabaseOutlined className="text-blue-500" />}
+                      valueStyle={{ 
+                        color: designSystem.colors.primary,
+                        fontWeight: 600,
+                        fontSize: '32px'
+                      }}
+                    />
+                  </Card>
+                </Col>
+                
+                <Col xs={24} sm={12} lg={8}>
+                  <Card className="stat-card text-center border-0 shadow-sm">
+                    <a 
+                      href={homepage}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <Statistic
+                        title={
+                          <Text className="text-slate-600 font-medium">
+                            {t('home.stats.github_stars')}
+                          </Text>
+                        }
+                        value={stats.openDeepWikiStars}
+                        prefix={<StarOutlined className="text-yellow-500" />}
+                        suffix={
+                          <Space size={4} className="ml-2">
+                            <GithubOutlined className="text-slate-400 text-sm" />
+                          </Space>
+                        }
+                        valueStyle={{ 
+                          color: designSystem.colors.warning,
+                          fontWeight: 600,
+                          fontSize: '32px'
+                        }}
+                      />
+                    </a>
+                  </Card>
+                </Col>
+              </Row>
+            </div>
 
-            {/* 仓库列表区域 */}
             <Card className="border-0 shadow-sm bg-white/90 backdrop-blur-md">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 space-y-4 lg:space-y-0">
                 <div className="flex items-center space-x-3">

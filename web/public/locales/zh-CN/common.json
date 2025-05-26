@@ -34,7 +34,11 @@
       "total_repos": "仓库总数",
       "processing_tasks": "处理中任务",
       "completed_tasks": "已完成",
-      "git_repos": "Git仓库"
+      "git_repos": "Git仓库",
+      "total_repositories": "仓库总数",
+      "completed_repositories": "已完成",
+      "processing_repositories": "处理中",
+      "github_stars": "GitHub Stars"
     },
     "sponsors": {
       "title": "感谢赞助商支持",
@@ -45,6 +49,10 @@
       "302ai": {
         "name": "302.AI",
         "description": "AI应用开发平台"
+      },
+      "whuanle": {
+        "name": "痴者工良",
+        "description": "高级程序员劝退师，专注.NET、Go、AI技术分享"
       }
     },
     "repo_list": {
