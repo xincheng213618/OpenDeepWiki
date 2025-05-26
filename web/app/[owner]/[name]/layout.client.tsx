@@ -45,6 +45,7 @@ import { useEffect, useState } from 'react';
 import AIInputBar from '../../components/AIInputBar';
 import Image from 'next/image';
 import { ExportMarkdownZip } from '../../services';
+import { useTranslation } from '../../i18n/client';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -113,6 +114,7 @@ export default function RepositoryLayoutClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { token } = theme.useToken();
+  const { t } = useTranslation();
 
   const pathParts = pathname.split('/').filter(Boolean);
   const currentPath = pathParts.slice(2).join('/');
@@ -161,11 +163,11 @@ export default function RepositoryLayoutClient({
     navigator.clipboard.writeText(mcpJsonString)
       .then(() => {
         setCopySuccess(true);
-        message.success('配置已复制到剪贴板');
+        message.success(t('repository_layout.mcp.config.copy_success'));
         setTimeout(() => setCopySuccess(false), 3000);
       })
       .catch(() => {
-        message.error('复制失败，请手动复制');
+        message.error(t('repository_layout.mcp.config.copy_failed'));
       });
   };
 
@@ -403,7 +405,7 @@ export default function RepositoryLayoutClient({
                     label: branch, 
                     value: branch 
                   }))}
-                  placeholder="选择分支"
+                  placeholder={t('repository_layout.branch.select_placeholder')}
                   suffixIcon={<BranchesOutlined />}
                   variant="borderless"
                 />
@@ -420,7 +422,7 @@ export default function RepositoryLayoutClient({
                   boxShadow: 'none',
                 }}
               >
-                {isMobile ? 'MCP' : '添加MCP'}
+                {isMobile ? 'MCP' : t('repository_layout.header.add_mcp')}
               </Button>
               
               {initialLastUpdated && !isMobile && (
@@ -428,7 +430,7 @@ export default function RepositoryLayoutClient({
                   fontSize: 12,
                   color: minimalistDesign.colors.textSecondary,
                 }}>
-                  最近更新: {initialLastUpdated}
+                  {t('repository_layout.header.last_updated', { time: initialLastUpdated })}
                 </Text>
               )}
             </Flex>
@@ -439,7 +441,7 @@ export default function RepositoryLayoutClient({
           title={
             <Flex align="center" gap={minimalistDesign.spacing.sm}>
               <ApiOutlined style={{ color: minimalistDesign.colors.primary }} />
-              <span>MCP接入教程</span>
+              <span>{t('repository_layout.mcp.modal_title')}</span>
             </Flex>
           }
           open={isMCPModalVisible}
@@ -452,11 +454,11 @@ export default function RepositoryLayoutClient({
             <Alert
               type="info"
               showIcon
-              message="OpenDeepWiki支持MCP（ModelContextProtocol）"
+              message={t('repository_layout.mcp.support_message')}
               description={
                 <ul style={{ paddingLeft: minimalistDesign.spacing.lg, margin: `${minimalistDesign.spacing.sm}px 0` }}>
-                  <li>支持单仓库提供MCPServer，针对单个仓库进行分析</li>
-                  <li>通过OpenDeepWiki作为MCPServer，您可以方便地对开源项目进行分析和理解</li>
+                  <li>{t('repository_layout.mcp.features.single_repo')}</li>
+                  <li>{t('repository_layout.mcp.features.analysis')}</li>
                 </ul>
               }
               style={{ 
@@ -467,7 +469,7 @@ export default function RepositoryLayoutClient({
             />
 
             <Card
-              title="使用配置"
+              title={t('repository_layout.mcp.config.title')}
               style={{
                 marginBottom: minimalistDesign.spacing.lg,
                 borderRadius: minimalistDesign.borderRadius.lg,
@@ -476,7 +478,7 @@ export default function RepositoryLayoutClient({
               }}
             >
               <Paragraph style={{ marginBottom: minimalistDesign.spacing.md }}>
-                下面是Cursor的使用方式：
+                {t('repository_layout.mcp.config.cursor_usage')}
               </Paragraph>
 
               <div style={{
@@ -497,7 +499,7 @@ export default function RepositoryLayoutClient({
                 }}>
                   {mcpJsonString}
                 </pre>
-                <Tooltip title={copySuccess ? "已复制" : "复制配置"}>
+                <Tooltip title={copySuccess ? t('repository_layout.mcp.config.copied_tooltip') : t('repository_layout.mcp.config.copy_tooltip')}>
                   <Button
                     type="text"
                     icon={copySuccess ? <CheckOutlined style={{ color: minimalistDesign.colors.success }} /> : <CopyOutlined />}

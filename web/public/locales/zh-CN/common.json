@@ -282,5 +282,52 @@
     "asia": "亚洲",
     "europe": "欧美",
     "middle_east": "中东"
+  },
+  "repository_layout": {
+    "branch": {
+      "select_placeholder": "选择分支"
+    },
+    "header": {
+      "add_mcp": "添加MCP",
+      "last_updated": "最近更新: {{time}}"
+    },
+    "mcp": {
+      "modal_title": "MCP接入教程",
+      "support_message": "OpenDeepWiki支持MCP（ModelContextProtocol）",
+      "features": {
+        "single_repo": "支持单仓库提供MCPServer，针对单个仓库进行分析",
+        "analysis": "通过OpenDeepWiki作为MCPServer，您可以方便地对开源项目进行分析和理解"
+      },
+      "config": {
+        "title": "使用配置",
+        "cursor_usage": "下面是Cursor的使用方式：",
+        "copy_success": "配置已复制到剪贴板",
+        "copy_failed": "复制失败，请手动复制",
+        "copy_tooltip": "复制配置",
+        "copied_tooltip": "已复制",
+        "description_title": "配置说明：",
+        "owner_desc": "是仓库组织或拥有者的名称",
+        "name_desc": "是仓库的名称"
+      },
+      "test": {
+        "title": "测试案例",
+        "description": "添加好仓库以后尝试进行测试提问（注意，请保证仓库已经处理完成）：",
+        "question": "OpenDeepWiki是什么？",
+        "image_alt": "MCP测试效果"
+      }
+    },
+    "sidebar": {
+      "export": {
+        "button": "导出文档",
+        "modal_title": "导出Markdown",
+        "modal_content": "是否将当前文档导出为Markdown格式？",
+        "ok_text": "导出",
+        "cancel_text": "取消",
+        "failed_message": "导出失败，请稍后再试。"
+      },
+      "overview": "概览",
+      "changelog": "更新日志"
+    },
+    "update_tooltip": "最近更新: {{time}}"
   }
 } 

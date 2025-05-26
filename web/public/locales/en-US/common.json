@@ -280,7 +280,54 @@
     "id": "Indonesian",
     "th": "Thai",
     "asia": "Asia",
-    "europe": "Europe & America",
+    "europe": "Europe & Americas",
     "middle_east": "Middle East"
+  },
+  "repository_layout": {
+    "branch": {
+      "select_placeholder": "Select Branch"
+    },
+    "header": {
+      "add_mcp": "Add MCP",
+      "last_updated": "Last Updated: {{time}}"
+    },
+    "mcp": {
+      "modal_title": "MCP Integration Tutorial",
+      "support_message": "OpenDeepWiki supports MCP (Model Context Protocol)",
+      "features": {
+        "single_repo": "Support single repository MCP Server for individual repository analysis",
+        "analysis": "Through OpenDeepWiki as MCP Server, you can easily analyze and understand open source projects"
+      },
+      "config": {
+        "title": "Usage Configuration",
+        "cursor_usage": "Here's how to use it with Cursor:",
+        "copy_success": "Configuration copied to clipboard",
+        "copy_failed": "Copy failed, please copy manually",
+        "copy_tooltip": "Copy Configuration",
+        "copied_tooltip": "Copied",
+        "description_title": "Configuration Description:",
+        "owner_desc": "The name of the repository organization or owner",
+        "name_desc": "The name of the repository"
+      },
+      "test": {
+        "title": "Test Case",
+        "description": "After adding the repository, try asking test questions (Note: please ensure the repository has been processed):",
+        "question": "What is OpenDeepWiki?",
+        "image_alt": "MCP Test Effect"
+      }
+    },
+    "sidebar": {
+      "export": {
+        "button": "Export Docs",
+        "modal_title": "Export Markdown",
+        "modal_content": "Export current documentation as Markdown format?",
+        "ok_text": "Export",
+        "cancel_text": "Cancel",
+        "failed_message": "Export failed, please try again later."
+      },
+      "overview": "Overview",
+      "changelog": "Changelog"
+    },
+    "update_tooltip": "Last Updated: {{time}}"
   }
 } 
