@@ -393,9 +393,13 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
             .AsNoTracking()
             .Where(x => x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing);
 
+        keyword = keyword.Trim().ToLower();
+
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            query = query.Where(x => x.Name.Contains(keyword) || x.Address.Contains(keyword));
+            query = query.Where(x =>
+                x.Name.ToLower().Contains(keyword) || x.Address.ToLower().Contains(keyword) ||
+                x.Description.ToLower().Contains(keyword));
         }
 
         // 按仓库名称和组织名称分组，保持排序一致性
@@ -445,7 +449,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
             var info = repositoryInfo.FirstOrDefault(x =>
                 x.RepoUrl.Replace(".git", "").Equals(repository.Address.Replace(".git", ""),
                     StringComparison.InvariantCultureIgnoreCase));
-            
+
             if (info != null)
             {
                 repository.Stars = info.Stars;
