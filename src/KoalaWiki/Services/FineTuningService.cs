@@ -19,7 +19,6 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace KoalaWiki.Services;
 
-[Filter(typeof(ResultFilter))]
 [Tags("FineTuning")]
 [Authorize]
 public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext) : FastApi
@@ -28,6 +27,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// 创建训练数据集
     /// </summary>
     [EndpointSummary("微调管理：创建训练数据集")]
+    [Filter(typeof(ResultFilter))]
     public async Task<TrainingDataset> CreateDatasetAsync(CreateDatasetInput input)
     {
         var warehouse = await koala.Warehouses
@@ -64,6 +64,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// 获取训练数据集列表
     /// </summary>
     [EndpointSummary("微调管理：获取训练数据集列表")]
+    [Filter(typeof(ResultFilter))]
     public async Task<List<TrainingDataset>> GetDatasetsAsync(string? warehouseId)
     {
         return await koala.TrainingDatasets
@@ -77,6 +78,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// 获取训练数据集详情
     /// </summary>
     [EndpointSummary("微调管理：获取训练数据集详情")]
+    [Filter(typeof(ResultFilter))]
     public async Task<TrainingDataset> GetDatasetAsync(string datasetId)
     {
         var dataset = await koala.TrainingDatasets
@@ -95,6 +97,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// 更新训练数据集
     /// </summary>
     [EndpointSummary("微调管理：更新训练数据集")]
+    [Filter(typeof(ResultFilter))]
     public async Task<TrainingDataset> UpdateDatasetAsync(UpdateDatasetInput input)
     {
         var dataset = await koala.TrainingDatasets
@@ -120,6 +123,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// 删除训练数据集
     /// </summary>
     [EndpointSummary("微调管理：删除训练数据集")]
+    [Filter(typeof(ResultFilter))]
     public async Task DeleteDatasetAsync(string datasetId)
     {
         var dataset = await koala.TrainingDatasets
@@ -130,14 +134,23 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
             throw new Exception("数据集不存在");
         }
 
-        koala.TrainingDatasets.Remove(dataset);
-        await koala.SaveChangesAsync();
+        await koala.FineTuningTasks
+            .Where(x => x.TrainingDatasetId == datasetId && x.UserId == userContext.CurrentUserId)
+            .ExecuteDeleteAsync();
+
+        await koala.TrainingDatasets
+            .Where(x => x.WarehouseId == dataset.WarehouseId && x.UserId == userContext.CurrentUserId)
+            .ExecuteDeleteAsync();
+
+        await koala.TrainingDatasets.Where(x => x.Id == datasetId && x.UserId == userContext.CurrentUserId)
+            .ExecuteDeleteAsync();
     }
 
     /// <summary>
     /// 创建微调任务
     /// </summary>
     [EndpointSummary("微调管理：创建微调任务")]
+    [Filter(typeof(ResultFilter))]
     public async Task<FineTuningTask> CreateTaskAsync(CreateTaskInput input)
     {
         var dataset = await koala.TrainingDatasets
@@ -172,6 +185,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// 获取微调任务列表
     /// </summary>
     [EndpointSummary("微调管理：获取微调任务列表")]
+    [Filter(typeof(ResultFilter))]
     public async Task<List<FineTuningTask>> GetTasksAsync(string warehouseId)
     {
         return await koala.FineTuningTasks
@@ -184,6 +198,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// 获取微调任务详情
     /// </summary>
     [EndpointSummary("微调管理：获取微调任务详情")]
+    [Filter(typeof(ResultFilter))]
     public async Task<FineTuningTask> GetTaskAsync(string taskId)
     {
         var task = await koala.FineTuningTasks
@@ -202,19 +217,19 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// 启动微调任务
     /// </summary>
     [EndpointSummary("微调管理：启动微调任务")]
-    public async Task<FineTuningTask> StartTaskAsync(string taskId, HttpContext context)
+    public async Task<FineTuningTask> StartTaskAsync(StartTaskInput input, HttpContext context)
     {
         var task = await koala.FineTuningTasks
-            .FirstOrDefaultAsync(x => x.Id == taskId && x.UserId == userContext.CurrentUserId);
+            .FirstOrDefaultAsync(x => x.Id == input.TaskId && x.UserId == userContext.CurrentUserId);
 
         if (task == null)
         {
             throw new Exception("任务不存在");
         }
 
-        if (task.Status != FineTuningTaskStatus.NotStarted)
+        if (task.Status == FineTuningTaskStatus.InProgress)
         {
-            throw new Exception("任务已经启动或已完成");
+            throw new Exception("任务已在进行中，请勿重复启动");
         }
 
         var dataset = await koala.TrainingDatasets
@@ -239,22 +254,49 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
             throw new Exception("当前微调任务的文档内容不存在，请先生成文档内容。");
         }
 
+        var document = await koala.Documents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.WarehouseId == dataset.WarehouseId);
+
+        var warehouse = await koala.Warehouses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == dataset.WarehouseId);
+
+        if (document == null)
+        {
+            throw new Exception("当前微调任务的文档不存在，请先生成文档。");
+        }
+
         await koala.FineTuningTasks.Where(x => x.Id == dataset.Id)
             .ExecuteUpdateAsync(x => x.SetProperty(a => a.Status, FineTuningTaskStatus.InProgress)
-                    .SetProperty(a => a.StartedAt, DateTime.Now),
+                    .SetProperty(a => a.StartedAt, DateTime.Now)
+                    .SetProperty(a => a.CreatedAt, DateTime.Now),
                 context.RequestAborted);
 
         try
         {
             // 配置OpenAI客户端
             var kernel = KernelFactory.GetKernel(dataset.Endpoint,
-                dataset.ApiKey, dataset.Model, OpenAIOptions.ChatModel, false);
+                dataset.ApiKey, document.GitPath, dataset.Model, false);
 
             var chat = kernel.GetRequiredService<IChatCompletionService>();
 
+            var prompt = string.IsNullOrEmpty(input.Prompt)
+                ? dataset.Prompt.Replace("{{markdown_content}}", fileItem.Content)
+                : input.Prompt.Replace("{{markdown_content}}", fileItem.Content);
+
+            if (string.IsNullOrEmpty(input.Prompt) && input.Prompt != dataset.Prompt)
+            {
+                await koala.TrainingDatasets.Where(x => x.Id == dataset.Id)
+                    .ExecuteUpdateAsync(x => x.SetProperty(a => a.Prompt, input.Prompt));
+            }
+
+            // 在prompt的头部增加<catalogue>标签
+            prompt += $"<catalogue>\n{warehouse?.OptimizedDirectoryStructure}\n</catalogue>";
+
             // 这里可以实现实际的微调训练逻辑
             var history = new ChatHistory();
-            history.AddUserMessage(dataset.Prompt.Replace("{{markdown_content}}", fileItem.Content));
+            history.AddUserMessage(prompt);
 
             var first = true;
             var sb = new StringBuilder();
@@ -263,6 +305,8 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
                                new OpenAIPromptExecutionSettings()
                                {
                                    MaxTokens = DocumentsService.GetMaxTokens(dataset.Model),
+                                   ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+                                   Temperature = 0.3,
                                }, kernel))
             {
                 if (first)
@@ -318,10 +362,10 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
             await koala.FineTuningTasks.Where(x => x.Id == task.Id)
                 .ExecuteUpdateAsync(x => x.SetProperty(a => a.Status, FineTuningTaskStatus.Completed)
                         .SetProperty(x => x.Dataset, datasetContent)
-                        .SetProperty(x=>x.OriginalDataset,sb.ToString())
+                        .SetProperty(x => x.OriginalDataset, sb.ToString())
                         .SetProperty(a => a.CompletedAt, DateTime.Now),
                     context.RequestAborted);
-            
+
             await koala.TrainingDatasets.Where(x => x.Id == dataset.Id)
                 .ExecuteUpdateAsync(x => x.SetProperty(a => a.Status, TrainingDatasetStatus.Completed)
                         .SetProperty(a => a.UpdatedAt, DateTime.Now),
@@ -357,6 +401,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// <summary>
     /// 取消微调任务
     /// </summary>
+    [Filter(typeof(ResultFilter))]
     public async Task<FineTuningTask> CancelTaskAsync(string taskId)
     {
         var task = await koala.FineTuningTasks
@@ -381,6 +426,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
     /// <summary>
     /// 删除微调任务
     /// </summary>
+    [Filter(typeof(ResultFilter))]
     public async Task DeleteTaskAsync(string taskId)
     {
         var task = await koala.FineTuningTasks

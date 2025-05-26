@@ -216,8 +216,7 @@ export default function RepositoriesPage() {
             width: '120px',
           }}
           href={`/admin/repositories/${record.id}`}>
-            {record.organizationName}/{record.name}
-            {record.branch ? `/${record.branch}` : ''}
+            {record.address}
           </Link>
           {record.isRecommended && <Tag color="gold"><StarOutlined /> 推荐</Tag>}
         </Space>

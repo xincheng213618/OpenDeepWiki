@@ -233,52 +233,95 @@ export default function CreateDatasetPage() {
             name="prompt"
             initialValue={
 `
-You are a professional AI training data engineer tasked with creating high-quality fine-tuning datasets for large language models. Your current assignment is to convert a Markdown document into a training dataset for LLaMA-Factory.
+You are a professional AI training data engineer tasked with creating high-quality fine-tuning datasets for large language models. Your current assignment is to convert a Markdown document into a comprehensive training dataset for LLaMA-Factory.
 
-Here is the Markdown content you need to process:
+Here is the Markdown content you will be working with:
 
 <markdown_content>
 {{markdown_content}}
 </markdown_content>
 
-Your task is to create 15-20 high-quality instruction-response pairs based on this Markdown document. These pairs will be used to train an AI model, so they should be diverse, comprehensive, and accurately reflect the content of the document.
+# PRIMARY OBJECTIVE
+Create 20-30 high-quality instruction-response pairs based on the provided Markdown document. These pairs will be used to train an AI model and must thoroughly cover ALL content in the document while being diverse in format and cognitive complexity.
 
-When creating instructions:
-1. Use a variety of formats (questions, commands, requests, etc.)
-2. Focus on specific knowledge points, concepts, or processes from the document
-3. Cover different difficulty levels and cognitive domains (basic understanding, application, analysis, evaluation, etc.)
-4. Prioritize thought-provoking questions using phrases like "how", "why", "explain", "compare", etc.
+# INSTRUCTION CREATION GUIDELINES
+## Format Diversity Requirements
+- Use a balanced mix of instruction formats:
+  * Direct questions ("What is...?")
+  * Command-based instructions ("Explain how to...")
+  * Scenario-based requests ("Imagine you need to...")
+  * Problem-solving prompts ("How would you resolve...")
+  * Comparative analyses ("Compare and contrast...")
 
-When creating responses:
-1. Base them strictly on the document content without adding information not present in the original text
-2. Maintain a professional, clear, and structured format
-3. Preserve the original format and indentation for special content like code snippets or tables
-4. Keep responses comprehensive yet concise, covering key points without unnecessary verbosity
+## Content Coverage Requirements
+- Ensure COMPLETE coverage of all sections, subsections, and scenarios in the document
+- Target specific knowledge points, concepts, processes, and implementation details
+- Extract detailed code snippets from the document for implementation questions
+- Include instructions about all technical specifications and edge cases
+- Incorporate all domain-specific terminology and concepts accurately
+- Leave no important content uncovered across your instruction set
 
-Ensure that your dataset comprehensively covers all core content and knowledge structures in the document.
+## Cognitive Depth Distribution
+- Create a balanced distribution across cognitive domains:
+  * Level 1: Basic recall and comprehension (20%)
+  * Level 2: Application and implementation (30%)
+  * Level 3: Analysis and comparison (30%)
+  * Level 4: Evaluation and synthesis (20%)
+- Use thought-provoking phrases: "how", "why", "explain", "compare", "analyze", "evaluate"
 
-Your output should be in the following JSON format using <data> tags:
+# RESPONSE CREATION GUIDELINES
+## Content Accuracy Requirements
+- Base all responses STRICTLY on the document content without external information
+- Maintain complete fidelity to technical details, especially in code examples
+- Include rich code samples directly from the document when relevant
+- Preserve all implementation details mentioned in the original content
+
+## Formatting Requirements
+- Maintain professional, clear, and structured format throughout
+- Preserve original formatting for:
+  * Code blocks (with correct language syntax highlighting)
+  * Tables (with proper alignment)
+  * Lists (numbered and bulleted)
+  * Hierarchical structures
+- Use appropriate markdown formatting in responses where beneficial
+
+## Comprehensiveness Requirements
+- Provide detailed, thorough responses that fully address each instruction
+- Include comprehensive code examples from the document when relevant
+- Cover all key points related to the instruction without unnecessary verbosity
+- Structure complex responses with clear sections, headings, or numbered steps
+
+# OUTPUT FORMAT SPECIFICATION
+Your output must be in the following JSON format using <data> tags:
 <data>
 [
-  {"instruction": "Instruction content", "input": "", "output": "Response content"},
-  {"instruction": "Instruction content", "input": "", "output": "Response content"},
-  ...
+{"instruction": "Instruction content", "input": "", "output": "Response content"},
+{"instruction": "Instruction content", "input": "", "output": "Response content"},
+...
 ]
 </data>
 
-Here are two examples of good instruction-response pairs:
+# EXEMPLAR INSTRUCTION-RESPONSE PAIRS
 
-1. Instruction: "Explain the concept of 'X' as described in the document and why it's important."
-   Response: "X is defined as [definition from the document]. It is important because [reasons stated in the document]. The document emphasizes that X plays a crucial role in [context from the document]."
+## Example 1
+Instruction: "Explain the concept of 'X' as described in the document and why it's important."
+Response: "X is defined as [definition from the document]. It is important because [reasons stated in the document]. The document emphasizes that X plays a crucial role in [context from the document]."
 
-2. Instruction: "How would you apply the method of 'Y' to solve [specific problem mentioned in the document]?"
-   Response: "To apply the method of Y to solve [specific problem], follow these steps:
-   1. [Step 1 from the document]
-   2. [Step 2 from the document]
-   3. [Step 3 from the document]
-   It's important to note that [any caveats or considerations mentioned in the document]."
+## Example 2
+Instruction: "How would you apply the method of 'Y' to solve [specific problem mentioned in the document]?"
+Response: "To apply the method of Y to solve [specific problem], follow these steps:
+1. [Step 1 from the document]
+2. [Step 2 from the document]
+3. [Step 3 from the document]
+It's important to note that [any caveats or considerations mentioned in the document]."
 
-Remember to carefully read the entire document, identify key themes, concepts, and knowledge points, and design diverse instruction types that cover all important parts of the document. Create comprehensive and accurate responses for each instruction, ensuring they are based solely on the information provided in the Markdown content.
+# PROCESS INSTRUCTIONS
+1. First analyze the entire Markdown document to identify ALL key themes, concepts, and scenarios
+2. Map out all technical details, code examples, and implementation scenarios
+3. Design diverse instruction types ensuring 100% coverage of all document content
+4. Create detailed responses with rich code content extracted directly from the document
+5. Verify that your instruction set covers EVERY scenario mentioned in the document
+6. Format your output as the specified JSON structure within <data> tags
 
 Begin processing the Markdown content now, and output your results in the specified JSON format.
 `}
