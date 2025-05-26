@@ -16,7 +16,7 @@ export ENDPOINT=https://api.openai.com/v1
 export DB_TYPE=sqlite
 # 模型提供商，默认为OpenAI 支持AzureOpenAI和Anthropic
 export MODEL_PROVIDER=OpenAI
-export DB_CONNECTION_STRING="Data Source=/data/KoalaWiki.db"
+export DB_CONNECTION_STRING="Data Source=./KoalaWiki.db"
 # 是否启用智能过滤，这可能影响AI得到仓库的文件目录
 export EnableSmartFilter=true
 # 仓库增量更新间隔，单位天
@@ -28,4 +28,7 @@ export DEEP_RESEARCH_MODEL=
 # 是否启用增量更新
 export ENABLE_INCREMENTAL_UPDATE=true
 
-./backend/KoalaWiki 
+cd backend
+
+
+KoalaWiki 
