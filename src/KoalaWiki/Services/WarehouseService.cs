@@ -15,7 +15,8 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace KoalaWiki.Services;
 
-public class WarehouseService(IKoalaWikiContext access, IMapper mapper, IMemoryCache memory) : FastApi
+public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepositoryService gitRepositoryService)
+    : FastApi
 {
     /// <summary>
     /// 更新仓库状态，并且重新提交
@@ -386,7 +387,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, IMemoryC
     /// <param name="pageSize">每页显示的记录数。</param>
     /// <param name="keyword">搜索关键词，用于匹配仓库名称或地址。</param>
     /// <returns>返回一个包含总记录数和当前页仓库数据的分页结果对象。</returns>
-    public async Task<PageDto<Warehouse>> GetWarehouseListAsync(int page, int pageSize, string keyword)
+    public async Task<PageDto<WarehouseDto>> GetWarehouseListAsync(int page, int pageSize, string keyword)
     {
         var query = access.Warehouses
             .AsNoTracking()
@@ -407,7 +408,23 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, IMemoryC
 
         var total = await groupedQuery.CountAsync();
 
-        var queryList = await groupedQuery.ToListAsync();
+        var queryList = (await groupedQuery
+                .ToListAsync())
+            .Select(x => new Warehouse()
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Address = x.Address,
+                Description = x.Description,
+                CreatedAt = x.CreatedAt,
+                Status = x.Status,
+                IsRecommended = x.IsRecommended,
+                OrganizationName = x.OrganizationName,
+                Type = x.Type,
+                Branch = x.Branch,
+                Email = x.Email,
+                Version = x.Version,
+            });
 
         var list = queryList
             .OrderByDescending(x => x.IsRecommended)
@@ -417,7 +434,41 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, IMemoryC
             .Take(pageSize)
             .ToList();
 
-        return new PageDto<Warehouse>(total, list);
+        var address = list.Select(x => x.Address).ToArray();
+
+        var repositoryInfo = await gitRepositoryService.GetRepoInfoAsync(address);
+
+        var dto = mapper.Map<List<WarehouseDto>>(list);
+
+        foreach (var repository in dto)
+        {
+            var info = repositoryInfo.FirstOrDefault(x =>
+                x.RepoUrl.Replace(".git", "").Equals(repository.Address.Replace(".git", ""),
+                    StringComparison.InvariantCultureIgnoreCase));
+            
+            if (info != null)
+            {
+                repository.Stars = info.Stars;
+                repository.Forks = info.Forks;
+                repository.AvatarUrl = info.AvatarUrl;
+                if (string.IsNullOrEmpty(repository.Description))
+                {
+                    repository.Description = info.Description;
+                }
+
+                repository.OwnerUrl = info.OwnerUrl;
+                repository.Language = info.Language;
+                repository.License = info.License;
+                repository.Error = info.Error;
+                repository.Success = info.Success;
+            }
+
+            repository.OptimizedDirectoryStructure = string.Empty;
+            repository.Prompt = string.Empty;
+            repository.Readme = string.Empty;
+        }
+
+        return new PageDto<WarehouseDto>(total, dto);
     }
 
     [EndpointSummary("获取指定仓库代码文件")]

@@ -215,6 +215,9 @@ docker-compose build --build-arg ARCH=arm64
 docker-compose build --build-arg ARCH=amd64
 ```
 
+### 部署到 Sealos 通过公网访问
+详情请参考：[使用模板将 OpenDeepWiki 一键部署为 Sealos 应用暴露到公网](scripts/sealos/README.zh-CN.md)
+
 ## 🔍工作原理
 
 OpenDeepWiki使用AI实现：
@@ -276,8 +279,7 @@ make build-frontend-amd
 ```
 
 ## WeChat 
-
-![0fff53b3927a3088483d50f821b80815](https://github.com/user-attachments/assets/c0b6c199-0001-40ee-8a72-a128b45c4fa3)
+![2efb23f03f6286e3821f458769369da2](https://github.com/user-attachments/assets/e7695654-c498-478a-9982-a9c82ef85196)
 
 
 ## 📄 License
