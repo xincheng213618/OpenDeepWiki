@@ -278,6 +278,7 @@ export default function SearchPage({ }: any) {
       case 'java':
       case 'c':
       case 'cpp':
+      case 'cc':
       case 'cs':
       case 'go':
       case 'rb':
