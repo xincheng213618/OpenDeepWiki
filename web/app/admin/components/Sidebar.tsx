@@ -21,11 +21,12 @@ export interface NavItem {
 interface SidebarProps {
   isSidebarOpen: boolean;
   selectedKey: string;
+  userRole: string;
 }
 
-export default function Sidebar({ isSidebarOpen, selectedKey }: SidebarProps) {
+export default function Sidebar({ isSidebarOpen, selectedKey, userRole }: SidebarProps) {
   // 导航菜单配置
-  const navItems: NavItem[] = [
+  const allNavItems: NavItem[] = [
     {
       key: 'dashboard',
       icon: <DashboardOutlined className={styles.navItemIcon} />,
@@ -57,6 +58,26 @@ export default function Sidebar({ isSidebarOpen, selectedKey }: SidebarProps) {
       path: '/admin/settings',
     },
   ];
+
+  // 根据用户角色过滤菜单项
+  const getNavItems = () => {
+    // 调试信息：输出当前用户角色
+    console.log('当前用户角色:', userRole);
+    
+    if (userRole === 'admin') {
+      // 管理员显示全部菜单
+      console.log('显示管理员完整菜单');
+      return allNavItems;
+    } else {
+      // 其他角色只显示数据统计和微调数据
+      console.log('显示受限菜单：仅数据统计和微调数据');
+      return allNavItems.filter(item => 
+        item.key === 'dashboard' || item.key === 'finetune'
+      );
+    }
+  };
+
+  const navItems = getNavItems();
 
   return (
     <aside 

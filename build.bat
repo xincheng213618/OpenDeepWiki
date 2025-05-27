@@ -2,11 +2,6 @@
 chcp 65001 >nul
 echo 开始构建KoalaWiki项目...
 
-REM 创建输出目录
-if not exist "output" mkdir output
-if not exist "output\backend" mkdir output\backend
-if not exist "output\frontend" mkdir output\frontend
-
 REM 复制启动脚本
 copy ".\start-backend.bat" ".\output\" >nul
 copy ".\start-frontend.bat" ".\output\" >nul
@@ -22,8 +17,6 @@ call npm run build
 xcopy /E /I /Y .next ..\output\frontend\
 cd ..
 
-echo KoalaWiki项目构建完成！
-echo 后端输出目录: %cd%\output\backend
-echo 前端输出目录: %cd%\output\frontend
+xcopy /E /I /Y .next\static ..\output\frontend\standalone\.next\static\
 
 pause 

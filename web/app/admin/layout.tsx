@@ -16,6 +16,7 @@ export default function AdminLayout({
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState('管理员');
+  const [userRole, setUserRole] = useState('user');
   const pathname = usePathname();
   const router = useRouter();
 
@@ -57,6 +58,32 @@ export default function AdminLayout({
         if (storedUserName) {
           setUserName(storedUserName);
         }
+        
+        // 获取用户信息和角色
+        const userInfoStr = localStorage.getItem('userInfo');
+        console.log('从localStorage获取的userInfo:', userInfoStr);
+        
+        if (userInfoStr) {
+          try {
+            const userInfo = JSON.parse(userInfoStr);
+            console.log('解析后的userInfo:', userInfo);
+            
+            if (userInfo.role) {
+              setUserRole(userInfo.role);
+              console.log('设置用户角色为:', userInfo.role);
+            } else {
+              console.log('userInfo中没有role字段，使用默认角色user');
+              setUserRole('user');
+            }
+          } catch (error) {
+            console.error('解析用户信息失败:', error);
+            // 如果解析失败，默认为普通用户
+            setUserRole('user');
+          }
+        } else {
+          console.log('localStorage中没有userInfo，使用默认角色user');
+          setUserRole('user');
+        }
       }
       setIsLoading(false);
     };
@@ -66,9 +93,18 @@ export default function AdminLayout({
 
   // 处理登出
   const handleLogout = () => {
-    // 清除用户登录信息
+    console.log('用户退出登录');
+    // 清除所有用户登录信息
     localStorage.removeItem('userToken');
     localStorage.removeItem('userName');
+    localStorage.removeItem('userInfo');
+    localStorage.removeItem('redirectPath'); // 也清除重定向路径
+    
+    // 重置状态
+    setIsLoggedIn(false);
+    setUserName('管理员');
+    setUserRole('user');
+    
     // 重定向到登录页面
     router.push('/login');
   };
@@ -105,6 +141,7 @@ export default function AdminLayout({
         <Sidebar 
           isSidebarOpen={isSidebarOpen} 
           selectedKey={getSelectedKey()} 
+          userRole={userRole}
         />
         
         <div className={`${styles.mainContent} ${!isSidebarOpen ? styles.mainContentSidebarClosed : ''}`}>

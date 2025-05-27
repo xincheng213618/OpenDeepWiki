@@ -50,13 +50,18 @@ export const login = async (username: string, password: string): Promise<any> =>
 };
 
 // 注册
-export const register = async (username: string, email: string, password: string): Promise<RegisterResponse> => {
+export const register = async (username: string, email: string, password: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/api/Auth/Register?username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
+    const response = await fetch(`${API_URL}/api/Auth/Register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        username: username,
+        email: email,
+        password: password
+      })
     });
     
     if (!response.ok) {

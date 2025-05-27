@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, Typography, Tag, Button, Table, Space, Descriptions, message, Spin, Divider, Tree, Modal, Form, Input, Dropdown, Menu } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, FolderOutlined, FileOutlined, ExclamationCircleOutlined, DownloadOutlined } from '@ant-design/icons';
+import { Card, Typography, Tag, Button, Table, Space, Descriptions, message, Spin, Divider, Tree, Modal, Form, Input, Dropdown, Menu, Row, Col } from 'antd';
+import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, FolderOutlined, FileOutlined, ExclamationCircleOutlined, DownloadOutlined, PlayCircleOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import { getDataset, deleteDataset, TrainingDataset, createTask, getTasks, FineTuningTask, getTask, deleteTask, startTask, startTaskStream } from '../../../../services/fineTuningService';
+import { getDataset, deleteDataset, TrainingDataset, createTask, getTasks, FineTuningTask, getTask, deleteTask, startTask, startTaskStream, updateDataset } from '../../../../services/fineTuningService';
 import { getRepositoryFiles, getRepositoryFileContent, saveRepositoryFileContent } from '../../../../services/repositoryService';
 import { MdEditor } from 'md-editor-rt';
 import 'md-editor-rt/lib/style.css';
@@ -97,6 +97,18 @@ export default function DatasetDetailPage() {
   const [entireDatasetContent, setEntireDatasetContent] = useState<string>('');
   const [entireDatasetLoading, setEntireDatasetLoading] = useState(false);
 
+  // 添加新的微调任务界面相关状态
+  const [isAdvancedStartModalVisible, setIsAdvancedStartModalVisible] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [finetunedResult, setFinetunedResult] = useState<string>('');
+  const [datasetContent, setDatasetContent] = useState<string>('');
+  const [isFinetuning, setIsFinetuning] = useState(false);
+  const [taskPrompt, setTaskPrompt] = useState<string>('');
+
+  // 添加提示词相关状态
+  const [promptText, setPromptText] = useState<string>('');
+  const [savingPrompt, setSavingPrompt] = useState(false);
+
   // 加载数据集详情
   const fetchDataset = async () => {
     setLoading(true);
@@ -107,6 +119,10 @@ export default function DatasetDetailPage() {
       const { data } = await getDataset(datasetId);
       if (data.code === 200) {
         setDataset(data.data);
+        // 设置提示词内容
+        if (data.data.prompt) {
+          setPromptText(data.data.prompt);
+        }
 
         // 如果数据集有关联的仓库ID，则加载仓库文件目录
         if (data.data.warehouseId) {
@@ -379,41 +395,78 @@ export default function DatasetDetailPage() {
     });
   };
 
-  // 启动任务
-  const handleStartTask = async (taskId: string, taskStatus: number) => {
-    if (taskStatus !== 0) {
-      message.warning('只有未开始状态的任务才能启动');
+  // 启动任务 - 新的高级界面
+  const handleAdvancedStartTask = async (taskId: string, taskStatus: number) => {
+    if (taskStatus === 1) {
+      message.warning('任务正在运行中，请稍后再试');
       return;
     }
 
-    setStartingTask(true);
+    setSelectedTaskId(taskId);
 
-    // 显示进度对话框
-    setIsProgressModalVisible(true);
-    let progress = '';
+    // 获取任务详情和数据集内容
     try {
-      // 使用流式API获取实时更新
-      const stream = await startTaskStream(taskId);
+      setTaskDetailsLoading(true);
+      const { data } = await getTask(taskId);
+      if (data.code === 200) {
+        setTaskDetails(data.data);
+
+        // 设置数据集内容用于显示
+        if (data.data.dataset) {
+          try {
+            setDatasetContent(data.data.dataset);
+          } catch (e) {
+            console.error('解析数据集内容失败:', e);
+            setDatasetContent('数据集内容解析失败');
+          }
+        } else {
+          setDatasetContent('没有数据集内容');
+        }
+
+        // 设置提示词（如果任务中有提示词则使用任务提示词，否则使用数据集提示词）
+        setTaskPrompt(data.data.prompt || promptText || '');
+
+        // 打开高级启动界面
+        setIsAdvancedStartModalVisible(true);
+      } else {
+        message.error(data.message || '获取任务详情失败');
+      }
+    } catch (error) {
+      console.error('获取任务详情失败:', error);
+      message.error('获取任务详情失败');
+    } finally {
+      setTaskDetailsLoading(false);
+    }
+  };
+
+  // 开始微调 - 在高级界面中
+  const handleStartFinetuning = async () => {
+    if (!selectedTaskId) return;
+
+    setIsFinetuning(true);
+    setFinetunedResult('');
+    let progress = '';
+
+    try {
+      // 使用流式API获取实时更新，并传入当前提示词
+      const stream = await startTaskStream(selectedTaskId, taskPrompt);
 
       for await (const chunk of stream) {
         if (chunk.type === 'start') {
-          message.info(chunk.content);
+          progress += chunk.content + '\n';
+          setTaskProgress(progress);
         } else if (chunk.type === 'progress') {
           progress += chunk.content;
           setTaskProgress(progress);
         } else if (chunk.type === 'complete') {
+          progress += chunk.content;
+          setTaskProgress(progress);
           message.success(chunk.content);
-          break;
         } else if (chunk.type === 'error') {
+          progress += chunk.content;
+          setTaskProgress(progress);
           message.error(chunk.content);
-          break;
         }
-
-        setTimeout(() => {
-          if (progressContainerRef.current) {
-            progressContainerRef.current.scrollTop = progressContainerRef.current.scrollHeight;
-          }
-        }, 100);
       }
 
       // 刷新任务列表
@@ -421,14 +474,34 @@ export default function DatasetDetailPage() {
         await fetchTasksList(dataset.warehouseId);
       }
     } catch (error) {
-      console.error('启动微调任务失败:', error);
-      message.error('启动微调任务失败');
-      progress = '启动微调任务失败';
       setTaskProgress(progress);
     } finally {
-      setStartingTask(false);
-      // 不自动关闭进度对话框，让用户自己关闭
+      setIsFinetuning(false);
     }
+  };
+
+  // 立即启动任务 - 不显示界面，直接后台执行
+  const handleImmediateStartTask = async (taskId: string, taskStatus: number) => {
+    if (taskStatus === 1) {
+      message.warning('任务正在运行中，请稍后再试');
+      return;
+    }
+    await startTask(taskId);
+  };
+
+  // 关闭高级启动界面
+  const handleCloseAdvancedStartModal = () => {
+    if (isFinetuning) {
+      message.warning('任务正在微调中，请稍后再关闭');
+      return;
+    }
+
+    setIsAdvancedStartModalVisible(false);
+    setSelectedTaskId(null);
+    setTaskProgress('');
+    setFinetunedResult('');
+    setDatasetContent('');
+    setTaskPrompt('');
   };
 
   // 关闭任务详情对话框
@@ -523,7 +596,7 @@ export default function DatasetDetailPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       let formatSuffix = '';
-      
+
       switch (exportFormat) {
         case 'llamaFactory':
           formatSuffix = 'llama-factory';
@@ -537,7 +610,7 @@ export default function DatasetDetailPage() {
         default:
           formatSuffix = 'json';
       }
-      
+
       a.href = url;
       a.download = `dataset-export-${formatSuffix}-${new Date().getTime()}.json`;
       a.click();
@@ -608,6 +681,37 @@ export default function DatasetDetailPage() {
     }
   };
 
+  // 保存提示词
+  const handleSavePrompt = async () => {
+    if (!dataset) return;
+
+    setSavingPrompt(true);
+    try {
+      const updateData = {
+        datasetId: dataset.id,
+        prompt: taskPrompt || promptText  // 优先使用弹窗中的提示词
+      };
+
+      const response = await updateDataset(updateData);
+      if (response.success) {
+        message.success('提示词更新成功');
+
+        // 更新本地状态
+        setPromptText(taskPrompt || promptText);
+
+        // 重新加载数据集以获取最新数据
+        await fetchDataset();
+      } else {
+        message.error(response.error || '更新提示词失败');
+      }
+    } catch (error) {
+      console.error('更新提示词失败:', error);
+      message.error('更新提示词失败');
+    } finally {
+      setSavingPrompt(false);
+    }
+  };
+
   // 定义表格列
   const columns = [
     {
@@ -648,15 +752,24 @@ export default function DatasetDetailPage() {
           >
             删除
           </Button>
-          <Button
-            type="link"
-            size="small"
-            disabled={record.status !== 0}
-            onClick={() => handleStartTask(record.id, record.status)}
-            loading={startingTask}
-          >
-            启动任务
-          </Button>
+          <Dropdown overlay={
+            <Menu>
+              <Menu.Item key="advanced" onClick={() => handleAdvancedStartTask(record.id, record.status)}>
+                启动任务
+              </Menu.Item>
+              <Menu.Item key="immediate" onClick={() => handleImmediateStartTask(record.id, record.status)}>
+                立即启动
+              </Menu.Item>
+            </Menu>
+          } disabled={record.status === 1}>
+            <Button
+              type="link"
+              size="small"
+              disabled={record.status === 1}
+            >
+              {record.status === 1 ? '任务运行中' : '启动'}
+            </Button>
+          </Dropdown>
         </Space>
       ),
     },
@@ -696,7 +809,7 @@ export default function DatasetDetailPage() {
 
   // 导出菜单项
   const exportMenu = (
-    <Menu onClick={({key}) => handleExportDataset(key as string)}>
+    <Menu onClick={({ key }) => handleExportDataset(key as string)}>
       <Menu.Item key="llamaFactory">LLaMA-Factory 格式</Menu.Item>
       <Menu.Item key="alpaca">Alpaca 格式</Menu.Item>
       <Menu.Item key="chatML">ChatML 格式</Menu.Item>
@@ -912,7 +1025,8 @@ export default function DatasetDetailPage() {
             关闭
           </Button>
         ]}
-        width={600}
+        width="100%"
+
       >
         <div
           ref={progressContainerRef}
@@ -932,16 +1046,16 @@ export default function DatasetDetailPage() {
 
       {/* 导出数据集对话框 */}
       <Modal
-        title={`导出数据集 - ${exportFormat === 'llamaFactory' ? 'LLaMA-Factory' : 
-                exportFormat === 'alpaca' ? 'Alpaca' : 
-                exportFormat === 'chatML' ? 'ChatML' : '原始'} 格式`}
+        title={`导出数据集 - ${exportFormat === 'llamaFactory' ? 'LLaMA-Factory' :
+          exportFormat === 'alpaca' ? 'Alpaca' :
+            exportFormat === 'chatML' ? 'ChatML' : '原始'} 格式`}
         open={exportModalVisible}
         onCancel={() => setExportModalVisible(false)}
         footer={[
-          <Button 
-            key="download" 
-            type="primary" 
-            icon={<DownloadOutlined />} 
+          <Button
+            key="download"
+            type="primary"
+            icon={<DownloadOutlined />}
             loading={exportLoading}
             onClick={downloadExportFile}
           >
@@ -981,12 +1095,100 @@ export default function DatasetDetailPage() {
             </Button>
           </Space>
         </div>
-        
+
         <div style={{ maxHeight: '400px', overflow: 'auto', border: '1px solid #e8e8e8', padding: '12px', borderRadius: '4px', backgroundColor: '#f5f5f5' }}>
           <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
             {exportContent}
           </pre>
         </div>
+      </Modal>
+
+      {/* 高级启动微调任务对话框 */}
+      <Modal
+        title="微调任务"
+        open={isAdvancedStartModalVisible}
+        onCancel={handleCloseAdvancedStartModal}
+        footer={null}
+        width="80%"
+        style={{ top: 20 }}
+        bodyStyle={{ height: '90vh', overflow: 'hidden' }}
+      >
+        {taskDetailsLoading ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Spin />
+            <div style={{ marginTop: '10px' }}>加载任务详情...</div>
+          </div>
+        ) : (
+          <div style={{ height: '100%' }}>
+            <Row gutter={16} style={{ height: '100%' }}>
+              <Col span={12} style={{ height: '100%' }}>
+                <div style={{ marginBottom: '16px', height: '100%' }}>
+                  <div style={{ position: 'relative', height: '100%' }}>
+                    <TextArea
+                      value={taskPrompt}
+                      onChange={(e) => setTaskPrompt(e.target.value)}
+                      rows={4}
+                      placeholder="输入用于微调的提示词模板，使用{{markdown_content}}作为特殊变量"
+                      style={{
+                        resize: 'none',
+                        width: '100%',
+                        height: '100%',
+                        fontFamily: 'monospace',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        zIndex: 2,
+                        backgroundColor: 'transparent',
+                        caretColor: '#000'
+                      }}
+                    />
+                  </div>
+                </div>
+              </Col>
+
+              {/* 右侧 - 微调结果 */}
+              <Col span={12} style={{ height: '100%' }}>
+                <Card
+                  title="微调进度"
+                  style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                  bodyStyle={{ flex: 1, overflow: 'auto' }}
+                  extra={
+                    <Button
+                      type="primary"
+                      icon={<CaretRightOutlined />}
+                      onClick={handleStartFinetuning}
+                      loading={isFinetuning}
+                      disabled={isFinetuning}
+                    >
+                      开始微调
+                    </Button>
+                  }
+                >
+                  <div
+                    style={{
+                      flex: 1,
+                      overflow: 'auto',
+                      border: '1px solid #e8e8e8',
+                      borderRadius: '4px',
+                      backgroundColor: '#f5f5f5',
+                      padding: '12px',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all'
+                    }}
+                  >
+                    {taskProgress || '点击"开始微调"开始执行任务...'}
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+
+            <div style={{ marginTop: '16px', textAlign: 'right' }}>
+              <Button onClick={handleCloseAdvancedStartModal}>
+                关闭
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

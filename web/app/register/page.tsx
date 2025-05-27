@@ -19,19 +19,29 @@ export default function RegisterPage() {
       setLoading(true);
       
       // 调用注册API
-      const response = await register(values.username, values.email, values.password);
-      
-      if (response.item1) {
-        // 注册成功
-        message.success('注册成功，即将跳转到登录页面...');
-        
+      const {data} = await register(values.username, values.email, values.password);
+      console.log('注册响应:', data);
+      if (data.success) {
+        // 登录成功
+        // 保存登录状态
+        localStorage.setItem('userToken', data.token);
+        localStorage.setItem('refreshToken', data.refreshToken);
+
+        // 保存用户信息
+        if (data.user) {
+          localStorage.setItem('userInfo', JSON.stringify(data.user));
+        }
+
         // 延迟跳转，让用户看到成功消息
         setTimeout(() => {
-          router.push('/login');
-        }, 1500);
+          // 检查是否有上一个页面的路径（比如从管理页面重定向来的）
+          const redirectPath = localStorage.getItem('redirectPath') || '/admin';
+          localStorage.removeItem('redirectPath'); // 清除重定向路径
+          router.push(redirectPath);
+        }, 1000);
       } else {
-        // 注册失败
-        message.error(response.item2 || '注册失败，请重试');
+        // 登录失败
+        message.error(data.errorMessage || '用户名或密码错误');
       }
     } catch (error) {
       console.error('注册错误:', error);

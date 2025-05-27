@@ -168,17 +168,24 @@ export async function getTasks(warehouseId: string): Promise<any> {
 /**
  * 启动微调任务
  */
-export async function startTask(taskId: string): Promise<any> {
-    return fetchApi<any>(API_URL + '/api/FineTuning/StartTask?taskId=' + taskId, {
+export async function startTask(taskId: string, prompt?: string): Promise<any> {
+    return fetchApi<any>(API_URL + '/api/FineTuning/StartTask', {
         method: 'POST',
+        body: JSON.stringify({
+            taskId: taskId,
+            prompt: prompt
+        })
     });
 }
 
 /**
- * 启动微调任务
+ * 启动微调任务（流式）
  */
-export async function startTaskStream(taskId: string): Promise<AsyncIterableIterator<any>> {
-    return fetchSSE(API_URL + '/api/FineTuning/StartTask?taskId=' + taskId, {});
+export async function startTaskStream(taskId: string, prompt?: string): Promise<AsyncIterableIterator<any>> {
+    return fetchSSE(API_URL + '/api/FineTuning/StartTask', {
+        taskId: taskId,
+        prompt: prompt
+    });
 }
 
 /**
