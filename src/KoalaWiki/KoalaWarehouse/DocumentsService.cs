@@ -451,7 +451,7 @@ public partial class DocumentsService
             "QwQ-32B" => 8192,
             "gpt-4.1-mini" => 32768,
             "gpt-4.1" => 32768,
-            "gpt-4o" => 32768,
+            "gpt-4o" => 16384,
             "o4-mini" => 32768,
             "doubao-1-5-pro-256k-250115" => 12288,
             "o3-mini" => 32768,
