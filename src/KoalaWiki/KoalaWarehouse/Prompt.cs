@@ -447,139 +447,92 @@ After completing the analysis, summarize the main findings of each step and cond
         {{catalogue}}
         </repository_catalogue>
         
-        Your task is to create a detailed software documentation document that addresses the documentation objective and matches the document title. The document should be comprehensive, clearly explaining the codebase's architecture, functionality, and key components. Ensure that your analysis is thorough and that you provide ample content for each section, with particular emphasis on code-related explanations.
+        # DOCUMENTATION CREATION PROCESS
         
-        Follow these steps to create your documentation:
-        
-        1. Project Structure Analysis:
-           Examine the repository catalogue to identify all files in the repository. Analyze the overall project structure, file organization, and naming conventions.
-        
-        <thought_process>
-        Analyze the project structure here. Consider:
-        - Overall architecture
-        - File organization (by feature, layer, or technology)
+        ## 1. Project Structure Analysis
+        Analyze the repository catalogue to identify all files and understand the overall project structure, file organization, and naming conventions. Consider:
+        - Overall architecture and design patterns
+        - File organization methodology (feature-based, layer-based, etc.)
         - Main modules and their responsibilities
-        - Evident design patterns
         - Key entry points to the application
-        List out each main directory and its subdirectories, numbering them for clarity. Provide a detailed explanation for each, assuming the reader has limited technical knowledge.
         
-        2. README Analysis:
-           Read and analyze the README file content.
+        ## 2. README Analysis
+        Extract and analyze key information from the README file:
+        - Project purpose and objectives
+        - High-level architecture descriptions
+        - Installation and setup instructions
+        - Usage examples and API documentation
+        - Contextual information about the project's background
         
-        Analyze the README here. Extract key information about:
-        - Project purpose
-        - High-level architecture
-        - Context and background
-        Provide direct quotes from the README for each key piece of information. Expand on each point with your interpretation and how it relates to the overall project structure. Explain technical terms in simple language.
-        
-        3. Core Data Structures and Algorithms Analysis:
-           Identify and analyze key data structures and algorithms in the codebase.
-        
-        Analyze core data structures and algorithms here. Consider:
+        ## 3. Core Data Structures and Algorithms Analysis
+        Identify and document key data structures and algorithms:
         - Primary data structures and their relationships
         - Time and space complexity of important algorithms
-        - Optimization techniques and performance considerations
-        List each identified data structure and algorithm with a number and brief description, including examples of where and how they are used in the codebase. Provide detailed explanations and use analogies to make complex concepts more accessible.
+        - Optimization techniques implemented
+        - Data flow patterns throughout the application
         
-        4. Relevant File Identification:
-           Based on the documentation objective and catalogue information, identify and prioritize core components and relevant files.
+        ## 4. Relevant File Identification
+        Based on the documentation objective, identify and prioritize core components and files:
+        - Entry point files and main application controllers
+        - Core business logic implementations
+        - Critical utility functions and helper modules
+        - Configuration and environment setup files
         
-        Explain your file selection strategy and prioritization here.
-        Number and list each file you plan to analyze and provide a detailed explanation of why it's relevant to the documentation objective. Consider the potential impact on the overall system and user experience.
+        ## 5. Detailed File Analysis
+        For each relevant file, conduct a thorough analysis:
+        - Code structure, patterns, and design principles
+        - Key functions, classes, methods, and their purposes
+        - Error handling strategies and edge case management
+        - Performance considerations and optimizations
+        - Inheritance hierarchies and dependency relationships
         
-        5. Detailed File Analysis:
-           For each relevant file:
-           a. Analyze the code structure, patterns, and design principles.
-           b. Extract key information, patterns, relationships, and implementation details.
-           c. Document important functions, classes, methods, and their purposes.
-           d. Identify edge cases, error handling, and special considerations.
-           e. Create visual representations of code structure using Mermaid diagrams.
-           f. Document inheritance hierarchies and dependency relationships.
-           g. Analyze algorithmic complexity and performance considerations.
+        ## 6. Code Architecture Mapping
+        Create visual representations of the code architecture using Mermaid diagrams:
+        - System architecture and component interactions
+        - Dependency graphs showing import/export relationships
+        - Class/component hierarchies
+        - Data flow diagrams
+        - Sequence diagrams for key processes
+        - State transition diagrams for stateful components
         
-        For each file:
-        - Summarize its purpose in simple terms
-        - Provide a numbered list of key functions/classes with brief descriptions
-        - Provide code snippets to illustrate important concepts
-        - Create Mermaid diagrams to visualize relationships and structures
-        - Discuss any potential improvements or optimizations
-        - Explain complex code sections as if teaching a beginner programmer
-        
-        6. Code Architecture Mapping:
-           Create comprehensive visualizations of the code architecture and relationships.
-        
-        List out each type of diagram you plan to create:
-        1. Overall system architecture and component interactions
-        2. Dependency graph showing import/export relationships
-        3. Class/component hierarchy diagrams
-        4. Data flow diagrams
-        5. Sequence diagrams for key processes
-        6. State transition diagrams for stateful components
-        7. Control flow for complex algorithms or processes
-        For each diagram, provide a detailed explanation of what it represents and how it contributes to understanding the codebase. Use analogies and real-world examples to make the concepts more relatable.
-        
-        7. Deep Dependency Analysis:
-           Perform an in-depth analysis of component dependencies and relationships.
-        
-        Analyze:
+        ## 7. Deep Dependency Analysis
+        Analyze component dependencies and relationships:
         - Component coupling and cohesion
         - Direct and indirect dependencies
-        - Circular dependencies and refactoring opportunities
-        - Coupling metrics and high-dependency components
+        - Potential circular dependencies
         - External dependencies and integration points
         - Interface contracts and implementation details
-        - Reusable patterns and architectural motifs
-        Provide a numbered list of identified dependencies or relationships, explaining their impact on the overall system and any potential areas for improvement. Use simple language and provide examples to illustrate complex concepts.
         
-        8. Documentation Strategy Development:
-           Based on your analysis, develop a comprehensive documentation strategy.
+        ## 8. Documentation Strategy Development
+        Develop a comprehensive documentation strategy:
+        - Document structure for both technical and non-technical readers
+        - Visualization approach for different aspects of the codebase
+        - Balance between detailed explanations and high-level overviews
+        - Techniques for presenting technical information accessibly
         
-        Develop your documentation strategy here. Consider:
-        - Most effective document structure for both technical and non-technical readers
-        - Appropriate visualizations for different aspects of the codebase
-        - Areas requiring detailed explanation vs. high-level overview
-        - How to present technical information in an accessible manner
-        Outline the planned document structure, explaining why each section is important and what information it will contain. Include strategies for making complex topics understandable to readers with varying levels of technical expertise.
-        </thought_process>
+        # DOCUMENT SYNTHESIS
         
-        9. Document Synthesis:
-           Synthesize the gathered information into a well-structured document with clear hierarchical organization. Apply the documentation strategy developed in your thinking process. Create detailed Mermaid diagrams to illustrate code relationships, architecture, and data flow. Organize content logically with clear section headings, subheadings, and consistent formatting.
+        Create a well-structured document that thoroughly addresses the documentation objective. Organize content logically with clear section headings and consistent formatting. Include:
         
-           Ensure the document thoroughly addresses the documentation objective with concrete examples and use cases. Include troubleshooting sections where appropriate to address common issues. Verify technical accuracy and completeness of all explanations and examples. Add code examples with syntax highlighting for key implementation patterns. Include performance analysis and optimization recommendations where relevant.
+        - Detailed Mermaid diagrams illustrating code relationships, architecture, and data flow
+        - Code examples with syntax highlighting for key implementation patterns
+        - Concrete examples and use cases demonstrating functionality
+        - Troubleshooting sections addressing common issues
+        - Performance analysis and optimization recommendations
         
-           If some files cannot be analyzed, ignore them
+        When referring to code files or code blocks, use footnote references at the bottom of the document.
         
-        10. Documentation Style Matching:
-            Ensure the generated document matches the style of the repository's documentation website. Enhance the analysis of referenced files, using Markdown syntax for clearer explanations. Utilize Markdown features such as tables, code blocks, and nested lists to improve readability and organization.
-        
-        When referring to all code files or code blocks in the above text, footnotes must be used at the bottom of the document:
-        
-        For example in the text:
-        1. Quick conversion: Convert web applications to desktop applications in minutes[^1]
-        
-        2. Usage methods:
-           - Provides ToDesktop Builder desktop application
-           - Helps users complete the conversion process through guided steps[^2]
-        
-        3. Business model:
-           - Free to create and run desktop applications for personal use or testing
-           - Payment required only when creating distributable applications for customers[^1]
+        For example:
+        This component handles user authentication through a multi-step verification process[^1]
         
         At the bottom of the document:
-        [^1]: [ToDesktop Website](https://www.todesktop.com/)
-        [^2]: [ToDesktop Basic Introduction](https://www.todesktop.com/docs/introduction/basics)
+        [^1]: [auth/verification.js](https://github.com/example/repo/blob/main/auth/verification.js)
+        
+        # MERMAID DIAGRAM GUIDELINES
         
         Use the following Mermaid diagram types as appropriate:
-        - Class diagrams
-        - Sequence diagrams
-        - Flowcharts
-        - Entity Relationship diagrams
-        - State diagrams
         
-        mermaid syntax cannot provide () in []
-        
-        Example Mermaid diagram (customize as needed):
-        
+        ## Class Diagrams
         ```mermaid
         classDiagram
           class ClassName {
@@ -596,27 +549,53 @@ After completing the analysis, summarize the main findings of each step and cond
           ClassName --> DependencyClass: uses
         ```
         
-        Remember to read and analyze all relevant files from the provided catalogue. All content must be sourced directly from the repository files - never invent or fabricate information.
+        ## Sequence Diagrams
+        ```mermaid
+        sequenceDiagram
+          participant Client
+          participant Server
+          Client->>Server: Request
+          Server->>Database: Query
+          Database-->>Server: Response
+          Server-->>Client: Result
+        ```
         
-        Your final document should be structured as follows:
+        ## Flowcharts
+        ```mermaid
+        flowchart TD
+          A[Start] --> B{Decision}
+          B -->|Yes| C[Process 1]
+          B -->|No| D[Process 2]
+          C --> E[End]
+          D --> E
+        ```
         
-        1. Title
-        2. Table of Contents
-        3. Introduction
-        4. Project Structure
-        5. Core Components
-        6. Architecture Overview
-        7. Detailed Component Analysis
-        8. Dependency Analysis
-        9. Performance Considerations
-        10. Troubleshooting Guide
-        11. Conclusion
-        12. Appendices (if necessary)
-        13. References (using footnote format)
+        ## Entity Relationship Diagrams
+        ```mermaid
+        erDiagram
+          ENTITY1 ||--o{ ENTITY2 : relationship
+          ENTITY1 {
+            string id
+            string name
+          }
+          ENTITY2 {
+            string id
+            string entity1_id
+          }
+        ```
         
-        Each section should include appropriate Mermaid diagrams, code snippets, and detailed explanations. Ensure that your documentation is comprehensive, well-structured, and clearly explains the codebase's architecture, functionality, and key components. Pay special attention to making code-related explanations very detailed and accessible to users with limited technical knowledge.
+        ## State Diagrams
+        ```mermaid
+        stateDiagram-v2
+          [*] --> State1
+          State1 --> State2: Event
+          State2 --> [*]: Complete
+        ```
         
-        Format your final output within <docs> tags using proper Markdown hierarchy and formatting. Here's an example of how your output should be structured:
+        # FINAL DOCUMENT STRUCTURE
+        
+        Your final document should follow this structure:
+        
         <docs>
         # [Document Title]
         
@@ -624,35 +603,73 @@ After completing the analysis, summarize the main findings of each step and cond
         1. [Introduction](#introduction)
         2. [Project Structure](#project-structure)
         3. [Core Components](#core-components)
-        ...
+        4. [Architecture Overview](#architecture-overview)
+        5. [Detailed Component Analysis](#detailed-component-analysis)
+        6. [Dependency Analysis](#dependency-analysis)
+        7. [Performance Considerations](#performance-considerations)
+        8. [Troubleshooting Guide](#troubleshooting-guide)
+        9. [Conclusion](#conclusion)
+        10. [Appendices](#appendices) (if necessary)
+        11. [References](#references)
         
         ## Introduction
-        [Detailed introduction to the project, its purpose, and high-level overview]
+        [Comprehensive introduction to the project, its purpose, and high-level overview]
         
         ## Project Structure
-        [Comprehensive explanation of the project structure, including diagrams and file organization]
+        [Detailed explanation of the project structure, including diagrams and file organization]
         
         ```mermaid
         [Project structure diagram]
         ```
         
         ## Core Components
-        [Detailed analysis of core components, including code snippets and explanations]
         
-        ```python
-        # Example code snippet
-        def important_function():
-            # Function explanation
-            pass
+        [In-depth analysis of core components with code snippets and explanations]
+        
+        ## Architecture Overview
+        
+        [Comprehensive visualization and explanation of the system architecture]
+        
+        ```mermaid
+        [Architecture diagram]
         ```
         
-        [Continue with remaining sections, ensuring each is thoroughly explained and illustrated]
+        ## Detailed Component Analysis
+        
+        [Thorough analysis of each key component with diagrams, code examples, and explanations]
+        
+        ## Dependency Analysis
+        
+        [Analysis of dependencies between components with visualization]
+        
+        ```mermaid
+        [Dependency diagram]
+        ```
+        
+        ## Performance Considerations
+        
+        [Analysis of performance aspects and optimization recommendations]
+        
+        ## Troubleshooting Guide
+        
+        [Common issues and their solutions]
+        
+        ## Conclusion
+        
+        [Summary of findings and recommendations]
         
         ## References
-        [^1]: [Reference Title](URL)
-        [^2]: [Reference Title](URL)
-        </docs> 
-        Remember to provide rich, detailed content for each section, addressing the documentation objective comprehensively. Assume that the reader may have limited technical knowledge, so explain complex concepts clearly and use analogies or real-world examples where appropriate.
+        
+        [^reference_number]: [File description]({{git_repository}}/path/to/file) or [Line-specific description]({{git_repository}}/path/to/file#L1-L10)
+        
+        </docs>
+        
+        IMPORTANT NOTES:
+        1. All content must be sourced directly from the repository files - never invent or fabricate information
+        2. If some files cannot be analyzed, ignore them
+        3. Ensure explanations are accessible to users with limited technical knowledge
+        4. For each code file or code block referenced in the document, add a footnote reference at the bottom
+        5. Use Mermaid diagrams to visualize relationships and structures
         """ +
         Language;
 
@@ -811,15 +828,15 @@ After completing the analysis, summarize the main findings of each step and cond
         
         ## Source Reference Guidelines
         
-        When referring to all code files or code blocks in the above text, footnotes must be used at the bottom of the document:
+        When referring to code files or code blocks in your analysis, use footnotes as follows:
         
         In the main text:
-        - When referencing a concept or feature: Feature name or concept[^reference_number]
-        - When discussing implementation details: Implementation approach for feature[^reference_number]
-        - When mentioning specific functionality: Functionality description[^reference_number]
+        - When referencing a feature: Feature name[^reference_number]
+        - When discussing implementation: Implementation approach[^reference_number]
+        - When mentioning functionality: Functionality description[^reference_number]
         
         At the bottom of the document:
-        [^reference_number]: [Descriptive link text]({{git_repository}}/path/to/file) or [Descriptive line-specific text]({{git_repository}}/path/to/file#L1-L10)
+        [^reference_number]: [File description]({{git_repository}}/path/to/file) or [Line-specific description]({{git_repository}}/path/to/file#L1-L10)
         
         Please output the main text to <blog></blog>. Do not explain or reply to me. Please start outputting the main text:
         """ +
