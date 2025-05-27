@@ -39,6 +39,9 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// <returns></returns>
     public async Task<object> GetLastWarehouseAsync(string address)
     {
+        
+        address = address.Trim().TrimEnd('/').ToLower();
+        
         // 判断是否.git结束，如果不是需要添加
         if (!address.EndsWith(".git"))
         {
@@ -47,7 +50,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
 
         var query = await access.Warehouses
             .AsNoTracking()
-            .Where(x => x.Address == address)
+            .Where(x => x.Address.ToLower() == address)
             .FirstOrDefaultAsync();
 
         // 如果没有找到仓库，返回空列表
@@ -69,9 +72,11 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
 
     public async Task<DocumentCommitRecord?> GetChangeLogAsync(string owner, string name)
     {
+        owner = owner.Trim().ToLower();
+        name = name.Trim().ToLower();
         var warehouse = await access.Warehouses
             .AsNoTracking()
-            .Where(x => x.Name == name && x.OrganizationName == owner)
+            .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner)
             .FirstOrDefaultAsync();
 
         // 如果没有找到仓库，返回空列表
@@ -266,12 +271,14 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
 
             var (localPath, organization) = GitService.GetRepositoryPath(input.Address);
 
+            organization = organization.Trim().ToLower();
+            
             var names = input.Address.Split('/');
 
-            var repositoryName = names[^1].Replace(".git", "");
+            var repositoryName = names[^1].Replace(".git", "").ToLower();
 
             var value = await access.Warehouses.FirstOrDefaultAsync(x =>
-                x.OrganizationName == organization && x.Name == repositoryName && x.Branch == input.Branch &&
+                x.OrganizationName.ToLower() == organization && x.Name.ToLower() == repositoryName && x.Branch == input.Branch &&
                 x.Status == WarehouseStatus.Completed);
 
             // 判断这个仓库是否已经添加
@@ -344,9 +351,12 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// </summary>
     public async Task GetWarehouseOverviewAsync(string owner, string name, string? branch, HttpContext context)
     {
+        owner = owner.Trim().ToLower();
+        name = name.Trim().ToLower();
+        
         var warehouse = await access.Warehouses
             .AsNoTracking()
-            .Where(x => x.Name == name && x.OrganizationName == owner &&
+            .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner &&
                         (string.IsNullOrEmpty(branch) || x.Branch == branch))
             .FirstOrDefaultAsync();
 

@@ -42,20 +42,7 @@ public class GitService
         // 先克隆
         if (!Directory.Exists(repositoryUrl))
         {
-            var cloneOptions = new CloneOptions
-            {
-                FetchOptions =
-                {
-                    CertificateCheck = (_, _, _) => true,
-                    CredentialsProvider = (_url, _user, _cred) =>
-                        new UsernamePasswordCredentials
-                        {
-                            Username = userName,
-                            Password = password
-                        }
-                }
-            };
-            Repository.Clone(repositoryUrl, repositoryUrl, cloneOptions);
+            throw new Exception("仓库不存在，请先克隆仓库");
         }
         
         if(!Directory.Exists(repositoryUrl))
@@ -172,6 +159,7 @@ public class GitService
 
                 cloneOptions = new CloneOptions
                 {
+                    BranchName = branch,
                     FetchOptions =
                     {
                         Depth = 0,
