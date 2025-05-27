@@ -294,14 +294,14 @@ namespace CodeDependencyAnalyzer
                 ".js" => _parsers.FirstOrDefault(p => p is JavaScriptParser),
                 ".py" => _parsers.FirstOrDefault(p => p is PythonParser),
                 ".java" => _parsers.FirstOrDefault(p => p is JavaParser),
-                ".cpp" or ".h" or ".hpp" => _parsers.FirstOrDefault(p => p is CppParser),
+                ".cpp" or ".h" or ".hpp" or ".cc" => _parsers.FirstOrDefault(p => p is CppParser),
                 _ => null
             };
         }
 
         private List<string> GetAllSourceFiles(string path)
         {
-            var extensions = new[] { ".cs", ".js", ".py", ".java", ".cpp", ".h", ".hpp" };
+            var extensions = new[] { ".cs", ".js", ".py", ".java", ".cpp", ".h", ".hpp", ".cc" };
             return Directory.GetFiles(path, "*.*", SearchOption.AllDirectories)
                 .Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
                 .ToList();
