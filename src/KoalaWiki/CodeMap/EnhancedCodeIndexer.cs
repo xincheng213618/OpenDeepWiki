@@ -194,6 +194,7 @@ public class EnhancedCodeIndexer
             ".php" => "php",
             ".c" => "c",
             ".cpp" => "cpp",
+            ".cc" => "cpp",
             ".h" => "c",
             ".hpp" => "cpp",
             ".jsx" => "javascript",
