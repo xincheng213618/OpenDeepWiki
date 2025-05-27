@@ -42,26 +42,6 @@ const DocumentContent: React.FC<DocumentContentProps> = ({
     });
   }, [document?.content]);
 
-  // 提取和处理 antThinking 标签内容
-  // useEffect(() => {
-  //   if (document?.content) {
-  //     const content = document.content;
-  //     const thinkingRegex = /<antThinking\b[^>]*>([\S\s]*?)(?:<\/antThinking>|$)/g;
-  //     const thinking: string[] = [];
-      
-  //     // 提取所有 antThinking 标签内容并保存
-  //     let match;
-  //     while ((match = thinkingRegex.exec(content)) !== null) {
-  //       thinking.push(match[1] || '');
-  //     }
-      
-  //     // 移除所有 antThinking 标签
-  //     const cleanedContent = content.replace(/<antThinking\b[^>]*>[\S\s]*?(?:<\/antThinking>|$)/g, '');
-      
-  //     setProcessedContent(cleanedContent);
-  //     setThinkingContents(thinking);
-  //   }
-  // }, [document?.content]);
 
   useEffect(() => {
     if (document?.content) {
@@ -101,30 +81,8 @@ const DocumentContent: React.FC<DocumentContentProps> = ({
       <div className="markdown-content" itemProp="articleBody">
         <Markdown
           variant='chat'
+          enableCustomFootnotes={true}
           fullFeaturedCodeBlock={true}
-          components={{
-            think: (props: any) => (
-              <Flexbox style={{ marginBottom: 20 }}>
-                <RenderThinking>
-                  {props.children}
-                </RenderThinking>
-              </Flexbox>
-            ),
-            // 自定义链接以增加SEO友好属性
-            a: (props: any) => (
-              <a {...props} rel={props.href?.startsWith('http') ? 'noopener noreferrer' : undefined} />
-            ),
-            // 自定义图片以增加alt文本
-            img: (props: any) => (
-              <img {...props} alt={props.alt || `${document?.title || '文档'} 内的图片`} loading="lazy" />
-            ),
-          }}
-          remarkPlugins={[remarkCaptureThink,remarkGfm, remarkToc, remarkMath]}
-          rehypePlugins={[
-            rehypeRaw,
-            rehypeSlug,
-            rehypeKatex,
-          ]}
         >
           {processedContent}
         </Markdown>
