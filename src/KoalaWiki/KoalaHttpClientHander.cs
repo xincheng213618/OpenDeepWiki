@@ -72,7 +72,8 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
                 stopwatch.ElapsedMilliseconds,
                 errorContent
             );
-            Log.Logger.Information("Request JSON: {RequestJson}", await request.Content?.ReadAsStringAsync(cancellationToken) ?? "");
+            var json = await request.Content?.ReadAsStringAsync(cancellationToken) ?? "";
+            Log.Logger.Information("Request JSON: {RequestJson}",json);
         }
         else
         {
