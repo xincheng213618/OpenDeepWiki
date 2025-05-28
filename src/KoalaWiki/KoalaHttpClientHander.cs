@@ -59,7 +59,7 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
             .ConfigureAwait(false);
         // 3. 停止计时
         stopwatch.Stop();
-        
+
         // 如果响应错误那么输出错误信息
         if (!response.IsSuccessStatusCode)
         {
@@ -72,20 +72,23 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
                 stopwatch.ElapsedMilliseconds,
                 errorContent
             );
-            var json = await request.Content?.ReadAsStringAsync(cancellationToken) ?? "";
-            Log.Logger.Information("Request JSON: {RequestJson}",json);
+            Log.Logger.Information("Request JSON: {RequestJson}",
+                await request.Content?.ReadAsStringAsync(cancellationToken) ?? "");
+            
+            throw new HttpRequestException(
+                $"Request failed with status code {(int)response.StatusCode}: {errorContent}");
         }
         else
         {
-        
-        // 4. 记录简洁日志
-        Log.Logger.Information(
-            "HTTP {Method} {Uri} => {StatusCode} in {ElapsedMilliseconds}ms",
-            request.Method,
-            request.RequestUri,
-            (int)response.StatusCode,
-            stopwatch.ElapsedMilliseconds
-        );
-        return response;
+            // 4. 记录简洁日志
+            Log.Logger.Information(
+                "HTTP {Method} {Uri} => {StatusCode} in {ElapsedMilliseconds}ms",
+                request.Method,
+                request.RequestUri,
+                (int)response.StatusCode,
+                stopwatch.ElapsedMilliseconds
+            );
+            return response;
+        }
     }
 }
