@@ -7,6 +7,7 @@ using KoalaWiki.Entities;
 using KoalaWiki.Entities.DocumentFile;
 using KoalaWiki.Extensions;
 using KoalaWiki.Functions;
+using KoalaWiki.KoalaWarehouse.Overview;
 using KoalaWiki.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
@@ -298,8 +299,10 @@ public partial class DocumentsService
             }
         }
 
-        var overview = await GenerateProjectOverview(fileKernel, catalogue, gitRepository,
-            warehouse.Branch, readme);
+        var classify = await WarehouseClassify.ClassifyAsync(fileKernel, catalogue, readme);
+
+        var overview = await OverviewService.GenerateProjectOverview(fileKernel, catalogue, gitRepository,
+            warehouse.Branch, readme,classify);
 
         // 先删除<project_analysis>标签内容
         var project_analysis = new Regex(@"<project_analysis>(.*?)</project_analysis>",
@@ -494,52 +497,6 @@ public partial class DocumentsService
         {
             Log.Error(ex, "修复mermaid语法失败");
         }
-    }
-
-    /// <summary>
-    /// 生成项目概述
-    /// </summary>
-    /// <returns></returns>
-    private async Task<string> GenerateProjectOverview(Kernel kernel, string catalog, string gitRepository,
-        string branch, string readme)
-    {
-        var sr = new StringBuilder();
-
-        var settings = new OpenAIPromptExecutionSettings()
-        {
-            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-        };
-
-        var chat = kernel.GetRequiredService<IChatCompletionService>();
-        var history = new ChatHistory();
-
-        history.AddUserMessage(Prompt.Overview.Replace("{{catalogue}}", catalog)
-            .Replace("{{git_repository}}", gitRepository.Replace(".git", ""))
-            .Replace("{{readme}}", readme)
-            .Replace("{{branch}}", branch));
-
-        await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
-        {
-            if (!string.IsNullOrEmpty(item.Content))
-            {
-                sr.Append(item.Content);
-            }
-        }
-
-        // 使用正则表达式将<blog></blog>中的内容提取
-        var regex = new Regex(@"<blog>(.*?)</blog>", RegexOptions.Singleline);
-
-        var match = regex.Match(sr.ToString());
-
-        if (match.Success)
-        {
-            // 提取到的内容
-            var extractedContent = match.Groups[1].Value;
-            sr.Clear();
-            sr.Append(extractedContent);
-        }
-
-        return sr.ToString();
     }
 
     /// <summary>
