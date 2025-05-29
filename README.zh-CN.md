@@ -278,6 +278,10 @@ make build-backend-arm
 make build-frontend-amd
 ```
 
+## Discord
+
+[加入我们](https://discord.gg/8sxUNacv)
+
 ## WeChat 
 ![2efb23f03f6286e3821f458769369da2](https://github.com/user-attachments/assets/e7695654-c498-478a-9982-a9c82ef85196)
 
