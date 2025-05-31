@@ -98,9 +98,6 @@
       <Compile Update="KoalaWarehouse\DocumentsService.Commit.cs">
         <DependentUpon>DocumentsService.cs</DependentUpon>
       </Compile>
-      <Compile Update="KoalaWarehouse\DocumentsService.Catalogue.cs">
-        <DependentUpon>DocumentsService.cs</DependentUpon>
-      </Compile>
       <Compile Update="WarehouseProcessing\WarehouseProcessingTask.Analyse.cs">
         <DependentUpon>WarehouseProcessingTask.cs</DependentUpon>
       </Compile>

@@ -1,19 +1,16 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Domains;
 using KoalaWiki.Entities;
 using KoalaWiki.Entities.DocumentFile;
-using KoalaWiki.Extensions;
 using KoalaWiki.Functions;
+using KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 using KoalaWiki.KoalaWarehouse.Overview;
-using KoalaWiki.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using Serilog;
 
 namespace KoalaWiki.KoalaWarehouse;
 
@@ -302,7 +299,7 @@ public partial class DocumentsService
         var classify = await WarehouseClassify.ClassifyAsync(fileKernel, catalogue, readme);
 
         var overview = await OverviewService.GenerateProjectOverview(fileKernel, catalogue, gitRepository,
-            warehouse.Branch, readme,classify);
+            warehouse.Branch, readme, classify);
 
         // 先删除<project_analysis>标签内容
         var project_analysis = new Regex(@"<project_analysis>(.*?)</project_analysis>",
@@ -335,7 +332,9 @@ public partial class DocumentsService
             Id = Guid.NewGuid().ToString("N")
         });
 
-        var (result, exception) = await GenerateThinkCatalogue(path, catalogue, gitRepository, warehouse);
+        var (result, exception) =
+            await GenerateThinkCatalogueService.GenerateThinkCatalogue(path, catalogue, gitRepository, warehouse,
+                classify);
 
         if (result == null)
         {
