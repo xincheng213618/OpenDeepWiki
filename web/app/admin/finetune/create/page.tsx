@@ -233,97 +233,104 @@ export default function CreateDatasetPage() {
             name="prompt"
             initialValue={
 `
-You are a professional AI training data engineer tasked with creating high-quality fine-tuning datasets for large language models. Your current assignment is to convert a Markdown document into a comprehensive training dataset for LLaMA-Factory.
+# AI Training Data Engineering System for LLaMA-Factory
 
-Here is the Markdown content you will be working with:
+## SYSTEM ROLE AND OBJECTIVE
+You are an Advanced AI Training Data Engineer specializing in creating premium-quality fine-tuning datasets for large language models. Your mission is to transform Markdown documentation into comprehensive, diverse instruction-response pairs for LLaMA-Factory model training.
 
+## INPUT SPECIFICATION
 <markdown_content>
 {{markdown_content}}
 </markdown_content>
 
-# PRIMARY OBJECTIVE
-Create 20-30 high-quality instruction-response pairs based on the provided Markdown document. These pairs will be used to train an AI model and must thoroughly cover ALL content in the document while being diverse in format and cognitive complexity.
+## QUALITY STANDARDS AND METRICS
+### Coverage Requirements
+- Achieve 100% content coverage across all document sections
+- Include every technical detail, code example, and implementation scenario
+- Capture all domain-specific terminology and concepts
+- Address all edge cases and special considerations
 
-# INSTRUCTION CREATION GUIDELINES
-## Format Diversity Requirements
-- Use a balanced mix of instruction formats:
-  * Direct questions ("What is...?")
-  * Command-based instructions ("Explain how to...")
-  * Scenario-based requests ("Imagine you need to...")
-  * Problem-solving prompts ("How would you resolve...")
-  * Comparative analyses ("Compare and contrast...")
+### Format Quality Metrics
+- Maintain source code fidelity with exact syntax and formatting
+- Preserve all original structural elements (tables, lists, hierarchies)
+- Implement consistent markdown formatting throughout responses
+- Ensure JSON output validates against schema specification
 
-## Content Coverage Requirements
-- Ensure COMPLETE coverage of all sections, subsections, and scenarios in the document
-- Target specific knowledge points, concepts, processes, and implementation details
-- Extract detailed code snippets from the document for implementation questions
-- Include instructions about all technical specifications and edge cases
-- Incorporate all domain-specific terminology and concepts accurately
-- Leave no important content uncovered across your instruction set
+## INSTRUCTION DESIGN FRAMEWORK
+### Cognitive Complexity Distribution
+1. **Foundational (20%)**
+   - Knowledge recall
+   - Basic comprehension
+   - Term definitions
+   
+2. **Practical (30%)**
+   - Implementation tasks
+   - Code application
+   - Procedure execution
+   
+3. **Analytical (30%)**
+   - Pattern recognition
+   - Comparative analysis
+   - System relationships
+   
+4. **Advanced (20%)**
+   - Design evaluation
+   - Solution synthesis
+   - Architecture decisions
 
-## Cognitive Depth Distribution
-- Create a balanced distribution across cognitive domains:
-  * Level 1: Basic recall and comprehension (20%)
-  * Level 2: Application and implementation (30%)
-  * Level 3: Analysis and comparison (30%)
-  * Level 4: Evaluation and synthesis (20%)
-- Use thought-provoking phrases: "how", "why", "explain", "compare", "analyze", "evaluate"
+### Instruction Format Matrix
+| Format Type | Target % | Example Structure |
+|-------------|----------|-------------------|
+| Direct Questions | 20% | "What is [concept]?" |
+| Implementation Commands | 25% | "Implement [feature] using [method]" |
+| Scenario Challenges | 25% | "Given [scenario], solve [problem]" |
+| Analysis Tasks | 15% | "Compare [A] and [B] approaches" |
+| Synthesis Problems | 15% | "Design a solution that integrates [components]" |
 
-# RESPONSE CREATION GUIDELINES
-## Content Accuracy Requirements
-- Base all responses STRICTLY on the document content without external information
-- Maintain complete fidelity to technical details, especially in code examples
-- Include rich code samples directly from the document when relevant
-- Preserve all implementation details mentioned in the original content
+## RESPONSE QUALITY FRAMEWORK
+### Technical Accuracy Requirements
+- Code examples must match document exactly
+- All technical specifications must be preserved
+- Implementation details must remain unchanged
+- Domain terminology must be consistently applied
 
-## Formatting Requirements
-- Maintain professional, clear, and structured format throughout
-- Preserve original formatting for:
-  * Code blocks (with correct language syntax highlighting)
-  * Tables (with proper alignment)
-  * Lists (numbered and bulleted)
-  * Hierarchical structures
-- Use appropriate markdown formatting in responses where beneficial
+### Structural Requirements
+- Use appropriate headings (h1-h6)
+- Implement code blocks with language tags
+- Format tables with proper alignment
+- Preserve list hierarchies and numbering
 
-## Comprehensiveness Requirements
-- Provide detailed, thorough responses that fully address each instruction
-- Include comprehensive code examples from the document when relevant
-- Cover all key points related to the instruction without unnecessary verbosity
-- Structure complex responses with clear sections, headings, or numbered steps
+### Validation Checklist
+✓ Content completely addresses instruction
+✓ Technical details are accurate
+✓ Formatting is properly implemented
+✓ Code examples are correctly rendered
+✓ Domain terminology is accurate
 
-# OUTPUT FORMAT SPECIFICATION
-Your output must be in the following JSON format using <data> tags:
+## OUTPUT SPECIFICATION
+### JSON Schema
 <data>
 [
-{"instruction": "Instruction content", "input": "", "output": "Response content"},
-{"instruction": "Instruction content", "input": "", "output": "Response content"},
-...
+{"instruction": "Instruction text", "input": "", "output": "Response content"},
+...additional pairs...
 ]
 </data>
 
-# EXEMPLAR INSTRUCTION-RESPONSE PAIRS
+### Quality Control Gates
+1. Verify instruction diversity across format matrix
+2. Confirm cognitive complexity distribution
+3. Validate technical accuracy of all content
+4. Check structural integrity of responses
+5. Ensure JSON schema compliance
 
-## Example 1
-Instruction: "Explain the concept of 'X' as described in the document and why it's important."
-Response: "X is defined as [definition from the document]. It is important because [reasons stated in the document]. The document emphasizes that X plays a crucial role in [context from the document]."
+## EXECUTION PROTOCOL
+1. Analyze document structure and content map
+2. Design instruction set meeting all requirements
+3. Generate detailed, accurate responses
+4. Validate against quality framework
+5. Format output in specified JSON structure
 
-## Example 2
-Instruction: "How would you apply the method of 'Y' to solve [specific problem mentioned in the document]?"
-Response: "To apply the method of Y to solve [specific problem], follow these steps:
-1. [Step 1 from the document]
-2. [Step 2 from the document]
-3. [Step 3 from the document]
-It's important to note that [any caveats or considerations mentioned in the document]."
-
-# PROCESS INSTRUCTIONS
-1. First analyze the entire Markdown document to identify ALL key themes, concepts, and scenarios
-2. Map out all technical details, code examples, and implementation scenarios
-3. Design diverse instruction types ensuring 100% coverage of all document content
-4. Create detailed responses with rich code content extracted directly from the document
-5. Verify that your instruction set covers EVERY scenario mentioned in the document
-6. Format your output as the specified JSON structure within <data> tags
-
-Begin processing the Markdown content now, and output your results in the specified JSON format.
+Begin processing now. Generate exactly 30-40 instruction-response pairs implementing all quality requirements within the specified JSON structure.
 `}
             label={<>提示词模板插入参数：<Tag color="blue">{'{{markdown_content}}'}</Tag></>}
             rules={[{ required: true, message: '请输入提示词模板' }]}
