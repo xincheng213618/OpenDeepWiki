@@ -1,35 +1,22 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Domains;
 using KoalaWiki.Entities;
 using KoalaWiki.Entities.DocumentFile;
-using KoalaWiki.Extensions;
 using KoalaWiki.Functions;
-using KoalaWiki.Options;
+using KoalaWiki.KoalaWarehouse.DocumentPending;
+using KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
+using KoalaWiki.KoalaWarehouse.Overview;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using Serilog;
 
 namespace KoalaWiki.KoalaWarehouse;
 
 public partial class DocumentsService
 {
-    private static readonly int TaskMaxSizePerUser = 5;
-
-    static DocumentsService()
-    {
-        // 读取环境变量
-        var maxSize = Environment.GetEnvironmentVariable("TASK_MAX_SIZE_PER_USER").GetTrimmedValueOrEmpty();
-        if (!string.IsNullOrEmpty(maxSize) && int.TryParse(maxSize, out var maxSizeInt))
-        {
-            TaskMaxSizePerUser = maxSizeInt;
-        }
-    }
-
     /// <summary>
     /// 解析指定目录下单.gitignore配置忽略的文件
     /// </summary>
@@ -298,8 +285,13 @@ public partial class DocumentsService
             }
         }
 
-        var overview = await GenerateProjectOverview(fileKernel, catalogue, gitRepository,
-            warehouse.Branch, readme);
+        var classify = await WarehouseClassify.ClassifyAsync(fileKernel, catalogue, readme);
+
+        await dbContext.Warehouses.Where(x => x.Id == warehouse.Id)
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.Classify, classify));
+
+        var overview = await OverviewService.GenerateProjectOverview(fileKernel, catalogue, gitRepository,
+            warehouse.Branch, readme, classify);
 
         // 先删除<project_analysis>标签内容
         var project_analysis = new Regex(@"<project_analysis>(.*?)</project_analysis>",
@@ -332,7 +324,9 @@ public partial class DocumentsService
             Id = Guid.NewGuid().ToString("N")
         });
 
-        var (result, exception) = await GenerateThinkCatalogue(path, catalogue, gitRepository, warehouse);
+        var (result, exception) =
+            await GenerateThinkCatalogueService.GenerateThinkCatalogue(path, catalogue, gitRepository, warehouse,
+                classify);
 
         if (result == null)
         {
@@ -355,7 +349,8 @@ public partial class DocumentsService
 
         await dbContext.SaveChangesAsync();
 
-        await HandlePendingDocumentsAsync(documents, fileKernel, catalogue, gitRepository, warehouse, path, dbContext);
+        await DocumentPendingService.HandlePendingDocumentsAsync(documents, fileKernel, catalogue, gitRepository,
+            warehouse, path, dbContext, warehouse.Classify);
 
         if (warehouse.Type.Equals("git", StringComparison.CurrentCultureIgnoreCase))
         {
@@ -387,63 +382,13 @@ public partial class DocumentsService
         }
     }
 
-    /// <summary>
-    /// 处理单个文档的异步方法
-    /// <returns>
-    /// 返回列表
-    /// </returns>
-    /// </summary>
-    public static async Task<(DocumentCatalog catalog, DocumentFileItem fileItem, List<string> files)>
-        ProcessDocumentAsync(
-            DocumentCatalog catalog, Kernel kernel, string catalogue, string gitRepository, string branch, string path,
-            SemaphoreSlim? semaphore)
-    {
-        int retryCount = 0;
-        const int retries = 5;
-        var files = new List<string>();
-        DocumentContext.DocumentStore = new DocumentStore();
-
-        while (true)
-        {
-            try
-            {
-                if (semaphore != null)
-                {
-                    await semaphore.WaitAsync();
-                }
-
-                Log.Logger.Information("处理仓库；{path} ,处理标题：{name}", path, catalog.Name);
-                var fileItem = await ProcessCatalogueItems(catalog, kernel, catalogue, gitRepository, branch, path);
-                files.AddRange(DocumentContext.DocumentStore.Files);
-
-                Log.Logger.Information("处理仓库；{path} ,处理标题：{name} 完成！", path, catalog.Name);
-                semaphore?.Release();
-
-                return (catalog, fileItem, files);
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Error("处理仓库；{path} ,处理标题：{name} 失败:{ex}", path, catalog.Name, ex.ToString());
-                semaphore?.Release();
-
-                retryCount++;
-                if (retryCount >= retries)
-                {
-                    Console.WriteLine($"处理 {catalog.Name} 失败，已重试 {retryCount} 次，错误：{ex.Message}");
-                    throw; // 重试耗尽后向上层抛出异常
-                }
-                else
-                {
-                    // 等待一段时间后重试
-                    await Task.Delay(10000 * retryCount);
-                }
-            }
-        }
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int? GetMaxTokens(string model)
     {
+        if (model.StartsWith("deepseek-r1"))
+        {
+            return 32768;
+        }
         return model switch
         {
             "deepseek-chat" => 8192,
@@ -463,152 +408,10 @@ public partial class DocumentsService
             "gemini-2.5-pro-preview-05-06" => 32768,
             "gemini-2.5-flash-preview-04-17" => 32768,
             "Qwen3-32B" => 32768,
+            "deepseek-r1" => 32768,
+            "deepseek-r1:32b-qwen-distill-fp16" => 32768,
             _ => null
         };
-    }
-
-    /// <summary>
-    /// Mermaid可能存在语法错误，使用大模型进行修复
-    /// </summary>
-    /// <param name="fileItem"></param>
-    public static void RepairMermaid(DocumentFileItem fileItem)
-    {
-        try
-        {
-            var regex = new Regex(@"```mermaid\s*([\s\S]*?)```", RegexOptions.Multiline);
-            var matches = regex.Matches(fileItem.Content);
-
-            foreach (Match match in matches)
-            {
-                var code = match.Groups[1].Value;
-
-                // 只需要删除[]里面的(和)，它可能单独处理
-                var codeWithoutBrackets =
-                    Regex.Replace(code, @"\[[^\]]*\]",
-                        m => m.Value.Replace("(", "").Replace(")", "").Replace("（", "").Replace("）", ""));
-                // 然后替换原有内容
-                fileItem.Content = fileItem.Content.Replace(match.Value, $"```mermaid\n{codeWithoutBrackets}```");
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "修复mermaid语法失败");
-        }
-    }
-
-    /// <summary>
-    /// 生成项目概述
-    /// </summary>
-    /// <returns></returns>
-    private async Task<string> GenerateProjectOverview(Kernel kernel, string catalog, string gitRepository,
-        string branch, string readme)
-    {
-        var sr = new StringBuilder();
-
-        var settings = new OpenAIPromptExecutionSettings()
-        {
-            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-        };
-
-        var chat = kernel.GetRequiredService<IChatCompletionService>();
-        var history = new ChatHistory();
-
-        history.AddUserMessage(Prompt.Overview.Replace("{{catalogue}}", catalog)
-            .Replace("{{git_repository}}", gitRepository.Replace(".git", ""))
-            .Replace("{{readme}}", readme)
-            .Replace("{{branch}}", branch));
-
-        await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
-        {
-            if (!string.IsNullOrEmpty(item.Content))
-            {
-                sr.Append(item.Content);
-            }
-        }
-
-        // 使用正则表达式将<blog></blog>中的内容提取
-        var regex = new Regex(@"<blog>(.*?)</blog>", RegexOptions.Singleline);
-
-        var match = regex.Match(sr.ToString());
-
-        if (match.Success)
-        {
-            // 提取到的内容
-            var extractedContent = match.Groups[1].Value;
-            sr.Clear();
-            sr.Append(extractedContent);
-        }
-
-        return sr.ToString();
-    }
-
-    /// <summary>
-    /// 处理每一个标题产生文件内容
-    /// </summary>
-    private static async Task<DocumentFileItem> ProcessCatalogueItems(DocumentCatalog catalog, Kernel kernel,
-        string catalogue,
-        string gitRepository, string branch, string path)
-    {
-        var chat = kernel.Services.GetService<IChatCompletionService>();
-
-        var history = new ChatHistory();
-
-        history.AddUserMessage(Prompt.GenerateDocs
-            .Replace("{{catalogue}}", catalogue)
-            .Replace("{{prompt}}", catalog.Prompt)
-            .Replace("{{git_repository}}", gitRepository.Replace(".git", ""))
-            .Replace("{{branch}}", branch)
-            .Replace("{{title}}", catalog.Name));
-
-        var fileFunction = new FileFunction(path);
-        history.AddUserMessage(await fileFunction.ReadFilesAsync(catalog.DependentFile.ToArray()));
-
-        var sr = new StringBuilder();
-
-        await foreach (var i in chat.GetStreamingChatMessageContentsAsync(history, new OpenAIPromptExecutionSettings()
-                       {
-                           ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-                           MaxTokens = GetMaxTokens(OpenAIOptions.ChatModel),
-                           Temperature = 0.5,
-                       }, kernel))
-        {
-            if (!string.IsNullOrEmpty(i.Content))
-            {
-                sr.Append(i.Content);
-            }
-        }
-
-        // 使用正则表达式将<blog></blog>中的内容提取
-        var regex = new Regex(@"<docs>(.*?)</docs>", RegexOptions.Singleline);
-
-        var match = regex.Match(sr.ToString());
-
-        if (match.Success)
-        {
-            // 提取到的内容
-            var extractedContent = match.Groups[1].Value;
-            sr.Clear();
-            sr.Append(extractedContent);
-        }
-
-        var fileItem = new DocumentFileItem()
-        {
-            Content = sr.ToString(),
-            DocumentCatalogId = catalog.Id,
-            Description = string.Empty,
-            Extra = new Dictionary<string, string>(),
-            Metadata = new Dictionary<string, string>(),
-            Source = [],
-            CommentCount = 0,
-            RequestToken = 0,
-            CreatedAt = DateTime.Now,
-            Id = Guid.NewGuid().ToString("N"),
-            ResponseToken = 0,
-            Size = 0,
-            Title = catalog.Name,
-        };
-
-        return fileItem;
     }
 
     private static void ProcessCatalogueItems(List<DocumentResultCatalogueItem> items, string? parentId,
@@ -623,7 +426,7 @@ public partial class DocumentsService
             {
                 WarehouseId = warehouse.Id,
                 Description = item.title,
-                DependentFile = item.dependent_file.ToList(),
+                DependentFile = item.dependent_file?.ToList() ?? new List<string>(),
                 Id = Guid.NewGuid() + item.title,
                 Name = item.name,
                 Url = item.title,

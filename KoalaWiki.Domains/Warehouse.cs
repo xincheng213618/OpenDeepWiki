@@ -93,4 +93,8 @@ public class Warehouse : Entity<string>
     /// </summary>
     public string? Readme { get; set; } 
     
+    /// <summary>
+    /// 仓库类别
+    /// </summary>
+    public ClassifyType? Classify { get; set; }
 }

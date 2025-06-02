@@ -603,6 +603,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                     b.Property<string>("Branch")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("Classify")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 

@@ -1,12 +1,9 @@
 ﻿using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Domains;
 using KoalaWiki.Entities;
-using KoalaWiki.Git;
-using KoalaWiki.KoalaWarehouse;
-using KoalaWiki.Options;
+using KoalaWiki.KoalaWarehouse.DocumentPending;
 using LibGit2Sharp;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -24,18 +21,18 @@ public partial class WarehouseProcessingTask
         try
         {
             logger.LogInformation("步骤1: 开始更新仓库 {GitPath}", document.GitPath);
-            
+
             // 1. 更新仓库
             var (commits, commitId) = GitService.PullRepository(document.GitPath, warehouse.Version,
                 warehouse.GitUserName, warehouse.GitPassword);
-            
+
             logger.LogInformation("仓库更新完成，获取到 {CommitCount} 个提交记录", commits?.Count ?? 0);
             if (commits == null || commits.Count == 0)
             {
                 logger.LogInformation("没有更新的提交记录");
                 return string.Empty;
             }
-            
+
             // 得到更新内容和更新文件
             var commitPrompt = new StringBuilder();
             if (commits is { Count: > 0 })
@@ -195,9 +192,10 @@ public partial class WarehouseProcessingTask
                 }
             }
 
-            await DocumentsService.HandlePendingDocumentsAsync(documents.Select(x => x.Item2).ToList(), fileKernel,
+            await DocumentPendingService.HandlePendingDocumentsAsync(documents.Select(x => x.Item2).ToList(),
+                fileKernel,
                 warehouse.OptimizedDirectoryStructure,
-                warehouse.Address, warehouse, document.GitPath, dbContext);
+                warehouse.Address, warehouse, document.GitPath, dbContext, warehouse.Classify);
 
             logger.LogInformation("仓库 {WarehouseName} 分析完成", warehouse.Name);
 
