@@ -21,7 +21,6 @@ namespace KoalaWiki.Services;
 /// </summary>
 [Tags("Repository")]
 [Filter(typeof(ResultFilter))]
-[Authorize(Roles = "admin")]
 public class RepositoryService(
     IKoalaWikiContext dbContext,
     GitRepositoryService gitRepositoryService,
@@ -71,7 +70,7 @@ public class RepositoryService(
 
         // 将实体映射为DTO
         var repositoryDtos = repositories.Select(r => r.Adapt<RepositoryInfoDto>()).ToList();
-
+        
         return new PageDto<RepositoryInfoDto>(total, repositoryDtos);
     }
 
@@ -93,7 +92,6 @@ public class RepositoryService(
 
         // 将实体映射为DTO
         var repositoryDto = repository.Adapt<RepositoryInfoDto>();
-
         return ResultDto<RepositoryInfoDto>.Success(repositoryDto);
     }
 
@@ -135,6 +133,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="createDto">仓库信息</param>
     /// <returns>创建结果</returns>
+    [Authorize(Roles = "admin")]
     public async Task<RepositoryInfoDto> CreateGitRepositoryAsync(CreateGitRepositoryDto createDto)
     {
         // 处理Git地址
@@ -226,6 +225,7 @@ public class RepositoryService(
     /// <param name="id">仓库ID</param>
     /// <param name="updateDto">更新信息</param>
     /// <returns>更新结果</returns>
+    [Authorize(Roles = "admin")]
     public async Task<RepositoryInfoDto> UpdateRepositoryAsync(string id, UpdateRepositoryDto updateDto)
     {
         var repository = await dbContext.Warehouses.FindAsync(id);
@@ -266,6 +266,7 @@ public class RepositoryService(
     /// <param name="id">仓库ID</param>
     /// <returns>删除结果</returns>
     [EndpointSummary("仓库管理：删除仓库")]
+    [Authorize(Roles = "admin")]
     public async Task<bool> DeleteRepositoryAsync(string id)
     {
         await dbContext.Warehouses
@@ -305,6 +306,7 @@ public class RepositoryService(
     /// <param name="id">仓库ID</param>
     /// <returns>处理结果</returns>
     [EndpointSummary("仓库管理：重新处理仓库")]
+    [Authorize(Roles = "admin")]
     public async Task<bool> ResetRepositoryAsync(string id)
     {
         // 更新仓库状态为待处理
@@ -357,6 +359,7 @@ public class RepositoryService(
     /// 重命名目录
     /// </summary>
     [EndpointSummary("仓库管理：重命名目录")]
+    [Authorize(Roles = "admin")]
     public async Task<bool> RenameCatalogAsync(string id, string newName)
     {
         await dbContext.DocumentCatalogs
@@ -368,6 +371,7 @@ public class RepositoryService(
 
     [EndpointSummary("仓库管理：删除目录")]
     [HttpDelete("{id}")]
+    [Authorize(Roles = "admin")]
     public async Task<bool> DeleteCatalogAsync(string id)
     {
         // 逻辑删除目录
@@ -498,6 +502,7 @@ public class RepositoryService(
     /// AI智能生成文件内容
     /// </summary>
     /// <returns></returns>
+    [Authorize(Roles = "admin")]
     public async Task<bool> GenerateFileContentAsync(GenerateFileContentInput input)
     {
         if (!string.IsNullOrEmpty(input.Prompt))
@@ -574,6 +579,7 @@ public class RepositoryService(
     }
 
     [EndpointSummary("仓库管理：保存文件内容")]
+    [Authorize(Roles = "admin")]
     public async Task<bool> FileContentAsync(SaveFileContentInput input)
     {
         var fileItem = await dbContext.DocumentFileItems
