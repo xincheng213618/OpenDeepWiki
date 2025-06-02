@@ -28,9 +28,19 @@ jobs:
             runtime: linux-x64
             extension: ''
             archive: tar.gz
+          - os: linux-arm64
+            runner: ubuntu-latest
+            runtime: linux-arm64
+            extension: ''
+            archive: tar.gz
           - os: macos
             runner: macos-latest
             runtime: osx-x64
+            extension: ''
+            archive: tar.gz
+          - os: macos-arm64
+            runner: macos-latest
+            runtime: osx-arm64
             extension: ''
             archive: tar.gz
     
@@ -213,7 +223,9 @@ jobs:
           #### 后端程序
           - **Windows**: `koala-wiki-backend-windows.zip` - 适用于Windows x64系统
           - **Linux**: `koala-wiki-backend-linux.tar.gz` - 适用于Linux x64系统  
+          - **Linux ARM64**: `koala-wiki-backend-linux-arm64.tar.gz` - 适用于Linux ARM64系统
           - **macOS**: `koala-wiki-backend-macos.tar.gz` - 适用于macOS x64系统
+          - **macOS ARM64**: `koala-wiki-backend-macos-arm64.tar.gz` - 适用于macOS ARM64系统
           
           #### 前端程序
           - **通用**: `koala-wiki-frontend.tar.gz` - 适用于所有平台的前端静态文件
@@ -261,7 +273,9 @@ jobs:
           files: |
             artifacts/backend-windows/koala-wiki-backend-windows.zip
             artifacts/backend-linux/koala-wiki-backend-linux.tar.gz
+            artifacts/backend-linux-arm64/koala-wiki-backend-linux-arm64.tar.gz
             artifacts/backend-macos/koala-wiki-backend-macos.tar.gz
+            artifacts/backend-macos-arm64/koala-wiki-backend-macos-arm64.tar.gz
             artifacts/frontend/koala-wiki-frontend.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
