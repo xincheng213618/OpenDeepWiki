@@ -42,12 +42,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# 复制启动脚本
-COPY start.sh /app/start.sh
+# 复制启动脚本并设置权限
+COPY --chown=nextjs:nodejs start.sh /app/start.sh
 RUN chmod +x /app/start.sh
-
-# 改变所有权到 nextjs 用户
-RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
@@ -56,4 +53,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # 使用启动脚本而不是直接启动 server.js
-CMD ["/app/start.sh"]
+CMD ["node","server.js"]

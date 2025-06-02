@@ -4,8 +4,18 @@ const nextConfig = {
   reactStrictMode: true,  
   transpilePackages: ['antd','@ant-design/icons'],
   async rewrites() {
-    // 使用占位符，在运行时会被替换
-    const apiUrl = 'http://__API_URL_PLACEHOLDER__';
+    const apiUrl = 'http://localhost:5085'
+
+    // 如果NEXT_PUBLIC_API_URL环境变量有值则使用
+    if (process.env?.NEXT_PUBLIC_API_URL) {
+      return [
+        {
+          source: '/api/:path*',
+          destination: `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`,
+        },
+      ];
+    }
+
     return [
       {
         source: '/api/:path*',
