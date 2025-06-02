@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using KoalaWiki.Domains;
 using KoalaWiki.Entities;
 using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel;
@@ -13,12 +14,12 @@ public class GenerateThinkCatalogueService
 {
     public static async Task<(DocumentResultCatalogue catalogue, Exception? exception)> GenerateThinkCatalogue(string path,
         string catalogue, string gitRepository,
-        Warehouse warehouse, WarehouseClassify.ClassifyType? classify)
+        Warehouse warehouse, ClassifyType? classify)
     {
         string prompt = string.Empty;
         if (classify.HasValue)
         {
-            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.Overview) + classify,
+            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.GenerateThinkCatalogue) + classify,
                 new KernelArguments()
                 {
                     ["code_files"] = catalogue,
@@ -28,7 +29,7 @@ public class GenerateThinkCatalogueService
         }
         else
         {
-            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.Overview),
+            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.GenerateThinkCatalogue),
                 new KernelArguments()
                 {
                     ["code_files"] = catalogue,
@@ -97,13 +98,13 @@ public class GenerateThinkCatalogueService
 
     public static async Task<DocumentResultCatalogue> GenerateCatalogue(string think,
         string path, string gitRepository, string catalogue,
-        Warehouse warehouse, WarehouseClassify.ClassifyType? classify)
+        Warehouse warehouse, ClassifyType? classify)
     {
         
         string prompt = string.Empty;
         if (classify.HasValue)
         {
-            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.Overview) + classify,
+            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.AnalyzeCatalogue) + classify,
                 new KernelArguments()
                 {
                     ["code_files"] = catalogue,
@@ -114,7 +115,7 @@ public class GenerateThinkCatalogueService
         }
         else
         {
-            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.Overview),
+            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.AnalyzeCatalogue),
                 new KernelArguments()
                 {
                     ["code_files"] = catalogue,

@@ -7,6 +7,7 @@ using KoalaWiki.Entities.DocumentFile;
 using KoalaWiki.Git;
 using KoalaWiki.Infrastructure;
 using KoalaWiki.KoalaWarehouse;
+using KoalaWiki.KoalaWarehouse.DocumentPending;
 using KoalaWiki.Options;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
@@ -466,8 +467,9 @@ public class RepositoryService(
             OpenAIOptions.ChatApiKey, document.GitPath, OpenAIOptions.ChatModel, false);
         // 对当前单目录进行分析
         var (catalogs, fileItem, files)
-            = await DocumentsService.ProcessDocumentAsync(catalog, fileKernel, warehouse.OptimizedDirectoryStructure,
-                warehouse.Address, warehouse.Branch, document.GitPath, null);
+            = await DocumentPendingService.ProcessDocumentAsync(catalog, fileKernel,
+                warehouse.OptimizedDirectoryStructure,
+                warehouse.Address, warehouse.Branch, document.GitPath, null, warehouse.Classify);
 
         // 处理完成后，更新目录状态
 
@@ -476,7 +478,7 @@ public class RepositoryService(
             .ExecuteUpdateAsync(x => x.SetProperty(y => y.IsCompleted, true));
 
         // 修复Mermaid语法错误
-        DocumentsService.RepairMermaid(fileItem);
+        DocumentPendingService.RepairMermaid(fileItem);
 
         await dbContext.DocumentFileItems.AddAsync(fileItem);
         await dbContext.DocumentFileItemSources.AddRangeAsync(files.Select(x => new DocumentFileItemSource()
@@ -520,8 +522,9 @@ public class RepositoryService(
             OpenAIOptions.ChatApiKey, document.GitPath, OpenAIOptions.ChatModel, false);
         // 对当前单目录进行分析
         var (catalogs, fileItem, files)
-            = await DocumentsService.ProcessDocumentAsync(catalog, fileKernel, warehouse.OptimizedDirectoryStructure,
-                warehouse.Address, warehouse.Branch, document.GitPath, null);
+            = await DocumentPendingService.ProcessDocumentAsync(catalog, fileKernel,
+                warehouse.OptimizedDirectoryStructure,
+                warehouse.Address, warehouse.Branch, document.GitPath, null, warehouse.Classify);
 
         // 处理完成后，更新目录状态
 
@@ -530,7 +533,7 @@ public class RepositoryService(
             .ExecuteUpdateAsync(x => x.SetProperty(y => y.IsCompleted, true));
 
         // 修复Mermaid语法错误
-        DocumentsService.RepairMermaid(fileItem);
+        DocumentPendingService.RepairMermaid(fileItem);
 
         await dbContext.DocumentFileItems.Where(x => x.Id == fileItem.Id)
             .ExecuteDeleteAsync();

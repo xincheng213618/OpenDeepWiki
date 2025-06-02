@@ -28,7 +28,7 @@ public class PromptContext
 
         return args.Aggregate(values,
             (current, value) =>
-                current.Replace(string.Format("{{{0}}}", value.Key), value.Value?.ToString(),
+                current.Replace("{{$" + value.Key + "}}", value.Value?.ToString(),
                     StringComparison.CurrentCultureIgnoreCase)) + Prompt.Language;
     }
 }

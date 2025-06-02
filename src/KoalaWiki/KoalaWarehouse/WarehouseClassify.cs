@@ -1,6 +1,12 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.ClientModel.Primitives;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using KoalaWiki.Domains;
 using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Newtonsoft.Json;
+using OpenAI.Chat;
 
 namespace KoalaWiki.KoalaWarehouse;
 
@@ -12,18 +18,32 @@ public class WarehouseClassify
     public static async Task<ClassifyType?> ClassifyAsync(Kernel kernel, string catalog, string readme)
     {
         var prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.RepositoryClassification),
-            new KernelArguments()
+            new KernelArguments(new OpenAIPromptExecutionSettings()
             {
-                ["DIRECTORY_STRUCTURE"] = catalog,
-                ["README"] = readme
+                MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.ChatModel)
+            })
+            {
+                ["category"] = catalog,
+                ["readme"] = readme
             });
 
         var result = await kernel.InvokePromptAsync(prompt);
+        var promptResult = string.Empty;
 
+        var jsonContent =
+            JsonNode.Parse(ModelReaderWriter.Write(result.GetValue<OpenAIChatMessageContent>().InnerContent));
+
+        // 如果存在reasoning_content则说明是推理
+        if (jsonContent!["choices"]![0]!["message"]!["reasoning_content"] != null)
+        {
+            promptResult += jsonContent!["choices"]![0]!["message"]!["reasoning_content"];
+        }
+
+        promptResult += result.ToString();
 
         // 提取分类结果正则表达式<classify>(.*?)</classify>
         var regex = new Regex(@"<classify>(.*?)</classify>", RegexOptions.Singleline);
-        var match = regex.Match(result.ToString());
+        var match = regex.Match(promptResult);
         if (match.Success)
         {
             // 提取到的内容
@@ -43,43 +63,5 @@ public class WarehouseClassify
         {
             return null;
         }
-    }
-
-    public enum ClassifyType
-    {
-        /// <summary>
-        /// 应用系统
-        /// </summary>
-        Applications,
-
-        /// <summary>
-        /// Projects providing development foundation and architecture
-        /// </summary>
-        Frameworks,
-
-        /// <summary>
-        /// Libraries providing reusable code components
-        /// </summary>
-        Libraries,
-
-        /// <summary>
-        /// Tools and utilities for development
-        /// </summary>
-        DevelopmentTools,
-
-        /// <summary>
-        /// Projects related to data processing and analysis
-        /// </summary>
-        CLITools,
-
-        /// <summary>
-        /// Projects related to DevOps and CI/CD
-        /// </summary>
-        DevOpsConfiguration,
-
-        /// <summary>
-        /// Projects related to testing and quality assurance
-        /// </summary>
-        Documentation
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using KoalaWiki.Domains;
 using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -14,7 +15,7 @@ public class OverviewService
     /// </summary>
     /// <returns></returns>
     public static async Task<string> GenerateProjectOverview(Kernel kernel, string catalog, string gitRepository,
-        string branch, string readme, WarehouseClassify.ClassifyType? classify)
+        string branch, string readme, ClassifyType? classify)
     {
         var sr = new StringBuilder();
 

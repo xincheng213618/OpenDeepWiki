@@ -1,6 +1,4 @@
-﻿using KoalaWiki.Core.DataAccess;
-using KoalaWiki.Entities;
-using KoalaWiki.Options;
+﻿using KoalaWiki.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace KoalaWiki.WarehouseProcessing;

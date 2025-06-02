@@ -608,6 +608,9 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                     b.Property<string>("Branch")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("Classify")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 

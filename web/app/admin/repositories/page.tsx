@@ -17,6 +17,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { useState, useEffect } from 'react';
 import { getRepositoryList, createGitRepository, updateRepository, deleteRepository, resetRepository, RepositoryInfo, CreateGitRepositoryRequest, UpdateRepositoryRequest } from '../../services/repositoryService';
 import Link from 'next/link';
+import { Tooltip } from '@lobehub/ui';
 
 // 仓库状态映射
 const statusMap = {
@@ -205,19 +206,21 @@ export default function RepositoriesPage() {
       render: (_, record) => (
         <Space>
           <Avatar icon={<FolderOutlined />} style={{ backgroundColor: '#87d068' }} />
-          <Link
-          style={{
-            // 隐藏多行
-            display: '-webkit-box',
-            WebkitLineClamp: 1,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            width: '120px',
-          }}
-          href={`/admin/repositories/${record.id}`}>
-            {record.address}
-          </Link>
+          <Tooltip title={record.address}>
+            <Link
+              style={{
+                // 隐藏多行
+                display: '-webkit-box',
+                WebkitLineClamp: 1,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: '120px',
+              }}
+              href={`/admin/repositories/${record.id}`}>
+              {record.address}
+            </Link>
+          </Tooltip>
           {record.isRecommended && <Tag color="gold"><StarOutlined /> 推荐</Tag>}
         </Space>
       ),

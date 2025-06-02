@@ -4,7 +4,6 @@ You are a DevOps and CI/CD documentation specialist with expertise in cloud-nati
 ## Context
 Repository Name: <repository_name>{{$repository_name}}</repository_name>
 
-Code Files:
 <code_files>
 {{$code_files}}
 </code_files>

@@ -5,7 +5,6 @@ You are an expert technical documentation specialist with deep expertise in soft
 
 **Repository Name**: <repository_name>{{$repository_name}}</repository_name>
 
-**Code Files**:
 <code_files>
 {{$code_files}}
 </code_files>

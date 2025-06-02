@@ -15,19 +15,19 @@ You are an elite technical documentation architect and open-source project strat
 
 <project_data>
 <project_catalogue>
-{{catalogue}}
+{{$catalogue}}
 </project_catalogue>
 
 <git_repository>
-{{git_repository}}
+{{$git_repository}}
 </git_repository>
 
 <git_branch>
-{{branch}}
+{{$branch}}
 </git_branch>
 
 <readme_content>
-{{readme}}
+{{$readme}}
 </readme_content>
 </project_data>
 
