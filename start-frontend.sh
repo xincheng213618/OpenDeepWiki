@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cd ./frontend/standalone
+cd .next/standalone
 node server.js 

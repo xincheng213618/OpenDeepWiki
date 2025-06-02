@@ -28,7 +28,4 @@ export DEEP_RESEARCH_MODEL=
 # 是否启用增量更新
 export ENABLE_INCREMENTAL_UPDATE=true
 
-cd backend
-
-
-KoalaWiki 
+./KoalaWiki 

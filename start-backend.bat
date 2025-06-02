@@ -26,6 +26,4 @@ SET DEEP_RESEARCH_MODEL=
 REM 是否启用增量更新
 SET ENABLE_INCREMENTAL_UPDATE=true
 
-cd backend
-
 "KoalaWiki.exe"
