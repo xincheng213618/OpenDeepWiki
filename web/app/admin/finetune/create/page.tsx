@@ -307,8 +307,7 @@ You are an Advanced AI Training Data Engineer specializing in creating premium-q
 ✓ Code examples are correctly rendered
 ✓ Domain terminology is accurate
 
-## OUTPUT SPECIFICATION
-### JSON Schema
+output format：
 <data>
 [
 {"instruction": "Instruction text", "input": "", "output": "Response content"},
