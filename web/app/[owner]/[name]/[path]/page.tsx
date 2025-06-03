@@ -125,7 +125,7 @@ export default function DocumentPage() {
               <nav aria-label="文档目录">
                 <DocumentSidebar
                   anchorItems={anchorItems}
-                  document={document}
+                  documentData={document}
                 />
               </nav>
             </Col>

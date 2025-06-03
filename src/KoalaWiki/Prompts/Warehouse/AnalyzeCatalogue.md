@@ -36,8 +36,8 @@ Requirements for the documentation structure:
 12. Organize reference material in a logical, accessible manner.
 13. For each section, identify and include the most relevant source files from the project as dependent_file entries.
 
-Output Format:
-The final output should be a JSON structure representing the documentation hierarchy. Use the following format:
+Use the following format:
+
 <documentation_structure>
 {
   "items": [

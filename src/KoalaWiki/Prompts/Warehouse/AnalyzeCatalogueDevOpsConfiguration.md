@@ -58,8 +58,8 @@ When documenting DevOps configuration aspects:
 8. Explain monitoring, logging, and observability configurations
    </devops_specific_guidance>
 
-<output_format>
-The final output should be a JSON structure representing the documentation hierarchy. Use the following format:
+Use the following format:
+
 <documentation_structure>
 {
     "items": [
