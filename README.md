@@ -210,6 +210,7 @@ docker-compose build --build-arg ARCH=amd64
 
 
 ### Deploy to Sealos with Public Internet Access
+[![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://cloud.sealos.io/?openapp=system-template%3FtemplateName%3DOpenDeepWiki)
 For detailed steps, refer to:[One-Click Deployment of OpenDeepWiki as a Sealos Application Exposed to the Public Network Using Templates](scripts/sealos/README.zh-CN.md)
 
 ## 🔍 How It Works
