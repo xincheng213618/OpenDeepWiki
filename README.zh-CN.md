@@ -215,7 +215,8 @@ docker-compose build --build-arg ARCH=arm64
 docker-compose build --build-arg ARCH=amd64
 ```
 
-### 部署到 Sealos 通过公网访问
+### 一键部署到 Sealos 通过公网访问
+[![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://cloud.sealos.io/?openapp=system-template%3FtemplateName%3DOpenDeepWiki)
 详情请参考：[使用模板将 OpenDeepWiki 一键部署为 Sealos 应用暴露到公网](scripts/sealos/README.zh-CN.md)
 
 ## 🔍工作原理
