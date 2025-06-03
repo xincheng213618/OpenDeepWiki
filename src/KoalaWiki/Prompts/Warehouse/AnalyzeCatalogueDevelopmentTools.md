@@ -54,8 +54,8 @@ For Development Tools, include these specialized sections when applicable:
 10. Scripting & Automation - How to automate tasks using the tool
     </development_tool_specific_sections>
 
-<output_format>
-The final output should be a JSON structure representing the documentation hierarchy. Use the following format:
+Use the following format:
+
 <documentation_structure>
 {
   "items": [

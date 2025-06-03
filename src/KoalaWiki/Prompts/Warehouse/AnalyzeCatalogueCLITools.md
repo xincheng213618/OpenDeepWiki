@@ -48,8 +48,8 @@ CLI-Specific Documentation Elements:
 6. Error Handling: Document exit codes, error messages, and troubleshooting steps
 7. Scripting Integration: Document how to use the tool in scripts and automation
 
-Output Format:
-The final output should be a JSON structure representing the documentation hierarchy. Use the following format:
+Use the following format:
+
 <documentation_structure>
 {
     "items": [

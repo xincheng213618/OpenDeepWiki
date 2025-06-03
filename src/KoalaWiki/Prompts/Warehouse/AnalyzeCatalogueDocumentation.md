@@ -81,8 +81,8 @@ Create a documentation structure specifically tailored to this project, based on
   - Error message explanations
   - Support resources
 
-## OUTPUT FORMAT
-The final output should be a JSON structure representing the documentation hierarchy with the following format:
+Use the following format:
+
 <documentation_structure>
 {
   "items": [

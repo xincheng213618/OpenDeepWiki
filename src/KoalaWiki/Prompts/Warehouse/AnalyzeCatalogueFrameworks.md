@@ -70,8 +70,8 @@ For full-stack frameworks:
 - Document build and deployment pipeline
   </framework_specific_guidance>
 
-<output_format>
-The final output should be a JSON structure representing the documentation hierarchy. Use the following format:
+Use the following format:
+
 <documentation_structure>
 {
     "items": [

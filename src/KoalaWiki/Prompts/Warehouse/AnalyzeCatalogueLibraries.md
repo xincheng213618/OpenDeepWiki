@@ -56,8 +56,8 @@ Your goal is to create a documentation structure specifically tailored to this p
     </library_specific_requirements>
     </documentation_requirements>
 
-<output_format>
-The final output should be a JSON structure representing the documentation hierarchy. Use the following format:
+Use the following format:
+
 <documentation_structure>
 {
    "items": [
@@ -78,7 +78,6 @@ The final output should be a JSON structure representing the documentation hiera
    ]
 }
 </documentation_structure>
-</output_format>
 
 <library_documentation_prompts>
 For API reference sections, use this specialized prompt:
