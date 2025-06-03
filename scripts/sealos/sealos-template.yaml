@@ -1,7 +1,7 @@
 apiVersion: app.sealos.io/v1
 kind: Template
 metadata:
-  name: ${{ defaults.app_name }}
+  name: OpenDeepWiki
 spec:
   title: 'OpenDeepWiki'
   url: 'https://opendeep.wiki'                             #Your app's official website
