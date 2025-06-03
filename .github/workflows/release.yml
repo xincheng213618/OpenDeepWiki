@@ -4,12 +4,22 @@ on:
   push:
     tags:
       - 'v*'
+  # 允许在任何分支上手动触发
   workflow_dispatch:
     inputs:
       version:
         description: '版本号 (例如: v1.0.0)'
         required: true
         default: 'v1.0.0'
+      ref:
+        description: '分支或标签 (默认: main)'
+        required: false
+        default: 'main'
+
+# 添加全局权限设置
+permissions:
+  contents: write
+  packages: read
 
 jobs:
   build-backend:
@@ -47,6 +57,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
       
       - name: 设置 .NET
         uses: actions/setup-dotnet@v4
@@ -134,6 +146,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
       
       - name: 设置 Node.js
         uses: actions/setup-node@v4
@@ -195,9 +209,15 @@ jobs:
     needs: [build-backend, build-frontend]
     runs-on: ubuntu-latest
     
+    # 为此任务添加明确的权限
+    permissions:
+      contents: write
+    
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
       
       - name: 下载所有构建产物
         uses: actions/download-artifact@v4
@@ -210,6 +230,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
+            # 从标签名称中提取版本号
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
       
@@ -271,6 +292,8 @@ jobs:
           body_path: release_notes.md
           draft: false
           prerelease: false
+          # 如果手动触发时必须提前创建标签
+          target_commitish: ${{ github.event.inputs.ref || github.sha }}
           files: |
             artifacts/backend-windows/koala-wiki-backend-windows.zip
             artifacts/backend-linux/koala-wiki-backend-linux.tar.gz
