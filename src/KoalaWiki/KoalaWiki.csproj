@@ -82,7 +82,7 @@
       <None Update="plugins\CodeAnalysis\FunctionPrompt\skprompt.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Prompts\Warehouse\RepositoryClassification.md">
+      <None Update="Prompts\Warehouse\*.md">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
