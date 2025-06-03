@@ -25,8 +25,6 @@
       
   koalawiki-web:
     image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/koala-wiki-web
-    ports:
-      - 8080:3000
     environment:
       - NEXT_PUBLIC_API_URL=http://koalawiki:8080 # 用于提供给server的地址
     build:
@@ -42,3 +40,4 @@
     depends_on:
       - koalawiki
       - koalawiki-web
+ 
