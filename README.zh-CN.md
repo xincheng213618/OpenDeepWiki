@@ -104,6 +104,7 @@ services:
       - MAX_FILE_LIMIT=100 # 上传文件的最大限制，单位MB
       - DEEP_RESEARCH_MODEL= # 深度研究模型，为空使用CHAT_MODEL
       - ENABLE_INCREMENTAL_UPDATE=true # 是否启用增量更新
+      - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析？这可能会对代码的质量产生影响。
 
 ```
 
@@ -127,6 +128,7 @@ services:
       - MAX_FILE_LIMIT=100 # 上传文件的最大限制，单位MB
       - DEEP_RESEARCH_MODEL= # 深度研究模型，为空使用CHAT_MODEL
       - ENABLE_INCREMENTAL_UPDATE=true # 是否启用增量更新
+      - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析？这可能会对代码的质量产生影响。
 ```
 
 Anthropic
@@ -149,6 +151,7 @@ services:
       - MAX_FILE_LIMIT=100 # 上传文件的最大限制，单位MB
       - DEEP_RESEARCH_MODEL= # 深度研究模型，为空使用CHAT_MODEL
       - ENABLE_INCREMENTAL_UPDATE=true # 是否启用增量更新
+      - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析？这可能会对代码的质量产生影响。
 ```
 
 
@@ -261,6 +264,7 @@ graph TD
   - MAX_FILE_LIMIT 上传文件的最大限制，单位MB
   - DEEP_RESEARCH_MODEL 深度研究模型，为空使用CHAT_MODEL
   - ENABLE_INCREMENTAL_UPDATE 是否启用增量更新
+  - ENABLE_CODED_DEPENDENCY_ANALYSIS 是否启用代码依赖分析？这可能会对代码的质量产生影响。
 
 ### 针对不同架构的构建
 Makefile提供了针对不同CPU架构构建的命令：

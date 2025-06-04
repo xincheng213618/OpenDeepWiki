@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using CodeDependencyAnalyzer;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Configuration;

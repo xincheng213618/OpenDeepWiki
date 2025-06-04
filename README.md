@@ -99,6 +99,7 @@ services:
       - MAX_FILE_LIMIT=100 # The maximum limit for uploading files, in MB
       - DEEP_RESEARCH_MODEL= # Conduct in-depth research on the model and use CHAT_MODEL for the empty
       - ENABLE_INCREMENTAL_UPDATE=true # Whether to enable incremental updates 
+      - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis,This might have an impact on the quality of the code.
 ```
 
 AzureOpenAI:
@@ -121,6 +122,7 @@ services:
       - MAX_FILE_LIMIT=100 # The maximum limit for uploading files, in MB
       - DEEP_RESEARCH_MODEL= # Conduct in-depth research on the model and use CHAT_MODEL for the empty
       - ENABLE_INCREMENTAL_UPDATE=true # Whether to enable incremental updates
+      - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis,This might have an impact on the quality of the code.
 ```
 
 Anthropic:
@@ -143,6 +145,7 @@ services:
       - MAX_FILE_LIMIT=100 # The maximum limit for uploading files, in MB
       - DEEP_RESEARCH_MODEL= # Conduct in-depth research on the model and use CHAT_MODEL for the empty
       - ENABLE_INCREMENTAL_UPDATE=true # Whether to enable incremental updates
+      - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis,This might have an impact on the quality of the code.
 ```
 
 > 💡 **How to get an API Key:**
@@ -255,6 +258,7 @@ graph TD
   - MAX_FILE_LIMIT The maximum limit for uploading files, in MB
   - DEEP_RESEARCH_MODEL Conduct in-depth research on the model and use CHAT_MODEL for the empty
   - ENABLE_INCREMENTAL_UPDATE Whether to enable incremental updates
+  - ENABLE_CODED_DEPENDENCY_ANALYSIS Whether to enable code dependency analysis,This might have an impact on the quality of the code.
 
 ### Build for Different Architectures
 The Makefile provides commands to build for different CPU architectures:

@@ -1,5 +1,4 @@
-﻿using CodeDependencyAnalyzer;
-using KoalaWiki.Core.DataAccess;
+﻿using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Entities;
 using KoalaWiki.KoalaWarehouse;
 using KoalaWiki.Options;

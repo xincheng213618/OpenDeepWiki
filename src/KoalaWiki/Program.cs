@@ -7,9 +7,6 @@ Log.Logger = new LoggerConfiguration()
 
 #region Options
 
-builder.Configuration.GetSection(DocumentOptions.Name)
-    .Get<DocumentOptions>();
-
 // 初始化JWT配置
 var jwtOptions = JwtOptions.InitConfig(builder.Configuration);
 builder.Services.AddSingleton(jwtOptions);
@@ -17,6 +14,8 @@ builder.Services.AddSingleton(jwtOptions);
 OpenAIOptions.InitConfig(builder.Configuration);
 
 GithubOptions.InitConfig(builder.Configuration);
+
+DocumentOptions.InitConfig(builder.Configuration);
 
 #endregion
 
