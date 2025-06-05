@@ -14,8 +14,17 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
         Log.Logger.Information("HTTP {Method} {Uri}", request.Method, request.RequestUri);
 
         var json = JsonConvert.DeserializeObject<dynamic>(await request.Content.ReadAsStringAsync());
+
+        var model = $"{json.model}";
+
+        // GPT o系列不能传递温度,并且使用max_completion_tokens
+        if (model.StartsWith("o"))
+        {
+            json.temperature = null;
+        }
+
         // 增加max_token，从max_completion_tokens读取
-        if (json != null && json.max_completion_tokens != null)
+        if (json != null && json.max_completion_tokens != null && model.StartsWith("o") == false)
         {
             var maxToken = json.max_completion_tokens;
             if (maxToken != null)
@@ -23,9 +32,6 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
                 json.max_tokens = maxToken;
                 json.max_completion_tokens = null;
             }
-
-
-            var model = $"{json.model}";
 
             if (model.StartsWith("qwen3", StringComparison.CurrentCultureIgnoreCase))
             {
@@ -39,9 +45,6 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
         }
         else
         {
-            var model = $"{json.model}";
-
-
             if (model.StartsWith("qwen3", StringComparison.CurrentCultureIgnoreCase))
             {
                 // 关闭推理模式
@@ -74,7 +77,7 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
             );
             Log.Logger.Information("Request JSON: {RequestJson}",
                 await request.Content?.ReadAsStringAsync(cancellationToken) ?? "");
-            
+
             throw new HttpRequestException(
                 $"Request failed with status code {(int)response.StatusCode}: {errorContent}");
         }
