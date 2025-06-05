@@ -206,6 +206,7 @@ public class DocumentPendingService
                     ["title"] = catalog.Name
                 });
         }
+
         var history = new ChatHistory();
 
         history.AddUserMessage(prompt);
@@ -241,9 +242,15 @@ public class DocumentPendingService
             sr.Append(extractedContent);
         }
 
+        var content = sr.ToString().Trim();
+        
+        // 删除所有的所有的<think></think>
+        var thinkRegex = new Regex(@"<think>(.*?)</think>", RegexOptions.Singleline);
+        content = thinkRegex.Replace(content, string.Empty);
+
         var fileItem = new DocumentFileItem()
         {
-            Content = sr.ToString(),
+            Content = content,
             DocumentCatalogId = catalog.Id,
             Description = string.Empty,
             Extra = new Dictionary<string, string>(),
