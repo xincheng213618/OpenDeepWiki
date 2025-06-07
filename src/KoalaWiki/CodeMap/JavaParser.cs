@@ -25,7 +25,7 @@ public class JavaParser : ILanguageParser
         var functions = new List<Function>();
             
         // 匹配方法定义
-        var methodRegex = new Regex(@"(?:public|private|protected|static|\s) +(?:[a-zA-Z0-9_\.<>\[\]]+) +([a-zA-Z0-9_]+) *\([^)]*\) *(?:throws [^{]*)?\{([^{}]*(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}[^{}]*)*)\}", RegexOptions.Compiled);
+        var methodRegex = new Regex(@"(?:public|private|protected|static|\s) +(?:[a-zA-Z0-9_\.<>\[\]]+) +([a-zA-Z0-9_]+) *\([@a-zA-Z0-9_<>\[\]\(\)\""=,\s.]*\) *(?:throws [^{]*)?\{([^{}]*(?:\{[^{}]*(?:\{[^{}]*(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}[^{}]*)*\}[^{}]*)*\}[^{}]*)*)\}", RegexOptions.Compiled);
         var matches = methodRegex.Matches(fileContent);
             
         foreach (Match match in matches)
