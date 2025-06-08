@@ -97,7 +97,7 @@ function generateStructuredData(document: DocumentData, owner: string, name: str
 }
 
 // 生成页面元数据
-export async function generateMetadata({ params, searchParams }: DocumentPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: any): Promise<Metadata> {
   const { owner, name, path } = params;
   const { branch } = searchParams;
 
@@ -227,7 +227,7 @@ export async function generateMetadata({ params, searchParams }: DocumentPagePro
   };
 }
 
-export default async function DocumentPage({ params, searchParams }: DocumentPageProps) {
+export default async function DocumentPage({ params, searchParams }: any) {
   const { owner, name, path } = params;
   const { branch } = searchParams;
 
