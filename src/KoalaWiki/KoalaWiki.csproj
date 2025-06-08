@@ -115,6 +115,7 @@
 
     <ItemGroup>
       <Folder Include="plugins\CodeAnalysis\GenerateDescription\" />
+      <Folder Include="wwwroot\api\" />
     </ItemGroup>
 
 </Project>

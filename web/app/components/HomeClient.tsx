@@ -20,6 +20,7 @@ import RepositoryForm from './RepositoryForm';
 import RepositoryList from './RepositoryList';
 import LastRepoModal from './LastRepoModal';
 import LanguageSwitcher from './LanguageSwitcher';
+import UserAvatar from './UserAvatar';
 import { Repository, RepositoryFormValues } from '../types';
 import { submitWarehouse } from '../services/warehouseService';
 import { HomeStats } from '../services/statsService';
@@ -568,6 +569,7 @@ export default function HomeClient({ initialRepositories, initialTotal, initialP
                 className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
                 size="large"
               />
+              <UserAvatar />
             </Space>
           </div>
         </Header>

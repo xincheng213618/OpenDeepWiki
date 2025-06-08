@@ -7,6 +7,7 @@ import { getChatShareMessageList } from '../../services/chatShareMessageServce';
 import { API_URL, fetchSSE, getFileContent } from '../../services';
 import { DocumentContent } from '../../components/document';
 import styles from './search.module.css';
+import RenderThinking from '../../components/document/Component';
 
 // 定义消息类型
 interface ChatMessage {
@@ -41,6 +42,8 @@ export default function SearchPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
 
+  const [isInput, setIsInput] = useState(false);
+
   // 初始化页面时，如果有初始消息，自动发送
   useEffect(() => {
     if (chatShareMessageId) {
@@ -58,7 +61,6 @@ export default function SearchPage() {
 
   const loadInitMessage = async () => {
     const { data } = await getChatShareMessageList(chatShareMessageId, 1, 10);
-
     if (data.data.items.length === 0) {
       if (data.data.info && data.data.info.question) {
         messages.push({
@@ -67,6 +69,18 @@ export default function SearchPage() {
         })
         setWarehouseId(data.data.info.warehouseId)
         setMessages([...messages]);
+      }
+
+      if (data.data.info.userId) {
+        const userInfo = localStorage.getItem('userInfo');
+        if (userInfo) {
+          const userInfoObj = JSON.parse(userInfo);
+          if (userInfoObj.id === data.data.info.userId) {
+            setIsInput(true);
+          }
+        }
+      } else {
+        setIsInput(false);
       }
       handleSendMessage('', true);
     } else {
@@ -107,6 +121,17 @@ export default function SearchPage() {
         setWarehouseId(data.data.info.warehouseId);
       }
 
+      if (data.data.info.userId) {
+        const userInfo = localStorage.getItem('userInfo');
+        if (userInfo) {
+          const userInfoObj = JSON.parse(userInfo);
+          if (userInfoObj.id === data.data.info.userId) {
+            setIsInput(true);
+          }
+        }
+      } else {
+        setIsInput(false);
+      }
       setMessages(newMessages);
     }
   }
@@ -117,16 +142,14 @@ export default function SearchPage() {
 
     // 添加打字动画效果
     if (!init) {
+      messages.push({
+        content,
+        sender: 'user'
+      });
       setIsTyping(true);
       setTimeout(() => setIsTyping(false), 300);
 
-      setMessages(prevMessages => [
-        ...prevMessages,
-        {
-          content,
-          sender: 'user'
-        }
-      ]);
+      setMessages([...messages]);
       setMessage('');
     }
 
@@ -134,13 +157,15 @@ export default function SearchPage() {
       return;
     }
 
-    const aiMessage = {
+    const aiMessage: ChatMessage = {
       content: '',
       sender: 'ai' as const,
       loading: true
     };
 
-    setMessages(prevMessages => [...prevMessages, aiMessage]);
+    messages.push(aiMessage);
+
+    setMessages([...messages]);
     setLoading(true);
     setFileListLoading(true);
 
@@ -155,33 +180,15 @@ export default function SearchPage() {
       for await (const chunk of stream) {
         if (chunk.type === 'message') {
           aiResponseContent += chunk?.content ?? '';
-          setMessages(prevMessages => {
-            const newMessages = [...prevMessages];
-            const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage && lastMessage.sender === 'ai') {
-              newMessages[newMessages.length - 1] = {
-                ...lastMessage,
-                content: aiResponseContent,
-                loading: false
-              };
-            }
-            return newMessages;
-          });
+          aiMessage.content = aiResponseContent;
+          aiMessage.loading = false;
+          setMessages([...messages]);
         }
         else if (chunk.type === 'reasoning') {
-          console.log(chunk.content);
           aiResponseThink += chunk.content;
-          setMessages(prevMessages => {
-            const newMessages = [...prevMessages];
-            const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage && lastMessage.sender === 'ai') {
-              newMessages[newMessages.length - 1] = {
-                ...lastMessage,
-                think: aiResponseThink,
-              };
-            }
-            return newMessages;
-          });
+          aiMessage.loading = false;
+          aiMessage.think = aiResponseThink;
+          setMessages([...messages]);
         } else if (chunk.type === 'tool') {
           const files = chunk.content.map((x: string) => {
             const value = x.split('/');
@@ -191,11 +198,11 @@ export default function SearchPage() {
               title,
             }
           });
-          setReferenceFiles([...files]);
+          referenceFiles.push(...files);
+          setReferenceFiles([...referenceFiles]);
         }
       }
     } catch (error) {
-      console.error('流式响应出错:', error);
       messageApi.error('获取回复时发生错误');
     } finally {
       setLoading(false);
@@ -311,9 +318,13 @@ export default function SearchPage() {
                     </div>
                   ) : (
                     <div className={styles.aiText}>
+                      {msg.think && (
+                        <RenderThinking think={msg.think}>
+                          {msg.think}
+                        </RenderThinking>
+                      )}
                       <DocumentContent
                         document={{ content: msg.content }}
-                        think={msg.think}
                         owner=''
                         name=''
                         token={{
@@ -336,7 +347,7 @@ export default function SearchPage() {
           )}
         </div>
 
-        {/* 输入区域 */}
+        {isInput && 
         <div className={styles.inputSection}>
           <div className={styles.inputContainer}>
             <textarea
@@ -361,7 +372,7 @@ export default function SearchPage() {
               {loading ? '⏳' : '➤'}
             </button>
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* 文件侧边栏 */}

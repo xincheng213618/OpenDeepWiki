@@ -329,5 +329,19 @@
       "changelog": "更新日志"
     },
     "update_tooltip": "最近更新: {{time}}"
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出登录",
+    "logout_success": "退出登录成功",
+    "user": "用户",
+    "settings": "设置",
+    "admin_panel": "管理面板",
+    "joined": "加入于",
+    "role": {
+      "admin": "管理员",
+      "editor": "编辑者",
+      "user": "用户"
+    }
   }
 } 

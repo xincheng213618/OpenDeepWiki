@@ -1,5 +1,4 @@
-import { Metadata, ResolvingMetadata } from 'next';
-import { notFound } from 'next/navigation';
+import { Metadata,  } from 'next';
 import { documentById } from '../../../services/warehouseService';
 import Script from 'next/script';
 

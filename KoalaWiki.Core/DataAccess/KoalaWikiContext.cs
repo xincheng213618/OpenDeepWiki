@@ -42,6 +42,8 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
 
     public DbSet<MCPHistory> MCPHistories { get; set; }
 
+    public DbSet<UserInAuth> UserInAuths { get; set; }
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
     {
         BeforeSaveChanges();
@@ -298,6 +300,22 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             options.HasIndex(x => x.WarehouseId);
 
             options.HasIndex(x => x.UserId);
+        });
+
+        modelBuilder.Entity<UserInAuth>(options =>
+        {
+            options.HasKey(x => x.Id);
+
+            options.Property(x => x.UserId).IsRequired();
+
+            options.Property(x => x.Provider).IsRequired();
+
+            options.Property(x => x.AuthId).IsRequired();
+
+            options.HasIndex(x => x.UserId);
+
+            options.HasIndex(x => x.Provider);
+            options.HasIndex(x => x.AuthId);
         });
     }
 }

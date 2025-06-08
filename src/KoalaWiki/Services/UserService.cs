@@ -6,6 +6,9 @@ using KoalaWiki.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
 namespace KoalaWiki.Services;
 
@@ -14,8 +17,10 @@ namespace KoalaWiki.Services;
 /// </summary>
 [Tags("User")]
 [Filter(typeof(ResultFilter))]
-[Authorize(Roles = "admin")]
-public class UserService(IKoalaWikiContext dbContext, ILogger<UserService> logger) : FastApi
+public class UserService(
+    IKoalaWikiContext dbContext,
+    ILogger<UserService> logger,
+    IUserContext userContext) : FastApi
 {
     /// <summary>
     /// 获取用户列表
@@ -24,6 +29,7 @@ public class UserService(IKoalaWikiContext dbContext, ILogger<UserService> logge
     /// <param name="pageSize">每页数量</param>
     /// <param name="keyword">搜索关键词</param>
     /// <returns>用户列表</returns>
+    [Authorize(Roles = "admin")]
     public async Task<PageDto<UserInfoDto>> GetUserListAsync(int page, int pageSize, string? keyword)
     {
         var query = dbContext.Users.AsNoTracking();
@@ -57,6 +63,7 @@ public class UserService(IKoalaWikiContext dbContext, ILogger<UserService> logge
     /// </summary>
     /// <param name="id">用户ID</param>
     /// <returns>用户详情</returns>
+    [Authorize(Roles = "admin")]
     public async Task<ResultDto<UserInfoDto>> GetUserAsync(string id)
     {
         var user = await dbContext.Users
@@ -75,10 +82,273 @@ public class UserService(IKoalaWikiContext dbContext, ILogger<UserService> logge
     }
 
     /// <summary>
+    /// 获取当前用户信息
+    /// </summary>
+    /// <returns>当前用户信息</returns>
+    [Authorize]
+    public async Task<ResultDto<UserInfoDto>> GetCurrentUserAsync()
+    {
+        var userId = userContext.CurrentUserId;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return ResultDto<UserInfoDto>.Fail("用户未登录");
+        }
+
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return ResultDto<UserInfoDto>.Fail("用户不存在");
+        }
+
+        // 将实体映射为DTO
+        var userDto = user.Adapt<UserInfoDto>();
+
+        return ResultDto<UserInfoDto>.Success(userDto);
+    }
+
+    /// <summary>
+    /// 更新当前用户资料
+    /// </summary>
+    /// <param name="updateProfileDto">用户资料信息</param>
+    /// <returns>更新结果</returns>
+    [Authorize]
+    public async Task<ResultDto<UserInfoDto>> UpdateProfileAsync(UpdateProfileDto updateProfileDto)
+    {
+        try
+        {
+            var userId = userContext.CurrentUserId;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return ResultDto<UserInfoDto>.Fail("用户未登录");
+            }
+
+            var existingUser = await dbContext.Users.FindAsync(userId);
+            if (existingUser == null)
+            {
+                return ResultDto<UserInfoDto>.Fail("用户不存在");
+            }
+
+            // 如果修改了用户名，检查是否已存在
+            if (existingUser.Name != updateProfileDto.Name)
+            {
+                var existingUsername =
+                    await dbContext.Users.AnyAsync(u => u.Name == updateProfileDto.Name && u.Id != userId);
+                if (existingUsername)
+                {
+                    return ResultDto<UserInfoDto>.Fail("用户名已存在");
+                }
+            }
+
+            // 如果修改了邮箱，检查是否已存在
+            if (existingUser.Email != updateProfileDto.Email)
+            {
+                var existingEmail =
+                    await dbContext.Users.AnyAsync(u => u.Email == updateProfileDto.Email && u.Id != userId);
+                if (existingEmail)
+                {
+                    return ResultDto<UserInfoDto>.Fail("邮箱已被注册");
+                }
+            }
+
+            // 更新用户信息
+            existingUser.Name = updateProfileDto.Name;
+            existingUser.Email = updateProfileDto.Email;
+            existingUser.UpdatedAt = DateTime.UtcNow;
+            existingUser.Avatar = updateProfileDto.Avatar;
+
+            // 保存更改
+            dbContext.Users.Update(existingUser);
+            await dbContext.SaveChangesAsync();
+
+            // 将实体映射为DTO
+            var userDto = existingUser.Adapt<UserInfoDto>();
+
+            return ResultDto<UserInfoDto>.Success(userDto);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "更新用户资料失败");
+            return ResultDto<UserInfoDto>.Fail("更新用户资料失败，请稍后再试");
+        }
+    }
+
+    /// <summary>
+    /// 验证当前密码
+    /// </summary>
+    /// <param name="verifyPasswordDto">密码验证信息</param>
+    /// <returns>验证结果</returns>
+    [Authorize]
+    public async Task<ResultDto<bool>> VerifyPasswordAsync(VerifyPasswordDto verifyPasswordDto)
+    {
+        try
+        {
+            var userId = userContext.CurrentUserId;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return ResultDto<bool>.Fail("用户未登录");
+            }
+
+            var user = await dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return ResultDto<bool>.Fail("用户不存在");
+            }
+
+            // 这里应该使用密码哈希验证，暂时使用简单比较
+            // 在实际项目中，应该使用 BCrypt 或其他安全的密码哈希算法
+            var isValid = user.Password == verifyPasswordDto.Password;
+
+            return ResultDto<bool>.Success(isValid);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "验证密码失败");
+            return ResultDto<bool>.Fail("验证密码失败，请稍后再试");
+        }
+    }
+
+    /// <summary>
+    /// 修改密码
+    /// </summary>
+    /// <param name="changePasswordDto">修改密码信息</param>
+    /// <returns>修改结果</returns>
+    [Authorize]
+    public async Task<ResultDto<bool>> ChangePasswordAsync(ChangePasswordDto changePasswordDto)
+    {
+        try
+        {
+            var userId = userContext.CurrentUserId;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return ResultDto<bool>.Fail("用户未登录");
+            }
+
+            var existingUser = await dbContext.Users.FindAsync(userId);
+            if (existingUser == null)
+            {
+                return ResultDto<bool>.Fail("用户不存在");
+            }
+
+            // 验证当前密码
+            // 这里应该使用密码哈希验证，暂时使用简单比较
+            // 在实际项目中，应该使用 BCrypt 或其他安全的密码哈希算法
+            if (existingUser.Password != changePasswordDto.CurrentPassword)
+            {
+                return ResultDto<bool>.Fail("当前密码不正确");
+            }
+
+            // 更新密码
+            existingUser.Password = changePasswordDto.NewPassword;
+            existingUser.UpdatedAt = DateTime.UtcNow;
+
+            // 保存更改
+            dbContext.Users.Update(existingUser);
+            await dbContext.SaveChangesAsync();
+
+            return ResultDto<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "修改密码失败");
+            return ResultDto<bool>.Fail("修改密码失败，请稍后再试");
+        }
+    }
+
+    /// <summary>
+    /// 上传头像
+    /// </summary>
+    /// <param name="file">头像文件</param>
+    /// <returns>头像URL</returns>
+    [Authorize]
+    public async Task<ResultDto<string>> UploadAvatarAsync(HttpContext context)
+    {
+        try
+        {
+            var userId = userContext.CurrentUserId;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return ResultDto<string>.Fail("用户未登录");
+            }
+
+            var file = context.Request.Form.Files.FirstOrDefault();
+
+            // 验证文件
+            if (file == null || file.Length == 0)
+            {
+                return ResultDto<string>.Fail("请选择要上传的文件");
+            }
+
+            // 验证文件类型
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return ResultDto<string>.Fail("只支持 JPG、PNG、GIF 格式的图片");
+            }
+
+            // 验证文件大小（限制为2MB）
+            if (file.Length > 2 * 1024 * 1024)
+            {
+                return ResultDto<string>.Fail("文件大小不能超过 2MB");
+            }
+
+            // 创建头像目录
+            var avatarsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot","api", "avatars");
+            if (!Directory.Exists(avatarsPath))
+            {
+                Directory.CreateDirectory(avatarsPath);
+            }
+
+            // 生成唯一文件名
+            var fileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
+            var filePath = Path.Combine(avatarsPath, fileName);
+
+            // 如果用户已有头像，删除旧文件
+            var existingUser = await dbContext.Users.FindAsync(userId);
+            if (existingUser != null && !string.IsNullOrEmpty(existingUser.Avatar))
+            {
+                var oldAvatarPath = existingUser.Avatar;
+                if (oldAvatarPath.StartsWith("/api/avatars/"))
+                {
+                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot","api",
+                        oldAvatarPath.TrimStart('/'));
+                    if (File.Exists(oldFilePath))
+                    {
+                        File.Delete(oldFilePath);
+                    }
+                }
+            }
+
+            // 保存文件
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // 返回相对URL路径
+            var avatarUrl = $"/api/avatars/{fileName}";
+
+            return ResultDto<string>.Success(avatarUrl);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "上传头像失败");
+            return ResultDto<string>.Fail("上传头像失败，请稍后再试");
+        }
+    }
+
+    /// <summary>
     /// 创建用户
     /// </summary>
     /// <param name="createUserDto">用户信息</param>
     /// <returns>创建结果</returns>
+    [Authorize(Roles = "admin")]
     public async Task<ResultDto<UserInfoDto>> CreateUserAsync(CreateUserDto createUserDto)
     {
         try
@@ -131,6 +401,7 @@ public class UserService(IKoalaWikiContext dbContext, ILogger<UserService> logge
     /// <param name="id">用户ID</param>
     /// <param name="updateUserDto">用户信息</param>
     /// <returns>更新结果</returns>
+    [Authorize(Roles = "admin")]
     public async Task<ResultDto<UserInfoDto>> UpdateUserAsync(string id, UpdateUserDto updateUserDto)
     {
         try
@@ -195,6 +466,7 @@ public class UserService(IKoalaWikiContext dbContext, ILogger<UserService> logge
     /// </summary>
     /// <param name="id">用户ID</param>
     /// <returns>删除结果</returns>
+    [Authorize(Roles = "admin")]
     public async Task<ResultDto<bool>> DeleteUserAsync(string id)
     {
         try

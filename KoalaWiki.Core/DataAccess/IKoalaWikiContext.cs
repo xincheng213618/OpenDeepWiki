@@ -40,6 +40,8 @@ public interface IKoalaWikiContext
     public DbSet<User> Users { get; set; }
     
     public DbSet<MCPHistory> MCPHistories { get; set; }
+    
+    public DbSet<UserInAuth> UserInAuths { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken());
 

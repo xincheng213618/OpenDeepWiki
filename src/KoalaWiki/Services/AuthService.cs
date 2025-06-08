@@ -150,7 +150,7 @@ public class AuthService(
     /// </summary>
     /// <param name="code">授权码</param>
     /// <returns>登录结果</returns>
-    public async Task<(bool Success, string Token, string? RefreshToken, User? User, string? ErrorMessage)>
+    public async Task<LoginDto>
         GitHubLoginAsync(string code)
     {
         try
@@ -160,7 +160,7 @@ public class AuthService(
 
             if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
             {
-                return (false, string.Empty, null, null, "GitHub配置错误");
+                return new LoginDto(false, string.Empty, null, null, "GitHub配置错误");
             }
 
             // 获取访问令牌
@@ -170,7 +170,7 @@ public class AuthService(
 
             if (string.IsNullOrEmpty(token.AccessToken))
             {
-                return (false, string.Empty, null, null, "GitHub授权失败");
+                return new LoginDto(false, string.Empty, null, null, "GitHub授权失败");
             }
 
             // 设置访问令牌
@@ -180,120 +180,148 @@ public class AuthService(
             var githubUser = await client.User.Current();
 
             // 查询用户是否存在
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == githubUser.Email);
+            var userInAuth = await dbContext.UserInAuths.FirstOrDefaultAsync(u =>
+                u.Id == githubUser.Id.ToString() && u.Provider == "GitHub");
+
+            User user = null;
+            if (userInAuth != null)
+            {
+                user = await dbContext.Users
+                    .FirstOrDefaultAsync(u => u.Id == userInAuth.UserId);
+            }
 
             // 用户不存在，自动注册
-            if (user == null && !string.IsNullOrEmpty(githubUser.Email))
+            if (user == null)
             {
                 user = new User
                 {
                     Id = Guid.NewGuid().ToString("N"),
                     Name = githubUser.Login,
-                    Email = githubUser.Email,
+                    Email = githubUser.Email ?? string.Empty,
                     Password = Guid.NewGuid().ToString(), // 随机密码
                     Avatar = githubUser.AvatarUrl,
                     CreatedAt = DateTime.UtcNow,
                     Role = "user" // 默认角色
                 };
 
+                // 绑定GitHub账号
+                userInAuth = new UserInAuth
+                {
+                    Id = githubUser.Id.ToString(),
+                    UserId = user.Id,
+                    Provider = "GitHub",
+                    CreatedAt = DateTime.UtcNow
+                };
+
                 // 保存用户
                 await dbContext.Users.AddAsync(user);
+                await dbContext.UserInAuths.AddAsync(userInAuth);
                 await dbContext.SaveChangesAsync();
             }
             else if (user == null)
             {
-                return (false, string.Empty, null, null, "GitHub账号未绑定邮箱，无法登录");
+                return new LoginDto(false, string.Empty, null, null, "GitHub账号未绑定邮箱，无法登录");
             }
 
             // 更新登录信息
             user.LastLoginAt = DateTime.UtcNow;
             user.LastLoginIp = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+            if (httpContextAccessor.HttpContext?.Request.Headers["x-forwarded-for"].Count > 0)
+            {
+                user.LastLoginIp = httpContextAccessor.HttpContext.Request.Headers["x-forwarded-for"];
+            }
+            else if (httpContextAccessor.HttpContext?.Request.Headers["x-real-ip"].Count > 0)
+            {
+                user.LastLoginIp = httpContextAccessor.HttpContext.Request.Headers["x-real-ip"];
+            }
+
             await dbContext.SaveChangesAsync();
 
             // 生成JWT令牌
             var jwtToken = GenerateJwtToken(user);
             var refreshToken = GenerateRefreshToken(user);
 
-            return (true, jwtToken, refreshToken, user, null);
+            return new LoginDto(true, jwtToken, refreshToken, user, null);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "GitHub登录失败");
-            return (false, string.Empty, null, null, "GitHub登录失败，请稍后再试");
+            return new LoginDto(false, string.Empty, null, null, "GitHub登录失败，请稍后再试");
         }
     }
 
-    /// <summary>
-    /// 谷歌邮箱登录
-    /// </summary>
-    /// <param name="idToken">ID令牌</param>
-    /// <returns>登录结果</returns>
-    public async Task<(bool Success, string Token, string? RefreshToken, User? User, string? ErrorMessage)>
-        GoogleLoginAsync(string idToken)
-    {
-        try
-        {
-            // 验证Google ID令牌
-            var payload = await ValidateGoogleIdToken(idToken);
-            if (payload == null)
-            {
-                return (false, string.Empty, null, null, "Google认证失败");
-            }
-
-            // 获取邮箱
-            var email = payload.Email;
-            if (string.IsNullOrEmpty(email))
-            {
-                return (false, string.Empty, null, null, "无法获取Google邮箱");
-            }
-
-            // 查询用户是否存在
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
-
-            // 用户不存在，自动注册
-            if (user == null)
-            {
-                // 生成用户名
-                var username = email.Split('@')[0];
-                var existingUsername = await dbContext.Users.AnyAsync(u => u.Name == username);
-                if (existingUsername)
-                {
-                    username = $"{username}{Guid.NewGuid().ToString("N").Substring(0, 6)}";
-                }
-
-                user = new User
-                {
-                    Id = Guid.NewGuid().ToString("N"),
-                    Name = username,
-                    Email = email,
-                    Password = Guid.NewGuid().ToString(), // 随机密码
-                    Avatar = payload.Picture,
-                    CreatedAt = DateTime.UtcNow,
-                    Role = "user" // 默认角色
-                };
-
-                // 保存用户
-                await dbContext.Users.AddAsync(user);
-                await dbContext.SaveChangesAsync();
-            }
-
-            // 更新登录信息
-            user.LastLoginAt = DateTime.UtcNow;
-            user.LastLoginIp = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
-            await dbContext.SaveChangesAsync();
-
-            // 生成JWT令牌
-            var token = GenerateJwtToken(user);
-            var refreshToken = GenerateRefreshToken(user);
-
-            return (true, token, refreshToken, user, null);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Google登录失败");
-            return (false, string.Empty, null, null, "Google登录失败，请稍后再试");
-        }
-    }
+    // /// <summary>
+    // /// 谷歌邮箱登录
+    // /// </summary>
+    // /// <param name="idToken">ID令牌</param>
+    // /// <returns>登录结果</returns>
+    // public async Task<(bool Success, string Token, string? RefreshToken, User? User, string? ErrorMessage)>
+    //     GoogleLoginAsync(string idToken)
+    // {
+    //     try
+    //     {
+    //         // 验证Google ID令牌
+    //         var payload = await ValidateGoogleIdToken(idToken);
+    //         if (payload == null)
+    //         {
+    //             return (false, string.Empty, null, null, "Google认证失败");
+    //         }
+    //
+    //         // 获取邮箱
+    //         var email = payload.Email;
+    //         if (string.IsNullOrEmpty(email))
+    //         {
+    //             return (false, string.Empty, null, null, "无法获取Google邮箱");
+    //         }
+    //
+    //         // 查询用户是否存在
+    //         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+    //
+    //         // 用户不存在，自动注册
+    //         if (user == null)
+    //         {
+    //             // 生成用户名
+    //             var username = email.Split('@')[0];
+    //             var existingUsername = await dbContext.Users.AnyAsync(u => u.Name == username);
+    //             if (existingUsername)
+    //             {
+    //                 username = $"{username}{Guid.NewGuid().ToString("N").Substring(0, 6)}";
+    //             }
+    //
+    //             user = new User
+    //             {
+    //                 Id = Guid.NewGuid().ToString("N"),
+    //                 Name = username,
+    //                 Email = email,
+    //                 Password = Guid.NewGuid().ToString(), // 随机密码
+    //                 Avatar = payload.Picture,
+    //                 CreatedAt = DateTime.UtcNow,
+    //                 Role = "user" // 默认角色
+    //             };
+    //
+    //             // 保存用户
+    //             await dbContext.Users.AddAsync(user);
+    //             await dbContext.SaveChangesAsync();
+    //         }
+    //
+    //         // 更新登录信息
+    //         user.LastLoginAt = DateTime.UtcNow;
+    //         user.LastLoginIp = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+    //         await dbContext.SaveChangesAsync();
+    //
+    //         // 生成JWT令牌
+    //         var token = GenerateJwtToken(user);
+    //         var refreshToken = GenerateRefreshToken(user);
+    //
+    //         return (true, token, refreshToken, user, null);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         logger.LogError(ex, "Google登录失败");
+    //         return (false, string.Empty, null, null, "Google登录失败，请稍后再试");
+    //     }
+    // }
 
     /// <summary>
     /// 刷新令牌
@@ -447,6 +475,53 @@ public class AuthService(
             return null;
         }
     }
+
+    /// <summary>
+    /// 获取支持的第三方登录方式
+    /// </summary>
+    public async Task<List<SupportedThirdPartyLoginsDto>> GetSupportedThirdPartyLoginsAsync()
+    {
+        var supportedLogins = new List<SupportedThirdPartyLoginsDto>();
+
+        // 检查GitHub配置
+        if (!string.IsNullOrEmpty(configuration["GitHub:ClientId"]) &&
+            !string.IsNullOrEmpty(configuration["GitHub:ClientSecret"]))
+        {
+            supportedLogins.Add(new SupportedThirdPartyLoginsDto
+            {
+                Name = "GitHub",
+                Icon = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                ClientId = configuration["GitHub:ClientId"] ?? string.Empty,
+                RedirectUri = configuration["GitHub:RedirectUri"] ?? string.Empty
+            });
+        }
+
+        // 检查Google配置
+        if (!string.IsNullOrEmpty(configuration["Google:ClientId"]) &&
+            !string.IsNullOrEmpty(configuration["Google:ClientSecret"]))
+        {
+            supportedLogins.Add(new SupportedThirdPartyLoginsDto
+            {
+                Name = "Google",
+                Icon = "https://www.google.com/favicon.ico",
+                ClientId = configuration["Google:ClientId"] ?? string.Empty,
+                RedirectUri = configuration["Google:RedirectUri"] ?? string.Empty
+            });
+        }
+
+        return await Task.FromResult(supportedLogins);
+    }
+}
+
+public class SupportedThirdPartyLoginsDto
+{
+    public string Name { get; set; } = string.Empty;
+
+    public string Icon { get; set; } = string.Empty;
+
+    public string ClientId { get; set; } = string.Empty;
+
+    public string RedirectUri { get; set; } = string.Empty;
 }
 
 /// <summary>

@@ -329,5 +329,19 @@
       "changelog": "Changelog"
     },
     "update_tooltip": "Last Updated: {{time}}"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "logout_success": "Logout successful",
+    "user": "User",
+    "settings": "Settings",
+    "admin_panel": "Admin Panel",
+    "joined": "Joined",
+    "role": {
+      "admin": "Administrator",
+      "editor": "Editor",
+      "user": "User"
+    }
   }
 } 

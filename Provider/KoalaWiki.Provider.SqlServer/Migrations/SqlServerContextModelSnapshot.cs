@@ -481,6 +481,37 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.Users.UserInAuth", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AuthId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthId");
+
+                    b.HasIndex("Provider");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserInAuths");
+                });
+
             modelBuilder.Entity("KoalaWiki.Entities.DocumentFile.DocumentFileItem", b =>
                 {
                     b.Property<string>("Id")

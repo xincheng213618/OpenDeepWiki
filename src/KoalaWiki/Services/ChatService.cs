@@ -84,7 +84,6 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
         {
             await koala.ChatShareMessageItems.AddAsync(items);
 
-            await koala.SaveChangesAsync();
 
             var sw = Stopwatch.StartNew();
 
@@ -115,22 +114,26 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                 {
                     var historyMessage = new StringBuilder();
 
-                    foreach (var item in chatShareMessage.Items)
+                    foreach (var item in (await koala.ChatShareMessageItems
+                                 .Where(x => x.ChatShareMessageId == input.ChatShareMessageId).ToArrayAsync()))
                     {
-                        historyMessage.Append("<user> " + item.Question + "\n");
-                        historyMessage.Append("<assistant> " + item.Answer + "\n");
+                        historyMessage.Append("<user> " + item.Question + "\n</user>\n");
+                        historyMessage.Append("<assistant> " + item.Answer + "\n</assistant>\n");
                     }
-                    
-                    history.AddUserMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.FirstDeepChat),
+
+                    history.AddUserMessage((await PromptContext.Chat(nameof(PromptConstant.Chat.FirstDeepChat),
                         new KernelArguments()
                         {
                             ["catalogue"] = warehouse.OptimizedDirectoryStructure,
                             ["repository_url"] = warehouse.Address,
                             ["question"] = input.Question,
-                            ["history"] = input.Question,
-                        }));
+                            ["history"] = historyMessage.ToString(),
+                        })) );
                 }
 
+        
+                await koala.SaveChangesAsync();
+                
                 var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
                     OpenAIOptions.ChatApiKey, document.GitPath, OpenAIOptions.DeepResearchModel, false);
 
@@ -209,12 +212,17 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                 sw.Stop();
 
                 files = files.Distinct().ToList();
+                
+                var answerContent = answer.ToString();
+                var deepContentString = deepContent.ToString();
+                
                 await koala.ChatShareMessageItems.Where(x => x.Id == items.Id)
-                    .ExecuteUpdateAsync(x => x.SetProperty(a => a.Answer, answer.ToString())
+                    .ExecuteUpdateAsync(x => 
+                        x.SetProperty(a => a.Answer, answerContent)
                         .SetProperty(a => a.PromptToken, requestToken)
                         .SetProperty(a => a.CompletionToken, completionToken)
                         .SetProperty(a => a.Question, input.Question)
-                        .SetProperty(a => a.Think, deepContent.ToString())
+                        .SetProperty(a => a.Think, deepContentString)
                         .SetProperty(a => a.Files, files)
                         .SetProperty(a => a.TotalTime, sw.ElapsedMilliseconds));
             }
@@ -229,8 +237,6 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
         else
         {
             await koala.ChatShareMessageItems.AddAsync(items);
-
-            await koala.SaveChangesAsync();
 
             var sw = Stopwatch.StartNew();
 
@@ -259,22 +265,25 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                 {
                     var historyMessage = new StringBuilder();
 
-                    foreach (var item in chatShareMessage.Items)
+                    foreach (var item in (await koala.ChatShareMessageItems
+                                 .Where(x => x.ChatShareMessageId == input.ChatShareMessageId).ToArrayAsync()))
                     {
-                        historyMessage.Append("<user> " + item.Question + "\n");
-                        historyMessage.Append("<assistant> " + item.Answer + "\n");
+                        historyMessage.Append("<user> " + item.Question + "\n</user>\n");
+                        historyMessage.Append("<assistant> " + item.Answer + "\n</assistant>\n");
                     }
-                    
+
                     history.AddUserMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.FirstChat),
                         new KernelArguments()
                         {
                             ["catalogue"] = warehouse.OptimizedDirectoryStructure,
                             ["repository_url"] = warehouse.Address,
                             ["question"] = input.Question,
-                            ["history"] = input.Question,
+                            ["history"] = historyMessage.ToString(),
                         }));
                 }
 
+        
+                await koala.SaveChangesAsync();
 
                 var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
                     OpenAIOptions.ChatApiKey, document.GitPath, OpenAIOptions.ChatModel, false);
@@ -333,13 +342,17 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                 sw.Stop();
 
                 files = files.Distinct().ToList();
+                
+                var answerContent = answer.ToString();
+                
                 await koala.ChatShareMessageItems.Where(x => x.Id == items.Id)
-                    .ExecuteUpdateAsync(x => x.SetProperty(a => a.Answer, answer.ToString())
-                        .SetProperty(a => a.PromptToken, requestToken)
-                        .SetProperty(a => a.Question, input.Question)
-                        .SetProperty(a => a.CompletionToken, completionToken)
-                        .SetProperty(a => a.Files, files)
-                        .SetProperty(a => a.TotalTime, sw.ElapsedMilliseconds));
+                    .ExecuteUpdateAsync(x => 
+                        x.SetProperty(a => a.Answer, answerContent)
+                            .SetProperty(a => a.PromptToken, requestToken)
+                            .SetProperty(a => a.CompletionToken, completionToken)
+                            .SetProperty(a => a.Question, input.Question)
+                            .SetProperty(a => a.Files, files)
+                            .SetProperty(a => a.TotalTime, sw.ElapsedMilliseconds));
             }
             catch (Exception e)
             {

@@ -112,6 +112,9 @@ app.UseSerilogRequestLogging();
 
 app.UseCors("AllowAll");
 
+// 添加静态文件服务
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

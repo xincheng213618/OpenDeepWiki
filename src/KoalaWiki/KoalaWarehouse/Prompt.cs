@@ -16,7 +16,7 @@ public static class Prompt
         }
     }
 
-    public static string Language => $"\nReply to me in {_language}\n";
+    public static string Language => $"\nPlease communicate with me in {_language}\n";
 
 
     public static string DeepFirstPrompt =>

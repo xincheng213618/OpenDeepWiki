@@ -1,3 +1,5 @@
+'use client'
+
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import remarkToc from 'remark-toc';
@@ -30,9 +32,7 @@ const DocumentContent: React.FC<DocumentContentProps> = ({
   think
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
-  // 添加处理代码块的功能
   useEffect(() => {
-    // 代码块处理
     const codeBlocks = contentRef.current?.querySelectorAll('pre code');
     codeBlocks?.forEach((block) => {
       block.parentElement?.classList.add('code-block-wrapper');
