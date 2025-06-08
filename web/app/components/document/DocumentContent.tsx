@@ -46,8 +46,7 @@ const DocumentContent: React.FC<DocumentContentProps> = ({
       color: token.colorText
     }}>
       {think && (
-        <RenderThinking>
-          {think}
+        <RenderThinking think={think}>
         </RenderThinking>
       )}
       <div className="markdown-content" itemProp="articleBody">
