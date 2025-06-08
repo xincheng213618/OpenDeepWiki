@@ -126,7 +126,7 @@ export default function UsersPage() {
             role: values.role,
           };
 
-          const { data } = await createUser(createData);
+          const { data } = await createUser(createData) as any;
           if (data.code === 200) {
             message.success('用户创建成功');
             setIsModalOpen(false);
