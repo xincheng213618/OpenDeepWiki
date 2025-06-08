@@ -45,6 +45,9 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("WarehouseId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");

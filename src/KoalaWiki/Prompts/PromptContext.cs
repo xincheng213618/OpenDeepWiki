@@ -12,6 +12,27 @@ public class PromptContext
     /// </summary>
     private static string WarehousePrompt => Path.Combine(PromptPath, "Warehouse");
 
+    private static string ChatPrompt => Path.Combine(PromptPath, "Chat");
+
+    public static async Task<string> Chat(
+        string name,
+        KernelArguments args)
+    {
+        var fileName = name + ".md";
+
+        if (!File.Exists(Path.Combine(ChatPrompt, fileName)))
+        {
+            throw new FileNotFoundException($"Chat prompt not found name:{fileName}");
+        }
+
+        var values = await File.ReadAllTextAsync(Path.Combine(ChatPrompt, fileName));
+
+        return args.Aggregate(values,
+            (current, value) =>
+                current.Replace("{{$" + value.Key + "}}", value.Value?.ToString(),
+                    StringComparison.CurrentCultureIgnoreCase)) + Prompt.Language;
+    }
+
     // 创建一个默认的索引
     public static async Task<string> Warehouse(
         string name,

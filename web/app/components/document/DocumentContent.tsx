@@ -12,14 +12,13 @@ import { markdownElements } from './MarkdownElements';
 import { Alert, Typography } from 'antd';
 import RenderThinking from './Component';
 
-import { normalizeThinkTags, remarkCaptureThink } from './thinking/remarkPlugin';
-
-const { Title } = Typography;
+import { normalizeThinkTags,extractThinkContent } from './thinking/remarkPlugin';
 
 interface DocumentContentProps {
   document: any;
   owner: string;
   name: string;
+  think?: string;
   token: any;
 }
 
@@ -27,12 +26,10 @@ const DocumentContent: React.FC<DocumentContentProps> = ({
   document,
   owner,
   name,
-  token
+  token,
+  think
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
-  const [processedContent, setProcessedContent] = useState<string>('');
-  const [thinkingContents, setThinkingContents] = useState<string[]>([]);
-
   // 添加处理代码块的功能
   useEffect(() => {
     // 代码块处理
@@ -41,16 +38,6 @@ const DocumentContent: React.FC<DocumentContentProps> = ({
       block.parentElement?.classList.add('code-block-wrapper');
     });
   }, [document?.content]);
-
-
-  useEffect(() => {
-    if (document?.content) {
-      setProcessedContent(normalizeThinkTags(document.content));
-    }
-  }, [document?.content]);
-
-  const rehypePlugins = markdownElements.map((element) => element.rehypePlugin);
-
   return (
     <div ref={contentRef} style={{
       background: token.colorBgContainer,
@@ -58,33 +45,19 @@ const DocumentContent: React.FC<DocumentContentProps> = ({
       borderRadius: '0px',
       color: token.colorText
     }}>
-      {/* 可见的H1标题用于SEO */}
-      <header>
-        <Title level={1} style={{ marginBottom: '24px', wordBreak: 'break-word' }} itemProp="headline">
-          {document?.title || '文档'}
-        </Title>
-        {document?.updateTime && (
-          <div style={{ marginBottom: '16px', color: token.colorTextSecondary, fontSize: '14px' }}>
-            最后更新时间: <time itemProp="dateModified" dateTime={document?.updateTime}>{document?.updateTime}</time>
-          </div>
-        )}
-      </header>
-
-      {/* 思考内容 */}
-      {thinkingContents.map((content, index) => (
-        <RenderThinking key={`thinking-${index}`}>
-          {content}
+      {think && (
+        <RenderThinking>
+          {think}
         </RenderThinking>
-      ))}
-
-      {/* 文档正文 */}
+      )}
       <div className="markdown-content" itemProp="articleBody">
         <Markdown
           variant='chat'
           enableCustomFootnotes={true}
+          enableMermaid
           fullFeaturedCodeBlock={true}
         >
-          {processedContent}
+          {document?.content}
         </Markdown>
       </div>
 

@@ -45,6 +45,9 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
                     b.Property<string>("WarehouseId")
                         .IsRequired()
                         .HasColumnType("text");
