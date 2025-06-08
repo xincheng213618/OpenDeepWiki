@@ -32,11 +32,11 @@ Feature list:
 - [x] Supports multiple languages (Chinese, English, French, etc.)
 - [x] Supports uploading ZIP files, and uploading local files
 - [x] provides a data fine-tuning platform to generate fine-tuning datasets
-- [ ] Supports directory-level management of repositories, allowing for custom directory generation and dynamic documentation creation
-- [ ] Supports repository directory management, allowing for modification of repository directories
-- [ ] Supports user-level management, providing user management functions for adding, deleting, modifying, and querying users
+- [x] Supports directory-level management of repositories, allowing for custom directory generation and dynamic documentation creation
+- [x] Supports repository directory management, allowing for modification of repository directories
+- [x] Supports user-level management, providing user management functions for adding, deleting, modifying, and querying users
 - [ ] Supports user permission management, providing user permission management functions for adding, deleting, modifying, and querying user permissions
-- [ ] Supports generating different fine-tuning framework datasets at the repository level
+- [x] Supports generating different fine-tuning framework datasets at the repository level
 
 # Project Introduction
 
@@ -283,7 +283,7 @@ make build-frontend-amd
 
 ## WeChat 
 
-![a4efdc9044eeaefddc257ba5624da5e5](https://github.com/user-attachments/assets/b12878b9-8db1-4e3c-8874-1e21885af7ee)
+![b62354e40046f409b88528dd5631ed45](https://github.com/user-attachments/assets/2bb0055f-9e45-4db2-b9c9-f1e251996e01)
 
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

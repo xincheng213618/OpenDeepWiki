@@ -43,11 +43,11 @@ OpenDeepWiki 是参考[DeepWiki](https://deepwiki.com/) 作为灵感，基于 .N
 - [x] 支持多种语言（中文，英文，法文等）
 - [x] 支持上传ZIP文件，支持上传本地文件
 - [x] 提供数据微调平台生成微调数据集
-- [ ] 支持仓库目录级别管理，支持自定义目录动态生成文档
-- [ ] 支持仓库目录管理，支持修改仓库目录
-- [ ] 支持用户级别管理，提供用户管理功能支持增删改查用户
+- [x] 支持仓库目录级别管理，支持自定义目录动态生成文档
+- [x] 支持仓库目录管理，支持修改仓库目录
+- [x] 支持用户级别管理，提供用户管理功能支持增删改查用户
 - [ ] 支持用户权限管理，提供用户权限管理功能支持增删改查用户权限
-- [ ] 支持对仓库级别的生成不同微调框架的微调数据集
+- [x] 支持对仓库级别的生成不同微调框架的微调数据集
 - 
 ## MCP支持
 
@@ -289,7 +289,7 @@ make build-frontend-amd
 
 ## WeChat 
 
-![a4efdc9044eeaefddc257ba5624da5e5](https://github.com/user-attachments/assets/b12878b9-8db1-4e3c-8874-1e21885af7ee)
+![b62354e40046f409b88528dd5631ed45](https://github.com/user-attachments/assets/2bb0055f-9e45-4db2-b9c9-f1e251996e01)
 
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
