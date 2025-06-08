@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, Spin, message, Result, Button } from 'antd';
 import { LoadingOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { githubLogin, googleLogin } from '../../services/authService';
 import styles from '../../login/auth.module.css';
 
-export default function OAuthCallbackPage() {
+function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -29,8 +29,8 @@ export default function OAuthCallbackPage() {
           throw new Error(`OAuth授权失败: ${error}`);
         }
 
-        // 获取之前保存的登录类型
-        const oauthProvider = localStorage.getItem('oauthProvider');
+        // 获取之前保存的登录类型 - 添加客户端检查
+        const oauthProvider = typeof window !== 'undefined' ? localStorage.getItem('oauthProvider') : null;
         
         if (!oauthProvider) {
           throw new Error('未找到OAuth提供商信息，请重新登录');
@@ -51,25 +51,29 @@ export default function OAuthCallbackPage() {
             token,
             user
           } = data;
-          // 登录成功
-          localStorage.setItem('userToken', token);
-          localStorage.setItem('refreshToken', refreshToken);
-          
-          if (user) {
-            localStorage.setItem('userInfo', JSON.stringify(user));
-          }
+          // 登录成功 - 添加客户端检查
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('userToken', token);
+            localStorage.setItem('refreshToken', refreshToken);
+            
+            if (user) {
+              localStorage.setItem('userInfo', JSON.stringify(user));
+            }
 
-          // 清除OAuth提供商信息
-          localStorage.removeItem('oauthProvider');
+            // 清除OAuth提供商信息
+            localStorage.removeItem('oauthProvider');
+          }
 
           setStatus('success');
           message.success('登录成功！');
 
           // 延迟跳转
           setTimeout(() => {
-            const redirectPath = localStorage.getItem('redirectPath') || '/admin';
-            localStorage.removeItem('redirectPath');
-            router.push(redirectPath);
+            if (typeof window !== 'undefined') {
+              const redirectPath = localStorage.getItem('redirectPath') || '/admin';
+              localStorage.removeItem('redirectPath');
+              router.push(redirectPath);
+            }
           }, 1500);
 
         } 
@@ -88,8 +92,10 @@ export default function OAuthCallbackPage() {
   }, [searchParams, router]);
 
   const handleRetry = () => {
-    // 清除OAuth提供商信息并返回登录页
-    localStorage.removeItem('oauthProvider');
+    // 清除OAuth提供商信息并返回登录页 - 添加客户端检查
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('oauthProvider');
+    }
     router.push('/login');
   };
 
@@ -160,4 +166,31 @@ export default function OAuthCallbackPage() {
   }
 
   return null;
+}
+
+// 加载中的回退组件
+function LoadingFallback() {
+  return (
+    <div className={styles.authContainer}>
+      <div className={styles.authWrapper}>
+        <Card className={styles.authCard}>
+          <div className={styles.authHeader}>
+            <Spin 
+              indicator={<LoadingOutlined style={{ fontSize: 48, color: '#1890ff' }} spin />} 
+              size="large" 
+            />
+            <h2 style={{ marginTop: 24, textAlign: 'center' }}>正在加载...</h2>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default function OAuthCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <OAuthCallbackContent />
+    </Suspense>
+  );
 } 
