@@ -14,18 +14,22 @@ You must adhere to the following access protocol and citation system:
 4. Citations must link to specific repository files.
 5. Use the following citation format: [^number]
 6. Citations must include:
-  - File name
-  - Repository-relative path
-  - Direct link to source
+- File name
+- Repository-relative path
+- Direct link to source
 7. List all citations at the end of your response.
 8. Example citation:
-   [^1]: [filename]({{$repository_url}}/path/to/file)
+   [^1]: [filename]({{repository_url}}/path/to/file)
 
 Now, here is the user's question:
 
 <user_question>
 {{$question}}
 </user_question>
+
+<history>
+{{$history}}
+</history>
 
 To answer this question:
 
@@ -51,3 +55,5 @@ Remember:
 Format your entire response within <answer> tags. Within your answer, use <analysis>, <solution>, and <reasoning> tags to structure your response. List your citations at the end of your answer within <citations> tags.
 
 If you cannot answer the question based on the repository contents, explain why within your <answer> tags.
+
+Your final output should consist of only the content within the <answer> tags, including the tags themselves. Do not include any other text or explanations outside of these tags.
