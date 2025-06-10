@@ -47,8 +47,8 @@ public class OverviewService
                 {
                     ["catalogue"] = catalog,
                     ["git_repository"] = gitRepository.Replace(".git", ""),
-                    ["branch"] = readme,
-                    ["readme"] = branch
+                    ["branch"] = branch,
+                    ["readme"] = readme
                 });
         }
 
