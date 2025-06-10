@@ -84,6 +84,31 @@ cd OpenDeepWiki
 
 2. 打开`docker-compose.yml`文件，修改以下环境变量：
 
+Ollama：
+```yaml
+services:
+  koalawiki:
+    environment:
+      - KOALAWIKI_REPOSITORIES=/repositories
+      - TASK_MAX_SIZE_PER_USER=5 # 每个用户AI处理文档生成的最大并行数量
+      - CHAT_MODEL=qwen2.5:32b # 必须要支持function的模型
+      - ANALYSIS_MODEL=qwen2.5:32b # 分析模型，用于生成仓库目录结构
+      - CHAT_API_KEY=sk-xxxx # 您GiteeAI的APIkey
+      - LANGUAGE= # 设置生成语言默认为"中文"
+      - ENDPOINT=https://你的OllamaIP:端口/v1
+      - DB_TYPE=sqlite
+      - MODEL_PROVIDER=OpenAI # 模型提供商，默认为OpenAI 支持AzureOpenAI和Anthropic
+      - DB_CONNECTION_STRING=Data Source=/data/KoalaWiki.db
+      - EnableSmartFilter=true # 是否启用智能过滤，这可能影响AI得到仓库的文件目录
+      - UPDATE_INTERVAL=5 # 仓库增量更新间隔，单位天
+      - MAX_FILE_LIMIT=100 # 上传文件的最大限制，单位MB
+      - DEEP_RESEARCH_MODEL= # 深度研究模型，为空使用CHAT_MODEL
+      - ENABLE_INCREMENTAL_UPDATE=true # 是否启用增量更新
+      - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析？这可能会对代码的质量产生影响。
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=false # 是否启用MCP Prompt生成
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=false # 是否启用仓库Description生成
+```
+
 OpenAI：
 ```yaml
 services:
@@ -105,6 +130,8 @@ services:
       - DEEP_RESEARCH_MODEL= # 深度研究模型，为空使用CHAT_MODEL
       - ENABLE_INCREMENTAL_UPDATE=true # 是否启用增量更新
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析？这可能会对代码的质量产生影响。
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=false # 是否启用MCP Prompt生成
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=false # 是否启用仓库Description生成
 
 ```
 
@@ -129,6 +156,8 @@ services:
       - DEEP_RESEARCH_MODEL= # 深度研究模型，为空使用CHAT_MODEL
       - ENABLE_INCREMENTAL_UPDATE=true # 是否启用增量更新
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析？这可能会对代码的质量产生影响。
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=false # 是否启用MCP Prompt生成
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=false # 是否启用仓库Description生成
 ```
 
 Anthropic
@@ -152,6 +181,8 @@ services:
       - DEEP_RESEARCH_MODEL= # 深度研究模型，为空使用CHAT_MODEL
       - ENABLE_INCREMENTAL_UPDATE=true # 是否启用增量更新
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析？这可能会对代码的质量产生影响。
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=false # 是否启用MCP Prompt生成
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=false # 是否启用仓库Description生成
 ```
 
 
@@ -265,6 +296,7 @@ graph TD
   - DEEP_RESEARCH_MODEL 深度研究模型，为空使用CHAT_MODEL
   - ENABLE_INCREMENTAL_UPDATE 是否启用增量更新
   - ENABLE_CODED_DEPENDENCY_ANALYSIS 是否启用代码依赖分析？这可能会对代码的质量产生影响。
+  - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK # 是否启用MCP Prompt生成
 
 ### 针对不同架构的构建
 Makefile提供了针对不同CPU架构构建的命令：

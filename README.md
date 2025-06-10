@@ -79,6 +79,32 @@ cd OpenDeepWiki
 
 2. Open the `docker-compose.yml` file and modify the following environment variables:
 
+Ollama:
+```yaml
+services:
+  koalawiki:
+    environment:
+      - KOALAWIKI_REPOSITORIES=/repositories
+      - TASK_MAX_SIZE_PER_USER=5 # Maximum number of parallel document generation tasks per user by AI
+      - CHAT_MODEL=qwen2.5:32b # Model must support functions
+      - ANALYSIS_MODEL=qwen2.5:32b # Analysis model used for generating repository directory structure
+      - CHAT_API_KEY=sk-xxxxx # Your API key
+      - LANGUAGE= # Set the default language for generation as "Chinese"
+      - ENDPOINT=https://Your Ollama's IP: Port/v1
+      - DB_TYPE=sqlite
+      - MODEL_PROVIDER=OpenAI # Model provider, default is OpenAI, supports AzureOpenAI and Anthropic
+      - DB_CONNECTION_STRING=Data Source=/data/KoalaWiki.db
+      - EnableSmartFilter=true # Whether intelligent filtering is enabled or not may affect how the AI can obtain the file directory of the repository
+      - UPDATE_INTERVAL # Warehouse increment update interval, unit: days
+      - MAX_FILE_LIMIT=100 # The maximum limit for uploading files, in MB
+      - DEEP_RESEARCH_MODEL= # Conduct in-depth research on the model and use CHAT_MODEL for the empty
+      - ENABLE_INCREMENTAL_UPDATE=true # Whether to enable incremental updates 
+      - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis,This might have an impact on the quality of the code.
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=false # Whether to enable MCP Prompt generation or not.
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=false # Whether to enable the generation of warehouse Description
+```
+
+
 OpenAI:
 ```yaml
 services:
@@ -100,6 +126,8 @@ services:
       - DEEP_RESEARCH_MODEL= # Conduct in-depth research on the model and use CHAT_MODEL for the empty
       - ENABLE_INCREMENTAL_UPDATE=true # Whether to enable incremental updates 
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis,This might have an impact on the quality of the code.
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=false # Whether to enable MCP Prompt generation or not.
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=false # Whether to enable the generation of warehouse Description
 ```
 
 AzureOpenAI:
@@ -123,6 +151,8 @@ services:
       - DEEP_RESEARCH_MODEL= # Conduct in-depth research on the model and use CHAT_MODEL for the empty
       - ENABLE_INCREMENTAL_UPDATE=true # Whether to enable incremental updates
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis,This might have an impact on the quality of the code.
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=false # Whether to enable MCP Prompt generation or not.
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=false # Whether to enable the generation of warehouse Description
 ```
 
 Anthropic:
@@ -146,6 +176,8 @@ services:
       - DEEP_RESEARCH_MODEL= # Conduct in-depth research on the model and use CHAT_MODEL for the empty
       - ENABLE_INCREMENTAL_UPDATE=true # Whether to enable incremental updates
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis,This might have an impact on the quality of the code.
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=false # Whether to enable MCP Prompt generation or not.
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=false # Whether to enable the generation of warehouse Description
 ```
 
 > 💡 **How to get an API Key:**
@@ -259,6 +291,8 @@ graph TD
   - DEEP_RESEARCH_MODEL Conduct in-depth research on the model and use CHAT_MODEL for the empty
   - ENABLE_INCREMENTAL_UPDATE Whether to enable incremental updates
   - ENABLE_CODED_DEPENDENCY_ANALYSIS Whether to enable code dependency analysis,This might have an impact on the quality of the code.
+  - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK  # Whether to enable MCP Prompt generation or not.
+  - ENABLE_WAREHOUSE_DESCRIPTION_TASK # Whether to enable the generation of warehouse Description
 
 ### Build for Different Architectures
 The Makefile provides commands to build for different CPU architectures:

@@ -13,6 +13,13 @@ public partial class WarehouseDescriptionTask(ILogger<WarehouseDescriptionTask> 
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // 通过环境变量判断是否启用
+        if (DocumentOptions.EnableWarehouseDescriptionTask == false)
+        {
+            logger.LogInformation("仓库描述任务未启用");
+            return;
+        }
+        
         await Task.Delay(1000, stoppingToken);
 
         await using var scope = service.CreateAsyncScope();
