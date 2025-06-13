@@ -317,7 +317,7 @@ make build-frontend-amd
 
 ## Discord
 
-[加入我们](https://discord.gg/8sxUNacv)
+[加入我们](https://discord.gg/Y3fvpnGVwt)
 
 ## WeChat 
 

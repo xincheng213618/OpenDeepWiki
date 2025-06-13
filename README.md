@@ -313,7 +313,7 @@ make build-frontend-amd
 
 ## Discord
 
-[join us](https://discord.gg/8sxUNacv)
+[join us](https://discord.gg/Y3fvpnGVwt)
 
 ## WeChat 
 
