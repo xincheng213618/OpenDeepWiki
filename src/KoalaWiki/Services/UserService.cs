@@ -299,7 +299,7 @@ public class UserService(
             }
 
             // 创建头像目录
-            var avatarsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot","api", "avatars");
+            var avatarsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "api", "avatars");
             if (!Directory.Exists(avatarsPath))
             {
                 Directory.CreateDirectory(avatarsPath);
@@ -314,19 +314,29 @@ public class UserService(
             if (existingUser != null && !string.IsNullOrEmpty(existingUser.Avatar))
             {
                 var oldAvatarPath = existingUser.Avatar;
+
                 if (oldAvatarPath.StartsWith("/api/avatars/"))
                 {
-                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot","api",
-                        oldAvatarPath.TrimStart('/'));
-                    if (File.Exists(oldFilePath))
+                    var oldFilePath = new FileInfo(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "api",
+                        oldAvatarPath.TrimStart('/')));
+
+                    // 判断文件地址是否在 avatars目录下
+                    if (oldFilePath.DirectoryName != avatarsPath)
                     {
-                        File.Delete(oldFilePath);
+                        logger.LogWarning("尝试删除非头像目录下的文件: {FilePath}", oldFilePath.FullName);
+                    }
+                    else
+                    {
+                        if (oldFilePath.Exists)
+                        {
+                            oldFilePath.Delete();
+                        }
                     }
                 }
             }
 
             // 保存文件
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            await using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
             }
