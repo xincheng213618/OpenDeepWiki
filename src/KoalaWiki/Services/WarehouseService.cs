@@ -159,12 +159,10 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
         }
         else if (file.FileName.EndsWith(".gz"))
         {
-            using var inputStream = new FileStream(fileInfo.FullName, FileMode.Open);
-            await using (var outputStream = new FileStream(name, FileMode.Create))
-            await using (var decompressionStream = new GZipStream(inputStream, CompressionMode.Decompress))
-            {
-                await decompressionStream.CopyToAsync(outputStream);
-            }
+            await using var inputStream = new FileStream(fileInfo.FullName, FileMode.Open);
+            await using var outputStream = new FileStream(name, FileMode.Create);
+            await using var decompressionStream = new GZipStream(inputStream, CompressionMode.Decompress);
+            await decompressionStream.CopyToAsync(outputStream);
         }
         else if (file.FileName.EndsWith(".tar"))
         {
