@@ -68,7 +68,7 @@ export async function getUserList(
   pageSize: number = 10,
   keyword?: string
 ): Promise<ApiResponse<PageResponse<UserInfo>>> {
-  let url = `${API_URL}/api/User/GetUserListAsync?page=${page}&pageSize=${pageSize}`;
+  let url = `${API_URL}/api/User/UserList?page=${page}&pageSize=${pageSize}`;
   if (keyword) {
     url += `&keyword=${encodeURIComponent(keyword)}`;
   }
