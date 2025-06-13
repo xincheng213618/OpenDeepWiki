@@ -38,7 +38,7 @@ public class OverviewService
                     ["git_repository"] = gitRepository.Replace(".git", ""),
                     ["branch"] = readme,
                     ["readme"] = branch
-                });
+                },OpenAIOptions.ChatModel);
         }
         else
         {
@@ -49,7 +49,7 @@ public class OverviewService
                     ["git_repository"] = gitRepository.Replace(".git", ""),
                     ["branch"] = branch,
                     ["readme"] = readme
-                });
+                },OpenAIOptions.ChatModel);
         }
 
         history.AddUserMessage(prompt);

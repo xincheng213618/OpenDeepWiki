@@ -25,7 +25,7 @@ public class WarehouseClassify
             {
                 ["category"] = catalog,
                 ["readme"] = readme
-            });
+            }, OpenAIOptions.ChatModel);
 
         var result = await kernel.InvokePromptAsync(prompt);
         var promptResult = string.Empty;

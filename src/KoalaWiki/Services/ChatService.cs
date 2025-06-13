@@ -108,7 +108,7 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                             ["catalogue"] = warehouse.OptimizedDirectoryStructure,
                             ["repository_url"] = warehouse.Address,
                             ["question"] = input.Question,
-                        }));
+                        }, OpenAIOptions.DeepResearchModel));
                 }
                 else
                 {
@@ -128,12 +128,12 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                             ["repository_url"] = warehouse.Address,
                             ["question"] = input.Question,
                             ["history"] = historyMessage.ToString(),
-                        })) );
+                        }, OpenAIOptions.DeepResearchModel)));
                 }
 
-        
+
                 await koala.SaveChangesAsync();
-                
+
                 var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
                     OpenAIOptions.ChatApiKey, document.GitPath, OpenAIOptions.DeepResearchModel, false);
 
@@ -212,19 +212,19 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                 sw.Stop();
 
                 files = files.Distinct().ToList();
-                
+
                 var answerContent = answer.ToString();
                 var deepContentString = deepContent.ToString();
-                
+
                 await koala.ChatShareMessageItems.Where(x => x.Id == items.Id)
-                    .ExecuteUpdateAsync(x => 
+                    .ExecuteUpdateAsync(x =>
                         x.SetProperty(a => a.Answer, answerContent)
-                        .SetProperty(a => a.PromptToken, requestToken)
-                        .SetProperty(a => a.CompletionToken, completionToken)
-                        .SetProperty(a => a.Question, input.Question)
-                        .SetProperty(a => a.Think, deepContentString)
-                        .SetProperty(a => a.Files, files)
-                        .SetProperty(a => a.TotalTime, sw.ElapsedMilliseconds));
+                            .SetProperty(a => a.PromptToken, requestToken)
+                            .SetProperty(a => a.CompletionToken, completionToken)
+                            .SetProperty(a => a.Question, input.Question)
+                            .SetProperty(a => a.Think, deepContentString)
+                            .SetProperty(a => a.Files, files)
+                            .SetProperty(a => a.TotalTime, sw.ElapsedMilliseconds));
             }
             catch (Exception e)
             {
@@ -259,7 +259,7 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                             ["catalogue"] = warehouse.OptimizedDirectoryStructure,
                             ["repository_url"] = warehouse.Address,
                             ["question"] = input.Question,
-                        }));
+                        },OpenAIOptions.ChatModel));
                 }
                 else
                 {
@@ -279,10 +279,10 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                             ["repository_url"] = warehouse.Address,
                             ["question"] = input.Question,
                             ["history"] = historyMessage.ToString(),
-                        }));
+                        },OpenAIOptions.ChatModel));
                 }
 
-        
+
                 await koala.SaveChangesAsync();
 
                 var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
@@ -342,11 +342,11 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                 sw.Stop();
 
                 files = files.Distinct().ToList();
-                
+
                 var answerContent = answer.ToString();
-                
+
                 await koala.ChatShareMessageItems.Where(x => x.Id == items.Id)
-                    .ExecuteUpdateAsync(x => 
+                    .ExecuteUpdateAsync(x =>
                         x.SetProperty(a => a.Answer, answerContent)
                             .SetProperty(a => a.PromptToken, requestToken)
                             .SetProperty(a => a.CompletionToken, completionToken)

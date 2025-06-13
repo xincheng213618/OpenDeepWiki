@@ -2,6 +2,7 @@
 using System.Text;
 using KoalaWiki.Domains.MCP;
 using KoalaWiki.Functions;
+using KoalaWiki.Prompts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -45,7 +46,7 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
             .Where(x => x.WarehouseId == warehouse.Id && x.Question == question)
             .OrderByDescending(x => x.CreatedAt)
             .FirstOrDefaultAsync();
-        
+
         // 如果是3天内的提问，直接返回
         if (similarQuestion != null && (DateTime.Now - similarQuestion.CreatedAt).TotalDays < 3)
         {
@@ -84,10 +85,14 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
             }
         }
 
-        history.AddUserMessage(Prompt.DeepFirstPrompt
-            .Replace("{{question}}", question)
-            .Replace("{{git_repository_url}}", warehouse.Address.Replace(".git", ""))
-            .Replace("{{catalogue}}", string.Join('\n', catalogue)));
+
+        history.AddUserMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.FirstDeepChat),
+            new KernelArguments()
+            {
+                ["catalogue"] = warehouse.OptimizedDirectoryStructure,
+                ["repository_url"] = warehouse.Address,
+                ["question"] = question,
+            }, OpenAIOptions.ChatModel));
 
         var first = true;
 
@@ -103,7 +108,7 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
                                {
                                    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
                                    MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.ChatModel),
-                                   Temperature = 0.5,
+                                   Temperature = 0.5
                                }, fileKernel))
             {
                 // 发送数据

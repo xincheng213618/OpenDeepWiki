@@ -26,7 +26,7 @@ public class GenerateThinkCatalogueService
                     ["code_files"] = catalogue,
                     ["git_repository_url"] = gitRepository.Replace(".git", ""),
                     ["repository_name"] = warehouse.Name
-                });
+                }, OpenAIOptions.AnalysisModel);
         }
         else
         {
@@ -36,7 +36,7 @@ public class GenerateThinkCatalogueService
                     ["code_files"] = catalogue,
                     ["git_repository_url"] = gitRepository.Replace(".git", ""),
                     ["repository_name"] = warehouse.Name
-                });
+                }, OpenAIOptions.AnalysisModel);
         }
 
         DocumentResultCatalogue? result = null;
@@ -111,7 +111,7 @@ public class GenerateThinkCatalogueService
                     ["think"] = think,
                     ["git_repository_url"] = gitRepository.Replace(".git", ""),
                     ["repository_name"] = warehouse.Name
-                });
+                }, OpenAIOptions.AnalysisModel);
         }
         else
         {
@@ -122,7 +122,7 @@ public class GenerateThinkCatalogueService
                     ["think"] = think,
                     ["git_repository_url"] = gitRepository.Replace(".git", ""),
                     ["repository_name"] = warehouse.Name
-                });
+                }, OpenAIOptions.AnalysisModel);
         }
 
 

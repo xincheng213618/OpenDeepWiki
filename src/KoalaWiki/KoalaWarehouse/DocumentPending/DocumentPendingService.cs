@@ -192,7 +192,7 @@ public class DocumentPendingService
                     ["git_repository"] = gitRepository.Replace(".git", ""),
                     ["branch"] = branch,
                     ["title"] = catalog.Name
-                });
+                },OpenAIOptions.ChatModel);
         }
         else
         {
@@ -204,7 +204,7 @@ public class DocumentPendingService
                     ["git_repository"] = gitRepository.Replace(".git", ""),
                     ["branch"] = branch,
                     ["title"] = catalog.Name
-                });
+                },OpenAIOptions.ChatModel);
         }
 
         var history = new ChatHistory();
