@@ -338,7 +338,14 @@ public partial class DocumentsService
         // 递归处理目录层次结构
         ProcessCatalogueItems(result.items, null, warehouse, document, documents);
 
-        documents.ForEach(x => x.IsCompleted = false);
+        documents.ForEach(x =>
+        {
+            x.IsCompleted = false;
+            if (string.IsNullOrWhiteSpace(x.Prompt))
+            {
+                x.Prompt = " ";
+            }
+        });
 
         // 删除遗留数据
         await dbContext.DocumentCatalogs.Where(x => x.WarehouseId == warehouse.Id)
@@ -389,7 +396,7 @@ public partial class DocumentsService
         {
             return 32768;
         }
-        
+
         if (model.StartsWith("DeepSeek-R1"))
         {
             return 32768;
@@ -399,7 +406,7 @@ public partial class DocumentsService
         {
             return 65535;
         }
-        
+
         return model switch
         {
             "deepseek-chat" => 8192,
