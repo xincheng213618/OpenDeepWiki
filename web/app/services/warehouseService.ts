@@ -317,6 +317,9 @@ export async function documentById(owner: string, name: string, path: string, br
   if (branch) {
     url += '&branch=' + branch;
   }
+
+  console.log('请求接口',url);
+  
   
   // @ts-ignore
   return fetchApi<any>(url, {

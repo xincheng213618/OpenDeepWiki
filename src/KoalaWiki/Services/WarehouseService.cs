@@ -75,7 +75,8 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
         name = name.Trim().ToLower();
         var warehouse = await access.Warehouses
             .AsNoTracking()
-            .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner)
+            .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner &&
+                        x.Status == WarehouseStatus.Completed)
             .FirstOrDefaultAsync();
 
         // 如果没有找到仓库，返回空列表
@@ -353,7 +354,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
         var warehouse = await access.Warehouses
             .AsNoTracking()
             .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner &&
-                        (string.IsNullOrEmpty(branch) || x.Branch == branch))
+                        (string.IsNullOrEmpty(branch) || x.Branch == branch) && x.Status == WarehouseStatus.Completed)
             .FirstOrDefaultAsync();
 
         // 如果没有找到仓库，返回空列表

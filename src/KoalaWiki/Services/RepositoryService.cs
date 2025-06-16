@@ -107,7 +107,7 @@ public class RepositoryService(
     {
         var query = dbContext.Warehouses
             .AsNoTracking()
-            .Where(r => r.OrganizationName == owner && r.Name == name);
+            .Where(r => r.OrganizationName == owner && r.Name == name && r.Status == WarehouseStatus.Completed);
 
         // 如果指定了分支，则按分支筛选
         if (!string.IsNullOrEmpty(branch))

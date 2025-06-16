@@ -239,8 +239,6 @@ export default async function DocumentPage({ params, searchParams }: any) {
 
   try {
     const response = await documentById(owner, name, path, branch);
-    console.log(response, owner, name, path, branch);
-    
     if (response.isSuccess && response.data) {
       document = response.data as DocumentData;
       // 提取标题作为目录
