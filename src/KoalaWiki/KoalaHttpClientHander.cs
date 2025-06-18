@@ -20,7 +20,7 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
         // GPT o系列不能传递温度,并且使用max_completion_tokens
         if (model.StartsWith("o"))
         {
-            json.temperature = null;
+            json.Remove("temperature");
         }
 
         // 增加max_token，从max_completion_tokens读取
@@ -38,10 +38,6 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
                 // 关闭推理模式
                 json.enable_thinking = false;
             }
-
-            // 重写请求体
-            request.Content = new StringContent(JsonConvert.SerializeObject(json),
-                System.Text.Encoding.UTF8, "application/json");
         }
         else
         {
@@ -49,11 +45,12 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
             {
                 // 关闭推理模式
                 json.enable_thinking = false;
-                // 重写请求体
-                request.Content = new StringContent(JsonConvert.SerializeObject(json),
-                    System.Text.Encoding.UTF8, "application/json");
             }
         }
+
+        // 重写请求体
+        request.Content = new StringContent(JsonConvert.SerializeObject(json),
+            System.Text.Encoding.UTF8, "application/json");
 
         // 1. 启动计时
         var stopwatch = Stopwatch.StartNew();
