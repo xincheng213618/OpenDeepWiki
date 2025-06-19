@@ -21,4 +21,11 @@ public class PromptConstant
 
         FirstDeepChat = 20
     }
+
+    public enum Mem0
+    {
+        DocsSystem = 10,
+
+        CodeSystem = 20,
+    }
 }

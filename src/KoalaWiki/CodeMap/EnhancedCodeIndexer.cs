@@ -30,7 +30,6 @@ public class EnhancedCodeIndexer
             APIKey = OpenAIOptions.ChatApiKey,
             Endpoint = OpenAIOptions.Endpoint,
             TextModel = OpenAIOptions.ChatModel,
-            EmbeddingModel = OpenAIOptions.EmbeddingsModel,
             TextGenerationType = OpenAIConfig.TextGenerationTypes.TextCompletion,
         };
 

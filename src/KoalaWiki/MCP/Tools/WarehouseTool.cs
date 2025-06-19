@@ -65,10 +65,10 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
         var fileKernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, path, OpenAIOptions.DeepResearchModel, false);
 
-        if (!string.IsNullOrWhiteSpace(OpenAIOptions.EmbeddingsModel))
-        {
-            fileKernel.Plugins.AddFromObject(new RagFunction(warehouse.Id));
-        }
+        // if (!string.IsNullOrWhiteSpace(OpenAIOptions.EmbeddingsModel))
+        // {
+        //     fileKernel.Plugins.AddFromObject(new RagFunction(warehouse.Id));
+        // }
 
         var history = new ChatHistory();
 
