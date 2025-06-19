@@ -2,8 +2,9 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using KoalaWiki.Domains;
+using KoalaWiki.Domains.DocumentFile;
+using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Entities;
-using KoalaWiki.Entities.DocumentFile;
 using KoalaWiki.Functions;
 using KoalaWiki.Prompts;
 using Microsoft.EntityFrameworkCore;

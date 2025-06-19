@@ -18,6 +18,8 @@ using OpenAI.Chat;
 
 namespace KoalaWiki.Services;
 
+[Tags("对话服务")]
+[Route("/api/Chat")]
 public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : FastApi
 {
     public async Task CompletionsAsync(CompletionsInput input, HttpContext context)

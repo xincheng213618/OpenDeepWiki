@@ -1,20 +1,19 @@
 ﻿using System.IO.Compression;
 using System.Text;
 using FastService;
-using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Domains;
+using KoalaWiki.Domains.DocumentFile;
+using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Dto;
-using KoalaWiki.Entities;
-using KoalaWiki.Entities.DocumentFile;
 using KoalaWiki.Functions;
-using KoalaWiki.Git;
 using LibGit2Sharp;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace KoalaWiki.Services;
 
+[Tags("仓库管理")]
+[Route("/api/Warehouse")]
 public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepositoryService gitRepositoryService)
     : FastApi
 {
@@ -113,6 +112,11 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// </summary>
     public async Task UploadAndSubmitWarehouseAsync(HttpContext context)
     {
+        if (!DocumentOptions.EnableFileCommit)
+        {
+            throw new Exception("当前不允许上传文件，请联系管理员开启");
+        }
+
         // 获取文件
         var file = context.Request.Form.Files["file"];
         if (file == null)

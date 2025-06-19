@@ -27,23 +27,29 @@ public class WarehouseClassify
                 ["readme"] = readme
             }, OpenAIOptions.ChatModel);
 
-        var result = await kernel.InvokePromptAsync(prompt);
-        var promptResult = string.Empty;
+        var result = string.Empty;
 
-        var jsonContent =
-            JsonNode.Parse(ModelReaderWriter.Write(result.GetValue<OpenAIChatMessageContent>().InnerContent));
-
-        // 如果存在reasoning_content则说明是推理
-        if (jsonContent!["choices"]![0]!["message"]!["reasoning_content"] != null)
+        await foreach (var i in kernel.InvokePromptStreamingAsync(prompt))
         {
-            promptResult += jsonContent!["choices"]![0]!["message"]!["reasoning_content"];
-        }
+            var jsonContent =
+                JsonNode.Parse(ModelReaderWriter.Write(i.InnerContent));
 
-        promptResult += result.ToString();
+            // 判断jsonContent!["choices"]!索引 > 0
+            if (jsonContent == null || jsonContent["choices"] == null &&
+                jsonContent!["choices"]![0]!["message"]!["reasoning_content"] != null)
+            {
+                result += jsonContent!["choices"]![0]!["message"]!["reasoning_content"];
+            }
+            else
+            {
+                result += i.ToString();
+            }
+        }
 
         // 提取分类结果正则表达式<classify>(.*?)</classify>
         var regex = new Regex(@"<classify>(.*?)</classify>", RegexOptions.Singleline);
-        var match = regex.Match(promptResult);
+
+        var match = regex.Match(result);
         if (match.Success)
         {
             // 提取到的内容
@@ -59,6 +65,7 @@ public class WarehouseClassify
                 return null;
             }
         }
+
         else
         {
             return null;

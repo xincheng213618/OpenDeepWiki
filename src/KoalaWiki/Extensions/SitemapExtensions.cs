@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using KoalaWiki.Core.DataAccess;
+using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Entities;
 using Microsoft.EntityFrameworkCore;
 

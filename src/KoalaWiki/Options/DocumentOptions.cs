@@ -33,14 +33,40 @@ public class DocumentOptions
     /// </summary>
     /// <returns></returns>
     public static bool EnableCodeDependencyAnalysis { get; set; } = false;
-    
+
+    /// <summary>
+    /// 是否启用仓库功能提示任务
+    /// </summary>
     public static bool EnableWarehouseFunctionPromptTask { get; set; } = true;
-    
+
+    /// <summary>
+    /// 是否启用仓库描述任务
+    /// </summary>
     public static bool EnableWarehouseDescriptionTask { get; set; } = true;
+
+    /// <summary>
+    /// 是否启用文件提交
+    /// </summary>
+    /// <returns></returns>
+    public static bool EnableFileCommit { get; set; } = true;
 
     public static void InitConfig(IConfiguration configuration)
     {
         configuration.GetSection(Name).Get<DocumentOptions>();
+
+        var enableFileCommit = configuration.GetValue<bool?>($"ENABLE_FILE_COMMIT") ?? true;
+
+        EnableFileCommit = enableFileCommit;
+
+        var enableIncrementalUpdate = configuration.GetValue<string>($"ENABLE_INCREMENTAL_UPDATE");
+        if (!string.IsNullOrEmpty(enableIncrementalUpdate))
+        {
+            if (bool.TryParse(enableIncrementalUpdate, out var enable))
+            {
+                EnableIncrementalUpdate = enable;
+            }
+        }
+
 
         var enableCodeDependencyAnalysis = configuration.GetValue<string>($"ENABLE_CODED_DEPENDENCY_ANALYSIS");
 
@@ -51,9 +77,10 @@ public class DocumentOptions
                 EnableCodeDependencyAnalysis = enable;
             }
         }
-        
-        var enableWarehouseFunctionPromptTask = configuration.GetValue<string>($"ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK");
-        
+
+        var enableWarehouseFunctionPromptTask =
+            configuration.GetValue<string>($"ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK");
+
         if (!string.IsNullOrEmpty(enableWarehouseFunctionPromptTask))
         {
             if (bool.TryParse(enableWarehouseFunctionPromptTask, out var enable))
@@ -61,7 +88,7 @@ public class DocumentOptions
                 EnableWarehouseFunctionPromptTask = enable;
             }
         }
-        
+
         var enableWarehouseDescriptionTask = configuration.GetValue<string>($"ENABLE_WAREHOUSE_DESCRIPTION_TASK");
         if (!string.IsNullOrEmpty(enableWarehouseDescriptionTask))
         {

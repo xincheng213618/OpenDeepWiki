@@ -1,14 +1,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using FastService;
-using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Domains.Users;
 using KoalaWiki.Dto;
-using KoalaWiki.Infrastructure;
-using KoalaWiki.Options;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Octokit;
 using User = KoalaWiki.Domains.Users.User;
 
@@ -17,11 +16,13 @@ namespace KoalaWiki.Services;
 /// <summary>
 /// 认证服务
 /// </summary>
-[Tags("Auth")]
+[Tags("认证服务")]
+[Route("/api/Auth")]
 [Filter(typeof(ResultFilter))]
 public class AuthService(
     IKoalaWikiContext dbContext,
     JwtOptions jwtOptions,
+    IMapper mapper,
     ILogger<AuthService> logger,
     IConfiguration configuration,
     IHttpContextAccessor httpContextAccessor) : FastApi
@@ -59,13 +60,25 @@ public class AuthService(
             dbContext.Users.Update(user);
             await dbContext.SaveChangesAsync();
 
+            // 获取当前胡的角色
+            var roleIds = await dbContext.UserInRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Select(x => x.RoleId)
+                .ToListAsync();
+
+            var roles = await dbContext.Roles
+                .Where(r => roleIds.Contains(r.Id))
+                .ToListAsync();
+
             user.Password = string.Empty; // 清空密码
+            var dto = mapper.Map<UserInfoDto>(user);
+            dto.Role = string.Join(',', roles.Select(x=>x.Name));
 
             // 生成JWT令牌
-            var token = GenerateJwtToken(user);
+            var token = GenerateJwtToken(user, roles);
             var refreshToken = GenerateRefreshToken(user);
 
-            return new LoginDto(true, token, refreshToken, user, null);
+            return new LoginDto(true, token, refreshToken, dto, null);
         }
         catch (Exception ex)
         {
@@ -125,18 +138,29 @@ public class AuthService(
                 Email = input.Email,
                 Password = input.Password, // 随机密码
                 CreatedAt = DateTime.UtcNow,
-                Role = "user" // 默认角色
             };
 
             // 保存用户
             await dbContext.Users.AddAsync(user);
             await dbContext.SaveChangesAsync();
+            // 获取当前胡的角色
+            var roleIds = await dbContext.UserInRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Select(x => x.RoleId)
+                .ToListAsync();
+
+            var roles = await dbContext.Roles
+                .Where(r => roleIds.Contains(r.Id))
+                .ToListAsync();
 
             user.Password = string.Empty; // 清空密码
+
+            var dto = mapper.Map<UserInfoDto>(user);
+
             // 创建token
-            var token = GenerateJwtToken(user);
+            var token = GenerateJwtToken(user, roles);
             var refreshToken = GenerateRefreshToken(user);
-            return new LoginDto(true, token, refreshToken, user, null);
+            return new LoginDto(true, token, refreshToken, dto, null);
         }
         catch (Exception ex)
         {
@@ -201,7 +225,6 @@ public class AuthService(
                     Password = Guid.NewGuid().ToString(), // 随机密码
                     Avatar = githubUser.AvatarUrl,
                     CreatedAt = DateTime.UtcNow,
-                    Role = "user" // 默认角色
                 };
 
                 // 绑定GitHub账号
@@ -212,6 +235,16 @@ public class AuthService(
                     Provider = "GitHub",
                     CreatedAt = DateTime.UtcNow
                 };
+
+                // 获取普通用户角色
+                var userRole = await dbContext.Roles
+                    .FirstOrDefaultAsync(r => r.Name == "user");
+                
+                await dbContext.UserInRoles.AddAsync(new UserInRole
+                {
+                    UserId = user.Id,
+                    RoleId = userRole!.Id
+                });
 
                 // 保存用户
                 await dbContext.Users.AddAsync(user);
@@ -238,11 +271,25 @@ public class AuthService(
 
             await dbContext.SaveChangesAsync();
 
-            // 生成JWT令牌
-            var jwtToken = GenerateJwtToken(user);
-            var refreshToken = GenerateRefreshToken(user);
+            // 获取当前胡的角色
+            var roleIds = await dbContext.UserInRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Select(x => x.RoleId)
+                .ToListAsync();
 
-            return new LoginDto(true, jwtToken, refreshToken, user, null);
+            var roles = await dbContext.Roles
+                .Where(r => roleIds.Contains(r.Id))
+                .ToListAsync();
+
+            // 生成JWT令牌
+            var jwtToken = GenerateJwtToken(user, roles);
+            var refreshToken = GenerateRefreshToken(user);
+            
+            var userDto = mapper.Map<UserInfoDto>(user);
+            
+            userDto.Role = string.Join(',', roles.Select(x => x.Name));
+
+            return new LoginDto(true, jwtToken, refreshToken, userDto, null);
         }
         catch (Exception ex)
         {
@@ -361,8 +408,17 @@ public class AuthService(
                     return (false, string.Empty, null, "用户不存在");
                 }
 
+                // 获取当前胡的角色
+                var roleIds = await dbContext.UserInRoles
+                    .Where(ur => ur.UserId == user.Id)
+                    .Select(x => x.RoleId)
+                    .ToListAsync();
+
+                var roles = await dbContext.Roles
+                    .Where(r => roleIds.Contains(r.Id))
+                    .ToListAsync();
                 // 生成新的JWT令牌
-                var newToken = GenerateJwtToken(user);
+                var newToken = GenerateJwtToken(user, roles);
                 var newRefreshToken = GenerateRefreshToken(user);
 
                 return (true, newToken, newRefreshToken, null);
@@ -383,15 +439,16 @@ public class AuthService(
     /// 生成JWT令牌
     /// </summary>
     /// <param name="user">用户</param>
+    /// <param name="roles"></param>
     /// <returns>JWT令牌</returns>
-    private string GenerateJwtToken(User user)
+    private string GenerateJwtToken(User user, List<Role> roles)
     {
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Name, user.Name),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role)
+            new Claim(ClaimTypes.Role, string.Join(',', roles.Select(x => x.Name)))
         };
 
         var key = jwtOptions.GetSymmetricSecurityKey();
@@ -463,11 +520,11 @@ public class AuthService(
                 return null;
             }
 
-            var payloadJson = System.Text.Encoding.UTF8.GetString(
+            var payloadJson = Encoding.UTF8.GetString(
                 Convert.FromBase64String(tokenParts[1].PadRight(4 * ((tokenParts[1].Length + 3) / 4), '=')
                     .Replace('-', '+').Replace('_', '/')));
 
-            var payload = System.Text.Json.JsonSerializer.Deserialize<GooglePayload>(payloadJson);
+            var payload = JsonSerializer.Deserialize<GooglePayload>(payloadJson);
             return payload;
         }
         catch

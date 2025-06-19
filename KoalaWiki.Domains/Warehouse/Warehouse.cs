@@ -1,6 +1,6 @@
-﻿using KoalaWiki.Domains;
+﻿using KoalaWiki.Entities;
 
-namespace KoalaWiki.Entities;
+namespace KoalaWiki.Domains.Warehouse;
 
 public class Warehouse : Entity<string>
 {

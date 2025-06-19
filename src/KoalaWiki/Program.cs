@@ -35,11 +35,11 @@ builder.Services.AddKoalaMcp();
 builder.Services.AddSerilog(Log.Logger);
 
 builder.Services.AddOpenApi();
-builder.Services.WithFast();
+builder.Services.AddFastApis();
 builder.Services.AddSingleton<GitService>();
 builder.Services.AddSingleton<DocumentsService>();
 builder.Services.AddTransient<GlobalMiddleware>();
-builder.Services.AddScoped<AuthService>();
+// builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IUserContext, UserContext>();
 builder.Services.AddMemoryCache();
 
@@ -130,6 +130,6 @@ app.UseMiddleware<GlobalMiddleware>();
 
 app.MapSitemap();
 
-app.MapFast();
+app.MapFastApis();
 
 app.Run();

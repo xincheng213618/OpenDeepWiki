@@ -5,9 +5,12 @@ using KoalaWiki.Entities;
 using LibGit2Sharp;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using KoalaWiki.Domains.Warehouse;
 
 namespace KoalaWiki.Services;
 
+[Tags("文档目录")]
+[Route("/api/DocumentCatalog")]
 public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
 {
     /// <summary>
@@ -85,8 +88,8 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
     /// 根据目录id获取文件
     /// </summary>
     /// <returns></returns>
-    public async Task GetDocumentByIdAsync(HttpContext httpContext, string owner, string name, string? branch,
-        string path)
+    public async Task GetDocumentByIdAsync(string owner, string name, string? branch,
+        string path, HttpContext httpContext)
     {
         // 先根据仓库名称和组织名称找到仓库
         var query = await dbAccess.Warehouses

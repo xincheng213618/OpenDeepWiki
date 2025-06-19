@@ -1,4 +1,5 @@
 ﻿using KoalaWiki.Core.DataAccess;
+using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Entities;
 using KoalaWiki.KoalaWarehouse;
 using KoalaWiki.Options;
@@ -15,7 +16,7 @@ public class BuildCodeIndex(IServiceProvider service) : BackgroundService
 
         if (string.IsNullOrWhiteSpace(OpenAIOptions.EmbeddingsModel))
         {
-            Log.Logger.Error("没有设置OpenAI的EmbeddingsModel");
+            Log.Logger.Warning("没有设置OpenAI的EmbeddingsModel");
             return;
         }
 

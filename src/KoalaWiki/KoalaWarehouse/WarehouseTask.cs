@@ -1,5 +1,6 @@
 ﻿using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Domains;
+using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Entities;
 using KoalaWiki.Git;
 using Microsoft.EntityFrameworkCore;

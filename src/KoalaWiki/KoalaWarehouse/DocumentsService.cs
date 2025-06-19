@@ -2,8 +2,8 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using KoalaWiki.Domains;
+using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Entities;
-using KoalaWiki.Entities.DocumentFile;
 using KoalaWiki.Functions;
 using KoalaWiki.KoalaWarehouse.DocumentPending;
 using KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;

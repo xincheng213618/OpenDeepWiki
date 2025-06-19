@@ -1,4 +1,4 @@
-﻿namespace KoalaWiki.Entities;
+﻿namespace KoalaWiki.Domains.Warehouse;
 
 public enum WarehouseStatus : byte
 {

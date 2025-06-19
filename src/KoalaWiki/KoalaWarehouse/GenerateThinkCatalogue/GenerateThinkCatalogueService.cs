@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 using KoalaWiki.Domains;
+using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Entities;
 using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel;

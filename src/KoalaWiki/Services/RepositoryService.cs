@@ -1,15 +1,9 @@
 using FastService;
-using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Domains;
+using KoalaWiki.Domains.DocumentFile;
+using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Dto;
-using KoalaWiki.Entities;
-using KoalaWiki.Entities.DocumentFile;
-using KoalaWiki.Git;
-using KoalaWiki.Infrastructure;
-using KoalaWiki.KoalaWarehouse;
 using KoalaWiki.KoalaWarehouse.DocumentPending;
-using KoalaWiki.Options;
-using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +13,8 @@ namespace KoalaWiki.Services;
 /// <summary>
 /// 仓库管理服务
 /// </summary>
-[Tags("Repository")]
+[Tags("仓库管理服务")]
+[FastService.Route("/api/Repository")]
 [Filter(typeof(ResultFilter))]
 public class RepositoryService(
     IKoalaWikiContext dbContext,
@@ -70,7 +65,7 @@ public class RepositoryService(
 
         // 将实体映射为DTO
         var repositoryDtos = repositories.Select(r => r.Adapt<RepositoryInfoDto>()).ToList();
-        
+
         return new PageDto<RepositoryInfoDto>(total, repositoryDtos);
     }
 
@@ -87,7 +82,7 @@ public class RepositoryService(
 
         if (repository == null)
         {
-            return ResultDto<RepositoryInfoDto>.Fail("仓库不存在");
+            return ResultDto<RepositoryInfoDto>.Error("仓库不存在");
         }
 
         // 将实体映射为DTO
