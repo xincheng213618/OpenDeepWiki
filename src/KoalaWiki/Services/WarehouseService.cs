@@ -108,6 +108,126 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     }
 
     /// <summary>
+    /// 从URL下载文件到本地
+    /// </summary>
+    private async Task<FileInfo> DownloadFileFromUrlAsync(string fileUrl, string organization, string repositoryName)
+    {
+        using var httpClient = new HttpClient();
+        httpClient.Timeout = TimeSpan.FromMinutes(10); // 设置10分钟超时
+
+        try
+        {
+            // 发送GET请求下载文件
+            var response = await httpClient.GetAsync(fileUrl);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"下载文件失败，HTTP状态码: {response.StatusCode}");
+            }
+
+            // 优先从响应头中提取文件名
+            string fileName = string.Empty;
+            if (response.Content.Headers.ContentDisposition != null && !string.IsNullOrEmpty(response.Content.Headers.ContentDisposition.FileName))
+            {
+                fileName = response.Content.Headers.ContentDisposition.FileName.Trim('"');
+            }
+            else if (response.Content.Headers.TryGetValues("Content-Disposition", out var values))
+            {
+                // 兼容部分服务器未标准化ContentDisposition解析
+                var disposition = values.FirstOrDefault();
+                if (!string.IsNullOrEmpty(disposition))
+                {
+                    // 优先处理 filename*（RFC 5987）
+                    var fileNameStarMarker = "filename*=";
+                    var idxStar = disposition.IndexOf(fileNameStarMarker, StringComparison.OrdinalIgnoreCase);
+                    if (idxStar >= 0)
+                    {
+                        var value = disposition.Substring(idxStar + fileNameStarMarker.Length).Trim('"', '\'', ' ');
+                        // 处理形如 utf-8''filename.zip
+                        var parts = value.Split("''", 2);
+                        if (parts.Length == 2)
+                        {
+                            fileName = parts[1];
+                        }
+                        else
+                        {
+                            fileName = value;
+                        }
+                    }
+                    else
+                    {
+                        var fileNameMarker = "filename=";
+                        var idx = disposition.IndexOf(fileNameMarker, StringComparison.OrdinalIgnoreCase);
+                        if (idx >= 0)
+                        {
+                            fileName = disposition.Substring(idx + fileNameMarker.Length).Trim('"', '\'', ' ');
+                        }
+                    }
+                }
+            }
+            // 如果响应头没有文件名，则从URL中提取
+            if (string.IsNullOrEmpty(fileName))
+            {
+                var uri = new Uri(fileUrl);
+                fileName = Path.GetFileName(uri.LocalPath);
+            }
+            string suffix;
+
+            if (string.IsNullOrEmpty(fileName) || !fileName.Contains('.'))
+            {
+                // 如果无法从文件名提取后缀，尝试从URL路径推断
+                if (fileUrl.Contains("/archive/") && fileUrl.Contains(".zip"))
+                {
+                    suffix = "zip";
+                }
+                else if (fileUrl.Contains(".tar.gz"))
+                {
+                    suffix = "gz";
+                }
+                else if (fileUrl.Contains(".tar"))
+                {
+                    suffix = "tar";
+                }
+                else
+                {
+                    suffix = "zip"; // 默认使用zip格式
+                }
+            }
+            else
+            {
+                suffix = fileName.Split('.').Last().ToLower();
+
+                // 验证文件格式
+                if (!new[] { "zip", "gz", "tar", "br" }.Contains(suffix))
+                {
+                    throw new Exception($"不支持的文件格式: {suffix}，只支持zip、gz、tar、br格式");
+                }
+            }
+
+            var fileInfo = new FileInfo(Path.Combine(Constant.GitPath, organization, repositoryName + "." + suffix));
+
+            if (fileInfo.Directory?.Exists == false)
+            {
+                fileInfo.Directory.Create();
+            }
+
+            // 下载并保存文件
+            await using var fileStream = new FileStream(fileInfo.FullName, FileMode.Create);
+            await response.Content.CopyToAsync(fileStream);
+
+            return fileInfo;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new Exception($"下载文件时发生网络错误: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            throw new Exception("下载文件超时，请检查网络连接或尝试更小的文件");
+        }
+    }
+
+    /// <summary>
     /// 上传并且提交仓库
     /// </summary>
     public async Task UploadAndSubmitWarehouseAsync(HttpContext context)
@@ -117,38 +237,54 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
             throw new Exception("当前不允许上传文件，请联系管理员开启");
         }
 
-        // 获取文件
-        var file = context.Request.Form.Files["file"];
-        if (file == null)
-        {
-            context.Response.StatusCode = 400;
-            throw new Exception("没有文件上传");
-        }
-
-        // 只支持压缩包.zip 或gzip 
-        if (!file.FileName.EndsWith(".zip") && !file.FileName.EndsWith(".gz") && !file.FileName.EndsWith(".tar") &&
-            !file.FileName.EndsWith(".br"))
-        {
-            context.Response.StatusCode = 400;
-            throw new Exception("只支持zip，gz，tar，br格式的文件");
-        }
-
         var organization = context.Request.Form["organization"].ToString();
         var repositoryName = context.Request.Form["repositoryName"].ToString();
 
-        // 后缀名
-        var suffix = file.FileName.Split('.').Last();
-
-        var fileInfo = new FileInfo(Path.Combine(Constant.GitPath, organization, repositoryName + "." + suffix));
-
-        if (fileInfo.Directory?.Exists == false)
+        if (string.IsNullOrEmpty(organization) || string.IsNullOrEmpty(repositoryName))
         {
-            fileInfo.Directory.Create();
+            throw new Exception("组织名称和仓库名称不能为空");
+        }        // 检查是否是URL下载方式
+        var fileUrl = context.Request.Form["fileUrl"].ToString();
+        
+        FileInfo fileInfo;
+
+        if (!string.IsNullOrEmpty(fileUrl))
+        {
+            // 从URL下载文件
+            fileInfo = await DownloadFileFromUrlAsync(fileUrl, organization, repositoryName);
         }
-
-        await using (var stream = new FileStream(fileInfo.FullName, FileMode.Create))
+        else
         {
-            await file.CopyToAsync(stream);
+            // 获取上传的文件
+            var file = context.Request.Form.Files["file"];
+            if (file == null)
+            {
+                context.Response.StatusCode = 400;
+                throw new Exception("没有文件上传");
+            }
+
+            // 只支持压缩包.zip 或gzip 
+            if (!file.FileName.EndsWith(".zip") && !file.FileName.EndsWith(".gz") && !file.FileName.EndsWith(".tar") &&
+                !file.FileName.EndsWith(".br"))
+            {
+                context.Response.StatusCode = 400;
+                throw new Exception("只支持zip，gz，tar，br格式的文件");
+            }
+
+            // 后缀名
+            var suffix = file.FileName.Split('.').Last();
+
+            fileInfo = new FileInfo(Path.Combine(Constant.GitPath, organization, repositoryName + "." + suffix));
+
+            if (fileInfo.Directory?.Exists == false)
+            {
+                fileInfo.Directory.Create();
+            }
+
+            await using (var stream = new FileStream(fileInfo.FullName, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
         }
 
         var name = fileInfo.FullName.Replace(".zip", "")
@@ -156,27 +292,27 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
             .Replace(".tar", "")
             .Replace(".br", "");
         // 解压文件，根据后缀名判断解压方式
-        if (file.FileName.EndsWith(".zip"))
+        if (fileInfo.FullName.EndsWith(".zip"))
         {
             // 解压
             var zipPath = fileInfo.FullName.Replace(".zip", "");
             ZipFile.ExtractToDirectory(fileInfo.FullName, zipPath, true);
         }
-        else if (file.FileName.EndsWith(".gz"))
+        else if (fileInfo.FullName.EndsWith(".gz"))
         {
             await using var inputStream = new FileStream(fileInfo.FullName, FileMode.Open);
             await using var outputStream = new FileStream(name, FileMode.Create);
             await using var decompressionStream = new GZipStream(inputStream, CompressionMode.Decompress);
             await decompressionStream.CopyToAsync(outputStream);
         }
-        else if (file.FileName.EndsWith(".tar"))
+        else if (fileInfo.FullName.EndsWith(".tar"))
         {
             await using var inputStream = new FileStream(fileInfo.FullName, FileMode.Open);
             await using var outputStream = new FileStream(name, FileMode.Create);
             await using var decompressionStream = new GZipStream(inputStream, CompressionMode.Decompress);
             await decompressionStream.CopyToAsync(outputStream);
         }
-        else if (file.FileName.EndsWith(".br"))
+        else if (fileInfo.FullName.EndsWith(".br"))
         {
             await using var inputStream = new FileStream(fileInfo.FullName, FileMode.Open);
             await using var outputStream = new FileStream(name, FileMode.Create);
