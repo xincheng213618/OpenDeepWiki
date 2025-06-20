@@ -51,8 +51,8 @@ public class FileFunction(string gitPath)
                     info.Name,
                     info.Length,
                     info.Extension,
-                    info.CreationTime,
-                    info.LastWriteTime,
+                    // 返回总行数
+                    TotalLine = File.ReadAllLines(fullPath).Length,
                 }, new JsonSerializerOptions()
                 {
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
@@ -74,13 +74,13 @@ public class FileFunction(string gitPath)
         }
     }
 
-    [KernelFunction, Description(
-         "Read the specified file content. Always batch as many file paths as possible into a single call to minimize the number of invocations. Provide file paths as an array for maximum efficiency. The function returns a JSON object where each key is the file path and the value is the file content. If a file exceeds 100KB, instead of its content, return: 'If the file exceeds 100KB, you should use ReadFileFromLineAsync to read the file content line by line.' If the file size exceeds 10k, only 10k content will be returned."
-     )]
-    [return:
-        Description(
-            "Return a JSON object with file paths as keys and file contents as values. For files over 100KB, return: 'If the file exceeds 100KB, you should use ReadFileFromLineAsync to read the file content line by line.' If the file size exceeds 10k, only 10k content will be returned."
-        )]
+    // [KernelFunction, Description(
+    //      "Read the specified file content. Always batch as many file paths as possible into a single call to minimize the number of invocations. Provide file paths as an array for maximum efficiency. The function returns a JSON object where each key is the file path and the value is the file content. If a file exceeds 100KB, instead of its content, return: 'If the file exceeds 100KB, you should use ReadFileFromLineAsync to read the file content line by line.' If the file size exceeds 10k, only 10k content will be returned."
+    //  )]
+    // [return:
+    //     Description(
+    //         "Return a JSON object with file paths as keys and file contents as values. For files over 100KB, return: 'If the file exceeds 100KB, you should use ReadFileFromLineAsync to read the file content line by line.' If the file size exceeds 10k, only 10k content will be returned."
+    //     )]
     public async Task<string> ReadFilesAsync(
         [Description("File Path array. Always batch multiple file paths to reduce the number of function calls.")]
         string[] filePaths)
@@ -110,13 +110,15 @@ public class FileFunction(string gitPath)
                 // 判断文件大小
                 if (info.Length > 1024 * 100)
                 {
-                    return
+                    dic[filePath] =
                         "If the file exceeds 100KB, you should use ReadFileFromLineAsync to read the file content line by line";
                 }
-
-                await using var stream = new FileStream(item, FileMode.Open, FileAccess.Read);
-                using var reader = new StreamReader(stream);
-                dic[filePath] = await reader.ReadToEndAsync();
+                else
+                {
+                    await using var stream = new FileStream(item, FileMode.Open, FileAccess.Read);
+                    using var reader = new StreamReader(stream);
+                    dic[filePath] = await reader.ReadToEndAsync();
+                }
             }
 
             return JsonSerializer.Serialize(dic, new JsonSerializerOptions()
@@ -170,7 +172,29 @@ public class FileFunction(string gitPath)
             return $"Error reading file: {ex.Message}";
         }
     }
-    
+
+    public class ReadFileInput
+    {
+        [Description(
+            "An array of file items to read. Each item contains the file path and the start and end line numbers for reading. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
+        public ReadFileItemInput[] Items { get; set; } = [];
+    }
+
+    public class ReadFileItemInput
+    {
+        [Description(
+            "The absolute or relative path of the target file. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
+        public string FilePath { get; set; }
+
+        [Description(
+            "The starting line number for reading (starting from 0), must be less than or equal to the ending line number, and must be within the actual number of lines in the file.")]
+        public int StartLine { get; set; } = 0;
+
+        [Description(
+            "The ending line number for reading (including this line), must be greater than or equal to the starting line number, and must not exceed the total number of lines in the file.")]
+        public int EndLine { get; set; } = 200;
+    }
+
     /// <summary>
     /// 从指定行数开始读取文件内容
     /// </summary>
@@ -181,46 +205,75 @@ public class FileFunction(string gitPath)
     [return:
         Description(
             "Returns the file content from the specified starting line to the ending line (inclusive). If the total output length exceeds 10,000 characters, only the first 10,000 characters are returned, the content order is consistent with the original file, and the original line breaks are retained.")]
-    public async Task<string> ReadFileFromLineAsync(
-        [Description(
-            "The absolute or relative path of the target file. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
-        string filePath,
-        [Description(
-            "The starting line number for reading (starting from 0), must be less than or equal to the ending line number, and must be within the actual number of lines in the file.")]
-        int startLine = 0,
-        [Description(
-            "The ending line number for reading (including this line), must be greater than or equal to the starting line number, and must not exceed the total number of lines in the file.")]
-        int endLine = 10)
+    public async Task<string> ReadFileFromLineAsync(ReadFileInput input)
     {
-        try
+        var dic = new Dictionary<string, string>();
+        foreach (var item in input.Items)
         {
-            filePath = Path.Combine(gitPath, filePath.TrimStart('/'));
-            Console.WriteLine($"Reading file from line {startLine}: {filePath}");
-            var lines = await File.ReadAllLinesAsync(filePath);
-
-            if (startLine < 0 || startLine >= lines.Length)
-            {
-                return $"Invalid start line: {startLine}";
-            }
-
-            if (endLine < startLine || endLine >= lines.Length)
-            {
-                return $"Invalid end line: {endLine}";
-            }
-
-            var result = new StringBuilder();
-            for (var i = startLine; i <= endLine; i++)
-            {
-                result.AppendLine(lines[i]);
-            }
-
-            return result.ToString();
+            dic.Add(item.FilePath, await ReadItem(item.FilePath, item.StartLine, item.EndLine));
         }
-        catch (Exception ex)
+
+        return JsonSerializer.Serialize(dic, new JsonSerializerOptions()
         {
-            // 处理异常
-            Console.WriteLine($"Error reading file: {ex.Message}");
-            return $"Error reading file: {ex.Message}";
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            WriteIndented = true,
+        });
+
+        async Task<string> ReadItem(
+            [Description(
+                "The absolute or relative path of the target file. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
+            string filePath,
+            [Description(
+                "The starting line number for reading (starting from 0), must be less than or equal to the ending line number, and must be within the actual number of lines in the file.")]
+            int startLine = 0,
+            [Description(
+                "The ending line number for reading (including this line), must be greater than or equal to the starting line number, and must not exceed the total number of lines in the file.")]
+            int endLine = 200)
+        {
+            try
+            {
+                filePath = Path.Combine(gitPath, filePath.TrimStart('/'));
+                Console.WriteLine(
+                    $"Reading file from line {startLine}: {filePath} startLine={startLine}, endLine={endLine}");
+
+                // 如果<0则读取全部
+                if (startLine < 0 && endLine < 0)
+                {
+                    return await ReadFileAsync(filePath);
+                }
+
+                // 如果endLine<0则读取到最后一行
+                if (endLine < 0)
+                {
+                    endLine = int.MaxValue;
+                }
+
+                var lines = await File.ReadAllLinesAsync(filePath);
+
+                if (startLine < 0 || startLine >= lines.Length)
+                {
+                    return $"Invalid start line: {startLine}";
+                }
+
+                if (endLine < startLine || endLine >= lines.Length)
+                {
+                    return $"Invalid end line: {endLine}";
+                }
+
+                var result = new StringBuilder();
+                for (var i = startLine; i <= endLine; i++)
+                {
+                    result.AppendLine(lines[i]);
+                }
+
+                return result.ToString();
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                Console.WriteLine($"Error reading file: {ex.Message}");
+                return $"Error reading file: {ex.Message}";
+            }
         }
     }
 }
