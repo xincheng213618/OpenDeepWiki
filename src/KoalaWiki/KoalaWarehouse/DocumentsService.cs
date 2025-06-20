@@ -46,8 +46,6 @@ public partial class DocumentsService
         var pathInfos = new List<PathInfo>();
         // 递归扫描目录所有文件和目录
         ScanDirectory(path, pathInfos, ignoreFiles);
-        var catalogue = new List<string>();
-
         return pathInfos;
     }
 

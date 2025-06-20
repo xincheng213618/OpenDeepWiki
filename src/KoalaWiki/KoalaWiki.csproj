@@ -14,6 +14,7 @@
         <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
         <PackageReference Include="Lost.SemanticKernel.Connectors.Anthropic" Version="1.25.0-alpha3" />
         <PackageReference Include="Mapster.DependencyInjection" Version="1.0.1" />
+        <PackageReference Include="Mem0.NET" Version="1.1.3" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
@@ -33,9 +34,7 @@
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" Version="1.57.0-alpha" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.57.0" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.57.0" />
-        <PackageReference Include="ModelContextProtocol" Version="0.2.0-preview.2" />
-        <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.2" />
-        <PackageReference Include="ModelContextProtocolServer.Sse" Version="0.0.1-preview-06" />
+        <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.1" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Octokit" Version="14.0.0" />
         <PackageReference Include="Polly" Version="8.6.1" />
@@ -91,6 +90,12 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Prompts\Chat\*.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Mem0\DocsSystem.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Mem0\CodeSystem.md">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsApplications.md">
