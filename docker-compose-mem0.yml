@@ -12,12 +12,12 @@
       - REPAIR_MERMAID=1 # 是否进行Mermaid修复，1修复，其余不修复
       - CHAT_MODEL=gpt-4.1 # 必须要支持function的模型
       - ANALYSIS_MODEL=gpt-4.1 # 分析模型，用于生成仓库目录结构，这个很重要，模型越强，生成的目录结构越好，为空则使用ChatModel
-                        # 分析模型建议使用GPT-4.1  , CHAT模型可以用其他模型生成文档,以节省 token 开销
+      # 分析模型建议使用GPT-4.1  , CHAT模型可以用其他模型生成文档,以节省 token 开销
       - CHAT_API_KEY= #您的APIkey
       - LANGUAGE= # 设置生成语言默认为“中文”, 英文可以填写 English 或 英文
       - ENDPOINT=https://api.token-ai.cn/v1
       - DB_TYPE=postgres
-      - DB_CONNECTION_STRING=Host=postgres;Port=5432;Database=KoalaWiki;Username=postgres;Password=postgres 
+      - DB_CONNECTION_STRING=Host=postgres;Port=5432;Database=KoalaWiki;Username=postgres;Password=postgres
       - UPDATE_INTERVAL=5 # 仓库增量更新间隔，单位天
       - EnableSmartFilter=true # 是否启用智能过滤，这可能影响AI得到仓库的文件目录
       - ENABLE_INCREMENTAL_UPDATE=true # 是否启用增量更新
@@ -68,9 +68,11 @@
   
   koalawiki-web:
     image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/koala-wiki-web
+    networks:
+      - koala_network
     environment:
       - NEXT_PUBLIC_API_URL=http://koalawiki:8080 # 用于提供给server的地址
-      
+  
   nginx: # 需要nginx将前端和后端代理到一个端口
     image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/nginx:alpine
     ports:
@@ -123,7 +125,7 @@
       - NEO4J_apoc_export_file_enabled=true
       - NEO4J_apoc_import_file_enabled=true
       - NEO4J_apoc_import_file_use__neo4j__config=true
-        
+
 networks:
   koala_network:
     driver: bridge
