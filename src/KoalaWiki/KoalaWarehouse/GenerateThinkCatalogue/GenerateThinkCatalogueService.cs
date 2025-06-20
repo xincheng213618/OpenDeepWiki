@@ -43,8 +43,16 @@ public class GenerateThinkCatalogueService
         DocumentResultCatalogue? result = null;
 
         var retryCount = 0;
+        var assistantRetryCount = 0;
         const int maxRetries = 5;
         Exception? exception = null;
+
+        StringBuilder str = new StringBuilder();
+        var history = new ChatHistory();
+        history.AddUserMessage(prompt);
+        history.AddAssistantMessage(
+            "Ok. Now I will start analyzing the core file. And I won't ask you questions or notify you. I will directly provide you with the required content. Please confirm");
+        history.AddUserMessage("Ok, I confirm that you can start analyzing the core file. Please proceed with the analysis and provide the required content without asking questions or notifying me.");
 
         while (retryCount < maxRetries)
         {
@@ -54,10 +62,6 @@ public class GenerateThinkCatalogueService
                     OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false);
 
                 var chat = analysisModel.Services.GetService<IChatCompletionService>();
-
-                StringBuilder str = new StringBuilder();
-                var history = new ChatHistory();
-                history.AddUserMessage(prompt);
 
                 await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history,
                                    new OpenAIPromptExecutionSettings()
@@ -70,6 +74,29 @@ public class GenerateThinkCatalogueService
                 {
                     // 将推理内容输出
                     str.Append(item);
+                }
+
+                // 判断是否正常生成
+
+                /// 获取<output-think>
+                var regex = new Regex(@"<output-think>(.*?)</output-think>",
+                    RegexOptions.Singleline);
+                var match = regex.Match(str.ToString());
+                if (match.Success)
+                {
+                    // 提取到的内容
+                    var extractedContent = match.Groups[1].Value;
+                    str.Clear();
+                    str.Append(extractedContent);
+                }
+                else
+                {
+                    assistantRetryCount++;
+
+                    if (assistantRetryCount < maxRetries)
+                    {
+                        continue;
+                    }
                 }
 
                 result =
@@ -133,6 +160,14 @@ public class GenerateThinkCatalogueService
         const int maxRetries = 5;
         Exception? exception = null;
 
+        StringBuilder str = new StringBuilder();
+        var history = new ChatHistory();
+        history.AddUserMessage(prompt);
+
+        history.AddAssistantMessage(
+            "Ok. Now I will start analyzing the core file. And I won't ask you questions or notify you. I will directly provide you with the required content. Please confirm");
+        history.AddUserMessage("Ok, I confirm that you can start analyzing the core file. Please proceed with the analysis and provide the required content without asking questions or notifying me.");
+
         while (retryCount < maxRetries)
         {
             try
@@ -141,10 +176,6 @@ public class GenerateThinkCatalogueService
                     OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false);
 
                 var chat = analysisModel.Services.GetService<IChatCompletionService>();
-
-                StringBuilder str = new StringBuilder();
-                var history = new ChatHistory();
-                history.AddUserMessage(prompt);
 
                 await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history,
                                    new OpenAIPromptExecutionSettings()
