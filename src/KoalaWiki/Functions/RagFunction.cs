@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Text.Json;
 using KoalaWiki.CodeMap;
 using Mem0.NET;
 using Microsoft.KernelMemory;
@@ -19,13 +20,23 @@ public class RagFunction(string warehouseId)
         });
 
 
-    [KernelFunction, Description("检索当前仓库文档和代码相关索引内容，通过搜索关键词来获取相关的代码或文档内容。")]
-    public async Task<string> SearchdeAsync(
-        [Description("更接近需要的代码或文档的描述，例如：搜索一个函数，或者搜索一个类")]
-        string query, double minRelevance = 0.3)
+    [KernelFunction, Description("Search and retrieve relevant code or documentation content from the current repository index using specific keywords.")]
+    public async Task<string> SearchAsync(
+        [Description("Detailed description of the code or documentation you need. Specify whether you're looking for a function, class, method, or specific documentation. Be as specific as possible to improve search accuracy.")]
+        string query,
+        [Description("Number of search results to return. Default is 5. Increase for broader coverage or decrease for focused results.")]
+        int limit = 5,
+        [Description("Minimum relevance threshold for vector search results, ranging from 0 to 1. Default is 0.45. Higher values (e.g., 0.7) return more precise matches, while lower values provide more varied results.")]
+        double minRelevance = 0.45)
     {
-        
+        var result = await _mem0Client.SearchAsync(new SearchRequest()
+        {
+            Query = query,
+            UserId = warehouseId,
+            Threshold = minRelevance,
+            Limit = limit,
+        });
 
-        return "";
+        return JsonSerializer.Serialize(result, JsonSerializerOptions.Web);
     }
 }

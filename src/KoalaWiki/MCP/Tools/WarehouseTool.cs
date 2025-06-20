@@ -14,6 +14,13 @@ namespace KoalaWiki.MCP.Tools;
 
 public sealed class WarehouseTool(IKoalaWikiContext koala)
 {
+    /// <summary>
+    /// 生成仓库文档
+    /// </summary>
+    /// <param name="server"></param>
+    /// <param name="question"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
     public async Task<string> GenerateDocumentAsync(
         IMcpServer server,
         string question)

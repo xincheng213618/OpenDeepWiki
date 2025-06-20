@@ -58,10 +58,10 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
         var fileKernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, path, OpenAIOptions.ChatModel, false);
 
-        // if (!string.IsNullOrWhiteSpace(OpenAIOptions.EmbeddingsModel))
-        // {
-        //     fileKernel.Plugins.AddFromObject(new RagFunction(warehouse!.Id));
-        // }
+        if (OpenAIOptions.EnableMem0)
+        {
+            fileKernel.Plugins.AddFromObject(new RagFunction(warehouse!.Id));
+        }
 
         DocumentContext.DocumentStore = new DocumentStore();
 
@@ -261,7 +261,7 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                             ["catalogue"] = warehouse.OptimizedDirectoryStructure,
                             ["repository_url"] = warehouse.Address,
                             ["question"] = input.Question,
-                        },OpenAIOptions.ChatModel));
+                        }, OpenAIOptions.ChatModel));
                 }
                 else
                 {
@@ -281,7 +281,7 @@ public class ChatService(IKoalaWikiContext koala, IUserContext userContext) : Fa
                             ["repository_url"] = warehouse.Address,
                             ["question"] = input.Question,
                             ["history"] = historyMessage.ToString(),
-                        },OpenAIOptions.ChatModel));
+                        }, OpenAIOptions.ChatModel));
                 }
 
 
