@@ -184,4 +184,6 @@ erDiagram
 - Maintain consistent terminology
 - Implement progressive disclosure
 - Validate all diagrams
+- For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+- Don't hold back.  Give it your all.
   </execution_notes>

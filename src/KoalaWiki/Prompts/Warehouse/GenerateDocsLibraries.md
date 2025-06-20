@@ -257,4 +257,6 @@ flowchart LR
 - Include package manager installation instructions
 - Document configuration options with examples
 - Create quickstart guide for new users
+- For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+- Don't hold back.  Give it your all.
   </execution_notes>

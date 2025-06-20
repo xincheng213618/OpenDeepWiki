@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 
-public class GenerateThinkCatalogueService
+public static class GenerateThinkCatalogueService
 {
     public static async Task<(DocumentResultCatalogue catalogue, Exception? exception)> GenerateThinkCatalogue(
         string path,
@@ -47,17 +47,18 @@ public class GenerateThinkCatalogueService
         const int maxRetries = 5;
         Exception? exception = null;
 
-        StringBuilder str = new StringBuilder();
-        var history = new ChatHistory();
-        history.AddUserMessage(prompt);
-        history.AddAssistantMessage(
-            "Ok. Now I will start analyzing the core file. And I won't ask you questions or notify you. I will directly provide you with the required content. Please confirm");
-        history.AddUserMessage("Ok, I confirm that you can start analyzing the core file. Please proceed with the analysis and provide the required content without asking questions or notifying me.");
-
         while (retryCount < maxRetries)
         {
             try
             {
+                StringBuilder str = new StringBuilder();
+                var history = new ChatHistory();
+                history.AddUserMessage(prompt);
+                history.AddAssistantMessage(
+                    "Ok. Now I will start analyzing the core file. And I won't ask you questions or notify you. I will directly provide you with the required content. Please confirm");
+                history.AddUserMessage(
+                    "Ok, I confirm that you can start analyzing the core file. Please proceed with the analysis and provide the required content without asking questions or notifying me.");
+
                 var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
                     OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false);
 
@@ -166,7 +167,8 @@ public class GenerateThinkCatalogueService
 
         history.AddAssistantMessage(
             "Ok. Now I will start analyzing the core file. And I won't ask you questions or notify you. I will directly provide you with the required content. Please confirm");
-        history.AddUserMessage("Ok, I confirm that you can start analyzing the core file. Please proceed with the analysis and provide the required content without asking questions or notifying me.");
+        history.AddUserMessage(
+            "Ok, I confirm that you can start analyzing the core file. Please proceed with the analysis and provide the required content without asking questions or notifying me.");
 
         while (retryCount < maxRetries)
         {

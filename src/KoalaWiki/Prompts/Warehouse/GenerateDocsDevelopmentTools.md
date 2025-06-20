@@ -280,6 +280,6 @@ graph LR
 - Include debugging and troubleshooting techniques
 - Provide contribution guidelines
 - Document testing framework and approaches
-- Don't hold back. Give it your all.
 - For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+- Don't hold back.  Give it your all.
   </development_tool_specifics>

@@ -290,4 +290,6 @@ graph TD
 - Include setup instructions for development environments
 - Document testing procedures and code coverage
 - Provide migration guides for version upgrades
+- For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+- Don't hold back.  Give it your all.
   </execution_notes>
