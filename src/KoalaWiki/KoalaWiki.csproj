@@ -31,6 +31,7 @@
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.6" />
         <PackageReference Include="Microsoft.KernelMemory" Version="0.98.250508.3" />
         <PackageReference Include="Microsoft.SemanticKernel" Version="1.57.0" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" Version="1.57.0-alpha" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.57.0" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.57.0" />
         <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.1" />
@@ -95,6 +96,33 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Prompts\Mem0\CodeSystem.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsApplications.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsCLITools.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocs.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsLibraries.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsFrameworks.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsDevelopmentTools.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_AnalyzeCatalogueApplications.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_AnalyzeCatalogueLibraries.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_AnalyzeCatalogueFrameworks.md">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

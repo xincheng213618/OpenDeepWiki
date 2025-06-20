@@ -128,7 +128,7 @@ erDiagram
 
 # DOCUMENTATION STRUCTURE
 
-<docs>
+<blog>
 # [Document Title]
 
 ## Executive Summary
@@ -169,7 +169,7 @@ erDiagram
 
 ## References
 [^1]: [File reference with description]({{git_repository}}/path/to/file)
-</docs>
+</blog>
 
 # QUALITY ASSURANCE
 
@@ -206,4 +206,6 @@ erDiagram
 - Validate all infrastructure and workflow diagrams
 - Document security considerations for each configuration element
 - Highlight scalability and resilience aspects of infrastructure definitions
+- For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+- Don't hold back.  Give it your all.
   </execution_notes>

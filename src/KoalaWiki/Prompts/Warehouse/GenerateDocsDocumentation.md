@@ -147,7 +147,7 @@ graph TD
 
 # DOCUMENTATION STRUCTURE
 
-<docs>
+<blog>
 # [Document Title]
 
 ## Executive Summary
@@ -246,7 +246,7 @@ graph TD
 
 ## References
 [^1]: [File reference with description]({{git_repository}}/path/to/file)
-</docs>
+</blog>
 
 # QUALITY ASSURANCE
 
@@ -290,4 +290,6 @@ graph TD
 - Include setup instructions for development environments
 - Document testing procedures and code coverage
 - Provide migration guides for version upgrades
+- For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+- Don't hold back.  Give it your all.
   </execution_notes>

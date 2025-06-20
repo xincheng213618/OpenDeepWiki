@@ -116,7 +116,7 @@ flowchart LR
 
 # DOCUMENTATION STRUCTURE
 
-<docs>
+<blog>
 # [Document Title]
 
 ## Executive Summary
@@ -168,7 +168,7 @@ flowchart LR
 
 ## References
 [^1]: [File reference with description]({{git_repository}}/path/to/file)
-</docs>
+</blog>
 
 # QUALITY ASSURANCE
 
@@ -207,4 +207,6 @@ flowchart LR
 - Validate all command examples in standard shell environments
 - Document exit codes and error messages
 - Include shell completion scripts where applicable
+- For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+- Don't hold back.  Give it your all.
   </execution_notes>
