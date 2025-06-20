@@ -88,19 +88,19 @@ graph TB
         Router[Route Handler]
         State[State Management]
     end
-    
+
     subgraph "Backend Layer"
         API[API Gateway]
         Auth[Authentication]
         BL[Business Logic]
     end
-    
+
     subgraph "Data Layer"
         DB[(Database)]
         Cache[(Cache)]
         Files[(File Storage)]
     end
-    
+
     UI --> Router
     Router --> State
     State --> API
@@ -142,7 +142,7 @@ classDiagram
         +utils: Object
         +constants: Object
     }
-    
+
     ComponentA --> SharedService
     ComponentB --> SharedService
     ComponentA <--> ComponentB : props/events
@@ -151,7 +151,7 @@ classDiagram
 
 ## Documentation Structure Template
 
-Generate your documentation using this exact structure, wrapped in <blog> tags:
+<documentation_template>
 <blog>
 # [Document Title]
 
@@ -296,10 +296,6 @@ sequenceDiagram
 
 ## References & Resources
 
-### Code References
-[^1]: [Primary configuration file]({{$git_repository}}/path/to/config)
-[^2]: [Main application entry point]({{$git_repository}}/path/to/main)
-[^3]: [Core business logic]({{$git_repository}}/path/to/core)
 
 ### External Documentation
 - [Framework documentation]
@@ -310,7 +306,14 @@ sequenceDiagram
 - [Development standards]
 - [Code review guidelines]
 - [Deployment procedures]
+
+### Code References
+[^1]: [Primary configuration file]({{$git_repository}}/path/to/config)
+[^2]: [Main application entry point]({{$git_repository}}/path/to/main)
+[^3]: [Core business logic]({{$git_repository}}/path/to/core)
+
   </blog>
+  </documentation_template>
 
 ## Quality Assurance Checklist
 

@@ -36,29 +36,29 @@ Create comprehensive, professional-grade CLI documentation from Git repositories
 Execute this analysis in the following order, being thorough and methodical:
 
 1. **Repository Deep Dive**
-  - Map the complete CLI command structure and hierarchy
-  - Identify all entry points, argument parsers, and command handlers
-  - Document option interdependencies and validation logic
-  - Analyze error handling patterns and exit codes
+- Map the complete CLI command structure and hierarchy
+- Identify all entry points, argument parsers, and command handlers
+- Document option interdependencies and validation logic
+- Analyze error handling patterns and exit codes
 
 2. **User Experience Mapping**
-  - Trace typical user workflows from simple to complex scenarios
-  - Identify common pain points and error conditions
-  - Document shell integration opportunities and best practices
-  - Map input/output patterns and data flow
+- Trace typical user workflows from simple to complex scenarios
+- Identify common pain points and error conditions
+- Document shell integration opportunities and best practices
+- Map input/output patterns and data flow
 
 3. **Technical Architecture Analysis**
-  - Document command execution flow and internal architecture
-  - Identify performance considerations and optimization opportunities
-  - Analyze cross-platform compatibility and environment requirements
-  - Map configuration systems and extensibility points
+- Document command execution flow and internal architecture
+- Identify performance considerations and optimization opportunities
+- Analyze cross-platform compatibility and environment requirements
+- Map configuration systems and extensibility points
 
 4. **Documentation Synthesis**
-  - Create progressive learning paths from beginner to expert usage
-  - Design comprehensive reference materials with searchable structure
-  - Include real-world examples and troubleshooting scenarios
-  - Develop visual representations of complex relationships
-    </analysis_instructions>
+- Create progressive learning paths from beginner to expert usage
+- Design comprehensive reference materials with searchable structure
+- Include real-world examples and troubleshooting scenarios
+- Develop visual representations of complex relationships
+  </analysis_instructions>
 
 ## Required Documentation Components
 
@@ -98,7 +98,10 @@ Create Mermaid diagrams for:
 
 ## Output Format Requirements
 
-Generate your documentation using this exact structure, wrapped in <blog> tags:
+<output_specifications>
+Structure your response using this exact format:
+
+```markdown
 <blog>
 # [Document Title]
 
@@ -131,8 +134,12 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 
 ## References & Citations
 [Direct links to source code with specific line references]
-</blog>
 
+### Key Files Analyzed
+[^1]: [fileName]({{$git_repository}}/path/to/file#L123-L145) - Brief description of relevance
+[^2]: [anotherFileName]({{$git_repository}}/path/to/another/file#L67-L89) - Another relevant file
+</blog>
+```
 </output_specifications>
 
 ## Quality Standards & Best Practices

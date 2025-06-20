@@ -75,132 +75,131 @@ Create comprehensive visualizations using Mermaid diagrams. Include all of these
 ## System Architecture
 ```mermaid
 graph TD
-    A[User Input] --> B[Command Parser]
-    B --> C{Route Handler}
-    C -->|Config| D[Config Manager]
-    C -->|Build| E[Build System]
-    C -->|Plugin| F[Plugin Manager]
-    D --> G[Validation Layer]
-    E --> H[Asset Pipeline]
-    F --> I[Plugin Registry]
-    G --> J[Output Generator]
-    H --> J
-    I --> J
-    J --> K[Final Output]
+  A[User Input] --> B[Command Parser]
+  B --> C{Route Handler}
+  C -->|Config| D[Config Manager]
+  C -->|Build| E[Build System]
+  C -->|Plugin| F[Plugin Manager]
+  D --> G[Validation Layer]
+  E --> H[Asset Pipeline]
+  F --> I[Plugin Registry]
+  G --> J[Output Generator]
+  H --> J
+  I --> J
+  J --> K[Final Output]
 ```
 
 ## Component Relationships
 ```mermaid
 classDiagram
-    class CoreSystem {
-        +initialize()
-        +configure()
-        +execute()
-        -validateConfig()
-    }
-    class PluginManager {
-        +loadPlugins()
-        +executeHooks()
-        +validatePlugin()
-    }
-    class ConfigManager {
-        +loadConfig()
-        +mergeConfigs()
-        +validateSchema()
-    }
-    CoreSystem --> PluginManager
-    CoreSystem --> ConfigManager
-    PluginManager --> Plugin
-    ConfigManager --> ConfigSchema
+  class CoreSystem {
+    +initialize()
+    +configure()
+    +execute()
+    -validateConfig()
+  }
+  class PluginManager {
+    +loadPlugins()
+    +executeHooks()
+    +validatePlugin()
+  }
+  class ConfigManager {
+    +loadConfig()
+    +mergeConfigs()
+    +validateSchema()
+  }
+  CoreSystem --> PluginManager
+  CoreSystem --> ConfigManager
+  PluginManager --> Plugin
+  ConfigManager --> ConfigSchema
 ```
 
 ## Process Workflows
 ```mermaid
 sequenceDiagram
-    participant Developer
-    participant CLI
-    participant ConfigSystem
-    participant PluginManager
-    participant BuildSystem
-    
-    Developer->>CLI: Execute command
-    CLI->>ConfigSystem: Load configuration
-    ConfigSystem-->>CLI: Configuration object
-    CLI->>PluginManager: Initialize plugins
-    PluginManager-->>CLI: Plugin instances
-    CLI->>BuildSystem: Execute build process
-    BuildSystem->>PluginManager: Run plugin hooks
-    PluginManager-->>BuildSystem: Hook results
-    BuildSystem-->>CLI: Build artifacts
-    CLI-->>Developer: Success + output paths
+  participant Developer
+  participant CLI
+  participant ConfigSystem
+  participant PluginManager
+  participant BuildSystem
+
+  Developer->>CLI: Execute command
+  CLI->>ConfigSystem: Load configuration
+  ConfigSystem-->>CLI: Configuration object
+  CLI->>PluginManager: Initialize plugins
+  PluginManager-->>CLI: Plugin instances
+  CLI->>BuildSystem: Execute build process
+  BuildSystem->>PluginManager: Run plugin hooks
+  PluginManager-->>BuildSystem: Hook results
+  BuildSystem-->>CLI: Build artifacts
+  CLI-->>Developer: Success + output paths
 ```
 
 ## Data Flow Architecture
 ```mermaid
 flowchart LR
-    A[Source Files] --> B[Parser]
-    B --> C[AST Generator]
-    C --> D[Transform Pipeline]
-    D --> E{Plugin Hooks}
-    E -->|Pre-process| F[Plugin A]
-    E -->|Transform| G[Plugin B]
-    E -->|Post-process| H[Plugin C]
-    F --> I[Combiner]
-    G --> I
-    H --> I
-    I --> J[Output Generator]
-    J --> K[Artifacts]
+  A[Source Files] --> B[Parser]
+  B --> C[AST Generator]
+  C --> D[Transform Pipeline]
+  D --> E{Plugin Hooks}
+  E -->|Pre-process| F[Plugin A]
+  E -->|Transform| G[Plugin B]
+  E -->|Post-process| H[Plugin C]
+  F --> I[Combiner]
+  G --> I
+  H --> I
+  I --> J[Output Generator]
+  J --> K[Artifacts]
 ```
 
 ## Plugin Architecture
 ```mermaid
 graph TB
-    A[Host System] --> B[Plugin Manager]
-    B --> C[Plugin Loader]
-    B --> D[Hook Registry]
-    B --> E[Event Dispatcher]
-    
-    C --> F[Plugin A]
-    C --> G[Plugin B]
-    C --> H[Plugin C]
-    
-    F --> I[Hook Implementation]
-    G --> J[Hook Implementation]
-    H --> K[Hook Implementation]
-    
-    I --> D
-    J --> D
-    K --> D
-    
-    D --> E
-    E --> L[System Events]
+  A[Host System] --> B[Plugin Manager]
+  B --> C[Plugin Loader]
+  B --> D[Hook Registry]
+  B --> E[Event Dispatcher]
+
+  C --> F[Plugin A]
+  C --> G[Plugin B]
+  C --> H[Plugin C]
+
+  F --> I[Hook Implementation]
+  G --> J[Hook Implementation]
+  H --> K[Hook Implementation]
+
+  I --> D
+  J --> D
+  K --> D
+
+  D --> E
+  E --> L[System Events]
 ```
 
 ## Build Process Flow
 ```mermaid
 graph LR
-    A[Source Code] --> B[Dependency Resolution]
-    B --> C[Pre-build Hooks]
-    C --> D[Compilation/Transformation]
-    D --> E[Post-build Hooks]
-    E --> F[Asset Optimization]
-    F --> G[Output Generation]
-    G --> H[Validation]
-    H --> I[Package Creation]
-    
-    subgraph "Plugin Integration Points"
-        C
-        E
-        J[Custom Transformers]
-        K[Asset Processors]
-    end
-    
-    J --> D
-    K --> F
+  A[Source Code] --> B[Dependency Resolution]
+  B --> C[Pre-build Hooks]
+  C --> D[Compilation/Transformation]
+  D --> E[Post-build Hooks]
+  E --> F[Asset Optimization]
+  F --> G[Output Generation]
+  G --> H[Validation]
+  H --> I[Package Creation]
+
+  subgraph "Plugin Integration Points"
+    C
+    E
+    J[Custom Transformers]
+    K[Asset Processors]
+  end
+
+  J --> D
+  K --> F
 ```
 </visualization_requirements>
 
-Generate your documentation using this exact structure, wrapped in <blog> tags:
 <blog>
 # document title
 
@@ -550,9 +549,10 @@ jobs:
 - [GitHub Discussions]({{$git_repository}}/discussions)
 - [Stack Overflow Tag](https://stackoverflow.com/questions/tagged/tool-name)
 
----
 
-*Generated with comprehensive repository analysis focusing on developer experience and practical implementation guidance.*
+### References and Further Reading
+[^1]: [fileName]({{$git_repository}}/path/to/fileNam)
+
 </blog>
 
 <quality_assurance>

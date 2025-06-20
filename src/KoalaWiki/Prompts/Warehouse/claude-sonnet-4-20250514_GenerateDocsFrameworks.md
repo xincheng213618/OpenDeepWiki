@@ -65,35 +65,35 @@ Create sophisticated, informative diagrams using Mermaid syntax. Include multipl
 ## System Architecture Overview
 ```mermaid
 graph TB
-    subgraph "External Layer"
-        U[Users/Clients]
-        EXT[External APIs]
-    end
-    subgraph "Presentation Layer"
-        UI[User Interface]
-        API[API Gateway]
-    end
-    subgraph "Business Logic Layer"
-        CORE[Core Services]
-        PROC[Processing Engine]
-        VALID[Validation Layer]
-    end
-    subgraph "Data Layer"
-        CACHE[Cache Layer]
-        DB[(Primary Database)]
-        QUEUE[Message Queue]
-    end
-    
-    U --> UI
-    U --> API
-    EXT --> API
-    UI --> CORE
-    API --> CORE
-    CORE --> PROC
-    CORE --> VALID
-    PROC --> CACHE
-    PROC --> DB
-    CORE --> QUEUE
+  subgraph "External Layer"
+    U[Users/Clients]
+    EXT[External APIs]
+  end
+  subgraph "Presentation Layer"
+    UI[User Interface]
+    API[API Gateway]
+  end
+  subgraph "Business Logic Layer"
+    CORE[Core Services]
+    PROC[Processing Engine]
+    VALID[Validation Layer]
+  end
+  subgraph "Data Layer"
+    CACHE[Cache Layer]
+    DB[(Primary Database)]
+    QUEUE[Message Queue]
+  end
+
+  U --> UI
+  U --> API
+  EXT --> API
+  UI --> CORE
+  API --> CORE
+  CORE --> PROC
+  CORE --> VALID
+  PROC --> CACHE
+  PROC --> DB
+  CORE --> QUEUE
 ```
 
 ## Component Interaction Patterns
@@ -218,21 +218,21 @@ flowchart TD
 ## State and Lifecycle Management
 ```mermaid
 stateDiagram-v2
-    [*] --> Initializing
-    Initializing --> Configuring : Load Config
-    Configuring --> RegisteringServices : Config Valid
-    RegisteringServices --> StartingMiddleware : Services Ready
-    StartingMiddleware --> Running : All Systems Ready
-    Running --> Processing : Handle Request
-    Processing --> Running : Request Complete
-    Running --> Shutting_Down : Shutdown Signal
-    Shutting_Down --> Cleaning_Up : Stop Services
-    Cleaning_Up --> [*] : Cleanup Complete
-    
-    Configuring --> Error : Invalid Config
-    RegisteringServices --> Error : Service Failure
-    StartingMiddleware --> Error : Middleware Failure
-    Error --> [*] : Terminate
+  [*] --> Initializing
+  Initializing --> Configuring : Load Config
+  Configuring --> RegisteringServices : Config Valid
+  RegisteringServices --> StartingMiddleware : Services Ready
+  StartingMiddleware --> Running : All Systems Ready
+  Running --> Processing : Handle Request
+  Processing --> Running : Request Complete
+  Running --> Shutting_Down : Shutdown Signal
+  Shutting_Down --> Cleaning_Up : Stop Services
+  Cleaning_Up --> [*] : Cleanup Complete
+
+  Configuring --> Error : Invalid Config
+  RegisteringServices --> Error : Service Failure
+  StartingMiddleware --> Error : Middleware Failure
+  Error --> [*] : Terminate
 ```
 </visualization_specifications>
 
@@ -240,8 +240,9 @@ stateDiagram-v2
 The user wants me to structure this as a comprehensive documentation framework. I should create a template that incorporates Claude 4 best practices while maintaining the technical rigor of the original prompt.
 </thinking>
 
-Generate your documentation using this exact structure, wrapped in <blog> tags:
-<docs>
+<blog>
+Generate structured technical documentation following this template:
+
 ## Executive Summary
 Provide a concise yet comprehensive overview that captures:
 - **System Purpose**: Core functionality and business value
@@ -367,7 +368,7 @@ Document all source materials with precise references:
 [^1]: [File reference with specific line numbers and description]({{$git_repository}}/path/to/file#L123-L456)
 [^2]: [Component analysis reference]({{$git_repository}}/path/to/component)
 [^3]: [Configuration file with explanation]({{$git_repository}}/path/to/config.yaml)
-</docs>
+</blog>
 
 <quality_standards>
 ## Technical Excellence Requirements

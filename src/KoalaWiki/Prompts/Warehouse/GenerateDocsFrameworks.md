@@ -172,7 +172,7 @@ stateDiagram-v2
 
 # DOCUMENTATION STRUCTURE
 
-<docs>
+<blog>
 # [Document Title]
 
 ## Executive Summary
@@ -225,7 +225,7 @@ stateDiagram-v2
 
 ## References
 [^1]: [File reference with description]({{git_repository}}/path/to/file)
-</docs>
+</blog>
 
 # QUALITY ASSURANCE
 

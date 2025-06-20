@@ -128,7 +128,7 @@ erDiagram
 
 # DOCUMENTATION STRUCTURE
 
-<docs>
+<blog>
 # [Document Title]
 
 ## Executive Summary
@@ -169,7 +169,7 @@ erDiagram
 
 ## References
 [^1]: [File reference with description]({{git_repository}}/path/to/file)
-</docs>
+</blog>
 
 # QUALITY ASSURANCE
 

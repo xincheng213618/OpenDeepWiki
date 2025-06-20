@@ -234,7 +234,7 @@ public class DocumentPendingService
         sr = new StringBuilder(sr.ToString().Replace("<thinking>", string.Empty).Replace("</thinking>", string.Empty));
 
         // 使用正则表达式将<blog></blog>中的内容提取
-        var regex = new Regex(@"<docs>(.*?)</docs>", RegexOptions.Singleline);
+        var regex = new Regex(@"<blog>(.*?)</blog>", RegexOptions.Singleline);
 
         var match = regex.Match(sr.ToString());
 
@@ -251,6 +251,16 @@ public class DocumentPendingService
         // 删除所有的所有的<think></think>
         var thinkRegex = new Regex(@"<think>(.*?)</think>", RegexOptions.Singleline);
         content = thinkRegex.Replace(content, string.Empty);
+        
+        // 从docs提取
+        var docsRegex = new Regex(@"<docs>(.*?)</docs>", RegexOptions.Singleline);
+        var docsMatch = docsRegex.Match(content);
+        if (docsMatch.Success)
+        {
+            // 提取到的内容
+            var extractedDocs = docsMatch.Groups[1].Value;
+            content = content.Replace(docsMatch.Value, extractedDocs);
+        }
 
         var fileItem = new DocumentFileItem()
         {

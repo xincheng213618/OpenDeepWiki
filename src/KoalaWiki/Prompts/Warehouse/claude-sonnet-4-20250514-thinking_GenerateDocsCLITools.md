@@ -134,6 +134,10 @@ Structure your response using this exact format:
 
 ## References & Citations
 [Direct links to source code with specific line references]
+
+### Key Files Analyzed
+[^1]: [fileName]({{$git_repository}}/path/to/file#L123-L145) - Brief description of relevance
+[^2]: [anotherFileName]({{$git_repository}}/path/to/another/file#L67-L89) - Another relevant file
 </blog>
 ```
 </output_specifications>

@@ -241,12 +241,9 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 <blog>
 # [Document Title]
 
-<executive_summary>
 ## Executive Summary
 [2-3 sentence high-level overview of the system, its primary purpose, and key architectural decisions. Focus on business value and technical highlights.]
-</executive_summary>
 
-<system_overview>
 ## System Architecture Overview
 [Comprehensive architecture description with key design patterns and principles]
 
@@ -261,9 +258,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 
 ### Technology Stack
 [List and briefly describe the main technologies, frameworks, and tools used]
-</system_overview>
 
-<core_components>
 ## Core Components Analysis
 
 ### [Component 1 Name]
@@ -283,9 +278,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 ```mermaid
 [Component relationship diagram]
 ```
-</core_components>
 
-<data_flow_analysis>
 ## Data Flow and Processing Patterns
 
 [Detailed analysis of how data moves through the system]
@@ -299,9 +292,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 
 ### Performance Considerations
 [Analysis of data processing efficiency and potential bottlenecks]
-</data_flow_analysis>
 
-<integration_points>
 ## Integration and API Analysis
 
 ### External Dependencies
@@ -316,9 +307,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 ```mermaid
 [Integration diagram showing external connections]
 ```
-</integration_points>
 
-<implementation_patterns>
 ## Implementation Patterns and Best Practices
 
 ### Design Patterns Identified
@@ -332,9 +321,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 
 ### Error Handling Strategy
 [How errors are managed and propagated through the system]
-</implementation_patterns>
 
-<performance_analysis>
 ## Performance and Scalability Analysis
 
 ### Current Performance Characteristics
@@ -348,11 +335,6 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 2. **[Optimization Area 2]**: [Specific recommendation with rationale]
 3. **[Optimization Area 3]**: [Specific recommendation with rationale]
 
-### Resource Utilization
-[Analysis of memory, CPU, and I/O patterns]
-</performance_analysis>
-
-<developer_guide>
 ## Developer Experience and Setup
 
 ### Getting Started
@@ -366,9 +348,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 
 ### Debugging and Troubleshooting
 [Common issues and how to resolve them]
-</developer_guide>
 
-<troubleshooting_guide>
 ## Common Issues and Solutions
 
 ### Issue Category 1
@@ -382,9 +362,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 
 ### Monitoring and Alerting
 [What to monitor and how to set up alerts]
-</troubleshooting_guide>
 
-<recommendations>
 ## Strategic Recommendations
 
 ### Immediate Actions (0-30 days)
@@ -401,15 +379,9 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 
 ### Technical Debt Assessment
 [Analysis of technical debt and recommended remediation strategy]
-</recommendations>
 
-<references>
 ## References and Resources
 
-### Key Files Analyzed
-[^1]: [Primary configuration file]({{$git_repository}}/path/to/config) - [Brief description]
-[^2]: [Main application entry point]({{$git_repository}}/path/to/main) - [Brief description]
-[^3]: [Core business logic]({{$git_repository}}/path/to/core) - [Brief description]
 
 ### External Documentation
 - [Relevant framework documentation]
@@ -420,7 +392,11 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 - System Architecture: [Reference to main architecture diagram]
 - Data Flow: [Reference to data flow diagram]
 - Component Relationships: [Reference to component diagram]
-  </references>
+
+### Key Files Analyzed
+[^1]: [Primary configuration file]({{$git_repository}}/path/to/config) - [Brief description]
+[^2]: [Main application entry point]({{$git_repository}}/path/to/main) - [Brief description]
+[^3]: [Core business logic]({{$git_repository}}/path/to/core) - [Brief description]
   </blog>
   </output_structure>
 

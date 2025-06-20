@@ -296,10 +296,6 @@ sequenceDiagram
 
 ## References & Resources
 
-### Code References
-[^1]: [Primary configuration file]({{$git_repository}}/path/to/config)
-[^2]: [Main application entry point]({{$git_repository}}/path/to/main)
-[^3]: [Core business logic]({{$git_repository}}/path/to/core)
 
 ### External Documentation
 - [Framework documentation]
@@ -310,6 +306,12 @@ sequenceDiagram
 - [Development standards]
 - [Code review guidelines]
 - [Deployment procedures]
+
+### Code References
+[^1]: [Primary configuration file]({{$git_repository}}/path/to/config)
+[^2]: [Main application entry point]({{$git_repository}}/path/to/main)
+[^3]: [Core business logic]({{$git_repository}}/path/to/core)
+
   </blog>
   </documentation_template>
 

@@ -902,13 +902,11 @@ const secureConfig = {
 - [Related Library 1]: [Brief description and relationship]
 - [Related Library 2]: [Brief description and relationship]
 - [Complementary Tool]: [How it enhances this library]
-
----
+</blog>
 
 *Documentation generated on {{current_date}} from repository {{$git_repository}} branch {{$git_branch}}*
 
 *For the most up-to-date information, always refer to the source code and official releases.*
-</blog>
 
 ## Advanced Execution Instructions
 

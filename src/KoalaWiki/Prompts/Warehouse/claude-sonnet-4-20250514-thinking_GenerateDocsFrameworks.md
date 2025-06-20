@@ -240,7 +240,7 @@ stateDiagram-v2
 The user wants me to structure this as a comprehensive documentation framework. I should create a template that incorporates Claude 4 best practices while maintaining the technical rigor of the original prompt.
 </thinking>
 
-<docs>
+<blog>
 Generate structured technical documentation following this template:
 
 ## Executive Summary
@@ -368,7 +368,7 @@ Document all source materials with precise references:
 [^1]: [File reference with specific line numbers and description]({{$git_repository}}/path/to/file#L123-L456)
 [^2]: [Component analysis reference]({{$git_repository}}/path/to/component)
 [^3]: [Configuration file with explanation]({{$git_repository}}/path/to/config.yaml)
-</docs>
+</blog>
 
 <quality_standards>
 ## Technical Excellence Requirements

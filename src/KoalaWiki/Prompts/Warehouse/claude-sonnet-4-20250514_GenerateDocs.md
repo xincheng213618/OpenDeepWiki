@@ -80,143 +80,143 @@ Create comprehensive visual representations using Mermaid diagrams. Include mult
 <architecture_diagram>
 ```mermaid
 graph TB
-    subgraph "System Architecture"
-        A[Entry Points] --> B{Core Router/Gateway}
-        B --> C[Service Layer 1]
-        B --> D[Service Layer 2]
-        B --> E[Service Layer 3]
-        
-        C --> F[Business Logic]
-        D --> F
-        E --> F
-        
-        F --> G[Data Access Layer]
-        G --> H[(Primary Database)]
-        G --> I[(Cache Layer)]
-        G --> J[(External APIs)]
-    end
-    
-    subgraph "Cross-Cutting Concerns"
-        K[Logging]
-        L[Security]
-        M[Monitoring]
-        N[Configuration]
-    end
-    
-    K -.-> F
-    L -.-> B
-    M -.-> F
-    N -.-> F
+  subgraph "System Architecture"
+    A[Entry Points] --> B{Core Router/Gateway}
+    B --> C[Service Layer 1]
+    B --> D[Service Layer 2]
+    B --> E[Service Layer 3]
+
+    C --> F[Business Logic]
+    D --> F
+    E --> F
+
+    F --> G[Data Access Layer]
+    G --> H[(Primary Database)]
+    G --> I[(Cache Layer)]
+    G --> J[(External APIs)]
+  end
+
+  subgraph "Cross-Cutting Concerns"
+    K[Logging]
+    L[Security]
+    M[Monitoring]
+    N[Configuration]
+  end
+
+  K -.-> F
+  L -.-> B
+  M -.-> F
+  N -.-> F
 ```
 </architecture_diagram>
 
 <component_relationships>
 ```mermaid
 classDiagram
-    class CoreService {
-        +String id
-        +Configuration config
-        +Logger logger
-        +initialize()
-        +process()
-        +shutdown()
-        -validateInput()
-        -handleErrors()
-    }
-    
-    class DataService {
-        +Database connection
-        +Cache cache
-        +query()
-        +store()
-        +invalidate()
-    }
-    
-    class ApiService {
-        +Router router
-        +Middleware[] middleware
-        +handleRequest()
-        +authenticate()
-        +authorize()
-    }
-    
-    CoreService <|-- ApiService
-    CoreService <|-- DataService
-    CoreService *-- Logger
-    CoreService *-- Configuration
-    DataService *-- Database
-    DataService *-- Cache
+  class CoreService {
+    +String id
+    +Configuration config
+    +Logger logger
+    +initialize()
+    +process()
+    +shutdown()
+    -validateInput()
+    -handleErrors()
+  }
+
+  class DataService {
+    +Database connection
+    +Cache cache
+    +query()
+    +store()
+    +invalidate()
+  }
+
+  class ApiService {
+    +Router router
+    +Middleware[] middleware
+    +handleRequest()
+    +authenticate()
+    +authorize()
+  }
+
+  CoreService <|-- ApiService
+  CoreService <|-- DataService
+  CoreService *-- Logger
+  CoreService *-- Configuration
+  DataService *-- Database
+  DataService *-- Cache
 ```
 </component_relationships>
 
 <process_flows>
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant Gateway
-    participant AuthService
-    participant BusinessLogic
-    participant DataLayer
-    participant Database
-    participant Cache
-    
-    Client->>Gateway: HTTP Request
-    Gateway->>AuthService: Validate Token
-    AuthService-->>Gateway: Token Valid
-    Gateway->>BusinessLogic: Process Request
-    
-    BusinessLogic->>Cache: Check Cache
-    alt Cache Hit
-        Cache-->>BusinessLogic: Cached Data
-    else Cache Miss
-        BusinessLogic->>DataLayer: Query Data
-        DataLayer->>Database: SQL Query
-        Database-->>DataLayer: Result Set
-        DataLayer-->>BusinessLogic: Processed Data
-        BusinessLogic->>Cache: Store Result
-    end
-    
-    BusinessLogic-->>Gateway: Response
-    Gateway-->>Client: HTTP Response
+  participant Client
+  participant Gateway
+  participant AuthService
+  participant BusinessLogic
+  participant DataLayer
+  participant Database
+  participant Cache
+
+  Client->>Gateway: HTTP Request
+  Gateway->>AuthService: Validate Token
+  AuthService-->>Gateway: Token Valid
+  Gateway->>BusinessLogic: Process Request
+
+  BusinessLogic->>Cache: Check Cache
+  alt Cache Hit
+    Cache-->>BusinessLogic: Cached Data
+  else Cache Miss
+    BusinessLogic->>DataLayer: Query Data
+    DataLayer->>Database: SQL Query
+    Database-->>DataLayer: Result Set
+    DataLayer-->>BusinessLogic: Processed Data
+    BusinessLogic->>Cache: Store Result
+  end
+
+  BusinessLogic-->>Gateway: Response
+  Gateway-->>Client: HTTP Response
 ```
 </process_flows>
 
 <data_models>
 ```mermaid
 erDiagram
-    USER {
-        uuid id PK
-        string email UK
-        string username UK
-        timestamp created_at
-        timestamp updated_at
-        boolean active
-    }
-    
-    PROJECT {
-        uuid id PK
-        string name
-        string description
-        uuid owner_id FK
-        timestamp created_at
-        timestamp updated_at
-        enum status
-    }
-    
-    TASK {
-        uuid id PK
-        string title
-        text description
-        uuid project_id FK
-        uuid assignee_id FK
-        timestamp due_date
-        enum priority
-        enum status
-    }
-    
-    USER ||--o{ PROJECT : owns
-    USER ||--o{ TASK : assigned_to
-    PROJECT ||--o{ TASK : contains
+  USER {
+    uuid id PK
+    string email UK
+    string username UK
+    timestamp created_at
+    timestamp updated_at
+    boolean active
+  }
+
+  PROJECT {
+    uuid id PK
+    string name
+    string description
+    uuid owner_id FK
+    timestamp created_at
+    timestamp updated_at
+    enum status
+  }
+
+  TASK {
+    uuid id PK
+    string title
+    text description
+    uuid project_id FK
+    uuid assignee_id FK
+    timestamp due_date
+    enum priority
+    enum status
+  }
+
+  USER ||--o{ PROJECT : owns
+  USER ||--o{ TASK : assigned_to
+  PROJECT ||--o{ TASK : contains
 ```
 </data_models>
 </visualization_requirements>
@@ -235,7 +235,9 @@ For complex analysis tasks, use structured thinking to ensure comprehensive cove
 Then provide structured analysis and recommendations.
 </thinking_process>
 
+<output_structure>
 Generate your documentation using this exact structure, wrapped in <blog> tags:
+
 <blog>
 # [Document Title]
 
@@ -333,9 +335,6 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 2. **[Optimization Area 2]**: [Specific recommendation with rationale]
 3. **[Optimization Area 3]**: [Specific recommendation with rationale]
 
-### Resource Utilization
-[Analysis of memory, CPU, and I/O patterns]
-
 ## Developer Experience and Setup
 
 ### Getting Started
@@ -363,7 +362,6 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 
 ### Monitoring and Alerting
 [What to monitor and how to set up alerts]
-</troubleshooting_guide>
 
 ## Strategic Recommendations
 
@@ -384,10 +382,6 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 
 ## References and Resources
 
-### Key Files Analyzed
-[^1]: [Primary configuration file]({{$git_repository}}/path/to/config) - [Brief description]
-[^2]: [Main application entry point]({{$git_repository}}/path/to/main) - [Brief description]
-[^3]: [Core business logic]({{$git_repository}}/path/to/core) - [Brief description]
 
 ### External Documentation
 - [Relevant framework documentation]
@@ -398,8 +392,13 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 - System Architecture: [Reference to main architecture diagram]
 - Data Flow: [Reference to data flow diagram]
 - Component Relationships: [Reference to component diagram]
-  </blog>
-  </output_structure>
+
+### Key Files Analyzed
+[^1]: [Primary configuration file]({{$git_repository}}/path/to/config) - [Brief description]
+[^2]: [Main application entry point]({{$git_repository}}/path/to/main) - [Brief description]
+[^3]: [Core business logic]({{$git_repository}}/path/to/core) - [Brief description]
+</blog>
+</output_structure>
 
 <quality_assurance>
 <validation_checklist>

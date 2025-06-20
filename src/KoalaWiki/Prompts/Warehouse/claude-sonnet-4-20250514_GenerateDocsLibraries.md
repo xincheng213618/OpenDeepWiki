@@ -118,113 +118,110 @@ Create multiple diagram types to comprehensively illustrate the system:
 ### System Architecture Overview
 ```mermaid
 graph TB
-    subgraph "External Systems"
-        EXT1[External API]
-        EXT2[Database]
-        EXT3[Message Queue]
-    end
-    
-    subgraph "Application Layer"
-        API[API Gateway]
-        AUTH[Authentication Service]
-        CORE[Core Business Logic]
-    end
-    
-    subgraph "Data Layer"
-        CACHE[Cache Layer]
-        PERSIST[Persistence Layer]
-        SEARCH[Search Engine]
-    end
-    
-    EXT1 --> API
-    API --> AUTH
-    AUTH --> CORE
-    CORE --> CACHE
-    CORE --> PERSIST
-    CORE --> SEARCH
-    EXT2 --> PERSIST
-    EXT3 --> CORE
-    
-    classDef external fill:#ff9999
-    classDef application fill:#99ccff
-    classDef data fill:#99ff99
-    
-    class EXT1,EXT2,EXT3 external
-    class API,AUTH,CORE application
-    class CACHE,PERSIST,SEARCH data
+  subgraph "External Systems"
+    EXT1[External API]
+    EXT2[Database]
+    EXT3[Message Queue]
+  end
+
+  subgraph "Application Layer"
+    API[API Gateway]
+    AUTH[Authentication Service]
+    CORE[Core Business Logic]
+  end
+
+  subgraph "Data Layer"
+    CACHE[Cache Layer]
+    PERSIST[Persistence Layer]
+    SEARCH[Search Engine]
+  end
+
+  EXT1 --> API
+  API --> AUTH
+  AUTH --> CORE
+  CORE --> CACHE
+  CORE --> PERSIST
+  CORE --> SEARCH
+  EXT2 --> PERSIST
+  EXT3 --> CORE
+
+  classDef external fill:#ff9999
+  classDef application fill:#99ccff
+  classDef data fill:#99ff99
+
+  class EXT1,EXT2,EXT3 external
+  class API,AUTH,CORE application
+  class CACHE,PERSIST,SEARCH data
 ```
 
 ### Component Interaction Patterns
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant Gateway
-    participant Auth
-    participant Service
-    participant Database
-    participant Cache
-    
-    Client->>Gateway: API Request
-    Gateway->>Auth: Validate Token
-    Auth-->>Gateway: Token Valid
-    Gateway->>Service: Process Request
-    Service->>Cache: Check Cache
-    Cache-->>Service: Cache Miss
-    Service->>Database: Query Data
-    Database-->>Service: Return Data
-    Service->>Cache: Store in Cache
-    Service-->>Gateway: Response Data
-    Gateway-->>Client: Final Response
-    
-    Note over Service,Database: Implements Circuit Breaker Pattern
-    Note over Service,Cache: TTL-based Invalidation
+  participant Client
+  participant Gateway
+  participant Auth
+  participant Service
+  participant Database
+  participant Cache
+
+  Client->>Gateway: API Request
+  Gateway->>Auth: Validate Token
+  Auth-->>Gateway: Token Valid
+  Gateway->>Service: Process Request
+  Service->>Cache: Check Cache
+  Cache-->>Service: Cache Miss
+  Service->>Database: Query Data
+  Database-->>Service: Return Data
+  Service->>Cache: Store in Cache
+  Service-->>Gateway: Response Data
+  Gateway-->>Client: Final Response
+
+  Note over Service,Database: Implements Circuit Breaker Pattern
+  Note over Service,Cache: TTL-based Invalidation
 ```
 
 ### Data Flow Architecture
 ```mermaid
 flowchart TD
-    Input[Input Data] --> Validation{Validation}
-    Validation -->|Valid| Transform[Data Transformation]
-    Validation -->|Invalid| Error[Error Handler]
-    Transform --> Enrich[Data Enrichment]
-    Enrich --> Process[Business Logic Processing]
-    Process --> Persist[(Data Persistence)]
-    Process --> Notify[Event Notification]
-    Notify --> Queue[Message Queue]
-    Persist --> Audit[Audit Log]
-    
-    Error --> ErrorLog[Error Logging]
-    ErrorLog --> Monitoring[Monitoring System]
+  Input[Input Data] --> Validation{Validation}
+  Validation -->|Valid| Transform[Data Transformation]
+  Validation -->|Invalid| Error[Error Handler]
+  Transform --> Enrich[Data Enrichment]
+  Enrich --> Process[Business Logic Processing]
+  Process --> Persist[(Data Persistence)]
+  Process --> Notify[Event Notification]
+  Notify --> Queue[Message Queue]
+  Persist --> Audit[Audit Log]
+
+  Error --> ErrorLog[Error Logging]
+  ErrorLog --> Monitoring[Monitoring System]
 ```
 
 ### Library Usage Flow
 ```mermaid
 graph LR
-    App[Application Code] -->|imports| Entry[Library Entry Points]
-    Entry -->|configures| Config[Configuration Layer]
-    Entry -->|uses| Core[Core Features]
-    
-    Config -->|validates| Schema[Configuration Schema]
-    Core -->|depends| Internal[Internal Components]
-    Core -->|extends| Plugins[Plugin System]
-    
-    Internal -->|utilizes| Utils[Utility Functions]
-    Internal -->|manages| State[State Management]
-    
-    Plugins -->|implements| Hooks[Hook System]
-    Plugins -->|provides| Extensions[Feature Extensions]
-    
-    State -->|persists| Storage[(Data Storage)]
-    Utils -->|logs| Logging[Logging System]
+  App[Application Code] -->|imports| Entry[Library Entry Points]
+  Entry -->|configures| Config[Configuration Layer]
+  Entry -->|uses| Core[Core Features]
+
+  Config -->|validates| Schema[Configuration Schema]
+  Core -->|depends| Internal[Internal Components]
+  Core -->|extends| Plugins[Plugin System]
+
+  Internal -->|utilizes| Utils[Utility Functions]
+  Internal -->|manages| State[State Management]
+
+  Plugins -->|implements| Hooks[Hook System]
+  Plugins -->|provides| Extensions[Feature Extensions]
+
+  State -->|persists| Storage[(Data Storage)]
+  Utils -->|logs| Logging[Logging System]
 ```
 
 ## Comprehensive Documentation Structure
 
-Generate your documentation using this exact structure, wrapped in <blog> tags:
-
 <blog>
-
-# document title
+# {{document_title}}
 
 ## Executive Summary
 **System Overview**: [Comprehensive description of system purpose, scope, and architectural approach]
@@ -889,12 +886,6 @@ const secureConfig = {
 
 ## References & Additional Resources
 
-### Source Code References
-- Core Implementation: [{{$git_repository}}/src/core]({{$git_repository}}/src/core)
-- API Definitions: [{{$git_repository}}/src/api]({{$git_repository}}/src/api)
-- Configuration Schema: [{{$git_repository}}/src/config]({{$git_repository}}/src/config)
-- Test Suite: [{{$git_repository}}/tests]({{$git_repository}}/tests)
-
 ### External Resources
 - Official Documentation: [Link to official docs]
 - Community Forum: [Link to community discussions]
@@ -906,7 +897,14 @@ const secureConfig = {
 - [Related Library 2]: [Brief description and relationship]
 - [Complementary Tool]: [How it enhances this library]
 
-</blog>
+
+### Source Code References
+- Core Implementation: [{{$git_repository}}/src/core]({{$git_repository}}/src/core)
+- API Definitions: [{{$git_repository}}/src/api]({{$git_repository}}/src/api)
+- Configuration Schema: [{{$git_repository}}/src/config]({{$git_repository}}/src/config)
+- Test Suite: [{{$git_repository}}/tests]({{$git_repository}}/tests)
+
+  </blog>
 
 *Documentation generated on {{current_date}} from repository {{$git_repository}} branch {{$git_branch}}*
 
