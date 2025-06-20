@@ -10,8 +10,8 @@
       - KOALAWIKI_REPOSITORIES=/repositories
       - TASK_MAX_SIZE_PER_USER=5 # 每个用户AI处理文档生成的最大数量
       - REPAIR_MERMAID=1 # 是否进行Mermaid修复，1修复，其余不修复
-      - CHAT_MODEL=DeepSeek-V3 # 必须要支持function的模型
-      - ANALYSIS_MODEL= # 分析模型，用于生成仓库目录结构，这个很重要，模型越强，生成的目录结构越好，为空则使用ChatModel
+      - CHAT_MODEL=gpt-4.1 # 必须要支持function的模型
+      - ANALYSIS_MODEL=gpt-4.1 # 分析模型，用于生成仓库目录结构，这个很重要，模型越强，生成的目录结构越好，为空则使用ChatModel
                         # 分析模型建议使用GPT-4.1  , CHAT模型可以用其他模型生成文档,以节省 token 开销
       - CHAT_API_KEY= #您的APIkey
       - LANGUAGE= # 设置生成语言默认为“中文”, 英文可以填写 English 或 英文
@@ -30,9 +30,6 @@
     volumes:
       - ./repositories:/app/repositories
       - ./data:/data
-    build:
-      context: .
-      dockerfile: src/KoalaWiki/Dockerfile
 
   mem0:
     container_name: mem0
@@ -73,12 +70,6 @@
     image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/koala-wiki-web
     environment:
       - NEXT_PUBLIC_API_URL=http://koalawiki:8080 # 用于提供给server的地址
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    depends_on:
-      koalawiki:
-        condition: service_healthy
       
   nginx: # 需要nginx将前端和后端代理到一个端口
     image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/nginx:alpine
