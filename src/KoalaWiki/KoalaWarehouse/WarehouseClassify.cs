@@ -2,11 +2,13 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using KoalaWiki.Domains;
+using KoalaWiki.Dto;
 using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Newtonsoft.Json;
 using OpenAI.Chat;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace KoalaWiki.KoalaWarehouse;
 
@@ -20,6 +22,7 @@ public class WarehouseClassify
         var prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.RepositoryClassification),
             new KernelArguments(new OpenAIPromptExecutionSettings()
             {
+                Temperature = 0.1,
                 MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.ChatModel)
             })
             {
@@ -28,21 +31,37 @@ public class WarehouseClassify
             }, OpenAIOptions.ChatModel);
 
         var result = string.Empty;
+        var isDeep = false;
 
         await foreach (var i in kernel.InvokePromptStreamingAsync(prompt))
         {
-            var jsonContent =
-                JsonNode.Parse(ModelReaderWriter.Write(i.InnerContent));
+            var jsonContent = JsonSerializer.Deserialize<OpenAIResponse>(ModelReaderWriter.Write(i.InnerContent));
 
-            // 判断jsonContent!["choices"]!索引 > 0
-            if (jsonContent == null || jsonContent["choices"] == null &&
-                jsonContent!["choices"]![0]!["message"]!["reasoning_content"] != null)
+            if (jsonContent?.choices.Length > 0)
             {
-                result += jsonContent!["choices"]![0]!["message"]!["reasoning_content"];
-            }
-            else
-            {
-                result += i.ToString();
+                if (string.IsNullOrEmpty(jsonContent.choices[0].message?.reasoning_content) &&
+                    string.IsNullOrEmpty(jsonContent.choices[0].delta?.reasoning_content))
+                {
+                    if (isDeep)
+                    {
+                        result += "</think>";
+                        isDeep = false;
+                    }
+
+                    result += i.ToString();
+                    continue;
+                }
+
+                if (isDeep == false)
+                {
+                    result += "<think>";
+
+                    isDeep = true;
+                }
+
+                // 提取分类结果
+                result += jsonContent.choices[0].message?.reasoning_content ??
+                          jsonContent.choices[0].delta?.reasoning_content;
             }
         }
 
