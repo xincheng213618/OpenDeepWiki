@@ -32,7 +32,7 @@ public class OverviewService
         if (classify.HasValue)
         {
             prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.Overview) + classify,
-                new KernelArguments()
+                new KernelArguments(settings)
                 {
                     ["catalogue"] = catalog,
                     ["git_repository"] = gitRepository.Replace(".git", ""),
@@ -43,7 +43,7 @@ public class OverviewService
         else
         {
             prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.Overview),
-                new KernelArguments()
+                new KernelArguments(settings)
                 {
                     ["catalogue"] = catalog,
                     ["git_repository"] = gitRepository.Replace(".git", ""),

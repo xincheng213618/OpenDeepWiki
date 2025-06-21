@@ -84,13 +84,13 @@ public partial class DocumentsService
     {
         var ignoreFiles = GetIgnoreFiles(path);
         var pathInfos = new List<PathInfo>();
-        
+
         // 递归扫描目录所有文件和目录
         ScanDirectory(path, pathInfos, ignoreFiles);
-        
+
         // 构建文件树
         var fileTree = FileTreeBuilder.BuildTree(pathInfos, path);
-        
+
         return format.ToLower() switch
         {
             "json" => FileTreeBuilder.ToCompactJson(fileTree),
@@ -106,14 +106,15 @@ public partial class DocumentsService
     /// <param name="readme">README内容</param>
     /// <param name="format">输出格式</param>
     /// <returns>优化后的目录结构</returns>
-    public static async Task<string> GetCatalogueSmartFilterOptimizedAsync(string path, string readme, string format = "compact")
+    public static async Task<string> GetCatalogueSmartFilterOptimizedAsync(string path, string readme,
+        string format = "compact")
     {
         var ignoreFiles = GetIgnoreFiles(path);
         var pathInfos = new List<PathInfo>();
-        
+
         // 递归扫描目录所有文件和目录
         ScanDirectory(path, pathInfos, ignoreFiles);
-        
+
         // 如果文件数量较少，直接返回优化结构
         if (pathInfos.Count < 800)
         {
@@ -544,6 +545,11 @@ public partial class DocumentsService
             return 65535;
         }
 
+        if (model.StartsWith("MiniMax-M1", StringComparison.OrdinalIgnoreCase))
+        {
+            return 40000;
+        }
+
         return model switch
         {
             "deepseek-chat" => 8192,
@@ -553,7 +559,7 @@ public partial class DocumentsService
             "gpt-4.1" => 32768,
             "gpt-4o" => 16384,
             "o4-mini" => 32768,
-            "doubao-1-5-pro-256k-250115" => 12288,
+            "doubao-1-5-pro-256k-250115" => 256000,
             "o3-mini" => 32768,
             "Qwen/Qwen3-235B-A22B" => null,
             "grok-3" => 65536,
@@ -565,6 +571,7 @@ public partial class DocumentsService
             "Qwen3-32B" => 32768,
             "deepseek-r1" => 32768,
             "deepseek-r1:32b-qwen-distill-fp16" => 32768,
+
             _ => null
         };
     }
