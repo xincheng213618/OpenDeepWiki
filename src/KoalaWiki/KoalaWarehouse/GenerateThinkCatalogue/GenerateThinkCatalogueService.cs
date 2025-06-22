@@ -96,6 +96,8 @@ public static class GenerateThinkCatalogueService
 
                     if (assistantRetryCount < maxRetries)
                     {
+                        history.AddUserMessage("The content you generated does not meet the expected result. Please generate it again. Make sure the output contains the <output-think> tag and the content is formatted correctly.");
+                        str.Clear();
                         continue;
                     }
                 }
