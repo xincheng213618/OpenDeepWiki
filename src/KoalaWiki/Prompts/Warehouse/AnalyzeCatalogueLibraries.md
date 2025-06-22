@@ -56,7 +56,7 @@ Your goal is to create a documentation structure specifically tailored to this p
     </library_specific_requirements>
     </documentation_requirements>
 
-Use the following format:
+Insert your input content between the <documentation_structure></documentation_structure> tags as follows:
 
 <documentation_structure>
 {

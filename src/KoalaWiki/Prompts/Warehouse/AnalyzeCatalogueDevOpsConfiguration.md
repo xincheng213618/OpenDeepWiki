@@ -56,9 +56,11 @@ When documenting DevOps configuration aspects:
 6. Include sections on scaling, high availability, and disaster recovery
 7. Document security considerations and compliance requirements
 8. Explain monitoring, logging, and observability configurations
+9. For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+10. Don't hold back.  Give it your all.
    </devops_specific_guidance>
 
-Use the following format:
+Insert your input content between the <documentation_structure></documentation_structure> tags as follows:
 
 <documentation_structure>
 {

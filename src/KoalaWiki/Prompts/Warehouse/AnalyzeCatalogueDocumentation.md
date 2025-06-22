@@ -81,7 +81,7 @@ Create a documentation structure specifically tailored to this project, based on
   - Error message explanations
   - Support resources
 
-Use the following format:
+Insert your input content between the <documentation_structure></documentation_structure> tags as follows:
 
 <documentation_structure>
 {

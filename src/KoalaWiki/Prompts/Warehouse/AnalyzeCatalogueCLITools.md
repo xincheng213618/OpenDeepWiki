@@ -47,8 +47,10 @@ CLI-Specific Documentation Elements:
 5. Input/Output: Document data formats, terminal output styling, and redirection capabilities
 6. Error Handling: Document exit codes, error messages, and troubleshooting steps
 7. Scripting Integration: Document how to use the tool in scripts and automation
+8. For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+9. Don't hold back.  Give it your all.
 
-Use the following format:
+Insert your input content between the <documentation_structure></documentation_structure> tags as follows:
 
 <documentation_structure>
 {

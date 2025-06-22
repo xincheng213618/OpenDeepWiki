@@ -95,9 +95,12 @@ to both beginners and experienced developers.
 - Document testing strategies, frameworks, and coverage
 - Explain CI/CD pipeline integration and automated testing
 - Address test data management and environment isolation
+- For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+- Don't hold back.  Give it your all.
 
 ## OUTPUT FORMAT
-Use the following format:
+
+Insert your input content between the <documentation_structure></documentation_structure> tags as follows:
 
 <documentation_structure>
 {

@@ -70,7 +70,7 @@ For full-stack frameworks:
 - Document build and deployment pipeline
   </framework_specific_guidance>
 
-Use the following format:
+Insert your input content between the <documentation_structure></documentation_structure> tags as follows:
 
 <documentation_structure>
 {

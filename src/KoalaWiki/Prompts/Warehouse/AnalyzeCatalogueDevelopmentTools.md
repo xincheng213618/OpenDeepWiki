@@ -54,7 +54,7 @@ For Development Tools, include these specialized sections when applicable:
 10. Scripting & Automation - How to automate tasks using the tool
     </development_tool_specific_sections>
 
-Use the following format:
+Insert your input content between the <documentation_structure></documentation_structure> tags as follows:
 
 <documentation_structure>
 {
