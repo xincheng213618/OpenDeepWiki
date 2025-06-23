@@ -98,10 +98,8 @@ Create Mermaid diagrams for:
 
 ## Output Format Requirements
 
-<output_specifications>
-Structure your response using this exact format:
+Insert your input content between the <blog></blog> tags as follows:
 
-```markdown
 <blog>
 # [Document Title]
 
@@ -140,7 +138,6 @@ Structure your response using this exact format:
 [^2]: [anotherFileName]({{$git_repository}}/path/to/another/file#L67-L89) - Another relevant file
 </blog>
 ```
-</output_specifications>
 
 ## Quality Standards & Best Practices
 

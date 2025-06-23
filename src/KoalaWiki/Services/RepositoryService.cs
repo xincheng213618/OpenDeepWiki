@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FastService;
 using KoalaWiki.Domains;
 using KoalaWiki.Domains.DocumentFile;
@@ -511,9 +512,14 @@ public class RepositoryService(
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == input.Id);
 
+        Log.Logger.Information("开始处理目录：{CatalogName}", JsonSerializer.Serialize(catalog, JsonSerializerOptions.Web));
+
         var warehouse = await dbContext.Warehouses
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == catalog.WarehouseId);
+
+        Log.Logger.Information("仓库信息：{WarehouseInfo}", JsonSerializer.Serialize(warehouse, JsonSerializerOptions.Web));
+
         var document = await dbContext.Documents
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.WarehouseId == catalog.WarehouseId);
@@ -525,7 +531,7 @@ public class RepositoryService(
 
         var fileKernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, document.GitPath, OpenAIOptions.ChatModel, false);
-        
+
         // 对当前单目录进行分析
         var (catalogs, fileItem, files)
             = await DocumentPendingService.ProcessDocumentAsync(catalog, fileKernel,

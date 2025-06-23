@@ -200,6 +200,7 @@ graph LR
 ```
 </visualization_requirements>
 
+Insert your input content between the <blog></blog> tags as follows:
 <blog>
 # document title
 

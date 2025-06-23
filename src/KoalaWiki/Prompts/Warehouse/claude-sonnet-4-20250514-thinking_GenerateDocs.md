@@ -236,7 +236,8 @@ Then provide structured analysis and recommendations.
 </thinking_process>
 
 <output_structure>
-Generate your documentation using this exact structure, wrapped in <blog> tags:
+
+Insert your input content between the <blog></blog> tags as follows:
 
 <blog>
 # [Document Title]

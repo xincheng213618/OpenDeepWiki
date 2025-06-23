@@ -220,8 +220,9 @@ graph LR
 
 ## Comprehensive Documentation Structure
 
+Insert your input content between the <blog></blog> tags as follows:
 <blog>
-# {{document_title}}
+# document title
 
 ## Executive Summary
 **System Overview**: [Comprehensive description of system purpose, scope, and architectural approach]

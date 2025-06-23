@@ -151,7 +151,7 @@ classDiagram
 
 ## Documentation Structure Template
 
-<documentation_template>
+Insert your input content between the <blog></blog> tags as follows:
 <blog>
 # [Document Title]
 
@@ -313,7 +313,6 @@ sequenceDiagram
 [^3]: [Core business logic]({{$git_repository}}/path/to/core)
 
   </blog>
-  </documentation_template>
 
 ## Quality Assurance Checklist
 

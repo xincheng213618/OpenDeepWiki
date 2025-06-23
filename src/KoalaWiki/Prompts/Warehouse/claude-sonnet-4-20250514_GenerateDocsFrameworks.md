@@ -240,8 +240,8 @@ stateDiagram-v2
 The user wants me to structure this as a comprehensive documentation framework. I should create a template that incorporates Claude 4 best practices while maintaining the technical rigor of the original prompt.
 </thinking>
 
+Insert your input content between the <blog></blog> tags as follows:
 <blog>
-Generate structured technical documentation following this template:
 
 ## Executive Summary
 Provide a concise yet comprehensive overview that captures:
