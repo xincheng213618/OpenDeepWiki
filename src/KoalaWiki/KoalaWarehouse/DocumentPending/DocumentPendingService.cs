@@ -230,8 +230,10 @@ public class DocumentPendingService
             }
         }
 
-        // 删除内容中所有的<thinking>，可能存在多个<thinking>标签
-        sr = new StringBuilder(sr.ToString().Replace("<thinking>", string.Empty).Replace("</thinking>", string.Empty));
+        // 删除内容中所有的<thinking>内的内容，可能存在多个<thinking>标签,
+        var thinkingRegex = new Regex(@"<thinking>.*?</thinking>", RegexOptions.Singleline);
+        sr = new StringBuilder(thinkingRegex.Replace(sr.ToString(), string.Empty));
+
 
         // 使用正则表达式将<blog></blog>中的内容提取
         var regex = new Regex(@"<blog>(.*?)</blog>", RegexOptions.Singleline);
@@ -251,7 +253,7 @@ public class DocumentPendingService
         // 删除所有的所有的<think></think>
         var thinkRegex = new Regex(@"<think>(.*?)</think>", RegexOptions.Singleline);
         content = thinkRegex.Replace(content, string.Empty);
-        
+
         // 从docs提取
         var docsRegex = new Regex(@"<docs>(.*?)</docs>", RegexOptions.Singleline);
         var docsMatch = docsRegex.Match(content);

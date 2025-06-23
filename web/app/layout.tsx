@@ -239,16 +239,8 @@ export default async function RootLayout({
       overflowX: 'hidden'
     }} lang={locale}>
       <head>
-        {/* 预加载关键资源 */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://cdn.tailwindcss.com" />
-        
-        {/* DNS预解析 */}
         <link rel="dns-prefetch" href="//hm.baidu.com" />
         <link rel="dns-prefetch" href="//www.google-analytics.com" />
-        
-        {/* 基础meta标签 */}
         <meta name="msvalidate.01" content="61D1D1BFCB7FDB548E411C30FC69B058" />
         <meta name="baidu-site-verification" content="44a79feb3bf1e77660bdbc00e1808896" />
         <meta name="format-detection" content="telephone=no,email=no,address=no" />
@@ -282,7 +274,7 @@ export default async function RootLayout({
         />
         
         {/* 外部资源 */}
-        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="tailwindcss.js"></script>
         
         {/* 百度统计 */}
         <Script id="baidu-analytics" strategy="afterInteractive">

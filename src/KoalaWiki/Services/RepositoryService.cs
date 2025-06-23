@@ -518,8 +518,14 @@ public class RepositoryService(
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.WarehouseId == catalog.WarehouseId);
 
+        if (document == null)
+        {
+            throw new Exception("文档不存在");
+        }
+
         var fileKernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, document.GitPath, OpenAIOptions.ChatModel, false);
+        
         // 对当前单目录进行分析
         var (catalogs, fileItem, files)
             = await DocumentPendingService.ProcessDocumentAsync(catalog, fileKernel,
