@@ -153,6 +153,7 @@ graph TD
 
 # DOCUMENTATION STRUCTURE
 
+Generate your documentation using this exact structure, wrapped in <blog> tags:
 <blog>
 # [Document Title]
 

@@ -110,7 +110,9 @@
 ### Dynamic Content Strategy for Libraries
 
 **Essential Library Sections:**
-```markdown
+
+Generate your documentation using this exact structure, wrapped in <blog></blog> tags:
+<blog>
 # [Library Name]
 [Problem statement and solution approach]
 
@@ -143,7 +145,7 @@
 
 ## 🔗 Migration & Compatibility
 [Version compatibility and upgrade guides]
-```
+</blog>
 
 **Content Depth Scaling for Libraries:**
 ```
@@ -307,4 +309,4 @@ Generate comprehensive library documentation that serves as both tutorial and re
 - Installation-focused when only package information available
 - Migration-focused when version history indicates breaking changes
 
-Analyze the provided library project data and generate developer-focused documentation that maximizes adoption and integration success. Include the final result within `<blog></blog>` tags.
+Analyze the provided library project data and generate developer-focused documentation that maximizes adoption and integration success. 

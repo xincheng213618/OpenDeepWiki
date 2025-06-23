@@ -116,7 +116,8 @@ erDiagram
 
 # DOCUMENTATION STRUCTURE
 
-<docs>
+Generate your documentation using this exact structure, wrapped in <blog> tags:
+<blog>
 # [Document Title]
 
 ## Executive Summary
@@ -151,7 +152,7 @@ erDiagram
 
 ## References
 [^1]: [File reference with description]({{git_repository}}/path/to/file)
-</docs>
+</blog>
 
 # QUALITY ASSURANCE
 

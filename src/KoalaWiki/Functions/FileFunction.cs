@@ -205,10 +205,13 @@ public class FileFunction(string gitPath)
     [return:
         Description(
             "Returns the file content from the specified starting line to the ending line (inclusive). If the total output length exceeds 10,000 characters, only the first 10,000 characters are returned, the content order is consistent with the original file, and the original line breaks are retained.")]
-    public async Task<string> ReadFileFromLineAsync(ReadFileInput input)
+    public async Task<string> ReadFileFromLineAsync(
+        [Description(
+            "An array of file items to read. Each item contains the file path and the start and end line numbers for reading. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
+        ReadFileItemInput[] items)
     {
         var dic = new Dictionary<string, string>();
-        foreach (var item in input.Items)
+        foreach (var item in items)
         {
             dic.Add(item.FilePath, await ReadItem(item.FilePath, item.StartLine, item.EndLine));
         }

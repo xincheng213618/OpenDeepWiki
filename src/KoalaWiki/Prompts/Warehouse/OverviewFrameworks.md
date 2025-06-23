@@ -107,7 +107,8 @@
 
 ### Dynamic Framework Documentation Template
 
-```markdown
+Generate your documentation using this exact structure, wrapped in <blog></blog> tags:
+<blog>
 # [Framework Name]
 > [Framework tagline/philosophy extracted from documentation]
 
@@ -221,7 +222,7 @@
 
 ## 📄 License & Governance
 [Extract license and governance information]
-```
+</blog>
 
 ## Framework-Specific Analysis Guidelines
 
@@ -322,4 +323,4 @@ ELSE IF development_framework THEN
 - [ ] Performance characteristics are documented with framework-specific considerations
 - [ ] Community and ecosystem aspects are addressed with evidence-based claims
 
-Please analyze the provided framework project data comprehensively, focusing specifically on framework architecture, developer experience, and ecosystem considerations. Generate documentation that serves both framework users and contributors effectively. Include the final result within `<blog></blog>` tags.
+Please analyze the provided framework project data comprehensively, focusing specifically on framework architecture, developer experience, and ecosystem considerations. Generate documentation that serves both framework users and contributors effectively. 

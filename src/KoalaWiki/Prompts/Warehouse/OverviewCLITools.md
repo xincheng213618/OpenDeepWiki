@@ -80,7 +80,8 @@
 
 ### Core Documentation Framework
 
-```markdown
+Generate your documentation using this exact structure, wrapped in <blog></blog> tags:
+<blog>
 # [Tool Name] - [One-line Tool Description]
 
 > [Brief description of what the tool does and why it's useful]
@@ -136,7 +137,7 @@
 
 ### [Conditional: Common Issues]
 [Only if troubleshooting info found]
-```
+</blog>
 
 ### CLI-Specific Content Generation Rules
 
@@ -295,4 +296,4 @@ Example categories to include (if data available):
 - **Pipeline Tools**: Emphasize data flow and integration patterns
 - **Development Tools**: Focus on developer workflow integration
 
-Please analyze the provided CLI tool project data comprehensively and generate documentation that serves CLI tool users effectively, focusing on practical usage, command reference, and workflow integration. Include the final result within `<blog></blog>` tags.
+Please analyze the provided CLI tool project data comprehensively and generate documentation that serves CLI tool users effectively, focusing on practical usage, command reference, and workflow integration.

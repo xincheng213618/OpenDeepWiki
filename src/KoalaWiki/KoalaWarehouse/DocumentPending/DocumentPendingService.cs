@@ -213,7 +213,7 @@ public class DocumentPendingService
         history.AddUserMessage(prompt);
 
         var fileFunction = new FileFunction(path);
-        history.AddUserMessage(await fileFunction.ReadFilesAsync(catalog.DependentFile.ToArray()));
+        history.AddUserMessage($"The following is the list of contents of the pre-read files <files>{await fileFunction.ReadFilesAsync(catalog.DependentFile.ToArray())}</files>,Now you can continue to generate the document and go all out to produce more detailed document content.");
 
         var sr = new StringBuilder();
 
