@@ -127,7 +127,8 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
 
             // 优先从响应头中提取文件名
             string fileName = string.Empty;
-            if (response.Content.Headers.ContentDisposition != null && !string.IsNullOrEmpty(response.Content.Headers.ContentDisposition.FileName))
+            if (response.Content.Headers.ContentDisposition != null &&
+                !string.IsNullOrEmpty(response.Content.Headers.ContentDisposition.FileName))
             {
                 fileName = response.Content.Headers.ContentDisposition.FileName.Trim('"');
             }
@@ -165,12 +166,14 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
                     }
                 }
             }
+
             // 如果响应头没有文件名，则从URL中提取
             if (string.IsNullOrEmpty(fileName))
             {
                 var uri = new Uri(fileUrl);
                 fileName = Path.GetFileName(uri.LocalPath);
             }
+
             string suffix;
 
             if (string.IsNullOrEmpty(fileName) || !fileName.Contains('.'))
@@ -243,9 +246,10 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
         if (string.IsNullOrEmpty(organization) || string.IsNullOrEmpty(repositoryName))
         {
             throw new Exception("组织名称和仓库名称不能为空");
-        }        // 检查是否是URL下载方式
+        } // 检查是否是URL下载方式
+
         var fileUrl = context.Request.Form["fileUrl"].ToString();
-        
+
         FileInfo fileInfo;
 
         if (!string.IsNullOrEmpty(fileUrl))
@@ -454,6 +458,84 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
             var entity = mapper.Map<Warehouse>(input);
             entity.Name = repositoryName;
             entity.OrganizationName = organization;
+            entity.Description = string.Empty;
+            entity.Version = string.Empty;
+            entity.Error = string.Empty;
+            entity.Prompt = string.Empty;
+            entity.Branch = input.Branch;
+            entity.Type = "git";
+            entity.CreatedAt = DateTime.UtcNow;
+            entity.OptimizedDirectoryStructure = string.Empty;
+            entity.Id = Guid.NewGuid().ToString();
+            await access.Warehouses.AddAsync(entity);
+
+            await access.SaveChangesAsync();
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                code = 200,
+                message = "提交成功"
+            });
+        }
+        catch (Exception e)
+        {
+            await context.Response.WriteAsJsonAsync(new
+            {
+                code = 500,
+                message = e.Message
+            });
+        }
+    }
+
+    public async Task CustomSubmitWarehouseAsync(CustomWarehouseInput input, HttpContext context)
+    {
+        try
+        {
+            input.Organization = input.Organization.Trim().ToLower();
+
+            var repositoryName = input.RepositoryName.Trim().ToLower();
+
+            var value = await access.Warehouses.FirstOrDefaultAsync(x =>
+                x.OrganizationName.ToLower() == input.Organization && x.Name.ToLower() == repositoryName &&
+                x.Branch == input.Branch &&
+                x.Status == WarehouseStatus.Completed);
+
+            // 判断这个仓库是否已经添加
+            if (value?.Status is WarehouseStatus.Completed)
+            {
+                throw new Exception("该名称渠道已存在且处于完成状态，不可重复创建");
+            }
+            else if (value?.Status is WarehouseStatus.Pending)
+            {
+                throw new Exception("该名称渠道已存在且处于待处理状态，请等待处理完成");
+            }
+            else if (value?.Status is WarehouseStatus.Processing)
+            {
+                throw new Exception("该名称渠道已存在且正在处理中，请稍后再试");
+            }
+            else if (!string.IsNullOrEmpty(input.Branch))
+            {
+                var branch = await access.Warehouses
+                    .AsNoTracking()
+                    .Where(x => x.Branch == input.Branch && x.OrganizationName == input.Organization &&
+                                x.Name == repositoryName)
+                    .FirstOrDefaultAsync();
+
+                if (branch is { Status: WarehouseStatus.Completed or WarehouseStatus.Processing })
+                {
+                    throw new Exception("该分支已经存在");
+                }
+            }
+
+            // 删除旧的仓库
+            var oldWarehouse = await access.Warehouses
+                .Where(x => x.OrganizationName == input.Organization &&
+                            x.Name == repositoryName && x.Branch == input.Branch)
+                .ExecuteDeleteAsync();
+
+            var entity = mapper.Map<Warehouse>(input);
+            entity.Name = repositoryName;
+            entity.OrganizationName = input.Organization;
             entity.Description = string.Empty;
             entity.Version = string.Empty;
             entity.Error = string.Empty;
