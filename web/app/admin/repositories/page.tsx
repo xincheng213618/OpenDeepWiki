@@ -47,7 +47,6 @@ export default function RepositoriesPage() {
     try {
       setLoading(true);
       const { code, data } = await getRepositoryList(page, size, keyword);
-      console.log(data);
       if (code === 200) {
         setRepositories(data.items);
         setTotal(data.total);

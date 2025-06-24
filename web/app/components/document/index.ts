@@ -10,13 +10,6 @@ export { default as SourceFiles } from './SourceFiles';
 // 客户端组件
 export { initializeMermaid } from './utils/mermaidUtils';
 
-// 服务端组件
-export { ServerDocumentContent } from './ServerDocumentContent';
-export { ServerMarkdown } from './ServerMarkdown';
-export { ServerRenderThinking } from './ServerRenderThinking';
-
-// 导出服务器组件
-export * from './ServerComponents';
 
 // 工具函数导出
 export * from './utils/headingUtils'; 
