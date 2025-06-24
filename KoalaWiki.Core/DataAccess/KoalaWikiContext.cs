@@ -9,6 +9,7 @@ using KoalaWiki.Domains.FineTuning;
 using KoalaWiki.Domains.MCP;
 using KoalaWiki.Domains.Users;
 using KoalaWiki.Domains.Warehouse;
+using KoalaWiki.Domains.Statistics;
 using KoalaWiki.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,6 +51,10 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
     public DbSet<Role> Roles { get; set; }
 
     public DbSet<WarehouseInRole> WarehouseInRoles { get; set; }
+
+    public DbSet<AccessRecord> AccessRecords { get; set; }
+
+    public DbSet<DailyStatistics> DailyStatistics { get; set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
     {
@@ -339,6 +344,47 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             options.HasIndex(x => x.WarehouseId);
             options.HasIndex(x => x.RoleId);
             options.HasComment("仓库角色关联表");
+        });
+
+        modelBuilder.Entity<AccessRecord>(options =>
+        {
+            options.HasKey(x => x.Id);
+            options.Property(x => x.Id).HasComment("主键Id");
+            options.Property(x => x.ResourceType).IsRequired().HasComment("资源类型");
+            options.Property(x => x.ResourceId).IsRequired().HasComment("资源Id");
+            options.Property(x => x.UserId).HasComment("用户Id");
+            options.Property(x => x.IpAddress).IsRequired().HasComment("IP地址");
+            options.Property(x => x.UserAgent).IsRequired().HasComment("用户代理");
+            options.Property(x => x.Path).IsRequired().HasComment("访问路径");
+            options.Property(x => x.Method).IsRequired().HasComment("请求方法");
+            options.Property(x => x.StatusCode).HasComment("状态码");
+            options.Property(x => x.ResponseTime).HasComment("响应时间");
+            options.Property(x => x.CreatedAt).IsRequired().HasComment("创建时间");
+            options.HasIndex(x => x.ResourceType);
+            options.HasIndex(x => x.ResourceId);
+            options.HasIndex(x => x.UserId);
+            options.HasIndex(x => x.IpAddress);
+            options.HasIndex(x => x.CreatedAt);
+            options.HasIndex(x => new { x.ResourceType, x.ResourceId });
+            options.HasComment("访问记录表");
+        });
+
+        modelBuilder.Entity<DailyStatistics>(options =>
+        {
+            options.HasKey(x => x.Id);
+            options.Property(x => x.Id).HasComment("主键Id");
+            options.Property(x => x.Date).IsRequired().HasComment("统计日期");
+            options.Property(x => x.NewUsersCount).HasComment("新增用户数");
+            options.Property(x => x.NewRepositoriesCount).HasComment("新增仓库数");
+            options.Property(x => x.NewDocumentsCount).HasComment("新增文档数");
+            options.Property(x => x.PageViews).HasComment("页面访问量");
+            options.Property(x => x.UniqueVisitors).HasComment("独立访问用户数");
+            options.Property(x => x.ActiveUsers).HasComment("活跃用户数");
+            options.Property(x => x.CreatedAt).IsRequired().HasComment("创建时间");
+            options.Property(x => x.UpdatedAt).IsRequired().HasComment("更新时间");
+            options.HasIndex(x => x.Date).IsUnique();
+            options.HasIndex(x => x.CreatedAt);
+            options.HasComment("每日统计表");
         });
     }
 }

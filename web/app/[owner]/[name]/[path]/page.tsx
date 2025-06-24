@@ -1,6 +1,18 @@
+'use server'
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import 'katex/dist/katex.min.css';
+
+// Markdown 编译器导入
+import { remark } from 'remark';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import remarkRehype from 'remark-rehype';
+import rehypeKatex from 'rehype-katex';
+import rehypeSlug from 'rehype-slug';
+import rehypeStringify from 'rehype-stringify';
+import rehypeRaw from 'rehype-raw';
 
 // 直接导入工具函数，避免导入客户端组件
 import { extractHeadings, createAnchorItems } from '../../../components/document/utils/headingUtils';
@@ -8,9 +20,49 @@ import { extractHeadings, createAnchorItems } from '../../../components/document
 // 导入文档服务和类型
 import { documentById, getWarehouseOverview } from '../../../services/warehouseService';
 
-// 导入客户端组件和类型
+// 导入客户端组件和服务端组件
 import DocumentPageClient from './DocumentPageClient';
-import { DocumentPageProps, DocumentData, Heading } from './types';
+import DocumentPageServer from './DocumentPageServer';
+import { DocumentData, Heading } from './types';
+
+// Markdown 编译器配置
+const markdownProcessor = remark()
+  .use(remarkGfm) // GitHub 风格 Markdown
+  .use(remarkMath) // 数学公式支持
+  .use(remarkRehype, { allowDangerousHtml: true }) // 转换为 HTML AST
+  .use(rehypeRaw) // 支持原始 HTML
+  .use(rehypeKatex) // KaTeX 数学公式渲染
+  .use(rehypeSlug) // 自动生成标题 ID
+  .use(rehypeStringify); // 转换为 HTML 字符串
+
+// 编译 Markdown 内容为 HTML
+async function compileMarkdownToHtml(markdown: string): Promise<string> {
+  try {
+    if (!markdown || markdown.trim() === '') {
+      return '<p>暂无内容</p>';
+    }
+
+    const result = await markdownProcessor.process(markdown);
+    return result.toString();
+  } catch (error) {
+    console.error('Markdown 编译错误:', error);
+    return `
+      <div style="
+        background-color: #fff2f0; 
+        border: 1px solid #ffccc7; 
+        border-radius: 6px; 
+        padding: 16px;
+        color: #a8071a;
+        margin: 16px 0;
+      ">
+        <h4 style="margin: 0 0 8px 0;">Markdown 编译失败</h4>
+        <p style="margin: 0; font-size: 14px;">
+          ${error instanceof Error ? error.message : '未知错误'}
+        </p>
+      </div>
+    `;
+  }
+}
 
 // 生成SEO友好的描述
 function generateSEODescription(document: DocumentData, owner: string, name: string, path: string): string {
@@ -96,10 +148,41 @@ function generateStructuredData(document: DocumentData, owner: string, name: str
   };
 }
 
+// 检测是否为搜索引擎爬虫
+function isSearchEngineBot(userAgent: string): boolean {
+  const searchEngineBots = [
+    'googlebot',
+    'bingbot',
+    'slurp', // Yahoo
+    'duckduckbot',
+    'baiduspider',
+    'yandexbot',
+    'sogou',
+    'exabot',
+    'facebookexternalhit',
+    'twitterbot',
+    'linkedinbot',
+    'whatsapp',
+    'telegram',
+    'applebot',
+    'pingdom',
+    'uptimerobot'
+  ];
+  
+  const lowerUserAgent = userAgent.toLowerCase();
+  return searchEngineBots.some(bot => lowerUserAgent.includes(bot));
+}
+
 // 生成页面元数据
-export async function generateMetadata({ params, searchParams }: any): Promise<Metadata> {
-  const { owner, name, path } = params;
-  const { branch } = searchParams;
+export async function generateMetadata({ 
+  params, 
+  searchParams 
+}: {
+  params: Promise<{ owner: string; name: string; path: string }>;
+  searchParams: Promise<{ branch?: string }>;
+}): Promise<Metadata> {
+  const { owner, name, path } = await params;
+  const { branch } = await searchParams;
 
   try {
     // 并行获取文档数据和仓库概览
@@ -130,7 +213,7 @@ export async function generateMetadata({ params, searchParams }: any): Promise<M
           address: false,
           telephone: false,
         },
-        metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://koalawiki.com'),
+        metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://opendeep.wiki'),
         alternates: {
           canonical: url,
         },
@@ -207,7 +290,7 @@ export async function generateMetadata({ params, searchParams }: any): Promise<M
     authors: [{ name: owner }],
     creator: owner,
     publisher: 'KoalaWiki',
-    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://koalawiki.com'),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://opendeep.wiki'),
     openGraph: {
       title: defaultTitle,
       description: defaultDescription,
@@ -227,20 +310,42 @@ export async function generateMetadata({ params, searchParams }: any): Promise<M
   };
 }
 
-export default async function DocumentPage({ params, searchParams }: any) {
-  const { owner, name, path } = params;
-  const { branch } = searchParams;
+export default async function DocumentPage({ 
+  params, 
+  searchParams 
+}: {
+  params: Promise<{ owner: string; name: string; path: string }>;
+  searchParams: Promise<{ branch?: string }>;
+}) {
+  const { owner, name, path } = await params;
+  const { branch } = await searchParams;
+
+  // 获取请求头信息
+  const headersList = await headers();
+  const userAgent = headersList.get('user-agent') || '';
 
   // 在服务端获取文档数据
   let document: DocumentData | null = null;
   let error: string | null = null;
   let headings: Heading[] = [];
   let structuredData: any = null;
+  let compiledHtml: string = '';
 
   try {
     const response = await documentById(owner, name, path, branch);
     if (response.isSuccess && response.data) {
       document = response.data as DocumentData;
+      
+      // 预编译 Markdown 内容
+      if (document.content) {
+        compiledHtml = await compileMarkdownToHtml(document.content);
+        // 创建一个新的文档对象，包含编译后的 HTML
+        document = {
+          ...document,
+          content: compiledHtml
+        };
+      }
+      
       // 提取标题作为目录
       headings = extractHeadings(response.data.content);
       // 生成结构化数据
@@ -259,31 +364,53 @@ export default async function DocumentPage({ params, searchParams }: any) {
     notFound();
   }
 
+  // 判断当前是否为搜索引擎
+  const isBot = isSearchEngineBot(userAgent);
+
   // 生成目录锚点项
   const anchorItems = createAnchorItems(headings);
 
-  return (
-    <>
-      {/* 结构化数据 */}
-      {structuredData && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(structuredData)
-          }}
-        />
-      )}
-      
-      <DocumentPageClient
-        document={document}
-        error={error}
-        headings={headings}
-        anchorItems={anchorItems}
-        owner={owner}
-        name={name}
-        path={path}
-        branch={branch}
-      />
-    </>
-  );
+  // 共同的props
+  const commonProps = {
+    document,
+    error,
+    headings,
+    anchorItems,
+    owner,
+    name,
+    path,
+    branch
+  };
+
+  if(!isBot){
+    return (
+      <>
+        {/* 结构化数据 */}
+        {/* {structuredData && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(structuredData)
+            }}
+          />
+        )} */}
+        <DocumentPageServer {...commonProps} />
+      </>
+    );
+  }else{
+    return (
+      <>
+        {/* 结构化数据 */}
+        {/* {structuredData && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(structuredData)
+            }}
+          />
+        )} */}
+        <DocumentPageClient {...commonProps} />
+      </>
+    );
+  }
 }

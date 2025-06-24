@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
 import {
-  Typography, Layout, Space, Empty,  Row, Col,  Pagination, message, ConfigProvider, Divider, Avatar,
+  Typography, Layout, Space, Empty, Row, Col, Pagination, message, ConfigProvider, Divider, Avatar,
 } from 'antd';
 import {
   PlusOutlined,
@@ -22,7 +22,7 @@ import { createRoot } from 'react-dom/client';
 import { homepage } from '../const/urlconst';
 import { useTranslation } from '../i18n/client';
 import { useSearchParams } from 'next/navigation';
-import { SearchBar, Button,Tag } from '@lobehub/ui';
+import { SearchBar, Button, Tag } from '@lobehub/ui';
 
 const { Content, Footer } = Layout;
 const { Title, Paragraph, Text } = Typography;
@@ -89,13 +89,13 @@ interface HomeClientProps {
   initialStats?: Partial<HomeStats>;
 }
 
-export default function HomeClient({ 
-  initialRepositories, 
-  initialTotal, 
-  initialPage, 
-  initialPageSize, 
-  initialSearchValue, 
-  initialStats 
+export default function HomeClient({
+  initialRepositories,
+  initialTotal,
+  initialPage,
+  initialPageSize,
+  initialSearchValue,
+  initialStats
 }: HomeClientProps) {
   const repositories = initialRepositories;
   const [formVisible, setFormVisible] = useState(false);
@@ -236,12 +236,7 @@ export default function HomeClient({
         
         .hero-banner {
           text-align: center;
-          padding: 80px 0 60px;
-          background: rgba(255, 255, 255, 0.8);
-          border-radius: 24px;
-          margin: 32px 0 48px;
           backdrop-filter: blur(10px);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .hero-title {
@@ -269,16 +264,14 @@ export default function HomeClient({
           display: flex;
           gap: 16px;
           justify-content: center;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
         }
         
         .content-section {
-          background: rgba(255, 255, 255, 0.9);
           border-radius: 16px;
           padding: 32px;
           margin-bottom: 32px;
           backdrop-filter: blur(10px);
-          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
         }
         
         .section-header {
@@ -459,7 +452,6 @@ export default function HomeClient({
             <div className="nav-section">
               <LanguageSwitcher />
               <Button
-                className="github-button"
                 href={homepage}
                 target="_blank"
                 icon={<GithubOutlined />}
@@ -494,33 +486,6 @@ export default function HomeClient({
                 {t('home.subtitle')}
               </Paragraph>
 
-              <div className="hero-actions">
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={() => setFormVisible(true)}
-                  style={{ 
-                    height: 48, 
-                    padding: '0 32px', 
-                    fontSize: 16,
-                    boxShadow: '0 4px 12px rgba(22, 119, 255, 0.3)'
-                  }}
-                >
-                  {t('home.add_repo_button')}
-                </Button>
-                <Button
-                  size="large"
-                  onClick={handleLastRepoQuery}
-                  style={{ 
-                    height: 48, 
-                    padding: '0 32px', 
-                    fontSize: 16 
-                  }}
-                >
-                  {t('home.query_last_repo_button')}
-                </Button>
-              </div>
             </div>
 
             {/* 仓库列表区域 */}
@@ -528,15 +493,33 @@ export default function HomeClient({
               <div className="section-header">
                 <div className="section-actions" style={{ width: '100%', justifyContent: 'center' }}>
                   <div className="search-container">
-                    <SearchBar
-                      placeholder={t('home.repo_list.search_placeholder')}
-                      allowClear
-                      value={searchValue}
-                      onSearch={handleSearch}
-                      onChange={e => setSearchValue(e.target.value)}
-                      size="large"
-                      style={{ width: '100%' }}
-                    />
+                    <div className="hero-actions">
+                      <SearchBar
+                        placeholder={t('home.repo_list.search_placeholder')}
+                        allowClear
+                        value={searchValue}
+                        onSearch={handleSearch}
+                        onChange={e => setSearchValue(e.target.value)}
+                        size="large"
+                        style={{
+                          width: '100%',
+                          minWidth: '450px'
+                        }}
+                      />
+                      <Button
+                        type="primary"
+                        size="large"
+                        onClick={() => setFormVisible(true)}
+                      >
+                        {t('home.add_repo_button')}
+                      </Button>
+                      <Button
+                        size="large"
+                        onClick={handleLastRepoQuery}
+                      >
+                        {t('home.query_last_repo_button')}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -562,7 +545,7 @@ export default function HomeClient({
                       onClick={() => setFormVisible(true)}
                       size="large"
                       icon={<PlusOutlined />}
-                      style={{ 
+                      style={{
                         marginTop: 16,
                         height: 48,
                         padding: '0 32px',
@@ -680,9 +663,9 @@ export default function HomeClient({
                     </Title>
                     <Space direction="vertical" size="middle">
                       {footerLinks.product.map(link => (
-                        <a 
-                          key={link.titleKey} 
-                          href={link.link} 
+                        <a
+                          key={link.titleKey}
+                          href={link.link}
                           style={{ color: '#64748b', fontSize: 14 }}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -699,9 +682,9 @@ export default function HomeClient({
                     </Title>
                     <Space direction="vertical" size="middle">
                       {footerLinks.resources.map(link => (
-                        <a 
-                          key={link.titleKey} 
-                          href={link.link} 
+                        <a
+                          key={link.titleKey}
+                          href={link.link}
                           style={{ color: '#64748b', fontSize: 14 }}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -718,9 +701,9 @@ export default function HomeClient({
                     </Title>
                     <Space direction="vertical" size="middle">
                       {footerLinks.company.map(link => (
-                        <a 
-                          key={link.titleKey} 
-                          href={link.link} 
+                        <a
+                          key={link.titleKey}
+                          href={link.link}
                           style={{ color: '#64748b', fontSize: 14 }}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -743,8 +726,8 @@ export default function HomeClient({
                       {t('footer.copyright', { year: new Date().getFullYear() })}
                     </Text>
                     <Text style={{ color: '#64748b', fontSize: 14 }}>
-                      {t('footer.powered_by')} 
-                      <span style={{ color: '#1677ff', fontWeight: 600, marginLeft: 4 }}>.NET 9.0</span> & 
+                      {t('footer.powered_by')}
+                      <span style={{ color: '#1677ff', fontWeight: 600, marginLeft: 4 }}>.NET 9.0</span> &
                       <span style={{ color: '#52c41a', fontWeight: 600, marginLeft: 4 }}>Semantic Kernel</span>
                     </Text>
                   </Space>

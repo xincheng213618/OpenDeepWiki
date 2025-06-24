@@ -9,19 +9,113 @@ using KoalaWiki.Functions;
 using LibGit2Sharp;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using KoalaWiki.Core.DataAccess;
+using KoalaWiki.Git;
+using KoalaWiki.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace KoalaWiki.Services;
 
 [Tags("仓库管理")]
 [Route("/api/Warehouse")]
-public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepositoryService gitRepositoryService)
+public class WarehouseService(
+    IKoalaWikiContext access, 
+    IMapper mapper, 
+    GitRepositoryService gitRepositoryService,
+    IUserContext userContext,
+    IHttpContextAccessor httpContextAccessor)
     : FastApi
 {
     /// <summary>
+    /// 检查用户对指定仓库的访问权限
+    /// </summary>
+    /// <param name="warehouseId">仓库ID</param>
+    /// <returns>是否有访问权限</returns>
+    private async Task<bool> CheckWarehouseAccessAsync(string warehouseId)
+    {
+        var currentUserId = userContext.CurrentUserId;
+        var isAdmin = httpContextAccessor.HttpContext?.User?.IsInRole("admin") ?? false;
+
+        // 管理员有所有权限
+        if (isAdmin) return true;
+
+        // 检查仓库是否存在权限分配
+        var hasPermissionAssignment = await access.WarehouseInRoles
+            .AnyAsync(wr => wr.WarehouseId == warehouseId);
+
+        // 如果仓库没有权限分配，则是公共仓库，所有人都可以访问
+        if (!hasPermissionAssignment) return true;
+
+        // 如果用户未登录，无法访问有权限分配的仓库
+        if (string.IsNullOrEmpty(currentUserId)) return false;
+
+        // 获取用户的角色ID列表
+        var userRoleIds = await access.UserInRoles
+            .Where(ur => ur.UserId == currentUserId)
+            .Select(ur => ur.RoleId)
+            .ToListAsync();
+
+        // 如果用户没有任何角色，无法访问有权限分配的仓库
+        if (!userRoleIds.Any()) return false;
+
+        // 检查用户角色是否有该仓库的权限
+        return await access.WarehouseInRoles
+            .AnyAsync(wr => userRoleIds.Contains(wr.RoleId) && wr.WarehouseId == warehouseId);
+    }
+
+    /// <summary>
+    /// 检查用户对指定仓库的管理权限
+    /// </summary>
+    /// <param name="warehouseId">仓库ID</param>
+    /// <returns>是否有管理权限</returns>
+    private async Task<bool> CheckWarehouseManageAccessAsync(string warehouseId)
+    {
+        var currentUserId = userContext.CurrentUserId;
+        var isAdmin = httpContextAccessor.HttpContext?.User?.IsInRole("admin") ?? false;
+
+        // 管理员有所有权限
+        if (isAdmin) return true;
+
+        // 如果用户未登录，无管理权限
+        if (string.IsNullOrEmpty(currentUserId)) return false;
+
+        // 检查仓库是否存在权限分配
+        var hasPermissionAssignment = await access.WarehouseInRoles
+            .AnyAsync(wr => wr.WarehouseId == warehouseId);
+
+        // 如果仓库没有权限分配，只有管理员可以管理
+        if (!hasPermissionAssignment) return false;
+
+        // 获取用户的角色ID列表
+        var userRoleIds = await access.UserInRoles
+            .Where(ur => ur.UserId == currentUserId)
+            .Select(ur => ur.RoleId)
+            .ToListAsync();
+
+        // 如果用户没有任何角色，无管理权限
+        if (!userRoleIds.Any()) return false;
+
+        // 检查用户角色是否有该仓库的写入或删除权限（管理权限）
+        return await access.WarehouseInRoles
+            .AnyAsync(wr => userRoleIds.Contains(wr.RoleId) && 
+                           wr.WarehouseId == warehouseId && 
+                           (wr.IsWrite || wr.IsDelete));
+    }
+
+    /// <summary>
     /// 更新仓库状态，并且重新提交
     /// </summary>
+    [EndpointSummary("更新仓库状态")]
     public async Task UpdateWarehouseStatusAsync(string warehouseId)
     {
+        // 检查管理权限
+        if (!await CheckWarehouseManageAccessAsync(warehouseId))
+        {
+            throw new UnauthorizedAccessException("您没有权限管理此仓库");
+        }
+
         await access.Warehouses
             .Where(x => x.Id == warehouseId)
             .ExecuteUpdateAsync(x => x.SetProperty(y => y.Status, WarehouseStatus.Pending));
@@ -36,6 +130,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// 查询上次提交的仓库
     /// </summary>
     /// <returns></returns>
+    [EndpointSummary("查询上次提交的仓库")]
     public async Task<object> GetLastWarehouseAsync(string address)
     {
         address = address.Trim().TrimEnd('/').ToLower();
@@ -110,6 +205,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// <summary>
     /// 从URL下载文件到本地
     /// </summary>
+    [EndpointSummary("从URL下载文件到本地")]
     private async Task<FileInfo> DownloadFileFromUrlAsync(string fileUrl, string organization, string repositoryName)
     {
         using var httpClient = new HttpClient();
@@ -233,6 +329,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// <summary>
     /// 上传并且提交仓库
     /// </summary>
+    [EndpointSummary("上传并且提交仓库")]
     public async Task UploadAndSubmitWarehouseAsync(HttpContext context)
     {
         if (!DocumentOptions.EnableFileCommit)
@@ -398,6 +495,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// <summary>
     /// 提交仓库
     /// </summary>
+    [EndpointSummary("提交仓库")]
     public async Task SubmitWarehouseAsync(WarehouseInput input, HttpContext context)
     {
         try
@@ -487,6 +585,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
         }
     }
 
+    [EndpointSummary("自定义提交仓库")]
     public async Task CustomSubmitWarehouseAsync(CustomWarehouseInput input, HttpContext context)
     {
         try
@@ -568,6 +667,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// <summary>
     /// 获取仓库概述
     /// </summary>
+    [EndpointSummary("获取仓库概述")]
     public async Task GetWarehouseOverviewAsync(string owner, string name, string? branch, HttpContext context)
     {
         owner = owner.Trim().ToLower();
@@ -583,6 +683,18 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
         if (warehouse == null)
         {
             throw new NotFoundException($"仓库不存在，请检查仓库名称和组织名称:{owner} {name} {branch}");
+        }
+
+        // 检查用户权限
+        if (!await CheckWarehouseAccessAsync(warehouse.Id))
+        {
+            context.Response.StatusCode = 403;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                code = 403,
+                message = "您没有权限访问此仓库"
+            });
+            return;
         }
 
         var document = await access.Documents
@@ -616,6 +728,7 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// <param name="pageSize">每页显示的记录数。</param>
     /// <param name="keyword">搜索关键词，用于匹配仓库名称或地址。</param>
     /// <returns>返回一个包含总记录数和当前页仓库数据的分页结果对象。</returns>
+    [EndpointSummary("获取仓库列表")]
     public async Task<PageDto<WarehouseDto>> GetWarehouseListAsync(int page, int pageSize, string keyword)
     {
         var query = access.Warehouses
@@ -630,6 +743,60 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
                 x.Name.ToLower().Contains(keyword) || x.Address.ToLower().Contains(keyword) ||
                 x.Description.ToLower().Contains(keyword));
         }
+
+        // 权限过滤：如果仓库存在WarehouseInRole分配，则只有拥有相应角色的用户才能访问
+        var currentUserId = userContext.CurrentUserId;
+        var isAdmin = httpContextAccessor.HttpContext?.User?.IsInRole("admin") ?? false;
+
+        if (!isAdmin && !string.IsNullOrEmpty(currentUserId))
+        {
+            // 获取用户的角色ID列表
+            var userRoleIds = await access.UserInRoles
+                .Where(ur => ur.UserId == currentUserId)
+                .Select(ur => ur.RoleId)
+                .ToListAsync();
+
+            // 如果用户没有任何角色，只能看到公共仓库（没有权限分配的仓库）
+            if (!userRoleIds.Any())
+            {
+                var publicWarehouseIds = await access.Warehouses
+                    .Where(w => !access.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
+                    .Select(w => w.Id)
+                    .ToListAsync();
+
+                query = query.Where(x => publicWarehouseIds.Contains(x.Id));
+            }
+            else
+            {
+                // 用户可以访问的仓库：
+                // 1. 通过角色权限可以访问的仓库
+                // 2. 没有任何权限分配的公共仓库
+                var accessibleWarehouseIds = await access.WarehouseInRoles
+                    .Where(wr => userRoleIds.Contains(wr.RoleId))
+                    .Select(wr => wr.WarehouseId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var publicWarehouseIds = await access.Warehouses
+                    .Where(w => !access.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
+                    .Select(w => w.Id)
+                    .ToListAsync();
+
+                var allAccessibleIds = accessibleWarehouseIds.Concat(publicWarehouseIds).Distinct().ToList();
+                query = query.Where(x => allAccessibleIds.Contains(x.Id));
+            }
+        }
+        else if (string.IsNullOrEmpty(currentUserId))
+        {
+            // 未登录用户只能看到公共仓库
+            var publicWarehouseIds = await access.Warehouses
+                .Where(w => !access.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
+                .Select(w => w.Id)
+                .ToListAsync();
+
+            query = query.Where(x => publicWarehouseIds.Contains(x.Id));
+        }
+        // 管理员可以看到所有仓库，不需要额外过滤
 
         // 按仓库名称和组织名称分组，保持排序一致性
         var groupedQuery = query
@@ -707,6 +874,12 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     [EndpointSummary("获取指定仓库代码文件")]
     public async Task<ResultDto<string>> GetFileContent(string warehouseId, string path)
     {
+        // 检查用户权限
+        if (!await CheckWarehouseAccessAsync(warehouseId))
+        {
+            throw new UnauthorizedAccessException("您没有权限访问此仓库");
+        }
+
         var query = await access.Documents
             .AsNoTracking()
             .Where(x => x.WarehouseId == warehouseId)
@@ -727,8 +900,21 @@ public class WarehouseService(IKoalaWikiContext access, IMapper mapper, GitRepos
     /// <summary>
     /// 导出Markdown压缩包
     /// </summary>
+    [EndpointSummary("导出Markdown压缩包")]
     public async Task ExportMarkdownZip(string warehouseId, HttpContext context)
     {
+        // 检查用户权限
+        if (!await CheckWarehouseAccessAsync(warehouseId))
+        {
+            context.Response.StatusCode = 403;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                code = 403,
+                message = "您没有权限访问此仓库"
+            });
+            return;
+        }
+
         var query = await access.Warehouses
             .AsNoTracking()
             .Where(x => x.Id == warehouseId)

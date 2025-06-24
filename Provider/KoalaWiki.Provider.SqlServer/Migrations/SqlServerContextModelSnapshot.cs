@@ -598,6 +598,133 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.Statistics.AccessRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("主键Id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasComment("创建时间");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("IP地址");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("请求方法");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("访问路径");
+
+                    b.Property<string>("ResourceId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("资源Id");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("资源类型");
+
+                    b.Property<long>("ResponseTime")
+                        .HasColumnType("bigint")
+                        .HasComment("响应时间");
+
+                    b.Property<int>("StatusCode")
+                        .HasColumnType("int")
+                        .HasComment("状态码");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("用户代理");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("用户Id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IpAddress");
+
+                    b.HasIndex("ResourceId");
+
+                    b.HasIndex("ResourceType");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ResourceType", "ResourceId");
+
+                    b.ToTable("AccessRecords", t =>
+                        {
+                            t.HasComment("访问记录表");
+                        });
+                });
+
+            modelBuilder.Entity("KoalaWiki.Domains.Statistics.DailyStatistics", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("主键Id");
+
+                    b.Property<int>("ActiveUsers")
+                        .HasColumnType("int")
+                        .HasComment("活跃用户数");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasComment("创建时间");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2")
+                        .HasComment("统计日期");
+
+                    b.Property<int>("NewDocumentsCount")
+                        .HasColumnType("int")
+                        .HasComment("新增文档数");
+
+                    b.Property<int>("NewRepositoriesCount")
+                        .HasColumnType("int")
+                        .HasComment("新增仓库数");
+
+                    b.Property<int>("NewUsersCount")
+                        .HasColumnType("int")
+                        .HasComment("新增用户数");
+
+                    b.Property<int>("PageViews")
+                        .HasColumnType("int")
+                        .HasComment("页面访问量");
+
+                    b.Property<int>("UniqueVisitors")
+                        .HasColumnType("int")
+                        .HasComment("独立访问用户数");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasComment("更新时间");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Date")
+                        .IsUnique();
+
+                    b.ToTable("DailyStatistics", t =>
+                        {
+                            t.HasComment("每日统计表");
+                        });
+                });
+
             modelBuilder.Entity("KoalaWiki.Domains.Users.Role", b =>
                 {
                     b.Property<string>("Id")
