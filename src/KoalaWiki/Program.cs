@@ -1,4 +1,10 @@
 using KoalaWiki.Mem0;
+using KoalaWiki.Infrastructure;
+using KoalaWiki.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,9 +47,21 @@ builder.Services.AddFastApis();
 builder.Services.AddSingleton<GitService>();
 builder.Services.AddSingleton<DocumentsService>();
 builder.Services.AddTransient<GlobalMiddleware>();
-// builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IUserContext, UserContext>();
 builder.Services.AddMemoryCache();
+
+// 添加统计服务
+builder.Services.AddScoped<StatisticsService>();
+builder.Services.AddHostedService<StatisticsBackgroundService>();
+
+// 添加访问日志队列和后台处理服务
+builder.Services.AddSingleton<AccessLogQueue>();
+builder.Services.AddHostedService<AccessLogBackgroundService>();
+
+// 添加权限管理服务
+builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<PermissionService>();
+builder.Services.AddScoped<MenuService>();
 
 // 添加JWT认证
 builder.Services.AddAuthentication(options =>
@@ -63,6 +81,31 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtOptions.Audience,
         IssuerSigningKey = jwtOptions.GetSymmetricSecurityKey(),
         ClockSkew = TimeSpan.Zero
+    };
+    
+    // 添加事件处理器以支持从cookie中读取token
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            // 首先检查Authorization header
+            var token = context.Request.Headers["Authorization"]
+                .FirstOrDefault()?.Split(" ").Last();
+            
+            // 如果Authorization header中没有token，则检查cookie
+            if (string.IsNullOrEmpty(token))
+            {
+                token = context.Request.Cookies["token"];
+            }
+            
+            // 如果找到token，则设置到context中
+            if (!string.IsNullOrEmpty(token))
+            {
+                context.Token = token;
+            }
+            
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -120,6 +163,12 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 添加权限中间件
+app.UsePermissionMiddleware();
+
+// 添加访问记录中间件（在认证授权之后，业务逻辑之前）
+app.UseAccessRecord();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -135,3 +184,12 @@ app.MapSitemap();
 app.MapFastApis();
 
 app.Run();
+
+// 权限中间件扩展方法
+public static class PermissionMiddlewareExtensions
+{
+    public static IApplicationBuilder UsePermissionMiddleware(this IApplicationBuilder builder)
+    {
+        return builder.UseMiddleware<PermissionMiddleware>();
+    }
+}

@@ -6,6 +6,7 @@ using KoalaWiki.Domains.FineTuning;
 using KoalaWiki.Domains.MCP;
 using KoalaWiki.Domains.Users;
 using KoalaWiki.Domains.Warehouse;
+using KoalaWiki.Domains.Statistics;
 using KoalaWiki.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,6 +50,10 @@ public interface IKoalaWikiContext
     public DbSet<Role> Roles { get; set; }
 
     public DbSet<WarehouseInRole> WarehouseInRoles { get; set; }
+
+    public DbSet<AccessRecord> AccessRecords { get; set; }
+
+    public DbSet<DailyStatistics> DailyStatistics { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = new());
 
