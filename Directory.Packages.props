@@ -1,9 +1,9 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <VersionSuffix>5</VersionSuffix>
+    <VersionSuffix>0</VersionSuffix>
     <TimeStamp>$([System.DateTime]::UtcNow.ToString("yyyyMMdd"))</TimeStamp>
-    <Version>0.4.$(VersionSuffix)</Version>
+    <Version>0.5.$(VersionSuffix)</Version>
     
     <!-- 项目信息 -->
     <Product>OpenDeepWiki</Product>
