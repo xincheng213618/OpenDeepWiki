@@ -157,18 +157,6 @@ export async function generateMetadata(): Promise<Metadata> {
         'max-snippet': -1,
       },
     },
-    icons: {
-      icon: [
-        { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-        { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      ],
-      apple: [
-        { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-      ],
-      other: [
-        { rel: 'mask-icon', url: '/safari-pinned-tab.svg', color: '#1677ff' },
-      ],
-    },
     manifest: '/site.webmanifest',
     viewport: {
       width: 'device-width',
@@ -212,22 +200,6 @@ export default async function RootLayout({
     switch (locale) {
       case 'zh-CN': return zhCN;
       case 'en-US': return enUS;
-      case 'zh-TW': return zhTW;
-      case 'ja': return jaJP;
-      case 'ko': return koKR;
-      case 'de': return deDE;
-      case 'fr': return frFR;
-      case 'es': return esES;
-      case 'it': return itIT;
-      case 'pt': return ptBR;
-      case 'ru': return ruRU;
-      case 'ar': return arEG;
-      case 'hi': return hiIN;
-      case 'nl': return nlNL;
-      case 'tr': return trTR;
-      case 'vi': return viVN;
-      case 'id': return idID;
-      case 'th': return thTH;
       default: return zhCN;
     }
   };

@@ -1,12 +1,17 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import 'katex/dist/katex.min.css';
+import { Row, Col } from 'antd';
 
 // 直接导入工具函数，避免导入客户端组件
 import { extractHeadings, createAnchorItems } from '../../../components/document/utils/headingUtils';
 
 // 导入文档服务和类型
 import { documentById, getWarehouseOverview } from '../../../services/warehouseService';
+
+// 导入服务端组件
+import { ServerDocumentContent } from '../../../components/document/ServerDocumentContent';
+import { SourceFiles, DocumentSidebar, MobileDocumentDrawer, LoadingErrorState, DocumentStyles } from '../../../components/document';
 
 // 导入客户端组件和类型
 import DocumentPageClient from './DocumentPageClient';
@@ -130,7 +135,7 @@ export async function generateMetadata({ params, searchParams }: any): Promise<M
           address: false,
           telephone: false,
         },
-        metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://koalawiki.com'),
+        metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://opendeep.wiki'),
         alternates: {
           canonical: url,
         },
@@ -207,7 +212,7 @@ export async function generateMetadata({ params, searchParams }: any): Promise<M
     authors: [{ name: owner }],
     creator: owner,
     publisher: 'KoalaWiki',
-    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://koalawiki.com'),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://opendeep.wiki'),
     openGraph: {
       title: defaultTitle,
       description: defaultDescription,
@@ -274,16 +279,157 @@ export default async function DocumentPage({ params, searchParams }: any) {
         />
       )}
       
-      <DocumentPageClient
-        document={document}
-        error={error}
-        headings={headings}
-        anchorItems={anchorItems}
-        owner={owner}
-        name={name}
-        path={path}
-        branch={branch}
-      />
+            {/* 服务端渲染的完整页面 - 对 SEO 友好，用户和搜索引擎都能看到 */}
+      {document && !error ? (
+        <main style={{ backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+          <div style={{ 
+            padding: '24px',
+            maxWidth: '1600px',
+            margin: '0 auto'
+          }}>
+            {/* 源文件组件 */}
+            {document?.fileSource && document.fileSource.length > 0 && (
+              <div style={{
+                backgroundColor: '#ffffff',
+                marginBottom: '24px',
+                borderRadius: '8px',
+                padding: '16px'
+              }}>
+                <h3 style={{ margin: '0 0 16px 0', color: '#1e293b' }}>源文件</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {document.fileSource.map((file: any, index: number) => (
+                    <a
+                      key={index}
+                      href={`${document.address}/blob/${document.branch}/${file.path}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: '4px 8px',
+                        backgroundColor: '#f1f5f9',
+                        borderRadius: '4px',
+                        textDecoration: 'none',
+                        color: '#475569',
+                        fontSize: '14px'
+                      }}
+                    >
+                      {file.path}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+              {/* 主要内容区 */}
+              <article style={{ flex: '1', minWidth: '0' }} itemProp="articleBody">
+                <ServerDocumentContent
+                  document={document}
+                  owner={owner}
+                  name={name}
+                />
+              </article>
+              
+              {/* 目录侧边栏 - 在移动端隐藏 */}
+              <nav style={{ 
+                width: '280px', 
+                flexShrink: 0
+              }} aria-label="文档目录">
+                <div style={{
+                  position: 'sticky',
+                  top: '24px',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                }}>
+                  <h4 style={{ 
+                    margin: '0 0 16px 0', 
+                    color: '#1e293b',
+                    fontSize: '16px',
+                    fontWeight: '600'
+                  }}>
+                    目录
+                  </h4>
+                  {headings.length > 0 ? (
+                    <ul style={{ 
+                      listStyle: 'none', 
+                      padding: 0, 
+                      margin: 0 
+                    }}>
+                      {headings.map((heading) => (
+                        <li key={heading.key} style={{
+                          marginBottom: '8px',
+                          paddingLeft: `${(heading.level - 1) * 16}px`
+                        }}>
+                          <a
+                            href={`#${heading.id}`}
+                            style={{
+                              color: '#64748b',
+                              textDecoration: 'none',
+                              fontSize: '14px',
+                              lineHeight: '1.4'
+                            }}
+                          >
+                            {heading.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p style={{ 
+                      color: '#94a3b8', 
+                      fontSize: '14px', 
+                      margin: 0 
+                    }}>
+                      暂无目录
+                    </p>
+                  )}
+                </div>
+              </nav>
+            </div>
+          </div>
+          
+          {/* 为搜索引擎提供的结构化数据 */}
+          <div style={{ display: 'none' }}>
+            <article itemScope itemType="https://schema.org/TechArticle">
+              <h1 itemProp="headline">{document.title || path}</h1>
+              <meta itemProp="author" content={owner} />
+              <meta itemProp="publisher" content="KoalaWiki" />
+              <meta itemProp="datePublished" content={document.createdAt} />
+              <meta itemProp="dateModified" content={document.updatedAt || document.createdAt} />
+            </article>
+          </div>
+        </main>
+      ) : (
+        /* 错误状态 */
+        <main style={{ 
+          padding: '24px', 
+          textAlign: 'center',
+          minHeight: '50vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div>
+            <h1>文档未找到</h1>
+            <p style={{ color: '#64748b', marginBottom: '24px' }}>
+              {error || `无法找到 ${owner}/${name} 项目中的 ${path} 文档`}
+            </p>
+            <a 
+              href={`/${owner}/${name}`}
+              style={{
+                color: '#2563eb',
+                textDecoration: 'none',
+                padding: '8px 16px',
+                border: '1px solid #2563eb',
+                borderRadius: '4px'
+              }}
+            >
+              返回项目首页
+            </a>
+          </div>
+        </main>
+      )}
     </>
   );
 }
