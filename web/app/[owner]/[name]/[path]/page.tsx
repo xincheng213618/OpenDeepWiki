@@ -382,7 +382,7 @@ export default async function DocumentPage({
     branch
   };
 
-  if(!isBot){
+  if(isBot){
     return (
       <>
         {/* 结构化数据 */}
@@ -401,14 +401,14 @@ export default async function DocumentPage({
     return (
       <>
         {/* 结构化数据 */}
-        {/* {structuredData && (
+        {structuredData && (
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
               __html: JSON.stringify(structuredData)
             }}
           />
-        )} */}
+        )} 
         <DocumentPageClient {...commonProps} />
       </>
     );
