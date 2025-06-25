@@ -2,7 +2,7 @@
 using System.Text.Json;
 using KoalaWiki.CodeMap;
 using Mem0.NET;
-using Microsoft.KernelMemory;
+
 using Microsoft.SemanticKernel;
 
 namespace KoalaWiki.Functions;
