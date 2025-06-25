@@ -39,8 +39,8 @@ export default function DocumentPageClient({
   // 渲染页面主体
   return (
     <main className="doc-page-container" style={{ backgroundColor: token.colorBgLayout, minHeight: '100vh' }}>
-      <Row 
-        style={{ 
+      <Row
+        style={{
           padding: { xs: '8px', sm: '16px', md: '24px' }[token.screenSM],
           maxWidth: '1600px',
           margin: '0 auto'
@@ -73,19 +73,16 @@ export default function DocumentPageClient({
                 />
               </Col>
             )}
-            
-            {/* 主要内容区 */}
+
             <Col xs={24} sm={24} md={18} lg={18} xl={18}>
-              <section itemProp="articleBody">
-                <DocumentContent
-                  document={document}
-                  owner={owner}
-                  name={name}
-                  token={token}
-                />
-              </section>
+              <DocumentContent
+                document={document}
+                owner={owner}
+                name={name}
+                token={token}
+              />
             </Col>
-            
+
             <Col xs={0} sm={0} md={6} lg={6} xl={6}>
               <nav aria-label="文档目录">
                 <DocumentSidebar
@@ -105,7 +102,7 @@ export default function DocumentPageClient({
           token={token}
         />
       )}
-      
+
       {/* 全局样式 */}
       <DocumentStyles token={token} />
     </main>

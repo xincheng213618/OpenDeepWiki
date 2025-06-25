@@ -22,18 +22,7 @@ import { documentById, getWarehouseOverview } from '../../../services/warehouseS
 
 // 导入客户端组件和服务端组件
 import DocumentPageClient from './DocumentPageClient';
-import DocumentPageServer from './DocumentPageServer';
 import { DocumentData, Heading } from './types';
-
-// Markdown 编译器配置
-const markdownProcessor = remark()
-  .use(remarkGfm) // GitHub 风格 Markdown
-  .use(remarkMath) // 数学公式支持
-  .use(remarkRehype, { allowDangerousHtml: true }) // 转换为 HTML AST
-  .use(rehypeRaw) // 支持原始 HTML
-  .use(rehypeKatex) // KaTeX 数学公式渲染
-  .use(rehypeSlug) // 自动生成标题 ID
-  .use(rehypeStringify); // 转换为 HTML 字符串
 
 // 编译 Markdown 内容为 HTML
 async function compileMarkdownToHtml(markdown: string): Promise<string> {
@@ -41,9 +30,6 @@ async function compileMarkdownToHtml(markdown: string): Promise<string> {
     if (!markdown || markdown.trim() === '') {
       return '<p>暂无内容</p>';
     }
-
-    const result = await markdownProcessor.process(markdown);
-    return result.toString();
   } catch (error) {
     console.error('Markdown 编译错误:', error);
     return `
@@ -322,30 +308,17 @@ export default async function DocumentPage({
 
   // 获取请求头信息
   const headersList = await headers();
-  const userAgent = headersList.get('user-agent') || '';
 
   // 在服务端获取文档数据
   let document: DocumentData | null = null;
   let error: string | null = null;
   let headings: Heading[] = [];
   let structuredData: any = null;
-  let compiledHtml: string = '';
 
   try {
     const response = await documentById(owner, name, path, branch);
     if (response.isSuccess && response.data) {
       document = response.data as DocumentData;
-      
-      // 预编译 Markdown 内容
-      if (document.content) {
-        compiledHtml = await compileMarkdownToHtml(document.content);
-        // 创建一个新的文档对象，包含编译后的 HTML
-        document = {
-          ...document,
-          content: compiledHtml
-        };
-      }
-      
       // 提取标题作为目录
       headings = extractHeadings(response.data.content);
       // 生成结构化数据
@@ -363,10 +336,6 @@ export default async function DocumentPage({
   if (error && (error.includes('404') || error.includes('未找到'))) {
     notFound();
   }
-
-  // 判断当前是否为搜索引擎
-  const isBot = isSearchEngineBot(userAgent);
-
   // 生成目录锚点项
   const anchorItems = createAnchorItems(headings);
 
@@ -382,35 +351,9 @@ export default async function DocumentPage({
     branch
   };
 
-  if(isBot){
-    return (
-      <>
-        {/* 结构化数据 */}
-        {/* {structuredData && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify(structuredData)
-            }}
-          />
-        )} */}
-        <DocumentPageServer {...commonProps} />
-      </>
-    );
-  }else{
-    return (
-      <>
-        {/* 结构化数据 */}
-        {structuredData && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify(structuredData)
-            }}
-          />
-        )} 
-        <DocumentPageClient {...commonProps} />
-      </>
-    );
-  }
+  return (
+    <>
+      <DocumentPageClient {...commonProps} />
+    </>
+  );
 }

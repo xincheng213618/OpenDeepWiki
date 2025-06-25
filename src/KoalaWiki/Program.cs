@@ -50,18 +50,11 @@ builder.Services.AddTransient<GlobalMiddleware>();
 builder.Services.AddScoped<IUserContext, UserContext>();
 builder.Services.AddMemoryCache();
 
-// 添加统计服务
-builder.Services.AddScoped<StatisticsService>();
 builder.Services.AddHostedService<StatisticsBackgroundService>();
 
 // 添加访问日志队列和后台处理服务
 builder.Services.AddSingleton<AccessLogQueue>();
 builder.Services.AddHostedService<AccessLogBackgroundService>();
-
-// 添加权限管理服务
-builder.Services.AddScoped<RoleService>();
-builder.Services.AddScoped<PermissionService>();
-builder.Services.AddScoped<MenuService>();
 
 // 添加JWT认证
 builder.Services.AddAuthentication(options =>
@@ -108,6 +101,7 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
+
 
 // 添加授权策略
 builder.Services.AddAuthorization(options =>
@@ -163,9 +157,6 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 添加权限中间件
-app.UsePermissionMiddleware();
-
 // 添加访问记录中间件（在认证授权之后，业务逻辑之前）
 app.UseAccessRecord();
 
@@ -177,19 +168,14 @@ if (app.Environment.IsDevelopment())
 
 app.MapMcp("/api/mcp");
 
+
 app.UseMiddleware<GlobalMiddleware>();
+
+// 添加权限中间件
+app.UseMiddleware<PermissionMiddleware>();
 
 app.MapSitemap();
 
 app.MapFastApis();
 
 app.Run();
-
-// 权限中间件扩展方法
-public static class PermissionMiddlewareExtensions
-{
-    public static IApplicationBuilder UsePermissionMiddleware(this IApplicationBuilder builder)
-    {
-        return builder.UseMiddleware<PermissionMiddleware>();
-    }
-}
