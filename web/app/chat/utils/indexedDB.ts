@@ -244,6 +244,17 @@ class ChatDatabase {
     });
   }
 
+  // 清空消息
+  async clearMessages(conversationId: string): Promise<void> {
+    // 删除workspaceId === conversationId 的消息,先获取所有消息
+    const messages = await this.getMessages(conversationId);
+    // 删除所有消息
+    messages.forEach(async (message) => {
+      await this.deleteMessage(message.id);
+    });
+  }
+  
+
   // 删除消息
   async deleteMessage(messageId: string): Promise<void> {
     const db = await this.init();

@@ -32,8 +32,9 @@ export class ChatService {
     this.baseUrl = baseUrl;
   }
 
-  // SSE 辅助函数
-  async* fetchSSE(url: string, data: any): AsyncIterableIterator<StreamEvent> {
+  // 发送消息并处理SSE流
+  async* sendMessage(input: ResponsesInput): AsyncIterableIterator<StreamEvent> {
+    const url = `${this.baseUrl}/api/Responses`;
     const token = localStorage.getItem("userToken");
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -43,10 +44,12 @@ export class ChatService {
       headers.Authorization = `Bearer ${token}`;
     }
 
+    console.log('🚀 开始发送消息:', url);
+
     const response = await fetch(url, {
       headers,
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(input),
     });
 
     if (response.status === 401) {
@@ -69,29 +72,42 @@ export class ChatService {
 
     const reader = response.body!.getReader();
     const decoder = new TextDecoder("utf-8");
+    let buffer = '';
+
 
     try {
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          break;
+        }
 
+        // 将新数据添加到缓冲区
         const chunk = decoder.decode(value, { stream: true });
-        const events = chunk.split("\n\n");
+        buffer += chunk;
+        // 处理完整的事件
+        const events = buffer.split("\n\n");
+        
+        // 保留最后一个可能不完整的事件
+        buffer = events.pop() || '';
 
         for (const event of events) {
           if (event.trim()) {
+            
             const dataLine = event.split("\n").find(line => line.startsWith("data:"));
             if (dataLine) {
               const jsonData = dataLine.replace("data:", "").trim();
+              
+              
               if (jsonData === "[done]" || jsonData === '{"type":"done"}') {
                 yield { type: 'done' };
-                break;
+                return;
               }
+              
               try {
                 const parsedData = JSON.parse(jsonData);
                 yield parsedData as StreamEvent;
               } catch (error) {
-                console.warn('Failed to parse SSE data:', jsonData);
               }
             }
           }
@@ -100,11 +116,6 @@ export class ChatService {
     } finally {
       reader.cancel();
     }
-  }
-
-  async* sendMessage(input: ResponsesInput): AsyncIterableIterator<StreamEvent> {
-    const url = `${this.baseUrl}/api/Responses`;
-    yield* this.fetchSSE(url, input);
   }
 
   // 验证域名权限
@@ -119,7 +130,7 @@ export class ChatService {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${this.baseUrl}/api/AppConfig/validate-domain`, {
+      const response = await fetch(`${this.baseUrl}/api/AppConfig/validatedomain`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

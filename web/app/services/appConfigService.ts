@@ -106,7 +106,7 @@ export async function toggleAppConfigEnabled(appId: string): Promise<ApiResponse
  * @returns 验证结果
  */
 export async function validateDomain(request: DomainValidationRequest): Promise<ApiResponse<DomainValidationResponse>> {
-  return fetchApi<DomainValidationResponse>(`${API_URL}/api/AppConfig/validate-domain`, {
+  return fetchApi<DomainValidationResponse>(`${API_URL}/api/AppConfig/validatedomain`, {
     method: 'POST',
     body: JSON.stringify(request),
   });

@@ -1,4 +1,5 @@
 ﻿using System.ClientModel.Primitives;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using FastService;
@@ -19,7 +20,6 @@ namespace KoalaWiki.Services.AI;
 
 [Tags("Responese")]
 [FastService.Route("")]
-[Filter(typeof(ResultFilter))]
 public class ResponsesService(IKoalaWikiContext koala) : FastApi
 {
     [HttpPost("/api/Responses")]
@@ -202,7 +202,7 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
                         type = "tool_call",
                         tool_call_id = toolCallUpdate.ToolCallId,
                         function_name = toolCallUpdate.FunctionName,
-                        function_arguments = toolCallUpdate.FunctionArgumentsUpdate
+                        function_arguments = Encoding.UTF8.GetString(toolCallUpdate.FunctionArgumentsUpdate),
                     };
 
                     await context.Response.WriteAsync($"data: {JsonSerializer.Serialize(toolCallData)}\n\n");

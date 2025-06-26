@@ -9,16 +9,11 @@ import type { Base64Content } from '../services/chatService';
 import { ActionIcon } from '@lobehub/ui';
 import { ChatInputActionBar, TokenTag } from '@lobehub/ui/chat';
 import { ChatInputArea } from '@lobehub/ui/mobile';
-import { Eraser, ImagePlus, Square } from 'lucide-react';
+import { Eraser, ImagePlus, Trash2 } from 'lucide-react';
 import { Flexbox } from 'react-layout-kit';
 
 const useStyles = createStyles(({ css, token }) => ({
     container: css`
-    padding: ${token.paddingMD}px;
-    border-top: 1px solid ${token.colorBorderSecondary};
-    background: ${token.colorBgContainer};
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-    position: relative;
     z-index: 10;
   `,
     imagePreviewContainer: css`
@@ -113,6 +108,7 @@ interface ChatInputProps {
     onSend?: (message: string, imageContents?: Base64Content[]) => void;
     onStop?: () => void;
     onChange?: (value: string) => void;
+    onClear?: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -123,6 +119,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     onSend,
     onStop,
     onChange,
+    onClear,
 }) => {
     const { styles } = useStyles();
     const [inputValue, setInputValue] = useState(value || '');
@@ -271,6 +268,19 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                             icon={<Eraser />}
                                             onClick={handleClear}
                                             disabled={!inputValue && imageList.length === 0}
+                                        />
+                                    </Tooltip>
+                                    {/* // 靠右侧显示垃圾桶 */}
+                                    <Tooltip title="清空消息">
+                                        <ActionIcon
+                                            className={styles.actionButton}
+                                            style={{ 
+                                                marginLeft: 'auto',
+                                                marginRight: '20px',
+                                                color: 'red',
+                                             }}
+                                            icon={<Trash2 />}
+                                            onClick={onClear}
                                         />
                                     </Tooltip>
                                 </>

@@ -33,20 +33,59 @@
     apiUrl: '',
     allowedDomains: [],
     enableDomainValidation: false,
-    theme: 'light'
+    theme: 'light',
+    // 提示相关配置
+    enableTooltip: true,
+    tooltipText: '点击我询问您想知道的！',
+    tooltipDelay: 5000, // 5秒后显示提示
+    tooltipDuration: 3000, // 提示显示3秒后自动隐藏
+    tooltipRepeatDelay: 30000 // 提示消失后30秒才能再次显示
   };
 
-  // 验证域名（异步）
+  // 用户活动检测相关变量
+  let lastActivity = Date.now();
+  let tooltipTimer = null;
+  let tooltipHideTimer = null;
+  let tooltipElement = null;
+  let tooltipShown = false;
+  let lastTooltipHideTime = 0;
+
+  // 获取API URL的辅助函数
+  function getApiUrl() {
+    // 如果配置中有apiUrl，直接使用
+    if (config.apiUrl) {
+      return config.apiUrl;
+    }
+
+    // 尝试从脚本标签获取源域名
+    const scriptElement = document.querySelector('script[src*="koala-chat-widget.js"]');
+    if (scriptElement) {
+      const scriptSrc = scriptElement.getAttribute('src');
+      if (scriptSrc) {
+        try {
+          const url = new URL(scriptSrc, window.location.href);
+          return url.origin;
+        } catch (e) {
+          console.warn('Unable to parse script source URL:', scriptSrc);
+        }
+      }
+    }
+
+    // 兜底使用当前页面域名
+    return window.location.origin;
+  }
+
+  // 域名验证
   async function validateDomain() {
     if (!config.appId) {
       return { isValid: false, reason: 'AppId is required' };
     }
 
     try {
-      const apiUrl = config.apiUrl || window.location.origin;
+      const apiUrl = getApiUrl();
       const currentDomain = window.location.hostname;
       
-      const response = await fetch(`${apiUrl}/api/AppConfig/validate-domain`, {
+      const response = await fetch(`${apiUrl}/api/AppConfig/validatedomain`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,11 +101,11 @@
         return { isValid: false, reason: 'ValidationRequestFailed' };
       }
 
-      const result = await response.json();
+      const {data} = await response.json();
       return {
-        isValid: result.isValid,
-        reason: result.reason,
-        appConfig: result.appConfig
+        isValid: data.isValid,
+        reason: data.reason,
+        appConfig: data.appConfig
       };
     } catch (error) {
       console.error('Domain validation error:', error);
@@ -81,7 +120,7 @@
     }
 
     try {
-      const apiUrl = config.apiUrl || window.location.origin;
+      const apiUrl = getApiUrl();
       
       const response = await fetch(`${apiUrl}/api/AppConfig/public/${config.appId}`, {
         method: 'GET',
@@ -101,6 +140,124 @@
       console.error('Failed to get app config:', error);
       return null;
     }
+  }
+
+  // 用户活动检测
+  function updateUserActivity() {
+    const now = Date.now();
+    
+    // 如果距离上次活动时间太短，避免频繁重置
+    if (now - lastActivity < 1000) {
+      return;
+    }
+    
+    lastActivity = now;
+    hideTooltip();
+    
+    // 重新开始计时
+    if (config.enableTooltip && floatingButton && !isExpanded) {
+      startTooltipTimer();
+    }
+  }
+
+  // 开始提示计时器
+  function startTooltipTimer() {
+    clearTimeout(tooltipTimer);
+    clearTimeout(tooltipHideTimer);
+    
+    // 检查是否需要等待更长时间（如果提示之前显示过）
+    const now = Date.now();
+    let delay = config.tooltipDelay;
+    
+    if (lastTooltipHideTime > 0) {
+      const timeSinceHide = now - lastTooltipHideTime;
+      if (timeSinceHide < config.tooltipRepeatDelay) {
+        delay = config.tooltipRepeatDelay - timeSinceHide;
+      }
+    }
+    
+    tooltipTimer = setTimeout(() => {
+      if (!isExpanded && floatingButton) {
+        showTooltip();
+      }
+    }, delay);
+  }
+
+  // 显示提示
+  function showTooltip() {
+    if (!config.enableTooltip || !config.tooltipText || isExpanded) {
+      return;
+    }
+
+    if (!tooltipElement) {
+      createTooltip();
+    }
+
+    tooltipElement.textContent = config.tooltipText;
+    tooltipElement.classList.add('visible');
+    tooltipShown = true;
+
+    // 设置自动隐藏计时器
+    if (config.tooltipDuration > 0) {
+      tooltipHideTimer = setTimeout(() => {
+        hideTooltip();
+      }, config.tooltipDuration);
+    }
+  }
+
+  // 隐藏提示
+  function hideTooltip() {
+    if (tooltipElement) {
+      tooltipElement.classList.remove('visible');
+    }
+    clearTimeout(tooltipHideTimer);
+    lastTooltipHideTime = Date.now();
+  }
+
+  // 创建提示元素
+  function createTooltip() {
+    tooltipElement = document.createElement('div');
+    tooltipElement.className = 'koala-tooltip';
+    document.body.appendChild(tooltipElement);
+
+    // 动态计算位置，确保提示出现在悬浮球上方
+    function updateTooltipPosition() {
+      if (floatingButton && tooltipElement) {
+        const buttonRect = floatingButton.getBoundingClientRect();
+        const tooltipRect = tooltipElement.getBoundingClientRect();
+        
+        // 计算提示位置：悬浮球上方，水平居中
+        const tooltipBottom = window.innerHeight - buttonRect.top + 12; // 12px间距
+        const tooltipRight = window.innerWidth - buttonRect.left - (buttonRect.width / 2) - (tooltipRect.width / 2);
+        
+        tooltipElement.style.bottom = tooltipBottom + 'px';
+        tooltipElement.style.right = Math.max(12, tooltipRight) + 'px';
+      }
+    }
+
+    // 点击提示时也打开聊天
+    tooltipElement.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleChat();
+    });
+
+    // 监听窗口大小变化
+    window.addEventListener('resize', updateTooltipPosition);
+    
+    // 初始位置更新
+    requestAnimationFrame(updateTooltipPosition);
+  }
+
+  // 监听用户活动
+  function initActivityListeners() {
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    events.forEach(event => {
+      document.addEventListener(event, updateUserActivity, {
+        passive: true,
+        capture: true
+      });
+    });
   }
 
   // 创建样式
@@ -141,8 +298,8 @@
         position: fixed;
         bottom: 24px;
         right: 24px;
-        width: 380px;
-        height: 600px;
+        width: 550px;
+        height: 700px;
         background: white;
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
@@ -162,8 +319,11 @@
       }
 
       .koala-chat-container.maximized {
-        width: 480px;
-        height: 720px;
+        width: 550px;
+        height: 100vh;
+        bottom: 0;
+        right: 0;
+        top: 0;
       }
 
       .koala-chat-header {
@@ -301,6 +461,43 @@
           bottom: 20px;
           right: 20px;
         }
+
+        .koala-tooltip {
+          bottom: 84px;
+          right: 20px;
+          max-width: calc(100vw - 40px);
+          white-space: pre-wrap;
+        }
+      }
+
+      .koala-tooltip {
+        position: fixed;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 14px;
+        white-space: nowrap;
+        z-index: 9999;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        pointer-events: none;
+      }
+
+      .koala-tooltip.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .koala-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: rgba(0, 0, 0, 0.8);
       }
     `;
 
@@ -320,7 +517,8 @@
       button.style.backgroundSize = 'cover';
       button.style.backgroundPosition = 'center';
     } else {
-      button.innerHTML = '💬';
+      const baseUrl = getApiUrl();
+      button.innerHTML = `<img src="${baseUrl}/logo.png" alt="AI 助手" style="width: 64px; height: 64px;">`;
     }
 
     button.addEventListener('click', toggleChat);
@@ -338,7 +536,7 @@
 
     const title = document.createElement('div');
     title.className = 'koala-header-title';
-    title.innerHTML = `💬 ${config.title}`;
+    title.innerHTML = `${config.title}`;
 
     const actions = document.createElement('div');
     actions.className = 'koala-header-actions';
@@ -414,6 +612,11 @@
     `;
   }
 
+  function showIframe(container, iframe) {
+    container.innerHTML = '';
+    container.appendChild(iframe);
+  }
+
   // 加载聊天界面
   function loadChatInterface(container) {
     // 检查必要配置
@@ -421,6 +624,9 @@
       showError(container, '应用配置缺失，无法加载聊天界面');
       return;
     }
+
+    // 获取API URL用于构建聊天界面URL
+    const baseUrl = getApiUrl();
 
     // 构建聊天界面 URL
     const params = new URLSearchParams({
@@ -439,7 +645,7 @@
       params.set('closeIcon', config.closeIcon);
     }
 
-    const chatUrl = `${config.apiUrl || window.location.origin}/chat/embedded?${params.toString()}`;
+    const chatUrl = `${baseUrl}/chat/embedded?${params.toString()}`;
 
     // 创建 iframe
     const iframe = document.createElement('iframe');
@@ -448,21 +654,11 @@
     iframe.frameBorder = '0';
     iframe.allowTransparency = true;
 
-    iframe.onload = function() {
-      container.innerHTML = '';
-      container.appendChild(iframe);
-    };
+    // 直接插入iframe到容器中
+    container.innerHTML = '';
+    container.appendChild(iframe);
 
-    iframe.onerror = function() {
-      showError(container, '无法加载聊天界面');
-    };
-
-    // 设置超时
-    setTimeout(() => {
-      if (container.querySelector('.koala-loading')) {
-        showError(container, '加载超时，请检查网络连接');
-      }
-    }, 10000);
+    showIframe(container, iframe);
   }
 
   // 全局变量
@@ -496,6 +692,9 @@
 
   // 打开聊天窗口
   async function openChat() {
+    // 隐藏提示
+    hideTooltip();
+    
     if (!chatContainer) {
       chatContainer = createChatContainer();
       document.body.appendChild(chatContainer);
@@ -530,6 +729,11 @@
     isExpanded = false;
     isMinimized = false;
     isMaximized = false;
+    
+    // 重新开始提示计时器
+    if (config.enableTooltip) {
+      startTooltipTimer();
+    }
   }
 
   // 最小化聊天窗口
@@ -610,6 +814,14 @@
       floatingButton = createFloatingButton();
       document.body.appendChild(floatingButton);
 
+      // 初始化用户活动检测
+      initActivityListeners();
+
+      // 启动提示计时器
+      if (config.enableTooltip) {
+        startTooltipTimer();
+      }
+
       console.log('KoalaChatWidget initialized successfully');
     } catch (error) {
       console.error('KoalaChatWidget initialization failed:', error);
@@ -621,6 +833,11 @@
 
   // 销毁组件
   function destroy() {
+    // 清理计时器
+    clearTimeout(tooltipTimer);
+    clearTimeout(tooltipHideTimer);
+    
+    // 移除元素
     if (floatingButton) {
       floatingButton.remove();
       floatingButton = null;
@@ -629,9 +846,18 @@
       chatContainer.remove();
       chatContainer = null;
     }
+    if (tooltipElement) {
+      tooltipElement.remove();
+      tooltipElement = null;
+    }
+    
+    // 重置状态
     isExpanded = false;
     isMinimized = false;
     isMaximized = false;
+    lastActivity = Date.now();
+    tooltipShown = false;
+    lastTooltipHideTime = 0;
   }
 
   // 暴露全局 API

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ConfigProvider, theme } from 'antd';
 import FloatingChat from '../index';
+import './page.css';
 
-// 嵌入式聊天页面组件
-const EmbeddedChatPage: React.FC = () => {
+// 嵌入式聊天页面组件的内容部分
+const EmbeddedChatContent: React.FC = () => {
   const searchParams = useSearchParams();
   const [config, setConfig] = useState<any>(null);
 
@@ -55,13 +56,20 @@ const EmbeddedChatPage: React.FC = () => {
     >
       <div style={{
         width: '100%',
-        height: '100vh',
+        height: '100% !important',
         overflow: 'hidden',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}>
         <EmbeddedFloatingChat {...config} />
       </div>
     </ConfigProvider>
+  );
+};
+
+// 嵌入式聊天页面组件
+const EmbeddedChatPage: React.FC = () => {
+  return (
+    <EmbeddedChatContent />
   );
 };
 
@@ -149,6 +157,10 @@ const FloatingChatContent: React.FC<EmbeddedFloatingChatProps> = ({
         .koala-chat-embedded .koala-chat-content {
           background: ${theme === 'dark' ? '#141414' : '#ffffff'};
         }
+        
+        .koala-chat-embedded{
+            height: 100vh !important;
+        }
       `}</style>
       
       <div className="koala-chat-embedded">
@@ -168,27 +180,11 @@ const FloatingChatContent: React.FC<EmbeddedFloatingChatProps> = ({
 const EmbeddedFloatingChatInner: React.FC<EmbeddedFloatingChatProps> = (props) => {
   // 直接导入并使用主组件，但通过 CSS 隐藏悬浮球并调整容器样式
   return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <FloatingChat
-        {...props}
-        enableDomainValidation={false} // 嵌入式模式下禁用域名验证
-      />
-      
-      {/* 强制显示聊天窗口的脚本 */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            // 等待组件加载后自动展开聊天窗口
-            setTimeout(() => {
-              const button = document.querySelector('.koala-floating-button');
-              if (button) {
-                button.click();
-              }
-            }, 100);
-          `,
-        }}
-      />
-    </div>
+    <FloatingChat
+      {...props}
+      embedded={true}
+      enableDomainValidation={false} // 嵌入式模式下禁用域名验证
+    />
   );
 };
 

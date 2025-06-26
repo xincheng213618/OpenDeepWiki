@@ -178,7 +178,7 @@ public class AppConfigService(IKoalaWikiContext koala, IUserContext userContext)
     /// <summary>
     /// 域名验证（公开接口，不需要登录）
     /// </summary>
-    [FastService.Route("/validate-domain")]
+    [FastService.Route("/validatedomain")]
     [AllowAnonymous]
     public async Task<DomainValidationResponse> ValidateDomainAsync(DomainValidationRequest request)
     {
