@@ -35,7 +35,7 @@ Feature list:
 - [x] Supports directory-level management of repositories, allowing for custom directory generation and dynamic documentation creation
 - [x] Supports repository directory management, allowing for modification of repository directories
 - [x] Supports user-level management, providing user management functions for adding, deleting, modifying, and querying users
-- [ ] Supports user permission management, providing user permission management functions for adding, deleting, modifying, and querying user permissions
+- [x] Supports user permission management, providing user permission management functions for adding, deleting, modifying, and querying user permissions
 - [x] Supports generating different fine-tuning framework datasets at the repository level
 
 # Project Introduction
