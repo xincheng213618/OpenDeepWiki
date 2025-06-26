@@ -104,11 +104,11 @@ builder.Services.AddAuthentication(options =>
 
 
 // 添加授权策略
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("admin"));
-    options.AddPolicy("RequireUserRole", policy => policy.RequireRole("user", "admin"));
-});
+builder.Services.AddAuthorizationBuilder()
+             // 添加授权策略
+             .AddPolicy("RequireAdminRole", policy => policy.RequireRole("admin"))
+             // 添加授权策略
+             .AddPolicy("RequireUserRole", policy => policy.RequireRole("user", "admin"));
 
 builder.Services
     .AddCors(options =>

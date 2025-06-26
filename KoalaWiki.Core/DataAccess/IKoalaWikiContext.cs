@@ -55,6 +55,8 @@ public interface IKoalaWikiContext
 
     public DbSet<DailyStatistics> DailyStatistics { get; set; }
 
+    public DbSet<AppConfig> AppConfigs { get; set; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = new());
 
     Task RunMigrateAsync();

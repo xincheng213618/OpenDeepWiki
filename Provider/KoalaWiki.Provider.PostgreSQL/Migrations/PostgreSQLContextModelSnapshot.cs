@@ -22,6 +22,93 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("KoalaWiki.Domains.AppConfig", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasComment("主键Id");
+
+                    b.Property<string>("AllowedDomainsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasComment("允许的域名列表JSON");
+
+                    b.Property<string>("AppId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasComment("应用ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasComment("创建时间");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasComment("应用描述");
+
+                    b.Property<bool>("EnableDomainValidation")
+                        .HasColumnType("boolean")
+                        .HasComment("是否启用域名验证");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean")
+                        .HasComment("是否启用");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasComment("最后使用时间");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("应用名称");
+
+                    b.Property<string>("OrganizationName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("组织名称");
+
+                    b.Property<string>("RepositoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("仓库名称");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasComment("创建用户ID");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppId")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsEnabled");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("OrganizationName");
+
+                    b.HasIndex("RepositoryName");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("OrganizationName", "RepositoryName");
+
+                    b.ToTable("AppConfigs", t =>
+                        {
+                            t.HasComment("应用配置表");
+                        });
+                });
+
             modelBuilder.Entity("KoalaWiki.Domains.ChatShareMessage", b =>
                 {
                     b.Property<string>("Id")

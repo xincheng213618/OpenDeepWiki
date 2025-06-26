@@ -56,6 +56,8 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
 
     public DbSet<DailyStatistics> DailyStatistics { get; set; }
 
+    public DbSet<AppConfig> AppConfigs { get; set; }
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
     {
         BeforeSaveChanges();
@@ -385,6 +387,32 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             options.HasIndex(x => x.Date).IsUnique();
             options.HasIndex(x => x.CreatedAt);
             options.HasComment("每日统计表");
+        });
+
+        modelBuilder.Entity<AppConfig>(options =>
+        {
+            options.HasKey(x => x.Id);
+            options.Property(x => x.Id).HasComment("主键Id");
+            options.Property(x => x.AppId).IsRequired().HasComment("应用ID");
+            options.Property(x => x.Name).IsRequired().HasComment("应用名称");
+            options.Property(x => x.OrganizationName).IsRequired().HasComment("组织名称");
+            options.Property(x => x.RepositoryName).IsRequired().HasComment("仓库名称");
+            options.Property(x => x.AllowedDomainsJson).IsRequired().HasComment("允许的域名列表JSON");
+            options.Property(x => x.EnableDomainValidation).HasComment("是否启用域名验证");
+            options.Property(x => x.Description).HasComment("应用描述");
+            options.Property(x => x.UserId).IsRequired().HasComment("创建用户ID");
+            options.Property(x => x.IsEnabled).HasComment("是否启用");
+            options.Property(x => x.LastUsedAt).HasComment("最后使用时间");
+            options.Property(x => x.CreatedAt).IsRequired().HasComment("创建时间");
+            options.HasIndex(x => x.AppId).IsUnique();
+            options.HasIndex(x => x.Name);
+            options.HasIndex(x => x.OrganizationName);
+            options.HasIndex(x => x.RepositoryName);
+            options.HasIndex(x => x.UserId);
+            options.HasIndex(x => x.IsEnabled);
+            options.HasIndex(x => x.CreatedAt);
+            options.HasIndex(x => new { x.OrganizationName, x.RepositoryName });
+            options.HasComment("应用配置表");
         });
     }
 }
