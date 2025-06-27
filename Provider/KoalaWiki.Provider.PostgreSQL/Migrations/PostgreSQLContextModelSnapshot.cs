@@ -109,108 +109,6 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("KoalaWiki.Domains.ChatShareMessage", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text")
-                        .HasComment("主键Id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Ip")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsDeep")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Question")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("WarehouseId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasComment("仓库Id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.ToTable("ChatShareMessages", t =>
-                        {
-                            t.HasComment("聊天分享消息表");
-                        });
-                });
-
-            modelBuilder.Entity("KoalaWiki.Domains.ChatShareMessageItem", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text")
-                        .HasComment("主键Id");
-
-                    b.Property<string>("Answer")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ChatShareMessageId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasComment("聊天分享消息Id");
-
-                    b.Property<int>("CompletionToken")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Files")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasComment("相关文件");
-
-                    b.Property<int>("PromptToken")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Question")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasComment("问题内容");
-
-                    b.Property<string>("Think")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("TotalTime")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("WarehouseId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasComment("仓库Id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatShareMessageId");
-
-                    b.HasIndex("Question");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.ToTable("ChatShareMessageItems", t =>
-                        {
-                            t.HasComment("聊天分享消息项表");
-                        });
-                });
-
             modelBuilder.Entity("KoalaWiki.Domains.Document", b =>
                 {
                     b.Property<string>("Id")
@@ -271,11 +169,6 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
 
                     b.Property<DateTime?>("DeletedTime")
                         .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("DependentFile")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasComment("依赖文件");
 
                     b.Property<string>("Description")
                         .IsRequired()

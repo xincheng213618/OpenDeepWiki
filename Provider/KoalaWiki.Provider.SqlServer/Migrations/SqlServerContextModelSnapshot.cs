@@ -109,108 +109,6 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         });
                 });
 
-            modelBuilder.Entity("KoalaWiki.Domains.ChatShareMessage", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)")
-                        .HasComment("主键Id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Ip")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeep")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Question")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WarehouseId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasComment("仓库Id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.ToTable("ChatShareMessages", t =>
-                        {
-                            t.HasComment("聊天分享消息表");
-                        });
-                });
-
-            modelBuilder.Entity("KoalaWiki.Domains.ChatShareMessageItem", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)")
-                        .HasComment("主键Id");
-
-                    b.Property<string>("Answer")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ChatShareMessageId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasComment("聊天分享消息Id");
-
-                    b.Property<int>("CompletionToken")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Files")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasComment("相关文件");
-
-                    b.Property<int>("PromptToken")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Question")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasComment("问题内容");
-
-                    b.Property<string>("Think")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TotalTime")
-                        .HasColumnType("int");
-
-                    b.Property<string>("WarehouseId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasComment("仓库Id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatShareMessageId");
-
-                    b.HasIndex("Question");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.ToTable("ChatShareMessageItems", t =>
-                        {
-                            t.HasComment("聊天分享消息项表");
-                        });
-                });
-
             modelBuilder.Entity("KoalaWiki.Domains.Document", b =>
                 {
                     b.Property<string>("Id")
@@ -271,11 +169,6 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
 
                     b.Property<DateTime?>("DeletedTime")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("DependentFile")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasComment("依赖文件");
 
                     b.Property<string>("Description")
                         .IsRequired()

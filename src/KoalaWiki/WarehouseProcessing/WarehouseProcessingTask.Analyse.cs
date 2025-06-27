@@ -239,7 +239,6 @@ public partial class WarehouseProcessingTask
             {
                 WarehouseId = warehouse.Id,
                 Description = item.title,
-                DependentFile = item.dependent_file.ToList(),
                 Id = item.Id,
                 Name = item.name,
                 Url = item.title,

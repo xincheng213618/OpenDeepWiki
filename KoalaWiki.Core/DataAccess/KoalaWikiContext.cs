@@ -115,13 +115,6 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             builder.Property(x => x.WarehouseId).HasComment("所属仓库Id");
             builder.Property(x => x.DucumentId).HasComment("文档Id");
             builder.Property(x => x.IsDeleted).HasComment("是否已删除");
-            builder.Property(x => x.DependentFile)
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                    v => string.IsNullOrEmpty(v)
-                        ? new List<string>()
-                        : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null))
-                .HasComment("依赖文件");
             builder.HasIndex(x => x.Name);
             builder.HasIndex(x => x.CreatedAt);
             builder.HasIndex(x => x.ParentId);

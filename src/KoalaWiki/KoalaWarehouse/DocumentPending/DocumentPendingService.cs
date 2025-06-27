@@ -213,11 +213,6 @@ public class DocumentPendingService
         history.AddSystemEnhance();
         history.AddUserMessage(prompt);
 
-        var fileFunction = new FileFunction(path);
-        history.AddUserMessage(
-            $"Based on the following pre-loaded reference files:\n\n<reference_files>\n{await fileFunction.ReadFilesAsync(catalog.DependentFile.ToArray())}\n</reference_files>\n\nPlease generate comprehensive and detailed documentation by:\n\n1. **Analyzing the provided reference materials** to understand the context, requirements, and existing information\n2. **Synthesizing the content** from multiple files to create a cohesive narrative\n3. **Expanding on key concepts** with thorough explanations, examples, and implementation details\n4. **Ensuring completeness** by covering all relevant aspects mentioned in the reference files\n5. **Maintaining consistency** with the established terminology and standards from the source materials\n\nGenerate detailed, well-structured documentation that leverages all available information from the reference files to provide maximum value and clarity.");
-
-
         var sr = new StringBuilder();
 
         var settings = new OpenAIPromptExecutionSettings()

@@ -575,7 +575,6 @@ public partial class DocumentsService
             {
                 WarehouseId = warehouse.Id,
                 Description = item.title,
-                DependentFile = item.dependent_file?.ToList() ?? new List<string>(),
                 Id = Guid.NewGuid() + item.title,
                 Name = item.name,
                 Url = item.title,
