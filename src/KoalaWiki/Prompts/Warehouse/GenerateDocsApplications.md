@@ -267,16 +267,13 @@ Generate documentation using this enhanced structure wrapped in <blog> tags:
 # [Document Title]
 
 ## [Executive Summary]
-<summary_guidelines>
 Provide a concise overview including:
 - System purpose and primary functionality
 - Technology stack and key frameworks
 - Architecture style and design patterns
 - Key strengths and notable features
-  </summary_guidelines>
 
 ## [Technology Stack Analysis]
-<tech_stack>
 ### [Primary Languages & Frameworks]
 [Identified languages with usage percentages and framework details]
 
@@ -285,19 +282,15 @@ Provide a concise overview including:
 
 ### [Dependencies & Libraries]
 [Key dependencies with purpose and version analysis]
-</tech_stack>
 
 ## [System Architecture]
-<architecture_analysis>
 [Detailed architecture description with patterns and principles]
 
 ```mermaid
 [System architecture diagram based on detected patterns]
 ```
-</architecture_analysis>
 
 ## [Component Deep Dive]
-<component_analysis>
 ### [Framework-Specific] Components
 [Analysis based on detected framework - React components, Django views, etc.]
 
@@ -306,37 +299,27 @@ Provide a concise overview including:
 
 ### [Integration Points]
 [External services, APIs, third-party integrations]
-</component_analysis>
-
 ## [Data Flow Analysis]
-<data_flow>
 [Comprehensive data movement and transformation patterns]
 
 ```mermaid
 [Data flow visualization]
 ```
-</data_flow>
 
 ## [State Management Strategy]
-<state_management>
 [Framework-specific state management patterns]
 
 ```mermaid
 [State transition diagram]
 ```
-</state_management>
 
 ## [User Journey Mapping]
-<user_flows>
 [Key user interactions and system responses]
 
 ```mermaid
 [User flow visualization]
 ```
-</user_flows>
-
 ## [Performance & Optimization]
-<performance_analysis>
 ### [Current Performance Characteristics]
 [Performance patterns and metrics]
 
@@ -345,10 +328,8 @@ Provide a concise overview including:
 
 ### [Scalability Considerations]
 [Scaling patterns and bottleneck analysis]
-</performance_analysis>
 
 ## [Development Workflow]
-<dev_workflow>
 ### [Build & Deployment Pipeline]
 [CI/CD patterns and deployment strategies]
 
@@ -357,10 +338,9 @@ Provide a concise overview including:
 
 ### [Development Environment Setup]
 [Environment configuration and dependencies]
-</dev_workflow>
 
 ## [Troubleshooting Guide]
-<troubleshooting>
+
 ### Common Issues & Solutions
 [Framework-specific common problems and resolutions]
 
@@ -369,10 +349,8 @@ Provide a concise overview including:
 
 ### [Performance Debugging]
 [Performance analysis and optimization techniques]
-</troubleshooting>
 
 ## [Best Practices & Recommendations]
-<recommendations>
 ### Code Quality
 [Code organization and quality improvement suggestions]
 
@@ -381,7 +359,7 @@ Provide a concise overview including:
 
 ### [Maintainability]
 [Long-term maintenance and evolution strategies]
-</recommendations>
+
 
 [^1]: [File reference with description and line numbers]({{$git_repository}}/path/to/file#L123-L456)
 </blog>
