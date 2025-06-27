@@ -52,6 +52,7 @@ public static class GenerateThinkCatalogueService
             {
                 StringBuilder str = new StringBuilder();
                 var history = new ChatHistory();
+                history.AddSystemEnhance();
                 history.AddUserMessage(prompt);
 
                 history.AddAssistantMessage(

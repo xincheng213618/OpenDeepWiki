@@ -210,6 +210,7 @@ public class DocumentPendingService
 
         var history = new ChatHistory();
 
+        history.AddSystemEnhance();
         history.AddUserMessage(prompt);
 
         var fileFunction = new FileFunction(path);
