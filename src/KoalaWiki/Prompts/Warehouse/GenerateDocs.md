@@ -151,7 +151,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 [Common issues and resolution approaches]
 
 ## References
-[^1]: [File reference with description]({{git_repository}}/path/to/file)
+[^1]: [File reference with description]({{$git_repository}}/path/to/file)
 </blog>
 
 # QUALITY ASSURANCE

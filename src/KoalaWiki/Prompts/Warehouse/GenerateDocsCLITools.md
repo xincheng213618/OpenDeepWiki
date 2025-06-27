@@ -293,13 +293,13 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 - **Contributing**: [How to contribute to the project]
 
 ## References & Citations
-[^1]: [Primary repository]({{git_repository}})
-[^2]: [Configuration files]({{git_repository}}/path/to/config)
-[^3]: [Command implementations]({{git_repository}}/path/to/commands)
-[^4]: [Documentation source]({{git_repository}}/docs)
+[^1]: [Primary repository]({{$git_repository}})
+[^2]: [Configuration files]({{$git_repository}}/path/to/config)
+[^3]: [Command implementations]({{$git_repository}}/path/to/commands)
+[^4]: [Documentation source]({{$git_repository}}/docs)
 
 ---
-*Documentation generated from repository analysis of `{{git_repository}}` (branch: {{git_branch}})*
+*Documentation generated from repository analysis of `{{$git_repository}}` (branch: {{$git_branch}})*
 *Last updated: {{current_date}}*
 </blog>
 </documentation_template>

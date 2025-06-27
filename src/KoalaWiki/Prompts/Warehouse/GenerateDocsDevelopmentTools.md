@@ -315,9 +315,9 @@ Generate documentation using this exact template, wrapped in `<blog>` tags:
 <!-- Links to relevant documentation and resources -->
 
 <!-- File references with line-specific citations -->
-[^1]: [Primary configuration file]({{git_repository}}/path/to/config)
-[^2]: [Main application entry point]({{git_repository}}/path/to/main)
-[^3]: [Core business logic]({{git_repository}}/path/to/core)
+[^1]: [Primary configuration file]({{$git_repository}}/path/to/config)
+[^2]: [Main application entry point]({{$git_repository}}/path/to/main)
+[^3]: [Core business logic]({{$git_repository}}/path/to/core)
 
 </blog>
 
