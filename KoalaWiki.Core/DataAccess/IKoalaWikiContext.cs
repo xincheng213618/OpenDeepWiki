@@ -27,11 +27,6 @@ public interface IKoalaWikiContext
     public DbSet<DocumentOverview> DocumentOverviews { get; set; }
 
     public DbSet<DocumentCommitRecord> DocumentCommitRecords { get; set; }
-
-    public DbSet<ChatShareMessage> ChatShareMessages { get; set; }
-
-    public DbSet<ChatShareMessageItem> ChatShareMessageItems { get; set; }
-
     /// <summary>
     /// 训练数据集
     /// </summary>

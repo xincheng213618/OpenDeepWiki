@@ -12,9 +12,6 @@ First, review the following information about the repository:
 {{$repository_name}}
 </repository_name>
 
-<additional_analysis>
-{{$think}}
-</additional_analysis>
 
 ## PRIMARY OBJECTIVE
 

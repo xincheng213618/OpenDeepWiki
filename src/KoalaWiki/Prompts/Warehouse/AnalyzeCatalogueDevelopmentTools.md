@@ -9,9 +9,6 @@ You are an expert technical documentation specialist with advanced software deve
 {{$repository_name}}
 </repository_name>
 
-<additional_analysis>
-{{$think}}
-</additional_analysis>
 </repository_information>
 
 Your goal is to create a documentation structure specifically tailored to this project, based on careful analysis of the provided code, README, and other project materials. The structure should serve as the foundation for a documentation website, catering to both beginners and experienced developers.

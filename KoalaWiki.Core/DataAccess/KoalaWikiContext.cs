@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using KoalaWiki.Domains;
 using KoalaWiki.Domains.DocumentFile;
 using KoalaWiki.Domains.FineTuning;
 using KoalaWiki.Domains.MCP;
+using KoalaWiki.Domains.Statistics;
 using KoalaWiki.Domains.Users;
 using KoalaWiki.Domains.Warehouse;
-using KoalaWiki.Domains.Statistics;
 using KoalaWiki.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,10 +27,6 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
     public DbSet<DocumentOverview> DocumentOverviews { get; set; }
 
     public DbSet<DocumentCommitRecord> DocumentCommitRecords { get; set; }
-
-    public DbSet<ChatShareMessage> ChatShareMessages { get; set; }
-
-    public DbSet<ChatShareMessageItem> ChatShareMessageItems { get; set; }
 
     public DbSet<TrainingDataset> TrainingDatasets { get; set; }
 
@@ -210,32 +202,6 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             options.HasIndex(x => x.WarehouseId);
             options.HasIndex(x => x.CommitId);
             options.HasComment("文档提交记录表");
-        });
-
-        modelBuilder.Entity<ChatShareMessage>(options =>
-        {
-            options.HasKey(x => x.Id);
-            options.Property(x => x.Id).HasComment("主键Id");
-            options.Property(x => x.WarehouseId).HasComment("仓库Id");
-            options.HasIndex(x => x.WarehouseId);
-            options.HasComment("聊天分享消息表");
-        });
-
-        modelBuilder.Entity<ChatShareMessageItem>(options =>
-        {
-            options.HasKey(x => x.Id);
-            options.Property(x => x.Id).HasComment("主键Id");
-            options.Property(x => x.ChatShareMessageId).HasComment("聊天分享消息Id");
-            options.Property(x => x.WarehouseId).HasComment("仓库Id");
-            options.Property(x => x.Question).IsRequired().HasComment("问题内容");
-            options.Property(x => x.Files)
-                .HasConversion(x => JsonSerializer.Serialize(x, (JsonSerializerOptions)null),
-                    x => JsonSerializer.Deserialize<List<string>>(x, (JsonSerializerOptions)null))
-                .HasComment("相关文件");
-            options.HasIndex(x => x.ChatShareMessageId);
-            options.HasIndex(x => x.WarehouseId);
-            options.HasIndex(x => x.Question);
-            options.HasComment("聊天分享消息项表");
         });
 
         modelBuilder.Entity<User>(options =>

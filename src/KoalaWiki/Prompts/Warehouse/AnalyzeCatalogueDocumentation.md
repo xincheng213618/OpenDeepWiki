@@ -9,9 +9,6 @@ You are an expert technical documentation specialist with advanced software deve
 {{$repository_name}}
 </repository_name>
 
-<additional_analysis>
-{{$think}}
-</additional_analysis>
 </repository_context>
 
 ## PRIMARY OBJECTIVE
