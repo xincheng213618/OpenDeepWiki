@@ -69,7 +69,19 @@ const EmbeddedChatContent: React.FC = () => {
 // 嵌入式聊天页面组件
 const EmbeddedChatPage: React.FC = () => {
   return (
-    <EmbeddedChatContent />
+    <Suspense fallback={
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      }}>
+        正在加载...
+      </div>
+    }>
+      <EmbeddedChatContent />
+    </Suspense>
   );
 };
 
