@@ -799,7 +799,7 @@ Based on comprehensive analysis of {{library_name}}, I've identified:
 
 ### Code References
 {{#each code_references}}
-[^{{reference_id}}]: [{{file_description}}]({{git_repository}}/blob/{{git_branch}}/{{file_path}}) - {{reference_description}}
+[^{{reference_id}}]: [{{file_description}}]({{$git_repository}}/blob/{{git_branch}}/{{file_path}}) - {{reference_description}}
 {{/each}}
 
 ### External Documentation

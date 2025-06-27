@@ -21,8 +21,8 @@ namespace KoalaWiki.Services;
 [Tags("仓库管理")]
 [Route("/api/Warehouse")]
 public class WarehouseService(
-    IKoalaWikiContext access, 
-    IMapper mapper, 
+    IKoalaWikiContext access,
+    IMapper mapper,
     GitRepositoryService gitRepositoryService,
     IUserContext userContext,
     IHttpContextAccessor httpContextAccessor)
@@ -99,9 +99,9 @@ public class WarehouseService(
 
         // 检查用户角色是否有该仓库的写入或删除权限（管理权限）
         return await access.WarehouseInRoles
-            .AnyAsync(wr => userRoleIds.Contains(wr.RoleId) && 
-                           wr.WarehouseId == warehouseId && 
-                           (wr.IsWrite || wr.IsDelete));
+            .AnyAsync(wr => userRoleIds.Contains(wr.RoleId) &&
+                            wr.WarehouseId == warehouseId &&
+                            (wr.IsWrite || wr.IsDelete));
     }
 
     /// <summary>
@@ -170,7 +170,7 @@ public class WarehouseService(
         var warehouse = await access.Warehouses
             .AsNoTracking()
             .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner &&
-                        x.Status == WarehouseStatus.Completed)
+                        (x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing))
             .FirstOrDefaultAsync();
 
         // 如果没有找到仓库，返回空列表
@@ -676,7 +676,8 @@ public class WarehouseService(
         var warehouse = await access.Warehouses
             .AsNoTracking()
             .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner &&
-                        (string.IsNullOrEmpty(branch) || x.Branch == branch) && x.Status == WarehouseStatus.Completed)
+                        (string.IsNullOrEmpty(branch) || x.Branch == branch) &&
+                        (x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing))
             .FirstOrDefaultAsync();
 
         // 如果没有找到仓库，返回空列表

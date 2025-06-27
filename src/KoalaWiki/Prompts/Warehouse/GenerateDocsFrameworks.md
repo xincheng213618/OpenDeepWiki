@@ -1194,7 +1194,7 @@ Expected output: {{expected_output}}
 
 ### Framework Source Code References
 {{#each source_references}}
-[^{{reference_id}}]: [{{file_description}}]({{git_repository}}/blob/{{git_branch}}/{{file_path}}) - {{reference_note}}
+[^{{reference_id}}]: [{{file_description}}]({{$git_repository}}/blob/{{git_branch}}/{{file_path}}) - {{reference_note}}
 {{/each}}
 
 ### Official Documentation

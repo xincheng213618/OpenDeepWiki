@@ -165,10 +165,10 @@ Generate documentation using this exact template, wrapped in `<blog>` tags:
 <blog>
 # {{document_title}}
 
-## Executive Summary
+## [Executive Summary]
 <!-- High-level system overview with key architectural insights (100-200 words) -->
 
-## System Architecture Overview
+## [System Architecture Overview]
 <!-- Architecture description with primary diagram -->
 ```mermaid
 <!-- System architecture visualization -->
@@ -176,10 +176,10 @@ Generate documentation using this exact template, wrapped in `<blog>` tags:
 
 <!-- Architecture explanation (300-500 words) -->
 
-## Technology Stack Analysis
+## [Technology Stack Analysis]
 <!-- Detailed technology breakdown by category -->
 
-### Core Technologies
+### [Core Technologies]
 - **Primary Language(s)**: [Languages with percentages]
 - **Framework(s)**: [Main frameworks and versions]
 - **Build System**: [Build tools and configuration]
@@ -260,58 +260,58 @@ Generate documentation using this exact template, wrapped in `<blog>` tags:
 ### Dependency Management
 <!-- How dependencies are managed and updated -->
 
-### Custom Build Steps
+### [Custom Build Steps]
 <!-- Specialized build requirements -->
 
-## Extension & Plugin System (if applicable)
+## [Extension & Plugin System (if applicable)]
 <!-- Plugin development and customization -->
 
-### Plugin Architecture
+### [Plugin Architecture]
 <!-- How plugins integrate with the system -->
 
-### Creating Custom Plugins
+### [Creating Custom Plugins]
 <!-- Plugin development guide -->
 
-## Performance Analysis
+## [Performance Analysis]
 <!-- Performance characteristics and optimization -->
 
-### Performance Metrics
+### [Performance Metrics]
 <!-- Key performance indicators and benchmarks -->
 
-### Optimization Opportunities
+### [Optimization Opportunities]
 <!-- Areas for performance improvement -->
 
-## Testing Strategy
+## [Testing Strategy]
 <!-- Testing approach and coverage -->
 
-### Test Structure
+### [Test Structure]
 <!-- How tests are organized and executed -->
 
-### Testing Best Practices
+### [Testing Best Practices]
 <!-- Recommended testing approaches -->
 
-## Troubleshooting Guide
+## [Troubleshooting Guide]
 <!-- Common issues and resolution approaches -->
 
-### Common Issues
+### [Common Issues]
 <!-- Frequent problems and solutions -->
 
-### Debug Strategies
+### [Debug Strategies]
 <!-- How to diagnose and fix issues -->
 
-### Support Resources
+### [Support Resources]
 <!-- Where to get help -->
 
-## Contributing Guidelines (if applicable)
+## [Contributing Guidelines (if applicable)]
 <!-- How to contribute to the project -->
 
-### Development Setup
+### [Development Setup]
 <!-- Setup for contributors -->
 
-### Contribution Process
+### [Contribution Process]
 <!-- How to submit changes -->
 
-## References & Resources
+## [References & Resources]
 <!-- Links to relevant documentation and resources -->
 
 <!-- File references with line-specific citations -->

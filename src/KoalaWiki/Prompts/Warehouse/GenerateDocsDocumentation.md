@@ -434,7 +434,7 @@ Based on my analysis of {{repository_name}}, I've identified the following key a
 ### Local Development Setup
 ```bash
 # Clone repository
-git clone {{git_repository}}
+git clone {{$git_repository}}
 cd {{repository_name}}
 
 # Install dependencies
@@ -506,7 +506,7 @@ cd {{repository_name}}
 
 ### Code References
 {{#each code_references}}
-[^{{reference_id}}]: [{{reference_description}}]({{git_repository}}/blob/{{git_branch}}/{{file_path}})
+[^{{reference_id}}]: [{{reference_description}}]({{$git_repository}}/blob/{{git_branch}}/{{file_path}})
 {{/each}}
 
 ### External Documentation

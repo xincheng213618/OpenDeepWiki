@@ -157,7 +157,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 <blog>
 # document title
 
-## TL;DR - Quick Start
+## [TL;DR - Quick Start]
 **Bottom Line Up Front**: [2-3 sentence summary of what this CLI does and why users should care]
 
 **Essential Commands**:
@@ -169,14 +169,14 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 {{setup_command}}
 ```
 
-## Executive Summary
+## [Executive Summary]
 [Comprehensive overview focusing on CLI capabilities, target use cases, and key differentiators from similar tools. Include performance characteristics and platform support.]
 
-## Installation & Environment Setup
-### Prerequisites
+## [Installation & Environment Setup]
+### [Prerequisites]
 [Language-specific requirements, system dependencies]
 
-### Installation Methods
+### [Installation Methods]
 [Multiple installation approaches: package managers, source builds, binaries]
 
 ```bash
@@ -187,50 +187,50 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 {{verify_command}}
 ```
 
-### Configuration
+### [Configuration]
 [Environment setup, config files, initial configuration steps]
 
-## Command Reference Architecture
+## [Command Reference Architecture]
 
-### Command Hierarchy
+### [Command Hierarchy]
 [Visual representation of command structure]
 ```mermaid
 {{command_hierarchy_diagram}}
 ```
 
-### Core Commands Deep Dive
+### [Core Commands Deep Dive]
 
-#### Basic Usage Patterns
+#### [Basic Usage Patterns]
 ```bash
 # Fundamental operations with explanations
 {{basic_command_examples}}
 ```
 
-#### Advanced Usage Patterns
+#### [Advanced Usage Patterns]
 ```bash
 # Complex workflows and power-user features
 {{advanced_command_examples}}
 ```
 
-### Option Reference Matrix
+### [Option Reference Matrix]
 
 | Option | Type | Description | Default | Dependencies | Conflicts |
 |--------|------|-------------|---------|--------------|-----------|
 | {{option_details}} | {{type}} | {{description}} | {{default}} | {{deps}} | {{conflicts}} |
 
-## Execution Flow Analysis
+## [Execution Flow Analysis]
 [Data processing patterns and internal workflows]
 ```mermaid
 {{execution_flow_diagram}}
 ```
 
-## Integration Patterns
-### Shell Integration
+## [Integration Patterns]
+### [Shell Integration]
 - **Tab Completion**: [Setup instructions for bash/zsh/fish]
 - **Aliases & Functions**: [Recommended shell shortcuts]
 - **Environment Variables**: [Configuration via env vars]
 
-### CI/CD Integration
+### [CI/CD Integration]
 ```bash
 # GitHub Actions example
 {{ci_example}}
@@ -239,23 +239,23 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 {{docker_example}}
 ```
 
-### API & Programmatic Usage
+### [API & Programmatic Usage]
 [If applicable: library usage, API endpoints, SDK information]
 
-## Performance Characteristics
+## [Performance Characteristics]
 - **Resource Usage**: [Memory, CPU, disk patterns]
 - **Scalability Limits**: [Known constraints and bottlenecks]
 - **Optimization Tips**: [Performance tuning recommendations]
 
-## Cross-Platform Considerations
+## [Cross-Platform Considerations]
 | Platform | Status | Notes | Limitations |
 |----------|--------|-------|-------------|
 | Linux | ✅ | Full support | None |
 | macOS | ✅ | Full support | [Platform-specific notes] |
 | Windows | {{status}} | {{notes}} | {{limitations}} |
 
-## Troubleshooting Guide
-### Common Issues & Solutions
+## [Troubleshooting Guide]
+### [Common Issues & Solutions]
 
 **Issue**: [Problem description]
 **Symptoms**: [How it manifests]
@@ -264,7 +264,7 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 {{solution_commands}}
 ```
 
-### Debug Mode & Logging
+### [Debug Mode & Logging]
 ```bash
 # Enable verbose output
 {{debug_commands}}
@@ -273,34 +273,32 @@ Generate your documentation using this exact structure, wrapped in <blog> tags:
 {{log_locations}}
 ```
 
-### Error Code Reference
+### [Error Code Reference]
 | Exit Code | Meaning | Common Causes | Resolution |
 |-----------|---------|---------------|------------|
 | {{code}} | {{meaning}} | {{causes}} | {{resolution}} |
 
-## Best Practices & Patterns
-1. **Configuration Management**: [Recommended config patterns]
+## [Best Practices & Patterns]
+1. **Configuration Management**:[^1]
 2. **Security Considerations**: [Authentication, permissions, sensitive data]
 3. **Performance Optimization**: [Efficient usage patterns]
 4. **Maintenance**: [Updates, cleanup, monitoring]
 
-## Extension & Customization
+## [Extension & Customization]
 [Plugin systems, custom commands, configuration extensions]
 
-## Community & Resources
-- **Documentation**: [Links to official docs]
+## [Community & Resources]
+- **Documentation**: [^1]
 - **Community**: [Forums, chat, issues]
 - **Contributing**: [How to contribute to the project]
 
-## References & Citations
+## [References & Citations]
+
 [^1]: [Primary repository]({{$git_repository}})
 [^2]: [Configuration files]({{$git_repository}}/path/to/config)
 [^3]: [Command implementations]({{$git_repository}}/path/to/commands)
 [^4]: [Documentation source]({{$git_repository}}/docs)
 
----
-*Documentation generated from repository analysis of `{{$git_repository}}` (branch: {{$git_branch}})*
-*Last updated: {{current_date}}*
 </blog>
 </documentation_template>
 </output_specification>

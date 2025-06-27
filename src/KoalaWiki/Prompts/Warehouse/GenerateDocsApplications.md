@@ -266,7 +266,7 @@ Generate documentation using this enhanced structure wrapped in <blog> tags:
 <blog>
 # [Document Title]
 
-## Executive Summary
+## [Executive Summary]
 <summary_guidelines>
 Provide a concise overview including:
 - System purpose and primary functionality
@@ -275,19 +275,19 @@ Provide a concise overview including:
 - Key strengths and notable features
   </summary_guidelines>
 
-## Technology Stack Analysis
+## [Technology Stack Analysis]
 <tech_stack>
-### Primary Languages & Frameworks
+### [Primary Languages & Frameworks]
 [Identified languages with usage percentages and framework details]
 
-### Development Tools & Build System
+### [Development Tools & Build System]
 [Build tools, package managers, development utilities]
 
-### Dependencies & Libraries
+### [Dependencies & Libraries]
 [Key dependencies with purpose and version analysis]
 </tech_stack>
 
-## System Architecture
+## [System Architecture]
 <architecture_analysis>
 [Detailed architecture description with patterns and principles]
 
@@ -296,19 +296,19 @@ Provide a concise overview including:
 ```
 </architecture_analysis>
 
-## Component Deep Dive
+## [Component Deep Dive]
 <component_analysis>
 ### [Framework-Specific] Components
 [Analysis based on detected framework - React components, Django views, etc.]
 
-### Core Business Logic
+### [Core Business Logic]
 [Domain-specific business logic and algorithms]
 
-### Integration Points
+### [Integration Points]
 [External services, APIs, third-party integrations]
 </component_analysis>
 
-## Data Flow Analysis
+## [Data Flow Analysis]
 <data_flow>
 [Comprehensive data movement and transformation patterns]
 
@@ -317,7 +317,7 @@ Provide a concise overview including:
 ```
 </data_flow>
 
-## State Management Strategy
+## [State Management Strategy]
 <state_management>
 [Framework-specific state management patterns]
 
@@ -326,7 +326,7 @@ Provide a concise overview including:
 ```
 </state_management>
 
-## User Journey Mapping
+## [User Journey Mapping]
 <user_flows>
 [Key user interactions and system responses]
 
@@ -335,55 +335,55 @@ Provide a concise overview including:
 ```
 </user_flows>
 
-## Performance & Optimization
+## [Performance & Optimization]
 <performance_analysis>
-### Current Performance Characteristics
+### [Current Performance Characteristics]
 [Performance patterns and metrics]
 
-### Optimization Opportunities
+### [Optimization Opportunities]
 [Identified improvement areas with recommendations]
 
-### Scalability Considerations
+### [Scalability Considerations]
 [Scaling patterns and bottleneck analysis]
 </performance_analysis>
 
-## Development Workflow
+## [Development Workflow]
 <dev_workflow>
-### Build & Deployment Pipeline
+### [Build & Deployment Pipeline]
 [CI/CD patterns and deployment strategies]
 
-### Testing Strategy
+### [Testing Strategy]
 [Testing frameworks and coverage analysis]
 
-### Development Environment Setup
+### [Development Environment Setup]
 [Environment configuration and dependencies]
 </dev_workflow>
 
-## Troubleshooting Guide
+## [Troubleshooting Guide]
 <troubleshooting>
 ### Common Issues & Solutions
 [Framework-specific common problems and resolutions]
 
-### Debugging Strategies
+### [Debugging Strategies]
 [Tools and techniques for issue diagnosis]
 
-### Performance Debugging
+### [Performance Debugging]
 [Performance analysis and optimization techniques]
 </troubleshooting>
 
-## Best Practices & Recommendations
+## [Best Practices & Recommendations]
 <recommendations>
 ### Code Quality
 [Code organization and quality improvement suggestions]
 
-### Security Considerations
+### [Security Considerations]
 [Security patterns and vulnerability assessments]
 
-### Maintainability
+### [Maintainability]
 [Long-term maintenance and evolution strategies]
 </recommendations>
 
-[^1]: [File reference with description and line numbers]({{git_repository}}/path/to/file#L123-L456)
+[^1]: [File reference with description and line numbers]({{$git_repository}}/path/to/file#L123-L456)
 </blog>
 </documentation_structure>
 

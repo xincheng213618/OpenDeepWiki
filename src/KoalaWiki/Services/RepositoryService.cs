@@ -243,7 +243,8 @@ public class RepositoryService(
     {
         var query = dbContext.Warehouses
             .AsNoTracking()
-            .Where(r => r.OrganizationName == owner && r.Name == name && r.Status == WarehouseStatus.Completed);
+            .Where(r => r.OrganizationName == owner && r.Name == name && 
+                        (r.Status == WarehouseStatus.Completed || r.Status == WarehouseStatus.Processing));
 
         // 如果指定了分支，则按分支筛选
         if (!string.IsNullOrEmpty(branch))
