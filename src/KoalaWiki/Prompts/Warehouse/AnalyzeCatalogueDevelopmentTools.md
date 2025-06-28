@@ -34,7 +34,6 @@ Your goal is to create a documentation structure specifically tailored to this p
 10. Address configuration, customization, and extension points
 11. Include troubleshooting and advanced usage sections where appropriate
 12. Organize reference material in a logical, accessible manner
-13. For each section, identify and include the most relevant source files from the project as dependent_file entries
     </documentation_requirements>
 
 <development_tool_specific_sections>

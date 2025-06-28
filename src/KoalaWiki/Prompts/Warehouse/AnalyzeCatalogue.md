@@ -30,9 +30,8 @@ Requirements for the documentation structure:
 10. Address configuration, customization, and extension points.
 11. Include troubleshooting and advanced usage sections where appropriate.
 12. Organize reference material in a logical, accessible manner.
-13. For each section, identify and include the most relevant source files from the project as dependent_file entries.
-14. For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
-15. Don't hold back.  Give it your all.
+13. For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+14. Don't hold back.  Give it your all.
 
 Insert your input content between the <documentation_structure></documentation_structure> tags as follows:
 

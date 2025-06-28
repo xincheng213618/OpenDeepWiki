@@ -31,8 +31,7 @@ Your goal is to create a documentation structure specifically tailored to this p
 10. Address configuration, customization, and extension points with detailed attention.
 11. Include troubleshooting and advanced usage sections where appropriate.
 12. Organize reference material in a logical, accessible manner.
-13. For each section, identify and include the most relevant source files from the project as dependent_file entries.
-14. For DevOps-focused projects, include detailed sections on:
+13. For DevOps-focused projects, include detailed sections on:
     - Infrastructure as Code components
     - CI/CD pipeline configurations
     - Environment management and deployment strategies

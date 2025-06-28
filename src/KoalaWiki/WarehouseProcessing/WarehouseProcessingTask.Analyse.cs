@@ -282,8 +282,6 @@ public class WareHouseCatalogueItems
 
     public string type { get; set; }
 
-    public string[] dependent_file { get; set; }
-
     public string prompt { get; set; }
 
     public WareHouseCatalogueItems[]? children { get; set; }

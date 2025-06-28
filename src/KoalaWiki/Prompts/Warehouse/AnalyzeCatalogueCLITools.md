@@ -30,10 +30,9 @@ Requirements for the documentation structure:
 10. Address configuration, customization, and extension points.
 11. Include troubleshooting and advanced usage sections where appropriate.
 12. Organize reference material in a logical, accessible manner.
-13. For each section, identify and include the most relevant source files from the project as dependent_file entries.
-14. Include specific sections for CLI-specific concepts like command syntax, argument parsing, and terminal interaction.
-15. Document environment variables, configuration files, and other external dependencies.
-16. Include information about shell completion, exit codes, and terminal output formatting.
+13. Include specific sections for CLI-specific concepts like command syntax, argument parsing, and terminal interaction.
+14. Document environment variables, configuration files, and other external dependencies.
+15. Include information about shell completion, exit codes, and terminal output formatting.
 
 CLI-Specific Documentation Elements:
 1. Command Reference: Document each command with syntax, options, arguments, and examples

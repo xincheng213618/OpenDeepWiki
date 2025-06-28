@@ -42,7 +42,6 @@ Your goal is to create a documentation structure specifically tailored to this p
     - Component lifecycle documentation
     - Troubleshooting and advanced usage sections
 8. Organize reference material in a logical, accessible manner
-9. For each section, identify and include the most relevant source files from the project as dependent_file entries
    </documentation_requirements>
 
 <framework_specific_guidance>
