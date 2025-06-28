@@ -573,6 +573,35 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.MiniMap", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT")
+                        .HasComment("主键Id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasComment("小地图数据");
+
+                    b.Property<string>("WarehouseId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasComment("仓库Id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("MiniMaps", t =>
+                        {
+                            t.HasComment("小地图表");
+                        });
+                });
+
             modelBuilder.Entity("KoalaWiki.Domains.Statistics.AccessRecord", b =>
                 {
                     b.Property<string>("Id")

@@ -406,12 +406,6 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                     text-align: center;
                     max-width: 480px;
                     padding: 48px 32px;
-                    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-                    border-radius: 24px;
-                    border: 1px solid rgba(226, 232, 240, 0.8);
-                    box-shadow: 
-                        0 20px 25px -5px rgba(0, 0, 0, 0.1),
-                        0 10px 10px -5px rgba(0, 0, 0, 0.04);
                 }
 
                 .empty-state-icon {

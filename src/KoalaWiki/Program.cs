@@ -51,6 +51,7 @@ builder.Services.AddScoped<IUserContext, UserContext>();
 builder.Services.AddMemoryCache();
 
 builder.Services.AddHostedService<StatisticsBackgroundService>();
+builder.Services.AddHostedService<MiniMapBackgroundService>();
 
 // 添加访问日志队列和后台处理服务
 builder.Services.AddSingleton<AccessLogQueue>();

@@ -13,6 +13,8 @@ public class PromptConstant
         GenerateThinkCatalogue = 40,
 
         AnalyzeCatalogue = 50,
+        
+        GenerateMindMap = 60,
     }
 
     public enum Chat

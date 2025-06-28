@@ -50,6 +50,8 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
 
     public DbSet<AppConfig> AppConfigs { get; set; }
 
+    public DbSet<MiniMap> MiniMaps { get; set; }
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
     {
         BeforeSaveChanges();
@@ -372,6 +374,16 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             options.HasIndex(x => x.CreatedAt);
             options.HasIndex(x => new { x.OrganizationName, x.RepositoryName });
             options.HasComment("应用配置表");
+        });
+        
+        modelBuilder.Entity<MiniMap>(options =>
+        {
+            options.HasKey(x => x.Id);
+            options.Property(x => x.Id).HasComment("主键Id");
+            options.Property(x => x.WarehouseId).IsRequired().HasComment("仓库Id");
+            options.Property(x => x.Value).IsRequired().HasComment("小地图数据");
+            options.HasIndex(x => x.WarehouseId);
+            options.HasComment("小地图表");
         });
     }
 }

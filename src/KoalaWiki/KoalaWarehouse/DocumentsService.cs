@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using KoalaWiki.Domains;
 using KoalaWiki.Domains.Warehouse;
@@ -428,6 +429,18 @@ public partial class DocumentsService
         await dbContext.Warehouses.Where(x => x.Id == warehouse.Id)
             .ExecuteUpdateAsync(x => x.SetProperty(y => y.Classify, classify));
 
+        
+        // 生成MiniMap
+        var miniMap = await MiniMapService.GenerateMiniMap(catalogue, warehouse, path);
+        await dbContext.MiniMaps.Where(x => x.WarehouseId == warehouse.Id)
+            .ExecuteDeleteAsync();
+        await dbContext.MiniMaps.AddAsync(new MiniMap()
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            WarehouseId = warehouse.Id,
+            Value = JsonSerializer.Serialize(miniMap, JsonSerializerOptions.Web)
+        });
+        
         var overview = await OverviewService.GenerateProjectOverview(fileKernel, catalogue, gitRepository,
             warehouse.Branch, readme, classify);
 
@@ -462,8 +475,9 @@ public partial class DocumentsService
             Id = Guid.NewGuid().ToString("N")
         });
 
+
         var result =
-            await GenerateThinkCatalogueService.GenerateCatalogue(path,  gitRepository,catalogue, warehouse,
+            await GenerateThinkCatalogueService.GenerateCatalogue(path, gitRepository, catalogue, warehouse,
                 classify);
 
         var documents = new List<DocumentCatalog>();

@@ -578,6 +578,35 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.MiniMap", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasComment("主键Id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasComment("小地图数据");
+
+                    b.Property<string>("WarehouseId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasComment("仓库Id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("MiniMaps", t =>
+                        {
+                            t.HasComment("小地图表");
+                        });
+                });
+
             modelBuilder.Entity("KoalaWiki.Domains.Statistics.AccessRecord", b =>
                 {
                     b.Property<string>("Id")

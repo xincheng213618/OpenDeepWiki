@@ -52,6 +52,8 @@ public interface IKoalaWikiContext
 
     public DbSet<AppConfig> AppConfigs { get; set; }
 
+    public DbSet<MiniMap> MiniMaps { get; set; }
+    
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = new());
 
     Task RunMigrateAsync();

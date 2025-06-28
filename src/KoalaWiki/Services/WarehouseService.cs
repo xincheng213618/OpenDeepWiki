@@ -722,6 +722,40 @@ public class WarehouseService(
         });
     }
 
+
+    /// <summary>
+    /// 获取知识图谱
+    /// </summary>
+    /// <returns></returns>
+    [EndpointSummary("仓库管理：获取思维导图")]
+    [AllowAnonymous]
+    public async Task<ResultDto<MiniMapService.MiniMapResult>> GetMiniMapAsync(
+        string owner,
+        string name,
+        string? branch = "")
+    {
+        var warehouse = await access.Warehouses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.OrganizationName == owner && r.Name == name &&
+                                      (r.Status == WarehouseStatus.Completed ||
+                                       r.Status == WarehouseStatus.Processing) &&
+                                      (string.IsNullOrEmpty(branch) || r.Branch == branch));
+
+        var miniMap = await access.MiniMaps
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.WarehouseId.ToLower() == warehouse.Id.ToLower());
+
+        if (miniMap == null)
+        {
+            return new ResultDto<MiniMapService.MiniMapResult>(200, "没有找到知识图谱", new MiniMapService.MiniMapResult());
+        }
+
+        return new ResultDto<MiniMapService.MiniMapResult>(200, "获取知识图谱成功",
+            JsonSerializer.Deserialize<MiniMapService.MiniMapResult>(miniMap.Value, JsonSerializerOptions.Web)
+            ?? new MiniMapService.MiniMapResult());
+    }
+
+
     /// <summary>
     /// 获取仓库列表的异步方法，支持分页和关键词搜索。
     /// </summary>
@@ -803,7 +837,7 @@ public class WarehouseService(
         var groupedQuery = query
             .GroupBy(x => new { x.Name, x.OrganizationName })
             .Select(g => g.OrderByDescending(x => x.IsRecommended)
-                .ThenByDescending(x => x.Status == WarehouseStatus.Completed)
+                .ThenByDescending(x => x.Status == WarehouseStatus.Completed )
                 .ThenByDescending(x => x.CreatedAt)
                 .FirstOrDefault());
 

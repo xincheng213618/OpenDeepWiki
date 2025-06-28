@@ -28,6 +28,7 @@ import {
   RocketOutlined,
   BranchesOutlined,
   GlobalOutlined,
+  PartitionOutlined,
 } from '@ant-design/icons';
 import { SaveAll } from 'lucide-react'
 import Link from 'next/link';
@@ -628,6 +629,17 @@ export default function RepositoryLayoutClient({
                   <span className="tree-item-label">{t('repository_layout.sidebar.overview')}</span>
                 </Link>
 
+                <Link
+                  href={selectedBranch ? `/${owner}/${name}/mindmap?branch=${selectedBranch}` : `/${owner}/${name}/mindmap`}
+                  className={`tree-item mindmap-item ${pathname === `/${owner}/${name}/mindmap` ? 'active' : ''}`}
+                  style={{ paddingLeft: '12px' }}
+                >
+                  <span className="tree-item-label">
+                    <PartitionOutlined style={{ marginRight: '8px', fontSize: '14px' }} />
+                    {t('repository_layout.sidebar.mindmap')}
+                  </span>
+                </Link>
+
                 <div className="menu-divider"></div>
 
                 {initialCatalogData?.items?.map(item => renderSidebarItem(item))}
@@ -777,8 +789,9 @@ export default function RepositoryLayoutClient({
           opacity: 1;
         }
         
-        /* 概览和更新日志的特殊样式 */
+        /* 概览、思维导图和更新日志的特殊样式 */
         .tree-item.overview-item,
+        .tree-item.mindmap-item,
         .tree-item.changelog-item {
           font-weight: 500;
           margin: 4px 8px 8px 8px;
@@ -787,11 +800,13 @@ export default function RepositoryLayoutClient({
         }
         
         .tree-item.overview-item:hover,
+        .tree-item.mindmap-item:hover,
         .tree-item.changelog-item:hover {
           background-color: #e2e8f0;
         }
         
         .tree-item.overview-item.active,
+        .tree-item.mindmap-item.active,
         .tree-item.changelog-item.active {
           background-color: #dbeafe;
           border-color: ${minimalistDesign.colors.primary};
