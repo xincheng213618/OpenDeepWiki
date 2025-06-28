@@ -25,13 +25,17 @@ public sealed class MiniMapBackgroundService(IServiceProvider service) : Backgro
             try
             {
                 // 使用sql to linq 获取minid和warehouse的表不存在的数据,如果warehouse表状态=2，但是不存在minid的记录则获取
-                var query = from miniMap in context.MiniMaps
-                    join warehouse in context.Warehouses on miniMap.WarehouseId equals warehouse.Id
-                    where warehouse.Status == WarehouseStatus.Completed &&
-                          !context.MiniMaps.Any(m => m.WarehouseId == warehouse.Id)
-                    // 生成最新的知识图谱
-                    orderby warehouse.CreatedAt descending
-                    select warehouse;
+
+                // 获取存在的id
+                var existingMiniMapIds = await context.MiniMaps
+                    .Select(m => m.WarehouseId)
+                    .ToListAsync(stoppingToken);
+
+                // 查询需要生成知识图谱的仓库
+                var query = context.Warehouses
+                    .Where(w => w.Status == WarehouseStatus.Completed && !existingMiniMapIds.Contains(w.Id))
+                    .OrderBy(w => w.CreatedAt)
+                    .AsNoTracking();
 
                 var item = await query.FirstOrDefaultAsync(stoppingToken);
                 if (item == null)
@@ -78,7 +82,7 @@ public sealed class MiniMapBackgroundService(IServiceProvider service) : Backgro
             }
             catch (Exception e)
             {
-                await Task.Delay(1000, stoppingToken); // 等待1秒后重试
+                await Task.Delay(10000, stoppingToken); // 等待1秒后重试
                 Log.Logger.Error("MiniMapBackgroundService 执行异常: {Message}", e.Message);
             }
         }

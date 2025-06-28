@@ -288,6 +288,33 @@ const MindMapPage: React.FC = () => {
                         background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
                         borderRadius: isFullscreen ? 0 : '8px',
                         position: 'relative',
+                        touchAction: 'none', // 禁用触摸手势
+                        userSelect: 'none', // 禁用文本选择
+                        WebkitUserSelect: 'none', // Safari兼容
+                    }}
+                    onContextMenu={(e) => {
+                        // 阻止默认右键菜单，让mind-elixir处理
+                        e.preventDefault();
+                    }}
+                    onMouseDown={(e) => {
+                        // 禁用浏览器的拖拽选择行为
+                        if (e.button === 2) { // 右键
+                            e.preventDefault();
+                        }
+                    }}
+                    onTouchStart={(e) => {
+                        // 禁用触摸手势
+                        if (e.touches.length > 1) {
+                            e.preventDefault();
+                        }
+                    }}
+                    onTouchMove={(e) => {
+                        // 禁用触摸滚动手势
+                        e.preventDefault();
+                    }}
+                    onDragStart={(e) => {
+                        // 禁用默认拖拽行为
+                        e.preventDefault();
                     }}
                 />
 
@@ -312,14 +339,23 @@ const MindMapPage: React.FC = () => {
                 .mind-elixir {
                     width: 100%;
                     height: 100%;
+                    touch-action: none !important;
+                    user-select: none !important;
+                    WebkitUserSelect: none !important;
+                    MozUserSelect: none !important;
+                    MsUserSelect: none !important;
                 }
                 
                 .mind-elixir .map-container {
                     background: transparent !important;
+                    touch-action: none !important;
+                    -ms-touch-action: none !important;
+                    -webkit-touch-callout: none !important;
                 }
                 
                 .mind-elixir .node-container {
                     cursor: pointer;
+                    touch-action: none !important;
                 }
                 
                 .mind-elixir .node-container:hover {
@@ -338,6 +374,7 @@ const MindMapPage: React.FC = () => {
                     border: 2px solid #1890ff;
                     background: #ffffff;
                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    touch-action: none !important;
                 }
                 
                 .mind-elixir .root {
@@ -357,6 +394,35 @@ const MindMapPage: React.FC = () => {
                     border-radius: 6px;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                     border: 1px solid #e8e8e8;
+                    z-index: 9999 !important;
+                }
+
+                /* 专门针对Edge浏览器的手势禁用 */
+                html {
+                    -ms-touch-action: none !important;
+                    touch-action: none !important;
+                }
+                
+                body {
+                    -ms-touch-action: manipulation !important;
+                    touch-action: manipulation !important;
+                }
+                
+                /* 禁用Edge的右键手势 */
+                * {
+                    -webkit-touch-callout: none !important;
+                    -webkit-user-select: none !important;
+                    -khtml-user-select: none !important;
+                    -moz-user-select: none !important;
+                    -ms-user-select: none !important;
+                }
+                
+                /* 允许输入框和文本区域的选择 */
+                input, textarea, [contenteditable] {
+                    -webkit-user-select: text !important;
+                    -moz-user-select: text !important;
+                    -ms-user-select: text !important;
+                    user-select: text !important;
                 }
             `}</style>
         </div>
