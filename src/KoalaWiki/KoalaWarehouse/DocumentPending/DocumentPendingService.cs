@@ -235,6 +235,7 @@ public class DocumentPendingService
             history.AddAssistantMessage(sr.ToString());
             history.AddUserMessage(
                 """
+                You need to further refine the previous content and provide more detailed information. All the content comes from the code repository and the style of the documentation should be more standardized.
                 Create thorough documentation that:
                 - Covers all key functionality with precise technical details
                 - Includes practical code examples and usage patterns  
