@@ -24,7 +24,7 @@ Code Files:
 <requirements>
 1. **Completeness**: Analyze ALL provided content without omissions
 2. **Structure**: Use hierarchical markdown structure with # symbols
-3. **Navigation**: Include file path navigation using format `##Title:{{$repository_url}}/path/filename`
+3. **Navigation**: Include file path navigation using format `##Title:path/filename`
 4. **Relationships**: Clearly establish connections between components
 5. **Accuracy**: All information must originate from provided content only
 6. **Format Compliance**: Follow exact output format specifications
@@ -35,8 +35,7 @@ Code Files:
 - Use single `#` for the main core title only
 - Use `##` or more for all other nodes and subtitles
 - Replace all `-` with `#` in hierarchical structures
-- Use `##Title:{{$repository_url}}/path/filename` for file navigation
-- If it is a Gitee repository, use the Gitee URL format:`##Title:{{$repository_url}}/tree/{{$branch_name}}/filename`, note that different repositories use different routing protocols
+- Use `##Title:path/filename` for file navigation
 - No explanatory text, code blocks, or formatting markers
 - Direct output only, no meta-commentary
   </output_format>
@@ -45,12 +44,12 @@ Code Files:
 <output_structure>
 # [Core Repository Title]
 ## [Primary Component/Module]
-### [Sub-component]:{{$repository_url}}/path/filename
+### [Sub-component]:path/filename
 #### [Detailed Element]
 ##### [Implementation Details]
 
 ## [Secondary Component/Module]
-### [Related Sub-component]:{{$repository_url}}/path/filename
+### [Related Sub-component]:path/filename
 #### [Functional Relationships]
 ##### [Dependencies and Connections]
 </output_structure>

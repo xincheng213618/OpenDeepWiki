@@ -27,7 +27,7 @@ public class MiniMapService
             {
                 ["code_files"] = catalogue,
                 ["repository_url"] = warehouse.Address.Replace(".git", ""),
-                ["branch"] = warehouse.Branch
+                ["branch_name"] = warehouse.Branch
             }, OpenAIOptions.AnalysisModel);
 
         var miniMap = new StringBuilder();
