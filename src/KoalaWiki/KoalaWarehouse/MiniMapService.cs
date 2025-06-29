@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
-using KoalaWiki.Domains;
 using KoalaWiki.Domains.Warehouse;
+using KoalaWiki.Dto;
 using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -159,12 +159,4 @@ public class MiniMapService
         return (content, string.Empty);
     }
 
-    public class MiniMapResult
-    {
-        public string Title { get; set; }
-
-        public string Url { get; set; }
-
-        public List<MiniMapResult> Nodes { get; set; } = new();
-    }
 }

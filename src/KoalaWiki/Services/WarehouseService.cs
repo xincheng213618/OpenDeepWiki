@@ -729,7 +729,7 @@ public class WarehouseService(
     /// <returns></returns>
     [EndpointSummary("仓库管理：获取思维导图")]
     [AllowAnonymous]
-    public async Task<ResultDto<MiniMapService.MiniMapResult>> GetMiniMapAsync(
+    public async Task<ResultDto<MiniMapResult>> GetMiniMapAsync(
         string owner,
         string name,
         string? branch = "")
@@ -747,12 +747,51 @@ public class WarehouseService(
 
         if (miniMap == null)
         {
-            return new ResultDto<MiniMapService.MiniMapResult>(200, "没有找到知识图谱", new MiniMapService.MiniMapResult());
+            return new ResultDto<MiniMapResult>(200, "没有找到知识图谱", new MiniMapResult());
         }
 
-        return new ResultDto<MiniMapService.MiniMapResult>(200, "获取知识图谱成功",
-            JsonSerializer.Deserialize<MiniMapService.MiniMapResult>(miniMap.Value, JsonSerializerOptions.Web)
-            ?? new MiniMapService.MiniMapResult());
+        var result = JsonSerializer.Deserialize<MiniMapResult>(miniMap.Value, JsonSerializerOptions.Web);
+
+        // 组成点击跳转地址
+        var address = warehouse.Address = warehouse.Address.Replace(".git", "").TrimEnd('/').ToLower();
+
+        if (address.Contains("github.com"))
+        {
+            address += "/tree/" + warehouse.Branch + "/";
+        }
+        else if (address.Contains("gitee.com"))
+        {
+            address += "/tree/" + warehouse.Branch + "/";
+        }
+
+        // TODO: 需要根据仓库类型判断跳转地址
+
+        foreach (var v in result.Nodes)
+        {
+            // 使用递归修改v.Url
+            void UpdateUrl(MiniMapResult node)
+            {
+                if (node.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    // 应该删除前缀
+                    node.Url = node.Url.Replace(warehouse.Address, string.Empty, StringComparison.OrdinalIgnoreCase);
+                }
+
+                if (node.Url != null && !node.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    node.Url = address + node.Url.TrimStart('/');
+                }
+
+                foreach (var child in node.Nodes)
+                {
+                    UpdateUrl(child);
+                }
+            }
+
+            UpdateUrl(v);
+        }
+
+        return new ResultDto<MiniMapResult>(200, "获取知识图谱成功", result);
     }
 
 
@@ -837,7 +876,7 @@ public class WarehouseService(
         var groupedQuery = query
             .GroupBy(x => new { x.Name, x.OrganizationName })
             .Select(g => g.OrderByDescending(x => x.IsRecommended)
-                .ThenByDescending(x => x.Status == WarehouseStatus.Completed )
+                .ThenByDescending(x => x.Status == WarehouseStatus.Completed)
                 .ThenByDescending(x => x.CreatedAt)
                 .FirstOrDefault());
 
