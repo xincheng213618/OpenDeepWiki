@@ -216,7 +216,7 @@ graph TD
     I --> J[Call AI model to generate project overview information]
     J --> K[Clean project analysis tag content]
     K --> L[Save project overview to database]
-    L --> M[Call AI to generate thinking directory (task list)]
+    L --> M[Call AI to generate thinking directory task list]
     M --> N[Recursively process directory tasks to generate DocumentCatalog]
     N --> O[Save directory structure to database]
     O --> P[Process incomplete document tasks]
