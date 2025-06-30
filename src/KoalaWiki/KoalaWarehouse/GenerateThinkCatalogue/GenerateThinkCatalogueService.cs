@@ -58,7 +58,7 @@ public static class GenerateThinkCatalogueService
                 history.AddAssistantMessage(
                     "Ok. Now I will start analyzing the core file. And I won't ask you questions or notify you. I will directly provide you with the required content. Please confirm");
                 history.AddUserMessage(
-                    "OK, I confirm that you can start analyzing the core file now. Please proceed with the analysis and provide the relevant content as required. There is no need to ask questions or notify me. The generated document structure will be detailed and provide a complete and detailed directory structure through the project file reading analysis.");
+                    "OK, I confirm that you can start analyzing the core file now. Please proceed with the analysis and provide the relevant content as required. There is no need to ask questions or notify me. The generated document structure will be refined and a complete and detailed directory structure of document types will be provided through project file reading and analysis.");
 
                 var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
                     OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false);
