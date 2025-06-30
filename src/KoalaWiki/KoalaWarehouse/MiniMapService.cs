@@ -37,7 +37,7 @@ public static class MiniMapService
 
         history.AddUserMessage(prompt);
 
-        var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint, OpenAIOptions.ChatApiKey, path);
+        var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint, OpenAIOptions.ChatApiKey, path, OpenAIOptions.ChatModel);
 
         await foreach (var item in kernel.GetRequiredService<IChatCompletionService>()
                            .GetStreamingChatMessageContentsAsync(history, new OpenAIPromptExecutionSettings()
