@@ -1,29 +1,7 @@
 import { API_URL } from '../../services/api';
+import { ResponsesInput, StreamEvent } from '../../types/chat';
 
-export interface Base64Content {
-  data: string;
-  mimeType: string;
-}
 
-export interface ResponsesMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  imageContents?: Base64Content[];
-}
-
-export interface ResponsesInput {
-  organizationName: string;
-  name: string;
-  messages: ResponsesMessage[];
-}
-
-export interface StreamEvent {
-  type: 'reasoning_start' | 'reasoning_content' | 'reasoning_end' | 'tool_call' | 'message_start' | 'message_content' | 'message_end' | 'done';
-  content?: string;
-  tool_call_id?: string;
-  function_name?: string;
-  function_arguments?: string;
-}
 
 export class ChatService {
   private baseUrl: string;

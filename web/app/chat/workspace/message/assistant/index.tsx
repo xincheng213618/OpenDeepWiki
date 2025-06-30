@@ -1,20 +1,281 @@
 import { ChatItem } from "@lobehub/ui/chat";
-import { MessageItem } from "../..";
+import { MessageItem } from "../../../../types/chat";
 import { Button, message, Modal, Spin, Tag, Tooltip } from "antd";
 import { Collapse, Markdown } from "@lobehub/ui";
-import { Copy, MoreHorizontal, Trash2, FileText, Brain, Settings } from "lucide-react";
+import { Copy, MoreHorizontal, Trash2, FileText, Brain, Settings, ChevronDown, ChevronRight, Maximize2 } from "lucide-react";
 import { Flexbox } from "react-layout-kit";
+import { useState } from "react";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { getFileContentByLine } from "../../../../services/warehouseService";
 
 interface AssistantMessageProps {
     messageItem: MessageItem;
     handleDelete: (messageId: string) => void;
+    organizationName: string;
+    repositoryName: string;
 }
 
-export default function AssistantMessage({ messageItem, handleDelete }: AssistantMessageProps) {
+export default function AssistantMessage({ messageItem, handleDelete,
+    organizationName,
+    repositoryName
+}: AssistantMessageProps) {
+    // 状态管理：跟踪文件内容的展开状态和内容
+    const [expandedFiles, setExpandedFiles] = useState<{ [key: string]: boolean }>({});
+    const [fileContents, setFileContents] = useState<{ [key: string]: string }>({});
+    const [loadingFiles, setLoadingFiles] = useState<{ [key: string]: boolean }>({});
+    
+    // 全屏模态框状态
+    const [fullScreenFile, setFullScreenFile] = useState<{
+        filePath: string;
+        content: string;
+        language: string;
+        startLine: number;
+        endLine: number;
+    } | null>(null);
+
+    // 根据文件扩展名确定语言类型
+    const getLanguageFromFileName = (fileName: string): string => {
+        const extension = fileName.split('.').pop()?.toLowerCase();
+        const languageMap: { [key: string]: string } = {
+            'js': 'javascript',
+            'jsx': 'jsx',
+            'ts': 'typescript',
+            'tsx': 'tsx',
+            'py': 'python',
+            'java': 'java',
+            'c': 'c',
+            'cpp': 'cpp',
+            'cxx': 'cpp',
+            'cc': 'cpp',
+            'cs': 'csharp',
+            'php': 'php',
+            'rb': 'ruby',
+            'go': 'go',
+            'rs': 'rust',
+            'kt': 'kotlin',
+            'swift': 'swift',
+            'scala': 'scala',
+            'sh': 'bash',
+            'bash': 'bash',
+            'zsh': 'zsh',
+            'ps1': 'powershell',
+            'sql': 'sql',
+            'html': 'html',
+            'htm': 'html',
+            'css': 'css',
+            'scss': 'scss',
+            'sass': 'sass',
+            'less': 'less',
+            'json': 'json',
+            'xml': 'xml',
+            'yaml': 'yaml',
+            'yml': 'yaml',
+            'toml': 'toml',
+            'ini': 'ini',
+            'cfg': 'ini',
+            'conf': 'ini',
+            'md': 'markdown',
+            'markdown': 'markdown',
+            'vue': 'vue',
+            'svelte': 'svelte',
+            'dockerfile': 'dockerfile',
+            'makefile': 'makefile',
+            'r': 'r',
+            'matlab': 'matlab',
+            'm': 'matlab',
+            'tex': 'latex',
+            'dart': 'dart',
+            'lua': 'lua',
+            'perl': 'perl',
+            'pl': 'perl'
+        };
+        return languageMap[extension || ''] || 'text';
+    };
+
+    // 处理文件内容的获取和展开
+    const handleFileClick = async (item: any) => {
+        const fileKey = `${item.FilePath}-${item.StartLine}-${item.EndLine}`;
+
+        if (expandedFiles[fileKey]) {
+            // 如果已展开，则收起
+            setExpandedFiles(prev => ({ ...prev, [fileKey]: false }));
+            return;
+        }
+
+        // 如果没有内容，则获取内容
+        if (!fileContents[fileKey]) {
+            setLoadingFiles(prev => ({ ...prev, [fileKey]: true }));
+            try {
+                const { data } = await getFileContentByLine(
+                    organizationName,
+                    repositoryName,
+                    item.FilePath,
+                    item.StartLine,
+                    item.EndLine
+                );
+                setFileContents(prev => ({ ...prev, [fileKey]: data.data || '' }));
+            } catch (error) {
+                console.error('获取文件内容失败:', error);
+                message.error('获取文件内容失败');
+                setLoadingFiles(prev => ({ ...prev, [fileKey]: false }));
+                return;
+            }
+            setLoadingFiles(prev => ({ ...prev, [fileKey]: false }));
+        }
+
+        // 展开文件内容
+        setExpandedFiles(prev => ({ ...prev, [fileKey]: true }));
+    };
+
+    // 处理全屏显示
+    const handleFullScreen = (item: any, content: string) => {
+        const language = getLanguageFromFileName(item.FilePath);
+        setFullScreenFile({
+            filePath: item.FilePath,
+            content: content,
+            language: language,
+            startLine: item.StartLine,
+            endLine: item.EndLine,
+        });
+    };
+
+    // 关闭全屏模态框
+    const handleCloseFullScreen = () => {
+        setFullScreenFile(null);
+    };
+
+    // 解析Markdown内容，提取thinking代码块
+    const parseThinkingBlocks = (content: string) => {
+        // 检查是否包含```thinking开头
+        const hasThinkingStart = content.includes('```thinking');
+        
+        if (!hasThinkingStart) {
+            // 没有thinking块，返回正常文本内容
+            return [{
+                type: 'text',
+                content: content
+            }];
+        }
+
+        // 检查是否有完整的thinking块（包含结束标签）
+        const thinkingRegex = /```thinking\n([\s\S]*?)\n```/g;
+        const parts = [];
+        let lastIndex = 0;
+        let match;
+        let hasCompleteThinkingBlock = false;
+
+        // 先检查是否有完整的thinking块
+        while ((match = thinkingRegex.exec(content)) !== null) {
+            hasCompleteThinkingBlock = true;
+            
+            // 添加thinking块之前的内容
+            if (match.index > lastIndex) {
+                const beforeContent = content.slice(lastIndex, match.index).trim();
+                if (beforeContent) {
+                    parts.push({
+                        type: 'text',
+                        content: beforeContent
+                    });
+                }
+            }
+
+            // 添加thinking块
+            parts.push({
+                type: 'thinking',
+                content: match[1].trim()
+            });
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        // 如果有完整的thinking块
+        if (hasCompleteThinkingBlock) {
+            // 添加最后剩余的内容
+            if (lastIndex < content.length) {
+                const remainingContent = content.slice(lastIndex).trim();
+                if (remainingContent) {
+                    parts.push({
+                        type: 'text',
+                        content: remainingContent
+                    });
+                }
+            }
+            return parts;
+        }
+
+        // 如果有```thinking开头但没有完整的闭合标签，说明是正在输出的thinking内容
+        // 提取```thinking之后的所有内容作为推理内容
+        const thinkingStartIndex = content.indexOf('```thinking');
+        const beforeThinking = content.slice(0, thinkingStartIndex).trim();
+        const thinkingContent = content.slice(thinkingStartIndex + '```thinking'.length).replace(/^\n/, '').trim();
+
+        const result = [];
+        
+        // 添加thinking之前的内容
+        if (beforeThinking) {
+            result.push({
+                type: 'text',
+                content: beforeThinking
+            });
+        }
+
+        // 添加正在输出的thinking内容
+        if (thinkingContent) {
+            result.push({
+                type: 'thinking',
+                content: thinkingContent
+            });
+        }
+
+        return result.length > 0 ? result : [{
+            type: 'text',
+            content: content
+        }];
+    };
+
+    // 渲染思考组件
+    const renderThinkingComponent = (content: string, index: number) => {
+        return (<Collapse
+            defaultActiveKey={["thinking"]}
+            size='small'
+            items={[
+                {
+                    key: "thinking",
+                    label: (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            fontWeight: 500,
+                        }}>
+                            <Brain size={16} />
+                            思考过程
+                        </div>
+                    ),
+                    children: (
+                        <div style={{
+                            maxHeight: 300,
+                            overflowY: 'auto',
+                            padding: '0 6px 6px',
+                        }}>
+                            <Markdown
+                                fontSize={12}
+                                children={content}
+                                enableMermaid
+                                enableImageGallery
+                                enableLatex
+                                enableCustomFootnotes
+                            />
+                        </div>
+                    ),
+                }
+            ]}
+        />
+        );
+    };
 
     const renderToolCalls = (toolCall: any) => {
-        console.log(toolCall);
-
         const renderArguments = (type: string) => {
             try {
                 const parsedArgs = JSON.parse(toolCall.arguments);
@@ -25,31 +286,132 @@ export default function AssistantMessage({ messageItem, handleDelete }: Assistan
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 8,
-                                padding: '8px 0',
                             }}>
-                                {parsedArgs.items.map((item: any, index: number) => (
-                                    <div key={index} style={{
-                                        padding: '8px 12px',
-                                        backgroundColor: '#f8f9fa',
-                                        borderRadius: 6,
-                                        border: '1px solid #e9ecef',
-                                        fontSize: '13px',
-                                    }}>
-                                        <div style={{
-                                            color: '#495057',
-                                            fontWeight: 500,
-                                            marginBottom: 4
+                                {parsedArgs.items.map((item: any, index: number) => {
+                                    const fileKey = `${item.FilePath}-${item.StartLine}-${item.EndLine}`;
+                                    const isExpanded = expandedFiles[fileKey];
+                                    const isLoading = loadingFiles[fileKey];
+                                    const content = fileContents[fileKey];
+                                    const language = getLanguageFromFileName(item.FilePath);
+
+
+                                    return (
+                                        <div key={index} style={{
+                                            border: '1px solid #e8e8e8',
+                                            borderRadius: 8,
+                                            overflow: 'hidden',
                                         }}>
-                                            📄 {item.FilePath}
+                                            <div
+                                                onClick={() => handleFileClick(item)}
+                                                style={{
+                                                    padding: '8px 12px',
+                                                    cursor: 'pointer',
+                                                    backgroundColor: isExpanded ? '#f0f7ff' : '#fafafa',
+                                                    borderBottom: isExpanded ? '1px solid #e8e8e8' : 'none',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    fontSize: '13px',
+                                                    transition: 'all 0.2s ease',
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.backgroundColor = isExpanded ? '#e6f3ff' : '#f0f0f0';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.backgroundColor = isExpanded ? '#f0f7ff' : '#fafafa';
+                                                }}
+                                            >
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                }}>
+                                                    <FileText size={14} color="#1890ff" />
+                                                    <span style={{
+                                                        color: '#495057',
+                                                        fontWeight: 500,
+                                                    }}>
+                                                        {item.FilePath}
+                                                    </span>
+                                                    <span style={{
+                                                        color: '#8c8c8c',
+                                                        fontSize: '12px',
+                                                    }}>
+                                                        {item.StartLine} - {item.EndLine} 行
+                                                    </span>
+                                                </div>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 4,
+                                                }}>
+                                                    {isLoading && <Spin size="small" />}
+                                                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                                </div>
+                                            </div>
+                                            {isExpanded && content && (
+                                                <div style={{
+                                                    position: 'relative',
+                                                    maxHeight: '400px',
+                                                    overflowY: 'auto',
+                                                    fontSize: '12px',
+                                                }}>
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '8px',
+                                                        right: '8px',
+                                                        zIndex: 10,
+                                                        display: 'flex',
+                                                        gap: '4px',
+                                                    }}>
+                                                        <Tooltip title="全屏查看">
+                                                            <Button
+                                                                type="text"
+                                                                size="small"
+                                                                icon={<Maximize2 size={14} />}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleFullScreen(item, content);
+                                                                }}
+                                                                style={{
+                                                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                                                    border: '1px solid #d9d9d9',
+                                                                    borderRadius: '4px',
+                                                                    padding: '2px 6px',
+                                                                    height: '24px',
+                                                                    width: '24px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                }}
+                                                            />
+                                                        </Tooltip>
+                                                    </div>
+                                                    <SyntaxHighlighter
+                                                        language={language}
+                                                        style={vs}
+                                                        showLineNumbers={true}
+                                                        startingLineNumber={item.StartLine}
+                                                        customStyle={{
+                                                            margin: 0,
+                                                            borderRadius: 0,
+                                                            fontSize: '12px',
+                                                            lineHeight: '1.4',
+                                                        }}
+                                                        codeTagProps={{
+                                                            style: {
+                                                                fontSize: '12px',
+                                                                fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
+                                                            }
+                                                        }}
+                                                    >
+                                                        {content}
+                                                    </SyntaxHighlighter>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div style={{
-                                            color: '#6c757d',
-                                            fontSize: '12px'
-                                        }}>
-                                            第 {item.StartLine} - {item.EndLine} 行
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         );
                     }
@@ -68,19 +430,38 @@ export default function AssistantMessage({ messageItem, handleDelete }: Assistan
                                         padding: '4px 8px',
                                         borderRadius: 4,
                                     }}>
-                                        📁 {path}
+                                        {path}
                                     </Tag>
                                 ))}
                             </div>
                         );
                     }
+                } else if (type === 'ragSearch') {
+                    return (
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8,
+                        }}>
+                            <span>RAG搜索</span>
+                            <pre style={{
+                                backgroundColor: '#f8f9fa',
+                                padding: '8px',
+                                borderRadius: 6,
+                                fontSize: '8px',
+                                color: '#495057',
+                            }}>
+                                {toolCall.arguments}
+                            </pre>
+                        </div>
+                    );
                 } else {
                     return (
                         <pre style={{
                             backgroundColor: '#f8f9fa',
-                            padding: '12px',
+                            padding: '8px',
                             borderRadius: 6,
-                            fontSize: '12px',
+                            fontSize: '8px',
                             color: '#495057',
                             overflow: 'auto',
                             border: '1px solid #e9ecef',
@@ -95,7 +476,7 @@ export default function AssistantMessage({ messageItem, handleDelete }: Assistan
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: '16px',
+                        padding: '8px',
                     }}>
                         <Spin size="small" />
                         <span style={{ marginLeft: 8, color: '#6c757d' }}>处理中...</span>
@@ -106,11 +487,15 @@ export default function AssistantMessage({ messageItem, handleDelete }: Assistan
 
         const getToolInfo = (functionName: string) => {
             if (functionName === 'FileFunction-FileFromLine') {
-                return { icon: <FileText size={14} />, label: '📖 读取文件内容', color: '#52c41a' };
+                return { label: '读取文件内容', color: '#52c41a' };
             } else if (functionName === 'FileFunction-FileInfo') {
-                return { icon: <FileText size={14} />, label: '📁 获取文件信息', color: '#1890ff' };
-            } else {
-                return { icon: <Settings size={14} />, label: functionName, color: '#722ed1' };
+                return { label: '获取文件信息', color: '#1890ff' };
+            } 
+            else if (functionName === 'RagFunction-RagSearch') {
+                return { label: 'RAG搜索', color: '#722ed1' };
+            }
+            else {
+                return { label: functionName, color: '#722ed1' };
             }
         };
 
@@ -118,10 +503,7 @@ export default function AssistantMessage({ messageItem, handleDelete }: Assistan
 
         return (
             <div style={{
-                marginBottom: 12,
                 borderRadius: 8,
-                border: '1px solid #e6f4ff',
-                backgroundColor: '#f6ffed',
                 overflow: 'hidden',
             }}>
                 <Collapse
@@ -133,18 +515,23 @@ export default function AssistantMessage({ messageItem, handleDelete }: Assistan
                                 <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 8,
+                                    gap: 2,
                                     color: toolInfo.color,
                                     fontWeight: 500,
                                 }}>
-                                    {toolInfo.icon}
                                     {toolInfo.label}
                                 </div>
                             ),
-                            children: renderArguments(
-                                toolCall.functionName === 'FileFunction-FileFromLine' ? 'fileFromLine' :
-                                    toolCall.functionName === 'FileFunction-FileInfo' ? 'fileInfo' : 'other'
-                            ),
+                            children: <Flexbox style={{
+                                overflow: 'auto',
+                                maxHeight: '180px'
+                            }}>
+                                {renderArguments(
+                                    toolCall.functionName === 'FileFunction-FileFromLine' ? 'fileFromLine' :
+                                        toolCall.functionName === 'FileFunction-FileInfo' ? 'fileInfo' :
+                                        toolCall.functionName === 'RagFunction-RagSearch' ? 'ragSearch' : 'other'
+                                )}
+                            </Flexbox>,
                         }
                     ]}
                 />
@@ -153,113 +540,158 @@ export default function AssistantMessage({ messageItem, handleDelete }: Assistan
     }
 
     const renderMessage = () => {
-        return (
-            <Flexbox gap={16}>
-                {/* 工具调用区域 */}
-                {messageItem.extra?.toolCalls && messageItem.extra.toolCalls.length > 0 && (
-                    <div style={{
-                        backgroundColor: '#fafafa',
-                        padding: '12px',
-                        borderRadius: 8,
-                        border: '1px solid #f0f0f0',
-                    }}>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            marginBottom: 12,
-                            color: '#595959',
-                            fontSize: '13px',
-                            fontWeight: 500,
-                        }}>
-                            <Settings size={14} />
-                            工具调用 ({messageItem.extra.toolCalls.length})
-                        </div>
-                        {messageItem.extra.toolCalls.map((toolCall, index) => (
-                            <div key={index}>
-                                {renderToolCalls(toolCall)}
-                            </div>
-                        ))}
-                    </div>
-                )}
+        // 从content数组中提取不同类型的内容
+        const allContent = messageItem.content as any[];
 
-                {/* 思考过程区域 */}
-                {messageItem.extra?.thinking && (
-                    <div style={{
-                        backgroundColor: '#fff7e6',
-                        borderRadius: 8,
-                        border: '1px solid #ffd591',
-                        overflow: 'hidden',
-                    }}>
-                        <Collapse
-                            defaultActiveKey={["thinking"]}
-                            items={[
-                                {
-                                    key: "thinking",
-                                    label: (
+        return (
+            <Flexbox
+            >
+                {allContent.map((contentItem, index) => {
+                    switch (contentItem.type) {
+                        case 'reasoning':
+                            return (
+                                <div key={`reasoning-${index}`} style={{
+                                    backgroundColor: '#fff7e6',
+                                    borderRadius: 8,
+                                    overflow: 'hidden',
+                                }}>
+                                    <Collapse
+                                        defaultActiveKey={["thinking"]}
+                                        items={[
+                                            {
+                                                key: "thinking",
+                                                label: (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 8,
+                                                        fontWeight: 500,
+                                                    }}>
+                                                        推理内容
+                                                    </div>
+                                                ),
+                                                children: (
+                                                    <div style={{
+                                                        maxHeight: 300,
+                                                        overflowY: 'auto',
+                                                        padding: '0 6px 6px',
+                                                    }}>
+                                                        <Markdown
+                                                            fontSize={12}
+                                                            children={contentItem.content || ''}
+                                                            enableMermaid
+                                                            enableImageGallery
+                                                            enableLatex
+                                                            enableCustomFootnotes
+                                                        />
+                                                    </div>
+                                                ),
+                                            }
+                                        ]}
+                                    />
+                                </div>
+                            );
+
+                        case 'tool':
+                            return (
+                                <div key={`tool-${index}`}>
+                                    {renderToolCalls({
+                                        id: contentItem.toolId,
+                                        functionName: contentItem.toolName || 'Unknown',
+                                        arguments: contentItem.toolArgs || '',
+                                    })}
+                                </div>
+                            );
+
+                        case 'text':
+                            return (
+                                <div key={`text-${index}`}>
+                                    {!contentItem.content || contentItem.content === '' ? (
                                         <div style={{
+                                            borderRadius: 8,
+                                            padding: '8px',
+                                            minHeight: '60px',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: 8,
-                                            color: '#d46b08',
-                                            fontWeight: 500,
+                                            justifyContent: 'center',
                                         }}>
-                                            推理内容
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 12,
+                                                color: '#8c8c8c',
+                                            }}>
+                                                <Spin size="small" />
+                                                <span>正在思考中...</span>
+                                            </div>
                                         </div>
-                                    ),
-                                    children: (
-                                        <div style={{
-                                            maxHeight: 300,
-                                            overflowY: 'auto',
-                                            padding: '0 12px 12px',
-                                        }}>
-                                            <Markdown
-                                                fontSize={12}
-                                                children={messageItem.extra.thinking}
-                                                enableMermaid
-                                                enableImageGallery
-                                                enableLatex
-                                                enableCustomFootnotes
-                                            />
-                                        </div>
-                                    ),
-                                }
-                            ]}
-                        />
-                    </div>
-                )}
+                                    ) : (
+                                        <>
+                                            {parseThinkingBlocks(contentItem.content).map((part, partIndex) => {
+                                                if (part.type === 'thinking') {
+                                                    return renderThinkingComponent(part.content, partIndex);
+                                                } else {
+                                                    return (
+                                                        <Markdown
+                                                            fontSize={12}
+                                                            children={part.content}
+                                                            enableMermaid
+                                                            enableImageGallery
+                                                            enableCustomFootnotes
+                                                            enableLatex
+                                                        />
+                                                    );
+                                                }
+                                            })}
+                                        </>
+                                    )}
+                                </div>
+                            );
 
-                {/* 主要回复内容 */}
-                <div style={{
-                    backgroundColor: '#ffffff',
-                    borderRadius: 8,
-                    padding: messageItem.content ? '16px' : '24px',
-                    border: '1px solid #f0f0f0',
-                    minHeight: messageItem.content ? 'auto' : '60px',
-                    display: 'flex',
-                    alignItems: messageItem.content ? 'flex-start' : 'center',
-                    justifyContent: messageItem.content ? 'flex-start' : 'center',
-                }}>
-                    {messageItem.content === '' ? (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 12,
-                            color: '#8c8c8c',
-                        }}>
-                            <Spin size="small" />
-                        </div>
-                    ) : (
-                        <Markdown
-                            fontSize={12}
-                            children={messageItem.content}
-                            enableMermaid
-                            enableImageGallery
-                            enableCustomFootnotes
-                            enableLatex
-                        />
-                    )}
-                </div>
+                        case 'image':
+                            return contentItem.imageContents && contentItem.imageContents.length > 0 ? (
+                                <div key={`image-${index}`} style={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: 8,
+                                    marginBottom: 8
+                                }}>
+                                    {contentItem.imageContents.map((image: any, imgIndex: number) => (
+                                        <img
+                                            key={imgIndex}
+                                            src={`data:${image.mimeType};base64,${image.data}`}
+                                            alt="AI生成的图片"
+                                            style={{
+                                                maxWidth: '200px',
+                                                maxHeight: '200px',
+                                                borderRadius: '8px',
+                                                objectFit: 'contain'
+                                            }}
+                                            onClick={() => window.open(`data:${image.mimeType};base64,${image.data}`, '_blank')}
+                                        />
+                                    ))}
+                                </div>
+                            ) : null;
+
+                        default:
+                            return (
+                                <div key={`other-${index}`} style={{
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: 8,
+                                    padding: '12px',
+                                    color: '#6c757d',
+                                    fontSize: '12px'
+                                }}>
+                                    <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                                        未知内容类型: {contentItem.type}
+                                    </div>
+                                    <pre style={{ margin: 0, fontFamily: 'inherit' }}>
+                                        {JSON.stringify(contentItem, null, 2)}
+                                    </pre>
+                                </div>
+                            );
+                    }
+                })}
             </Flexbox>
         )
     }
@@ -278,8 +710,13 @@ export default function AssistantMessage({ messageItem, handleDelete }: Assistan
     }
 
     const handleCopyClick = () => {
-        const content = messageItem.content;
-        navigator.clipboard.writeText(content);
+        // 提取所有文本和推理内容进行复制
+        const allContent = messageItem.content as any[];
+        const textContent = allContent
+            .filter(item => item.type === 'text' || item.type === 'reasoning')
+            .map(item => item.content || '')
+            .join('\n\n');
+        navigator.clipboard.writeText(textContent);
         message.success('已复制到剪贴板');
     }
 
@@ -339,18 +776,85 @@ export default function AssistantMessage({ messageItem, handleDelete }: Assistan
     }
 
     return (
-        <ChatItem
-            avatar={{
-                avatar: "🤖",
-                title: "AI助手",
-            }}
-            actions={renderActions()}
-            renderMessage={renderMessage}
-            key={messageItem.id}
-            message={messageItem.content}
-            style={{
-                marginBottom: 16,
-            }}
-        />
+        <>
+            <ChatItem
+                avatar={{
+                    avatar: "🤖",
+                    title: "AI助手",
+                }}
+                actions={renderActions()}
+                renderMessage={renderMessage}
+                key={messageItem.id}
+                style={{
+                    marginBottom: 16,
+                }}
+            />
+            
+            <Modal
+                zIndex={1002}
+                title={
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: '16px',
+                        fontWeight: 500,
+                    }}>
+                        <FileText size={18} />
+                        <span>{fullScreenFile?.filePath}</span>
+                        <span style={{
+                            color: '#8c8c8c',
+                            fontSize: '14px',
+                            fontWeight: 400,
+                        }}>
+                            ({fullScreenFile?.startLine} - {fullScreenFile?.endLine} 行)
+                        </span>
+                    </div>
+                }
+                open={!!fullScreenFile}
+                onCancel={handleCloseFullScreen}
+                footer={null}
+                width="90vw"
+                centered
+                style={{
+                    maxHeight: '90vh',
+                }}
+                bodyStyle={{
+                    padding: 0,
+                    maxHeight: '80vh',
+                    overflow: 'hidden',
+                }}
+            >
+                {fullScreenFile && (
+                    <div style={{
+                        height: '80vh',
+                        overflow: 'auto',
+                    }}>
+                        <SyntaxHighlighter
+                            language={fullScreenFile.language}
+                            style={vs}
+                            showLineNumbers={true}
+                            startingLineNumber={fullScreenFile.startLine}
+                            customStyle={{
+                                margin: 0,
+                                borderRadius: 0,
+                                fontSize: '14px',
+                                lineHeight: '1.5',
+                                height: '100%',
+                                overflow: 'auto',
+                            }}
+                            codeTagProps={{
+                                style: {
+                                    fontSize: '14px',
+                                    fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
+                                }
+                            }}
+                        >
+                            {fullScreenFile.content}
+                        </SyntaxHighlighter>
+                    </div>
+                )}
+            </Modal>
+        </>
     )
 }

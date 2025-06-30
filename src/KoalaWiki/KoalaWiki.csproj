@@ -139,12 +139,6 @@
       <Compile Update="KoalaWarehouse\DocumentsService.Commit.cs">
         <DependentUpon>DocumentsService.cs</DependentUpon>
       </Compile>
-      <Compile Update="WarehouseProcessing\WarehouseProcessingTask.Analyse.cs">
-        <DependentUpon>WarehouseProcessingTask.cs</DependentUpon>
-      </Compile>
-      <Compile Update="WarehouseProcessing\WarehouseProcessingTask.Commit.cs">
-        <DependentUpon>WarehouseProcessingTask.cs</DependentUpon>
-      </Compile>
     </ItemGroup>
 
     <ItemGroup>

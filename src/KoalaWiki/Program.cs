@@ -1,3 +1,4 @@
+using KoalaWiki.BackendService;
 using KoalaWiki.Mem0;
 using KoalaWiki.Infrastructure;
 using KoalaWiki.Services;
@@ -22,6 +23,8 @@ builder.Services.AddSingleton(jwtOptions);
 OpenAIOptions.InitConfig(builder.Configuration);
 
 GithubOptions.InitConfig(builder.Configuration);
+
+GiteeOptions.InitConfig(builder.Configuration);
 
 DocumentOptions.InitConfig(builder.Configuration);
 

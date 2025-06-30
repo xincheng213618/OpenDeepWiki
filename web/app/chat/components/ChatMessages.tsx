@@ -5,6 +5,7 @@ import { Avatar, Button, Spin, Typography, Dropdown, type MenuProps, message, Mo
 import { MoreOutlined, CopyOutlined, RedoOutlined, DeleteOutlined, UserOutlined, RobotOutlined, LoadingOutlined } from '@ant-design/icons';
 import { createStyles } from 'antd-style';
 import { Markdown } from '@lobehub/ui';
+import { ChatMessageItem } from '..';
 
 const { Text } = Typography;
 
@@ -321,23 +322,6 @@ const useStyles = createStyles(({ css, token }) => ({
   `
 }));
 
-export interface ChatMessageItem {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-  thinking?: string;
-  toolCalls?: Array<{
-    id: string;
-    functionName: string;
-    arguments: string;
-  }>;
-  status?: 'loading' | 'complete' | 'error';
-  imageContents?: Array<{
-    data: string;
-    mimeType: string;
-  }>;
-}
 
 interface ChatMessagesProps {
   messages: ChatMessageItem[];
@@ -397,7 +381,14 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
       key: 'copy',
       label: '复制',
       icon: <CopyOutlined />,
-      onClick: () => handleCopyMessage(message.content),
+      onClick: () => {
+        // 提取所有文本和推理内容
+        const textContent = message.content
+          .filter(item => item.type === 'text' || item.type === 'reasoning')
+          .map(item => item.content || '')
+          .join('\n\n');
+        handleCopyMessage(textContent);
+      },
     },
     ...(message.role === 'assistant' ? [{
       key: 'regenerate',
@@ -438,57 +429,80 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
     }
 
     if (message.status === 'error') {
+      // 显示错误状态时，提取第一个文本内容
+      const errorText = message.content.find(item => item.type === 'text')?.content || '发生未知错误';
       return (
         <div className={styles.errorMessage}>
-          {message.content}
+          {errorText}
         </div>
       );
     }
 
+    // 根据content数组中的类型渲染不同内容
     return (
       <>
-        {/* 思考过程 */}
-        {message.thinking && (
-          <div className={styles.thinking}>
-            <div className="thinking-header">
-              <span>🤔</span>
-              <span>思考过程</span>
-            </div>
-            <div className="thinking-content">{message.thinking}</div>
-          </div>
-        )}
-        
-        {/* 工具调用 */}
-        {message.toolCalls && message.toolCalls.map((tool) => (
-          <div key={tool.id} className={styles.toolCall}>
-            <div className="tool-header">
-              <span>🔧</span>
-              <span>工具调用: {tool.functionName}</span>
-            </div>
-            <div className="tool-content">{tool.arguments}</div>
-          </div>
-        ))}
-        
-        {/* 消息内容 */}
-        <div className={styles.markdownContent}>
-          <Markdown 
-            children={message.content}
-          />
-        </div>
-        
-        {/* 图片内容 */}
-        {message.imageContents && message.imageContents.length > 0 && (
-          <div className={styles.imageContent}>
-            {message.imageContents.map((image, index) => (
-              <img 
-                key={index}
-                src={`data:${image.mimeType};base64,${image.data}`}
-                alt="图片内容"
-                onClick={() => window.open(`data:${image.mimeType};base64,${image.data}`, '_blank')}
-              />
-            ))}
-          </div>
-        )}
+        {message.content.map((contentItem, index) => {
+          switch (contentItem.type) {
+            case 'reasoning':
+              return (
+                <div key={`reasoning-${index}`} className={styles.thinking}>
+                  <div className="thinking-header">
+                    <span>🤔</span>
+                    <span>思考过程</span>
+                  </div>
+                  <div className="thinking-content">{contentItem.content}</div>
+                </div>
+              );
+              
+            case 'tool':
+              return (
+                <div key={`tool-${index}`} className={styles.toolCall}>
+                  <div className="tool-header">
+                    <span>🔧</span>
+                    <span>工具调用: {contentItem.toolId}</span>
+                  </div>
+                  <div className="tool-content">
+                    参数: {contentItem.toolArgs}
+                    {contentItem.toolResult && (
+                      <>
+                        <br />
+                        结果: {contentItem.toolResult}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+              
+            case 'text':
+              return (
+                <div key={`text-${index}`} className={styles.markdownContent}>
+                  <Markdown children={contentItem.content || ''} />
+                </div>
+              );
+              
+            case 'image':
+              return contentItem.imageContents && contentItem.imageContents.length > 0 ? (
+                <div key={`image-${index}`} className={styles.imageContent}>
+                  {contentItem.imageContents.map((image: any, imgIndex: number) => (
+                    <img 
+                      key={imgIndex}
+                      src={`data:${image.mimeType};base64,${image.data}`}
+                      alt="图片内容"
+                      onClick={() => window.open(`data:${image.mimeType};base64,${image.data}`, '_blank')}
+                    />
+                  ))}
+                </div>
+              ) : null;
+              
+            default:
+              // 处理其他类型或未知类型
+              return (
+                <div key={`unknown-${index}`} className={styles.markdownContent}>
+                  <Markdown children={contentItem.content || JSON.stringify(contentItem)} />
+                </div>
+              );
+          }
+        })}
       </>
     );
   };
@@ -529,7 +543,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
               ) : (
                 <Tag className={styles.roleTag} color="orange">AI</Tag>
               )}
-              <span>{formatTimestamp(message.timestamp)}</span>
+              <span>{formatTimestamp(message.createAt)}</span>
             </div>
           </div>
         ))}

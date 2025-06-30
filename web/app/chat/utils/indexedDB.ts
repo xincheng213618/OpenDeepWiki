@@ -1,5 +1,5 @@
 // IndexedDB 工具类，用于存储聊天记录
-import { Base64Content } from '../services/chatService';
+import { Base64Content } from '../../types/chat';
 
 const DB_NAME = 'koala_chat_db';
 const DB_VERSION = 2;
@@ -9,17 +9,18 @@ const MESSAGES_STORE = 'messages';
 export interface ChatMessage {
   id: string;
   type: 'message_content' | 'reasoning_content' | 'tool_call';
-  content: string;
+  content: Array<{
+    type: string;
+    content?: string;
+    toolId?: string;
+    toolResult?: string;
+    toolArgs?: string;
+    [key: string]: any;
+  }>;
   role: 'user' | 'assistant' | 'system';
   timestamp: number;
   conversationId: string;
   metadata?: {
-    thinking?: string;
-    toolCalls?: Array<{
-      id: string;
-      functionName: string;
-      arguments: string;
-    }>;
     imageContents?: Base64Content[];
   };
 }

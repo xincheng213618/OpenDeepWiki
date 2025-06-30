@@ -81,7 +81,7 @@ public static class GenerateThinkCatalogueService
                 {
                     history.AddAssistantMessage(str.ToString());
                     history.AddUserMessage(
-                        "The directory you have provided now is not detailed enough, and the project code files have not been carefully analyzed.Generate a complete project directory structure with detailed analysis. Include all essential folders, files, and their purposes. Organize hierarchically with clear explanations for each component's role and functionality. Please do your best and spare no effort.");
+                        "The directory you have provided now is not detailed enough, and the project code files have not been carefully analyzed.  Generate a complete project document directory structure and conduct a detailed analysis Organize hierarchically with clear explanations for each component's role and functionality. Please do your best and spare no effort.");
 
                     str.Clear();
                     await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings,

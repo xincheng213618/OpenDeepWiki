@@ -460,3 +460,29 @@ export async function getMiniMap(
   }
   return fetchApi<any>(url);
 }
+
+
+/**
+ * 根据行号获取文件内容
+ * @param organizationName 组织名称
+ * @param name 仓库名称
+ * @param filePath 文件路径
+ * @param startLine 开始行号
+ * @param endLine 结束行号
+ * @returns 文件内容
+ */
+export async function getFileContentByLine(
+  organizationName: string,
+  name: string,
+  filePath: string,
+  startLine: number,
+  endLine: number
+) {
+  return fetchApi<any>(
+    API_URL + `/api/Warehouse/filecontentLine?organizationName=${organizationName}&name=${name}&filePath=${filePath}&startLine=${startLine}&endLine=${endLine}`,
+    {
+      method: 'GET',
+      cache: 'no-cache'
+    }
+  )
+}

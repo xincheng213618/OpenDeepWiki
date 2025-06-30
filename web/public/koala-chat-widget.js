@@ -478,7 +478,7 @@
         border-radius: 8px;
         font-size: 14px;
         white-space: nowrap;
-        z-index: 9999;
+        z-index: 998;
         opacity: 0;
         transform: translateY(10px);
         transition: opacity 0.3s ease, transform 0.3s ease;

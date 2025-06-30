@@ -5,12 +5,12 @@ import { Button, Upload, message, Tooltip } from 'antd';
 import { LoadingOutlined, CloseCircleFilled } from '@ant-design/icons';
 import { createStyles } from 'antd-style';
 import type { UploadProps } from 'antd';
-import type { Base64Content } from '../services/chatService';
 import { ActionIcon } from '@lobehub/ui';
 import { ChatInputActionBar, TokenTag } from '@lobehub/ui/chat';
 import { ChatInputArea } from '@lobehub/ui/mobile';
 import { Eraser, ImagePlus, Trash2 } from 'lucide-react';
 import { Flexbox } from 'react-layout-kit';
+import { Base64Content } from '../../types/chat';
 
 const useStyles = createStyles(({ css, token }) => ({
     container: css`
@@ -232,12 +232,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     beforeUpload={handleImageUpload}
                     maxCount={5}
                 >
-                    <Button>上传</Button>
+                    <Button
+                        size="small"
+                        type="text"
+                    >上传</Button>
                 </Upload>
 
                 <ChatInputArea
                     expand={expand}
                     setExpand={setExpand}
+                    size="small"
                     placeholder={placeholder}
                     value={inputValue}
                     onChange={(e) => {
@@ -246,6 +250,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     onInput={(e) => handleInputChange(e)}
                     onSend={handleSend}
                     disabled={disabled}
+                    loading={loading}
                     textAreaRightAddons={<ChatInputArea.SendButton
                         onSend={handleSend}
                         onStop={handleStop}
@@ -257,7 +262,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     <Tooltip title="上传图片">
                                         <ActionIcon
                                             className={styles.actionButton}
-                                            icon={imageUploading ? <LoadingOutlined /> : <ImagePlus />}
+                                            icon={imageUploading ? <LoadingOutlined
+                                                size={16}
+                                            /> : <ImagePlus
+                                                size={16}
+                                            />}
                                             onClick={handleUploadClick}
                                             disabled={disabled || loading}
                                         />
@@ -265,12 +274,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     <Tooltip title="清空输入">
                                         <ActionIcon
                                             className={styles.actionButton}
-                                            icon={<Eraser />}
+                                            icon={<Eraser
+                                                size={16} />}
                                             onClick={handleClear}
                                             disabled={!inputValue && imageList.length === 0}
                                         />
                                     </Tooltip>
-                                    {/* // 靠右侧显示垃圾桶 */}
                                     <Tooltip title="清空消息">
                                         <ActionIcon
                                             className={styles.actionButton}
@@ -279,7 +288,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                                 marginRight: '20px',
                                                 color: 'red',
                                              }}
-                                            icon={<Trash2 />}
+                                            icon={<Trash2
+                                                size={16}
+                                            />}
                                             onClick={onClear}
                                         />
                                     </Tooltip>

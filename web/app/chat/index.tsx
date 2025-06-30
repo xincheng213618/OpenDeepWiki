@@ -5,27 +5,23 @@ import { Button,  notification, Tooltip } from 'antd';
 import { MessageOutlined, CloseOutlined, MinusOutlined, ExpandOutlined, CompressOutlined, RobotOutlined, CopyOutlined, RedoOutlined, DeleteOutlined } from '@ant-design/icons';
 import { createStyles } from 'antd-style';
 import Workspace from './workspace';
+import { Brain } from 'lucide-react';
 
 // 保持原有的内部消息类型
 export interface ChatMessageItem {
   id: string;
   role: 'user' | 'assistant';
-  content: string;
+  content: Array<{
+    type: string;
+    content?: string;
+    toolId?: string;
+    toolResult?: string;
+    toolArgs?: string;
+    [key: string]: any;
+  }>;
   createAt: number;
   updateAt: number;
-  extra: {
-    thinking?: string;
-    toolCalls?: Array<{
-      id: string;
-      functionName: string;
-      arguments: string;
-    }>;
-    status?: 'loading' | 'complete' | 'error';
-    imageContents?: Array<{
-      data: string;
-      mimeType: string;
-    }>;
-  };
+  status?: 'loading' | 'complete' | 'error';
   meta: {
     avatar: string;
     title: string;
@@ -46,8 +42,8 @@ const useStyles = createStyles(({ css, token }) => ({
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 60px;
-    height: 60px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -56,18 +52,8 @@ const useStyles = createStyles(({ css, token }) => ({
     z-index: 1000;
     font-size: 24px;
     border: none;
-    background: linear-gradient(135deg, ${token.colorPrimary}, ${token.colorPrimaryActive});
     color: white;
     transition: all 0.3s ease;
-    
-    &:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 24px rgba(24, 144, 255, 0.35);
-    }
-    
-    &:active {
-      transform: scale(0.95);
-    }
   `,
 
   // 聊天窗口容器
@@ -354,7 +340,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({
           onClick={toggleExpanded}
           aria-label="打开聊天"
         >
-          <MessageOutlined />
+          <Brain />
         </Button>
       )}
 

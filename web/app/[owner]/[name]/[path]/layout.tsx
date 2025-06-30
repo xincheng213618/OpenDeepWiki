@@ -120,7 +120,6 @@ export default async function DocumentLayout({
 
   return (
     <>
-      {/* 添加结构化数据 */}
       <Script
         id="structured-data"
         type="application/ld+json"

@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using KoalaWiki.Domains;
 using KoalaWiki.Domains.Warehouse;
-using KoalaWiki.Entities;
 using KoalaWiki.KoalaWarehouse.DocumentPending;
 using LibGit2Sharp;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +12,7 @@ using Newtonsoft.Json;
 using Polly;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace KoalaWiki.WarehouseProcessing;
+namespace KoalaWiki.BackendService;
 
 public partial class WarehouseProcessingTask
 {

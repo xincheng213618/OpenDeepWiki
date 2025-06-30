@@ -1,8 +1,7 @@
 ﻿using KoalaWiki.Domains.Warehouse;
-using KoalaWiki.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace KoalaWiki.WarehouseProcessing;
+namespace KoalaWiki.BackendService;
 
 public partial class WarehouseProcessingTask(IServiceProvider service, ILogger<WarehouseProcessingTask> logger)
     : BackgroundService

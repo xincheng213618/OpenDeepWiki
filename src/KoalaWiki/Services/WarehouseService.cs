@@ -21,7 +21,7 @@ namespace KoalaWiki.Services;
 [Tags("仓库管理")]
 [Route("/api/Warehouse")]
 public class WarehouseService(
-    IKoalaWikiContext access,
+    IKoalaWikiContext koala,
     IMapper mapper,
     GitRepositoryService gitRepositoryService,
     IUserContext userContext,
@@ -42,7 +42,7 @@ public class WarehouseService(
         if (isAdmin) return true;
 
         // 检查仓库是否存在权限分配
-        var hasPermissionAssignment = await access.WarehouseInRoles
+        var hasPermissionAssignment = await koala.WarehouseInRoles
             .AnyAsync(wr => wr.WarehouseId == warehouseId);
 
         // 如果仓库没有权限分配，则是公共仓库，所有人都可以访问
@@ -52,7 +52,7 @@ public class WarehouseService(
         if (string.IsNullOrEmpty(currentUserId)) return false;
 
         // 获取用户的角色ID列表
-        var userRoleIds = await access.UserInRoles
+        var userRoleIds = await koala.UserInRoles
             .Where(ur => ur.UserId == currentUserId)
             .Select(ur => ur.RoleId)
             .ToListAsync();
@@ -61,7 +61,7 @@ public class WarehouseService(
         if (!userRoleIds.Any()) return false;
 
         // 检查用户角色是否有该仓库的权限
-        return await access.WarehouseInRoles
+        return await koala.WarehouseInRoles
             .AnyAsync(wr => userRoleIds.Contains(wr.RoleId) && wr.WarehouseId == warehouseId);
     }
 
@@ -82,14 +82,14 @@ public class WarehouseService(
         if (string.IsNullOrEmpty(currentUserId)) return false;
 
         // 检查仓库是否存在权限分配
-        var hasPermissionAssignment = await access.WarehouseInRoles
+        var hasPermissionAssignment = await koala.WarehouseInRoles
             .AnyAsync(wr => wr.WarehouseId == warehouseId);
 
         // 如果仓库没有权限分配，只有管理员可以管理
         if (!hasPermissionAssignment) return false;
 
         // 获取用户的角色ID列表
-        var userRoleIds = await access.UserInRoles
+        var userRoleIds = await koala.UserInRoles
             .Where(ur => ur.UserId == currentUserId)
             .Select(ur => ur.RoleId)
             .ToListAsync();
@@ -98,7 +98,7 @@ public class WarehouseService(
         if (!userRoleIds.Any()) return false;
 
         // 检查用户角色是否有该仓库的写入或删除权限（管理权限）
-        return await access.WarehouseInRoles
+        return await koala.WarehouseInRoles
             .AnyAsync(wr => userRoleIds.Contains(wr.RoleId) &&
                             wr.WarehouseId == warehouseId &&
                             (wr.IsWrite || wr.IsDelete));
@@ -116,11 +116,11 @@ public class WarehouseService(
             throw new UnauthorizedAccessException("您没有权限管理此仓库");
         }
 
-        await access.Warehouses
+        await koala.Warehouses
             .Where(x => x.Id == warehouseId)
             .ExecuteUpdateAsync(x => x.SetProperty(y => y.Status, WarehouseStatus.Pending));
 
-        var warehouse = await access.Warehouses
+        var warehouse = await koala.Warehouses
             .AsNoTracking()
             .Where(x => x.Id == warehouseId)
             .FirstOrDefaultAsync();
@@ -141,7 +141,7 @@ public class WarehouseService(
             address += ".git";
         }
 
-        var query = await access.Warehouses
+        var query = await koala.Warehouses
             .AsNoTracking()
             .Where(x => x.Address.ToLower() == address)
             .FirstOrDefaultAsync();
@@ -167,7 +167,7 @@ public class WarehouseService(
     {
         owner = owner.Trim().ToLower();
         name = name.Trim().ToLower();
-        var warehouse = await access.Warehouses
+        var warehouse = await koala.Warehouses
             .AsNoTracking()
             .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner &&
                         (x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing))
@@ -179,7 +179,7 @@ public class WarehouseService(
             throw new NotFoundException($"仓库不存在，请检查仓库名称和组织名称:{owner} {name}");
         }
 
-        var commit = await access.DocumentCommitRecords.Where(x => x.WarehouseId == warehouse.Id)
+        var commit = await koala.DocumentCommitRecords.Where(x => x.WarehouseId == warehouse.Id)
             .ToListAsync();
 
         var value = new StringBuilder();
@@ -444,7 +444,7 @@ public class WarehouseService(
             }
         }
 
-        var value = await access.Warehouses.FirstOrDefaultAsync(x =>
+        var value = await koala.Warehouses.FirstOrDefaultAsync(x =>
             x.OrganizationName == organization && x.Name == repositoryName);
         // 判断这个仓库是否已经添加
         if (value?.Status is WarehouseStatus.Completed)
@@ -461,7 +461,7 @@ public class WarehouseService(
         }
 
         // 删除旧的仓库
-        var oldWarehouse = await access.Warehouses
+        var oldWarehouse = await koala.Warehouses
             .Where(x => x.OrganizationName == organization && x.Name == repositoryName)
             .ExecuteDeleteAsync();
 
@@ -481,9 +481,9 @@ public class WarehouseService(
             Id = Guid.NewGuid().ToString()
         };
 
-        await access.Warehouses.AddAsync(entity);
+        await koala.Warehouses.AddAsync(entity);
 
-        await access.SaveChangesAsync();
+        await koala.SaveChangesAsync();
 
         await context.Response.WriteAsJsonAsync(new
         {
@@ -515,7 +515,7 @@ public class WarehouseService(
 
             var repositoryName = names[^1].Replace(".git", "").ToLower();
 
-            var value = await access.Warehouses.FirstOrDefaultAsync(x =>
+            var value = await koala.Warehouses.FirstOrDefaultAsync(x =>
                 x.OrganizationName.ToLower() == organization && x.Name.ToLower() == repositoryName &&
                 x.Branch == input.Branch &&
                 x.Status == WarehouseStatus.Completed);
@@ -535,7 +535,7 @@ public class WarehouseService(
             }
             else if (!string.IsNullOrEmpty(input.Branch))
             {
-                var branch = await access.Warehouses
+                var branch = await koala.Warehouses
                     .AsNoTracking()
                     .Where(x => x.Branch == input.Branch && x.OrganizationName == organization &&
                                 x.Name == repositoryName)
@@ -548,7 +548,7 @@ public class WarehouseService(
             }
 
             // 删除旧的仓库
-            var oldWarehouse = await access.Warehouses
+            var oldWarehouse = await koala.Warehouses
                 .Where(x => x.OrganizationName == organization &&
                             x.Name == repositoryName && x.Branch == input.Branch)
                 .ExecuteDeleteAsync();
@@ -565,9 +565,9 @@ public class WarehouseService(
             entity.CreatedAt = DateTime.UtcNow;
             entity.OptimizedDirectoryStructure = string.Empty;
             entity.Id = Guid.NewGuid().ToString();
-            await access.Warehouses.AddAsync(entity);
+            await koala.Warehouses.AddAsync(entity);
 
-            await access.SaveChangesAsync();
+            await koala.SaveChangesAsync();
 
             await context.Response.WriteAsJsonAsync(new
             {
@@ -594,7 +594,7 @@ public class WarehouseService(
 
             var repositoryName = input.RepositoryName.Trim().ToLower();
 
-            var value = await access.Warehouses.FirstOrDefaultAsync(x =>
+            var value = await koala.Warehouses.FirstOrDefaultAsync(x =>
                 x.OrganizationName.ToLower() == input.Organization && x.Name.ToLower() == repositoryName &&
                 x.Branch == input.Branch &&
                 x.Status == WarehouseStatus.Completed);
@@ -614,7 +614,7 @@ public class WarehouseService(
             }
             else if (!string.IsNullOrEmpty(input.Branch))
             {
-                var branch = await access.Warehouses
+                var branch = await koala.Warehouses
                     .AsNoTracking()
                     .Where(x => x.Branch == input.Branch && x.OrganizationName == input.Organization &&
                                 x.Name == repositoryName)
@@ -627,7 +627,7 @@ public class WarehouseService(
             }
 
             // 删除旧的仓库
-            var oldWarehouse = await access.Warehouses
+            var oldWarehouse = await koala.Warehouses
                 .Where(x => x.OrganizationName == input.Organization &&
                             x.Name == repositoryName && x.Branch == input.Branch)
                 .ExecuteDeleteAsync();
@@ -644,9 +644,9 @@ public class WarehouseService(
             entity.CreatedAt = DateTime.UtcNow;
             entity.OptimizedDirectoryStructure = string.Empty;
             entity.Id = Guid.NewGuid().ToString();
-            await access.Warehouses.AddAsync(entity);
+            await koala.Warehouses.AddAsync(entity);
 
-            await access.SaveChangesAsync();
+            await koala.SaveChangesAsync();
 
             await context.Response.WriteAsJsonAsync(new
             {
@@ -673,7 +673,7 @@ public class WarehouseService(
         owner = owner.Trim().ToLower();
         name = name.Trim().ToLower();
 
-        var warehouse = await access.Warehouses
+        var warehouse = await koala.Warehouses
             .AsNoTracking()
             .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner &&
                         (string.IsNullOrEmpty(branch) || x.Branch == branch) &&
@@ -698,7 +698,7 @@ public class WarehouseService(
             return;
         }
 
-        var document = await access.Documents
+        var document = await koala.Documents
             .AsNoTracking()
             .Where(x => x.WarehouseId == warehouse.Id)
             .FirstOrDefaultAsync();
@@ -708,7 +708,7 @@ public class WarehouseService(
             throw new NotFoundException("没有找到文档, 可能在生成中或者已经出现错误");
         }
 
-        var overview = await access.DocumentOverviews.FirstOrDefaultAsync(x => x.DocumentId == document.Id);
+        var overview = await koala.DocumentOverviews.FirstOrDefaultAsync(x => x.DocumentId == document.Id);
 
         if (overview == null)
         {
@@ -734,14 +734,14 @@ public class WarehouseService(
         string name,
         string? branch = "")
     {
-        var warehouse = await access.Warehouses
+        var warehouse = await koala.Warehouses
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.OrganizationName == owner && r.Name == name &&
                                       (r.Status == WarehouseStatus.Completed ||
                                        r.Status == WarehouseStatus.Processing) &&
                                       (string.IsNullOrEmpty(branch) || r.Branch == branch));
 
-        var miniMap = await access.MiniMaps
+        var miniMap = await koala.MiniMaps
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.WarehouseId.ToLower() == warehouse.Id.ToLower());
 
@@ -805,7 +805,7 @@ public class WarehouseService(
     [EndpointSummary("获取仓库列表")]
     public async Task<PageDto<WarehouseDto>> GetWarehouseListAsync(int page, int pageSize, string keyword)
     {
-        var query = access.Warehouses
+        var query = koala.Warehouses
             .AsNoTracking()
             .Where(x => x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing);
 
@@ -825,7 +825,7 @@ public class WarehouseService(
         if (!isAdmin && !string.IsNullOrEmpty(currentUserId))
         {
             // 获取用户的角色ID列表
-            var userRoleIds = await access.UserInRoles
+            var userRoleIds = await koala.UserInRoles
                 .Where(ur => ur.UserId == currentUserId)
                 .Select(ur => ur.RoleId)
                 .ToListAsync();
@@ -833,8 +833,8 @@ public class WarehouseService(
             // 如果用户没有任何角色，只能看到公共仓库（没有权限分配的仓库）
             if (!userRoleIds.Any())
             {
-                var publicWarehouseIds = await access.Warehouses
-                    .Where(w => !access.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
+                var publicWarehouseIds = await koala.Warehouses
+                    .Where(w => !koala.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
                     .Select(w => w.Id)
                     .ToListAsync();
 
@@ -845,14 +845,14 @@ public class WarehouseService(
                 // 用户可以访问的仓库：
                 // 1. 通过角色权限可以访问的仓库
                 // 2. 没有任何权限分配的公共仓库
-                var accessibleWarehouseIds = await access.WarehouseInRoles
+                var accessibleWarehouseIds = await koala.WarehouseInRoles
                     .Where(wr => userRoleIds.Contains(wr.RoleId))
                     .Select(wr => wr.WarehouseId)
                     .Distinct()
                     .ToListAsync();
 
-                var publicWarehouseIds = await access.Warehouses
-                    .Where(w => !access.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
+                var publicWarehouseIds = await koala.Warehouses
+                    .Where(w => !koala.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
                     .Select(w => w.Id)
                     .ToListAsync();
 
@@ -863,8 +863,8 @@ public class WarehouseService(
         else if (string.IsNullOrEmpty(currentUserId))
         {
             // 未登录用户只能看到公共仓库
-            var publicWarehouseIds = await access.Warehouses
-                .Where(w => !access.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
+            var publicWarehouseIds = await koala.Warehouses
+                .Where(w => !koala.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
                 .Select(w => w.Id)
                 .ToListAsync();
 
@@ -954,7 +954,7 @@ public class WarehouseService(
             throw new UnauthorizedAccessException("您没有权限访问此仓库");
         }
 
-        var query = await access.Documents
+        var query = await koala.Documents
             .AsNoTracking()
             .Where(x => x.WarehouseId == warehouseId)
             .FirstOrDefaultAsync();
@@ -989,7 +989,7 @@ public class WarehouseService(
             return;
         }
 
-        var query = await access.Warehouses
+        var query = await koala.Warehouses
             .AsNoTracking()
             .Where(x => x.Id == warehouseId)
             .FirstOrDefaultAsync();
@@ -1002,12 +1002,12 @@ public class WarehouseService(
         var fileName = $"{query.Name}.zip";
 
         // 先获取当前仓库所有目录
-        var documents = await access.Documents
+        var documents = await koala.Documents
             .AsNoTracking()
             .Where(x => x.WarehouseId == warehouseId)
             .FirstOrDefaultAsync();
 
-        var documentCatalogs = await access.DocumentCatalogs
+        var documentCatalogs = await koala.DocumentCatalogs
             .AsNoTracking()
             .Where(x => x.WarehouseId == warehouseId && x.IsDeleted == false)
             .ToListAsync();
@@ -1015,7 +1015,7 @@ public class WarehouseService(
         var catalogsIds = documentCatalogs.Select(x => x.Id).ToList();
 
         // 获取所有文档条目
-        var fileItems = await access.DocumentFileItems
+        var fileItems = await koala.DocumentFileItems
             .AsNoTracking()
             .Where(x => catalogsIds.Contains(x.DocumentCatalogId))
             .ToListAsync();
@@ -1024,7 +1024,7 @@ public class WarehouseService(
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
         {
             // 添加仓库概述文件
-            var overview = await access.DocumentOverviews
+            var overview = await koala.DocumentOverviews
                 .FirstOrDefaultAsync(x => x.DocumentId == documents.Id);
 
             if (overview != null)
@@ -1087,5 +1087,49 @@ public class WarehouseService(
 
         // 将zip文件流写入响应
         await memoryStream.CopyToAsync(context.Response.Body);
+    }
+
+
+    /// <summary>
+    /// 获取指定组织下仓库的指定文件代码内容
+    /// </summary>
+    /// <returns></returns>
+    [EndpointSummary("获取指定组织下仓库的指定文件代码内容")]
+    public async Task<ResultDto<string>> GetFileContentLineAsync(string organizationName, string name, string filePath,
+        int startLine = 0, int endLine = 0)
+    {
+        if (string.IsNullOrEmpty(organizationName) || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(filePath))
+        {
+            throw new ArgumentException("Organization name, warehouse name and file path cannot be null or empty.");
+        }
+
+        // 查找仓库
+        var warehouse = await koala.Warehouses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.OrganizationName.ToLower() == organizationName.ToLower() &&
+                x.Name.ToLower() == name.ToLower());
+
+        if (warehouse == null)
+        {
+            throw new Exception("Warehouse not found");
+        }
+
+        // 查找文档
+        var document = await koala.Documents
+            .AsNoTracking()
+            .Where(x => x.WarehouseId == warehouse.Id)
+            .FirstOrDefaultAsync();
+
+        if (document == null)
+        {
+            throw new Exception("Document not found");
+        }
+
+        var fileFunction = new FileFunction(document.GitPath);
+
+        var value = await fileFunction.ReadItem(filePath, startLine, endLine);
+
+        return ResultDto<string>.Success(value);
     }
 }

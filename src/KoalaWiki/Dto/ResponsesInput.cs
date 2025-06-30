@@ -3,13 +3,13 @@
 public class ResponsesInput
 {
     public List<ResponsesMessageInput> Messages { get; set; } = new();
-    
+
     /// <summary>
     /// 组织名
     /// </summary>
     /// <returns></returns>
     public string OrganizationName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 仓库名称
     /// </summary>
@@ -23,26 +23,70 @@ public class ResponsesMessageInput
     /// </summary>
     public string Role { get; set; } = string.Empty;
 
+    public List<ResponsesMessageContentInput>? Content { get; set; }
+}
+
+/// <summary>
+/// 消息内容输入
+/// </summary>
+public class ResponsesMessageContentInput
+{
+    public string Type { get; set; } = ResponsesMessageContentType.Text;
+
     /// <summary>
     /// 文本内容
     /// </summary>
     public string Content { get; set; } = string.Empty;
 
     /// <summary>
-    /// Base64编码的图片内容
+    /// 图片内容
     /// </summary>
-    public List<Base64Content>? ImageContents { get; set; }
+    public List<ResponsesMessageContentBase64Input>? ImageContents { get; set; }
+
+    public string? ToolId { get; set; }
+
+    public string? TooResult { get; set; }
+
+    public string? TooArgs { get; set; }
 }
 
-public class Base64Content
+public static class ResponsesMessageContentType
 {
-    /// <summary>
-    /// Base64编码的内容
-    /// </summary>
-    public string Data { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// 内容类型，如 image/png, image/jpeg 等
-    /// </summary>
-    public string MimeType { get; set; } = string.Empty;
+    public const string Text = "text";
+
+    public const string Tool = "tool";
+
+    public const string Image = "image";
+
+    public const string Code = "code";
+
+    public const string Table = "table";
+
+    public const string Link = "link";
+
+    public const string File = "file";
+
+    public const string Audio = "audio";
+
+    public const string Video = "video";
+
+    public const string Reasoning = "reasoning";
+
+    // Text = 'text',
+    // Tool = 'tool',
+    // Image = 'image',
+    // Code = 'code',
+    // Table = 'table',
+    // Link = 'link',
+    // File = 'file',
+    // Audio = 'audio',
+    // Video = 'video',
+    // Reasoning = 'reasoning',
+}
+
+public interface ResponsesMessageContentBase64Input
+{
+    public string Data { get; set; }
+
+    public string MimeType { get; set; }
 }

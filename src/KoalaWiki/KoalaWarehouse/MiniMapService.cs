@@ -9,15 +9,14 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace KoalaWiki.KoalaWarehouse;
 
-public class MiniMapService
+/// <summary>
+/// 
+/// </summary>
+public static class MiniMapService
 {
     /// <summary>
     /// 生成知识图谱
     /// </summary>
-    /// <param name="gitRepository"></param>
-    /// <param name="catalogue"></param>
-    /// <param name="warehouse"></param>
-    /// <param name="classify"></param>
     /// <returns></returns>
     public static async Task<MiniMapResult> GenerateMiniMap(string catalogue,
         Warehouse warehouse, string path)

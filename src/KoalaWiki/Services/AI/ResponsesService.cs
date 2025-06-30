@@ -71,6 +71,17 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
             kernel.Plugins.AddFromObject(new RagFunction(warehouse!.Id));
         }
 
+        if (warehouse.Address.Contains("github.com"))
+        {
+            // kernel.Plugins.AddFromObject(new GithubFunction(warehouse.OrganizationName, warehouse.Name,
+            //     warehouse.Branch, warehouse.GitUserName, warehouse.GitPassword), "Github");
+        }
+        else if (warehouse.Address.Contains("gitee.com") && !string.IsNullOrWhiteSpace(GiteeOptions.Token))
+        {
+            kernel.Plugins.AddFromObject(new GiteeFunction(warehouse.OrganizationName, warehouse.Name,
+                warehouse.Branch), "Gitee");
+        }
+
         DocumentContext.DocumentStore = new DocumentStore();
 
 
@@ -90,36 +101,73 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
         {
             if (msg.Role.ToLower() == "user")
             {
-                // 处理用户消息
-                string content = msg.Content;
-
-                // 如果有图片内容，添加到消息中
-                if (msg.ImageContents != null && msg.ImageContents.Count > 0)
+                if (msg.Content?.Count == 1 && msg.Content.Any(x => x.Type == ResponsesMessageContentType.Text))
                 {
-                    // 添加多模态消息
-                    var contentItems = new ChatMessageContentItemCollection();
-                    foreach (var image in msg.ImageContents)
-                    {
-                        contentItems.Add(new BinaryContent($"data:{image.MimeType};base64,{image.Data}"));
-                    }
-
-                    contentItems.Add(new TextContent(content));
-
-                    history.AddUserMessage(contentItems);
+                    history.AddUserMessage(msg.Content.First().Content);
+                    continue;
                 }
-                else
+
+                var contents = new ChatMessageContentItemCollection();
+
+                foreach (var messageContentInput in msg.Content)
                 {
-                    // 纯文本消息
-                    history.AddUserMessage(content);
+                    if (messageContentInput.Type == ResponsesMessageContentType.Text)
+                    {
+                        contents.Add(new TextContent(messageContentInput.Content));
+                    }
+                    else if (messageContentInput.Type == ResponsesMessageContentType.Image)
+                    {
+                        // 图片内容
+                        var imageContent = new ImageContent(messageContentInput.Content);
+                        contents.Add(new BinaryContent(
+                            $"data:{imageContent.MimeType};base64,{imageContent.Data}"));
+                    }
+                    else
+                    {
+                    }
                 }
             }
             else if (msg.Role.ToLower() == "assistant")
             {
-                history.AddAssistantMessage(msg.Content);
+                // 判断，如果当前消息是最后一条，并且content=空则跳过
+                if (msg.Content == null ||
+                    msg.Content.Count > 0 && msg.Content.All(x => string.IsNullOrEmpty(x.Content)))
+                {
+                    continue;
+                }
+
+                if (msg.Content?.Count == 1 && msg.Content.Any(x => x.Type == ResponsesMessageContentType.Text))
+                {
+                    history.AddUserMessage(msg.Content.First().Content);
+                    continue;
+                }
+
+                var contents = new ChatMessageContentItemCollection();
+                foreach (var messageContentInput in msg.Content)
+                {
+                    if (messageContentInput.Type == ResponsesMessageContentType.Text)
+                    {
+                        contents.Add(new TextContent(messageContentInput.Content));
+                    }
+                    else if (messageContentInput.Type == ResponsesMessageContentType.Image)
+                    {
+                        // 图片内容
+                        var imageContent = new ImageContent(messageContentInput.Content);
+                        contents.Add(new BinaryContent(
+                            $"data:{imageContent.MimeType};base64,{imageContent.Data}"));
+                    }
+                    else
+                    {
+                    }
+                }
             }
             else if (msg.Role.ToLower() == "system")
             {
-                history.AddSystemMessage(msg.Content);
+                if (msg.Content?.Count == 1 && msg.Content.Any(x => x.Type == ResponsesMessageContentType.Text))
+                {
+                    history.AddUserMessage(msg.Content.First().Content);
+                    continue;
+                }
             }
         }
 
