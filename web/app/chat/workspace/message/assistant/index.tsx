@@ -1,8 +1,8 @@
 import { ChatItem } from "@lobehub/ui/chat";
-import { MessageItem } from "../../../../types/chat";
+import { GitIssueItem, MessageItem } from "../../../../types/chat";
 import { Button, message, Modal, Spin, Tag, Tooltip } from "antd";
 import { Collapse, Markdown } from "@lobehub/ui";
-import { Copy, MoreHorizontal, Trash2, FileText, Brain, Settings, ChevronDown, ChevronRight, Maximize2 } from "lucide-react";
+import { Copy, MoreHorizontal, Trash2, FileText, Brain, Settings, ChevronDown, ChevronRight, Maximize2, ExternalLink, Calendar, User } from "lucide-react";
 import { Flexbox } from "react-layout-kit";
 import { useState } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -24,7 +24,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
     const [expandedFiles, setExpandedFiles] = useState<{ [key: string]: boolean }>({});
     const [fileContents, setFileContents] = useState<{ [key: string]: string }>({});
     const [loadingFiles, setLoadingFiles] = useState<{ [key: string]: boolean }>({});
-    
+
     // 全屏模态框状态
     const [fullScreenFile, setFullScreenFile] = useState<{
         filePath: string;
@@ -149,7 +149,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
     const parseThinkingBlocks = (content: string) => {
         // 检查是否包含```thinking开头
         const hasThinkingStart = content.includes('```thinking');
-        
+
         if (!hasThinkingStart) {
             // 没有thinking块，返回正常文本内容
             return [{
@@ -168,7 +168,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
         // 先检查是否有完整的thinking块
         while ((match = thinkingRegex.exec(content)) !== null) {
             hasCompleteThinkingBlock = true;
-            
+
             // 添加thinking块之前的内容
             if (match.index > lastIndex) {
                 const beforeContent = content.slice(lastIndex, match.index).trim();
@@ -211,7 +211,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
         const thinkingContent = content.slice(thinkingStartIndex + '```thinking'.length).replace(/^\n/, '').trim();
 
         const result = [];
-        
+
         // 添加thinking之前的内容
         if (beforeThinking) {
             result.push({
@@ -239,6 +239,12 @@ export default function AssistantMessage({ messageItem, handleDelete,
         return (<Collapse
             defaultActiveKey={["thinking"]}
             size='small'
+            style={{
+                marginBottom: 5,
+                borderRadius: 8,
+            }}
+            bordered
+            
             items={[
                 {
                     key: "thinking",
@@ -249,7 +255,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                             gap: 8,
                             fontWeight: 500,
                         }}>
-                            <Brain size={16} />
+                            <Brain size={14} />
                             思考过程
                         </div>
                     ),
@@ -285,6 +291,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
+                                marginBottom: 5,
                                 gap: 8,
                             }}>
                                 {parsedArgs.items.map((item: any, index: number) => {
@@ -421,17 +428,39 @@ export default function AssistantMessage({ messageItem, handleDelete,
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: 6,
-                                padding: '8px 0',
+                                marginBottom: 5,
+                                gap: 8,
                             }}>
                                 {parsedArgs.filePath.map((path: string, index: number) => (
-                                    <Tag key={index} color="blue" style={{
-                                        fontSize: '12px',
-                                        padding: '4px 8px',
-                                        borderRadius: 4,
+                                    <div key={index} style={{
+                                        border: '1px solid #e8e8e8',
+                                        borderRadius: 8,
+                                        overflow: 'hidden',
                                     }}>
-                                        {path}
-                                    </Tag>
+                                        <div style={{
+                                            padding: '8px 12px',
+                                            backgroundColor: '#fafafa',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            fontSize: '13px',
+                                        }}>
+                                            <FileText size={14} color="#1890ff" />
+                                            <span style={{
+                                                color: '#495057',
+                                                fontWeight: 500,
+                                                flex: 1,
+                                            }}>
+                                                {path}
+                                            </span>
+                                            <span style={{
+                                                color: '#8c8c8c',
+                                                fontSize: '12px',
+                                            }}>
+                                                文件信息
+                                            </span>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         );
@@ -454,6 +483,168 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                 {toolCall.arguments}
                             </pre>
                         </div>
+                    );
+                } else if (type === 'githubSearchIssues' || type === 'giteeSearchIssues') {
+                    // 处理GitHub或Gitee Issues搜索结果
+                    let parsedArgs: any = null;
+
+                    // 首先尝试从 toolResult 中解析数据
+                    if (toolCall.toolResult) {
+                        try {
+                            const resultData = JSON.parse(toolCall.toolResult);
+                            if (resultData.GitIssues) {
+                                parsedArgs = { GitIssues: resultData.GitIssues };
+                            }
+                        } catch (error) {
+                            console.error('解析 toolResult 失败:', error);
+                        }
+                    }
+
+                    // 如果 toolResult 中没有数据，则从 arguments 中解析
+                    if (!parsedArgs) {
+                        try {
+                            parsedArgs = JSON.parse(toolCall.arguments);
+                        } catch (error) {
+                            console.error('解析 arguments 失败:', error);
+                        }
+                    }
+
+                    if (parsedArgs && parsedArgs.GitIssues && Array.isArray(parsedArgs.GitIssues)) {
+                        return (
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 12,
+                                maxHeight: '600px',
+                                overflowY: 'auto',
+                            }}>
+                                {parsedArgs.GitIssues.map((issue: GitIssueItem, index: number) => (
+                                    <div key={index} style={{
+                                        borderRadius: 8,
+                                        padding: '12px',
+                                        backgroundColor: '#fafafa',
+                                        transition: 'all 0.2s ease',
+                                    }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            justifyContent: 'space-between',
+                                            marginBottom: 8,
+                                        }}>
+                                            <div style={{ flex: 1 }}>
+                                                <h4
+                                                    onClick={() => window.open(issue.urlHtml, '_blank')}
+                                                    style={{
+                                                        margin: 0,
+                                                        fontSize: '14px',
+                                                        fontWeight: 600,
+                                                        color: '#1890ff',
+                                                        cursor: 'pointer',
+                                                        lineHeight: '1.4',
+                                                        marginBottom: 4,
+                                                    }}>
+                                                    {issue.title}
+                                                </h4>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 12,
+                                                    fontSize: '12px',
+                                                    color: '#8c8c8c',
+                                                    marginBottom: 6,
+                                                }}>
+                                                    {issue.number && (
+                                                        <span style={{
+                                                            fontWeight: 500,
+                                                            color: '#666',
+                                                        }}>
+                                                            #{issue.number}
+                                                        </span>
+                                                    )}
+                                                    {issue.state && (
+                                                        <Tag
+                                                            color={issue.state === 'open' ? 'green' : 'default'}
+                                                            style={{
+                                                                fontSize: '11px',
+                                                                padding: '2px 6px',
+                                                                borderRadius: 10,
+                                                                lineHeight: '1.2',
+                                                            }}
+                                                        >
+                                                            {issue.state}
+                                                        </Tag>
+                                                    )}
+                                                    {issue.author && (
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                        }}>
+                                                            <User size={12} />
+                                                            <span>{issue.author}</span>
+                                                        </div>
+                                                    )}
+                                                    {issue.createdAt && (
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                        }}>
+                                                            <Calendar size={12} />
+                                                            <span>
+                                                                {new Date(issue.createdAt).toLocaleDateString('zh-CN')}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {issue.content && (
+                                            <div style={{
+                                                fontSize: '12px',
+                                                color: '#595959',
+                                                lineHeight: '1.5',
+                                                backgroundColor: '#ffffff',
+                                                padding: '8px',
+                                                borderRadius: 4,
+                                                border: '1px solid #f0f0f0',
+                                                maxHeight: '120px',
+                                                overflowY: 'auto',
+                                            }}>
+                                                {issue.content.length > 200
+                                                    ? `${issue.content.substring(0, 200)}...`
+                                                    : issue.content
+                                                }
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                {parsedArgs.GitIssues.length === 0 && (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '20px',
+                                        color: '#8c8c8c',
+                                        fontSize: '12px',
+                                    }}>
+                                        没有找到相关的Issues
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+                    // 如果不是标准格式，回退到原始显示
+                    return (
+                        <pre style={{
+                            backgroundColor: '#f8f9fa',
+                            padding: '8px',
+                            borderRadius: 6,
+                            fontSize: '8px',
+                            color: '#495057',
+                            overflow: 'auto',
+                            border: '1px solid #e9ecef',
+                        }}>
+                            {toolCall.arguments}
+                        </pre>
                     );
                 } else {
                     return (
@@ -490,9 +681,15 @@ export default function AssistantMessage({ messageItem, handleDelete,
                 return { label: '读取文件内容', color: '#52c41a' };
             } else if (functionName === 'FileFunction-FileInfo') {
                 return { label: '获取文件信息', color: '#1890ff' };
-            } 
+            }
             else if (functionName === 'RagFunction-RagSearch') {
                 return { label: 'RAG搜索', color: '#722ed1' };
+            }
+            else if (functionName === 'Github-SearchIssues') {
+                return { label: 'GitHub Issues搜索', color: '#24292e' };
+            }
+            else if (functionName === 'Gitee-SearchIssues') {
+                return { label: 'Gitee Issues搜索', color: '#c71d23' };
             }
             else {
                 return { label: functionName, color: '#722ed1' };
@@ -500,6 +697,27 @@ export default function AssistantMessage({ messageItem, handleDelete,
         };
 
         const toolInfo = getToolInfo(toolCall.functionName);
+
+        let functionType;
+
+        if (toolCall.functionName === 'FileFunction-FileFromLine') {
+            functionType = 'fileFromLine';
+            return renderArguments(functionType);
+        } else if (toolCall.functionName === 'FileFunction-FileInfo') {
+            functionType = 'fileInfo';
+            return renderArguments(functionType);
+        } else if (toolCall.functionName === 'RagFunction-RagSearch') {
+            functionType = 'ragSearch';
+        } else if (toolCall.functionName === 'Github-SearchIssues') {
+            functionType = 'githubSearchIssues';
+            return renderArguments(functionType);
+        } else if (toolCall.functionName === 'Gitee-SearchIssues') {
+            functionType = 'giteeSearchIssues';
+            return renderArguments(functionType);
+        } else {
+            functionType = 'other';
+        }
+
 
         return (
             <div style={{
@@ -526,11 +744,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                 overflow: 'auto',
                                 maxHeight: '180px'
                             }}>
-                                {renderArguments(
-                                    toolCall.functionName === 'FileFunction-FileFromLine' ? 'fileFromLine' :
-                                        toolCall.functionName === 'FileFunction-FileInfo' ? 'fileInfo' :
-                                        toolCall.functionName === 'RagFunction-RagSearch' ? 'ragSearch' : 'other'
-                                )}
+                                {renderArguments(functionType)}
                             </Flexbox>,
                         }
                     ]}
@@ -564,7 +778,6 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                     <div style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        gap: 8,
                                                         fontWeight: 500,
                                                     }}>
                                                         推理内容
@@ -599,6 +812,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                         id: contentItem.toolId,
                                         functionName: contentItem.toolName || 'Unknown',
                                         arguments: contentItem.toolArgs || '',
+                                        toolResult: contentItem.toolResult || '',
                                     })}
                                 </div>
                             );
@@ -670,6 +884,157 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                             onClick={() => window.open(`data:${image.mimeType};base64,${image.data}`, '_blank')}
                                         />
                                     ))}
+                                </div>
+                            ) : null;
+
+                        case 'git_issues':
+                            return contentItem.gitIssues && contentItem.gitIssues.length > 0 ? (
+                                <div key={`git-issues-${index}`} style={{
+                                    backgroundColor: '#f6ffed',
+                                    borderRadius: 8,
+                                    overflow: 'hidden',
+                                    marginBottom: 8,
+                                }}>
+                                    <Collapse
+                                        defaultActiveKey={["git-issues"]}
+                                        size="small"
+                                        items={[
+                                            {
+                                                key: "git-issues",
+                                                label: (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 8,
+                                                        fontWeight: 500,
+                                                        color: '#52c41a',
+                                                    }}>
+                                                        <ExternalLink size={16} />
+                                                        Issues 搜索结果 ({contentItem.gitIssues.length} 条)
+                                                    </div>
+                                                ),
+                                                children: (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: 12,
+                                                        maxHeight: '600px',
+                                                        overflowY: 'auto',
+                                                        padding: '0 8px 8px',
+                                                    }}>
+                                                        {contentItem.gitIssues.map((issue: any, issueIndex: number) => (
+                                                            <div key={issueIndex} style={{
+                                                                borderRadius: 8,
+                                                                padding: '12px',
+                                                                transition: 'all 0.2s ease',
+                                                            }}>
+                                                                <div style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'flex-start',
+                                                                    justifyContent: 'space-between',
+                                                                    marginBottom: 8,
+                                                                }}>
+                                                                    <div style={{ flex: 1 }}>
+                                                                        <h4 onClick={() => window.open(issue.urlHtml, '_blank')} style={{
+                                                                            margin: 0,
+                                                                            fontSize: '14px',
+                                                                            fontWeight: 600,
+                                                                            color: '#1890ff',
+                                                                            cursor: 'pointer',
+                                                                            lineHeight: '1.4',
+                                                                            marginBottom: 4,
+                                                                        }}>
+                                                                            {issue.title}
+                                                                        </h4>
+                                                                        <div style={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 12,
+                                                                            fontSize: '12px',
+                                                                            color: '#8c8c8c',
+                                                                            marginBottom: 6,
+                                                                        }}>
+                                                                            {issue.number && (
+                                                                                <span style={{
+                                                                                    fontWeight: 500,
+                                                                                    color: '#666',
+                                                                                }}>
+                                                                                    #{issue.number}
+                                                                                </span>
+                                                                            )}
+                                                                            {issue.state && (
+                                                                                <Tag
+                                                                                    color={issue.state === 'open' ? 'green' : 'default'}
+                                                                                    style={{
+                                                                                        fontSize: '11px',
+                                                                                        padding: '2px 6px',
+                                                                                        borderRadius: 10,
+                                                                                        lineHeight: '1.2',
+                                                                                    }}
+                                                                                >
+                                                                                    {issue.state}
+                                                                                </Tag>
+                                                                            )}
+                                                                            {issue.author && (
+                                                                                <div style={{
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: 4,
+                                                                                }}>
+                                                                                    <User size={12} />
+                                                                                    <span>{issue.author}</span>
+                                                                                </div>
+                                                                            )}
+                                                                            {issue.createdAt && (
+                                                                                <div style={{
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: 4,
+                                                                                }}>
+                                                                                    <Calendar size={12} />
+                                                                                    <span>
+                                                                                        {new Date(issue.createdAt).toLocaleDateString('zh-CN')}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                {issue.content && (
+                                                                    <div style={{
+                                                                        fontSize: '12px',
+                                                                        color: '#595959',
+                                                                        lineHeight: '1.5',
+                                                                        backgroundColor: '#ffffff',
+                                                                        padding: '8px',
+                                                                        borderRadius: 4,
+                                                                        border: '1px solid #f0f0f0',
+                                                                        maxHeight: '120px',
+                                                                        overflowY: 'auto',
+                                                                    }}>
+                                                                        {issue.content.length > 200
+                                                                            ? `${issue.content.substring(0, 200)}...`
+                                                                            : issue.content
+                                                                        }
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                        {contentItem.gitIssues.length === 0 && (
+                                                            <div style={{
+                                                                textAlign: 'center',
+                                                                padding: '20px',
+                                                                color: '#8c8c8c',
+                                                                fontSize: '12px',
+                                                            }}>
+                                                                没有找到相关的Issues
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ),
+                                            }
+                                        ]}
+                                    />
                                 </div>
                             ) : null;
 
@@ -789,7 +1154,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                     marginBottom: 16,
                 }}
             />
-            
+
             <Modal
                 zIndex={1002}
                 title={

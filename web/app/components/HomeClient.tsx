@@ -2,11 +2,13 @@
 import { useState, useEffect } from 'react';
 import {
   Typography, Layout, Space, Empty, Row, Col, Pagination, message, ConfigProvider, Divider, Avatar,
+  Tag,
+  Button,
+  Input,
 } from 'antd';
 import {
   PlusOutlined,
   GithubOutlined,
-  RocketOutlined,
   StarOutlined,
 } from '@ant-design/icons';
 import RepositoryForm from './RepositoryForm';
@@ -22,10 +24,10 @@ import { createRoot } from 'react-dom/client';
 import { homepage } from '../const/urlconst';
 import { useTranslation } from '../i18n/client';
 import { useSearchParams } from 'next/navigation';
-import { SearchBar, Button, Tag } from '@lobehub/ui';
 
 const { Content, Footer } = Layout;
 const { Title, Paragraph, Text } = Typography;
+const { Search } = Input;
 
 // 页脚链接配置
 const footerLinks = {
@@ -103,7 +105,6 @@ export default function HomeClient({
   const [searchValue, setSearchValue] = useState<string>(initialSearchValue);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  const [isMobile, setIsMobile] = useState(false);
 
   const searchParams = useSearchParams();
   const { t, i18n } = useTranslation();
@@ -119,17 +120,6 @@ export default function HomeClient({
       i18n.changeLanguage(lang);
     }
   }, [searchParams, i18n]);
-
-  // 检测窗口大小变化
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleAddRepository = async (values: RepositoryFormValues) => {
     try {
@@ -494,7 +484,7 @@ export default function HomeClient({
                 <div className="section-actions" style={{ width: '100%', justifyContent: 'center' }}>
                   <div className="search-container">
                     <div className="hero-actions">
-                      <SearchBar
+                      <Search
                         placeholder={t('home.repo_list.search_placeholder')}
                         allowClear
                         value={searchValue}
@@ -733,7 +723,7 @@ export default function HomeClient({
                   </Space>
                 </Col>
 
-                <Col xs={24} sm={12} style={{ textAlign: isMobile ? 'left' : 'right' }}>
+                <Col xs={24} sm={12} style={{ textAlign: 'right' }}>
                   <Space split={<Divider type="vertical" />} wrap>
                     <a href="/privacy" style={{ color: '#64748b', fontSize: 14 }}>
                       {t('footer.privacy')}

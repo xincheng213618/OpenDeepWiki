@@ -1,17 +1,14 @@
 'use client';
 
-import {  Dropdown, Typography } from 'antd';
+import {  Button, Dropdown, Typography } from 'antd';
 import { GlobalOutlined } from '@ant-design/icons';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useTranslation } from '../i18n/client';
-import { Button } from '@lobehub/ui';
 
 const LanguageSwitcher = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { t } = useTranslation();
-
   const getCurrentLocale = () => {
     const locale = searchParams.get('locale');
     return locale || 'zh-CN';

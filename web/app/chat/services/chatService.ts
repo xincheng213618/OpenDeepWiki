@@ -22,8 +22,6 @@ export class ChatService {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    console.log('🚀 开始发送消息:', url);
-
     const response = await fetch(url, {
       headers,
       method: "POST",

@@ -41,7 +41,22 @@ public class GiteeFunction(
         var sb = new StringBuilder();
         foreach (var issue in issues)
         {
-            sb.AppendLine($"[{issue.title}]({issue.html_url}) # {issue.number}\n");
+            sb.AppendLine($"[{issue.title}]({issue.html_url}) # {issue.number} - {issue.state}");
+        }
+
+        if (DocumentContext.DocumentStore != null)
+        {
+            DocumentContext.DocumentStore.GitIssus.AddRange(issues.Select(x => new GitIssusItem()
+            {
+                Author = x.user.name,
+                Title = x.title,
+                Url = x.url,
+                Content = x.body,
+                CreatedAt = DateTime.TryParse(x.created_at, out var createdAt) ? createdAt : null,
+                UrlHtml = x.html_url,
+                State = x.state,
+                Number = x.number
+            }));
         }
 
         return sb.ToString();

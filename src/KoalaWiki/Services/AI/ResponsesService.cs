@@ -73,8 +73,8 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
 
         if (warehouse.Address.Contains("github.com"))
         {
-            // kernel.Plugins.AddFromObject(new GithubFunction(warehouse.OrganizationName, warehouse.Name,
-            //     warehouse.Branch, warehouse.GitUserName, warehouse.GitPassword), "Github");
+            kernel.Plugins.AddFromObject(new GithubFunction(warehouse.OrganizationName, warehouse.Name,
+                warehouse.Branch), "Github");
         }
         else if (warehouse.Address.Contains("gitee.com") && !string.IsNullOrWhiteSpace(GiteeOptions.Token))
         {
@@ -93,7 +93,9 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
             new KernelArguments()
             {
                 ["catalogue"] = warehouse.OptimizedDirectoryStructure,
-                ["repository"] = warehouse.Address
+                ["repository"] = warehouse.Address.Replace(".git", ""),
+                ["repository_name"] = warehouse.Name,
+                ["branch"] = warehouse.Branch
             }, OpenAIOptions.DeepResearchModel));
 
         // 添加消息历史记录
@@ -192,6 +194,16 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
         {
             // 发送数据
             if (chatItem.InnerContent is not StreamingChatCompletionUpdate message) continue;
+
+            if (DocumentContext.DocumentStore != null && DocumentContext.DocumentStore.GitIssus.Count > 0)
+            {
+                await context.Response.WriteAsync(
+                    $"data: {{\"type\": \"git_issues\", \"content\": {JsonSerializer.Serialize(DocumentContext.DocumentStore.GitIssus, JsonSerializerOptions.Web)}}}\n\n");
+
+                await context.Response.Body.FlushAsync();
+
+                DocumentContext.DocumentStore.GitIssus.Clear();
+            }
 
 
             var jsonContent = JsonNode.Parse(ModelReaderWriter.Write(chatItem.InnerContent!));

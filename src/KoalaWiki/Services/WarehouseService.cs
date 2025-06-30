@@ -925,11 +925,10 @@ public class WarehouseService(
                 repository.Stars = info.Stars;
                 repository.Forks = info.Forks;
                 repository.AvatarUrl = info.AvatarUrl;
-                if (string.IsNullOrEmpty(repository.Description))
+                if (!string.IsNullOrEmpty(info.Description))
                 {
                     repository.Description = info.Description;
                 }
-
                 repository.OwnerUrl = info.OwnerUrl;
                 repository.Language = info.Language;
                 repository.License = info.License;

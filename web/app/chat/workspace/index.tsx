@@ -8,7 +8,7 @@ import Message from "./message";
 import { chatService } from "../services/chatService";
 import { chatDB, ChatMessage, Conversation } from "../utils/indexedDB";
 import { Modal, Button } from "antd";
-import { MessageContentType, MessageItem, MessageContentReasoningItem, MessageContentTextItem, MessageContentToolItem } from "../../types/chat";
+import { MessageContentType, MessageItem, MessageContentReasoningItem, MessageContentTextItem, MessageContentToolItem, MessageContentGitIssuesItem } from "../../types/chat";
 
 interface WorkspaceProps {
     organizationName: string;
@@ -19,6 +19,7 @@ interface WorkspaceProps {
 export default function Workspace({ organizationName, name }: WorkspaceProps) {
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [conversationId, setConversationId] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const abortControllerRef = useRef<AbortController>(
         new AbortController()
     );
@@ -96,215 +97,255 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
     }
 
     const handleSendMessage = async (message: string) => {
-
-        const userMessage = {
-            id: uuidv4(),
-            content: [
-                {
-                    type:MessageContentType.Text,
-                    content:message
-                }
-            ],
-            role: "user",
-            createdAt: new Date(),
-            updatedAt: new Date(),
+        if (isLoading) {
+            return;
         }
 
-        messages.push(userMessage);
-        const aiMessage: MessageItem = {
-            id: uuidv4(),
-            content: [
-                {
-                    type:MessageContentType.Text,
-                    content:''
-                }
-            ],
-            role: "assistant",
-            createdAt: new Date(Date.now() + 1000),  // 时间+1秒
-            updatedAt: new Date(Date.now() + 1000),  // 时间+1秒
-        }
+        setIsLoading(true);
 
-        messages.push(aiMessage);
+        try {
 
-        setMessages([...messages]);
-
-        // 保存用户消息到IndexedDB
-        if (conversationId) {
-            try {
-                const userChatMessage: ChatMessage = {
-                    id: userMessage.id,
-                    type: 'message_content',
-                    content: userMessage.content as any,
-                    role: 'user',
-                    timestamp: userMessage.createdAt.getTime(),
-                    conversationId: conversationId,
-                };
-                await chatDB.saveMessage(userChatMessage);
-
-                // 更新会话的最后消息
-                await chatDB.updateConversation(conversationId, {
-                    // 提取第一条text内容
-                    lastMessage: (userMessage.content as any[]).find(item => item.type === MessageContentType.Text)?.content || '',
-                    updatedAt: Date.now(),
-                });
-            } catch (error) {
-                console.error('保存用户消息失败:', error);
-            }
-        }
-
-        const requestData = {
-            messages: messages.map(x => {
-                return {
-                    role: x.role as "user" | "assistant" | "system",
-                    content: x.content,
-                }
-            }),
-            organizationName: organizationName,
-            name: name,
-            abortController: abortControllerRef.current,
-        }
-
-        let currentToolCalls: any[] = [];
-        let currentContentType: MessageContentType | null = null;
-        let isFirstContent = true;
-
-        for await (const event of chatService.sendMessage(requestData)) {
-            if (abortControllerRef.current?.signal.aborted) {
-                break;
+            const userMessage = {
+                id: uuidv4(),
+                content: [
+                    {
+                        type: MessageContentType.Text,
+                        content: message
+                    }
+                ],
+                role: "user",
+                createdAt: new Date(),
+                updatedAt: new Date(),
             }
 
-            switch (event.type) {
-                case 'reasoning_content':
-                    // 推理内容流式更新
-                    if (currentContentType !== MessageContentType.Reasoning) {
-                        // 如果当前类型不是推理类型，新增一个推理内容项
-                        const reasoningItem: MessageContentReasoningItem = {
-                            type: MessageContentType.Reasoning,
-                            content: ''
-                        };
-                        (aiMessage.content as any[]).push(reasoningItem);
-                        currentContentType = MessageContentType.Reasoning;
+            messages.push(userMessage);
+            const aiMessage: MessageItem = {
+                id: uuidv4(),
+                content: [
+                    {
+                        type: MessageContentType.Text,
+                        content: ''
                     }
-                    
-                    // 更新最后一个推理内容项
-                    const allContent = aiMessage.content as any[];
-                    const lastReasoningItem = allContent.filter(item => item.type === MessageContentType.Reasoning).pop();
-                    if (lastReasoningItem) {
-                        lastReasoningItem.content += event.content || '';
-                    }
+                ],
+                role: "assistant",
+                createdAt: new Date(Date.now() + 1000),  // 时间+1秒
+                updatedAt: new Date(Date.now() + 1000),  // 时间+1秒
+            }
 
-                    setMessages([...messages]);
+            messages.push(aiMessage);
+
+            setMessages([...messages]);
+
+            // 保存用户消息到IndexedDB
+            if (conversationId) {
+                try {
+                    const userChatMessage: ChatMessage = {
+                        id: userMessage.id,
+                        type: 'message_content',
+                        content: userMessage.content as any,
+                        role: 'user',
+                        timestamp: userMessage.createdAt.getTime(),
+                        conversationId: conversationId,
+                    };
+                    await chatDB.saveMessage(userChatMessage);
+
+                    // 更新会话的最后消息
+                    await chatDB.updateConversation(conversationId, {
+                        // 提取第一条text内容
+                        lastMessage: (userMessage.content as any[]).find(item => item.type === MessageContentType.Text)?.content || '',
+                        updatedAt: Date.now(),
+                    });
+                } catch (error) {
+                    console.error('保存用户消息失败:', error);
+                }
+            }
+
+            const requestData = {
+                messages: messages.map(x => {
+                    return {
+                        role: x.role as "user" | "assistant" | "system",
+                        content: x.content,
+                    }
+                }),
+                organizationName: organizationName,
+                name: name,
+                abortController: abortControllerRef.current,
+            }
+
+            let currentToolCalls: any[] = [];
+            let currentContentType: MessageContentType | null = null;
+            let isFirstContent = true;
+
+            for await (const event of chatService.sendMessage(requestData)) {
+                if (abortControllerRef.current?.signal.aborted) {
                     break;
+                }
 
-                case 'tool_call':
-                    // 工具调用
-                    if (event.tool_call_id && event.function_name) {
-                        // 新的工具调用开始，添加到content数组
-                        if (currentContentType !== MessageContentType.Tool) {
-                            currentContentType = MessageContentType.Tool;
-                        }
-                        
-                        const toolItem: MessageContentToolItem = {
-                            type: MessageContentType.Tool,
-                            toolId: event.tool_call_id,
-                            toolResult: '',
-                            toolArgs: event.function_arguments || '',
-                            toolName: event.function_name || ''
-                        };
-                        (aiMessage.content as any[]).push(toolItem);
-                        
-                        currentToolCalls.push({
-                            id: event.tool_call_id,
-                            functionName: event.function_name,
-                            arguments: event.function_arguments || '',
-                        });
-                    } else if (currentToolCalls.length > 0) {
-                        // 更新最后一个工具调用的参数
-                        const lastToolCall = currentToolCalls[currentToolCalls.length - 1];
-                        lastToolCall.arguments += event.function_arguments || '';
-                        
-                        // 同时更新content数组中的工具项
-                        const allContent = aiMessage.content as any[];
-                        const lastToolItem = allContent.filter(item => item.type === MessageContentType.Tool).pop();
-                        if (lastToolItem) {
-                            lastToolItem.toolArgs += event.function_arguments || '';
-                        }
-                    }
-
-                    setMessages([...messages]);
-                    break;
-
-                case 'message_content':
-                    // 消息内容流式更新
-                    if (isFirstContent) {
-                        // 第一次内容，更新默认的第一个text内容项
-                        const allContent = aiMessage.content as any[];
-                        const firstTextItem = allContent.find(item => item.type === MessageContentType.Text);
-                        if (firstTextItem) {
-                            firstTextItem.content += event.content || '';
-                        }
-                        currentContentType = MessageContentType.Text;
-                        isFirstContent = false;
-                    } else {
-                        // 后续内容，检查是否需要新增内容项
-                        if (currentContentType !== MessageContentType.Text) {
-                            // 当前类型不是text，新增一个text内容项
-                            const textItem: MessageContentTextItem = {
-                                type: MessageContentType.Text,
+                switch (event.type) {
+                    case 'reasoning_content':
+                        // 推理内容流式更新
+                        if (currentContentType !== MessageContentType.Reasoning) {
+                            // 如果当前类型不是推理类型，新增一个推理内容项
+                            const reasoningItem: MessageContentReasoningItem = {
+                                type: MessageContentType.Reasoning,
                                 content: ''
                             };
-                            (aiMessage.content as any[]).push(textItem);
-                            currentContentType = MessageContentType.Text;
+                            (aiMessage.content as any[]).push(reasoningItem);
+                            currentContentType = MessageContentType.Reasoning;
                         }
-                        
-                        // 更新最后一个text内容项
+
+                        // 更新最后一个推理内容项
                         const allContent = aiMessage.content as any[];
-                        const lastTextItem = allContent.filter(item => item.type === MessageContentType.Text).pop();
-                        if (lastTextItem) {
-                            lastTextItem.content += event.content || '';
+                        const lastReasoningItem = allContent.filter(item => item.type === MessageContentType.Reasoning).pop();
+                        if (lastReasoningItem) {
+                            lastReasoningItem.content += event.content || '';
                         }
-                    }
 
-                    setMessages([...messages]);
-                    break;
+                        setMessages([...messages]);
+                        break;
 
-                case 'message_start':
-                    break;
-
-                case 'done':
-                    setMessages([...messages]);
-
-                    // 保存AI消息到IndexedDB
-                    if (conversationId) {
-                        try {
-                            const aiChatMessage: ChatMessage = {
-                                id: aiMessage.id,
-                                type: 'message_content',
-                                content: aiMessage.content as any,
-                                role: 'assistant',
-                                timestamp: aiMessage.createdAt.getTime(),
-                                conversationId: conversationId,
-                                metadata: {}
-                            };
-                            await chatDB.saveMessage(aiChatMessage);
-
-                            // 更新会话的最后消息
+                    case 'git_issues':
+                        // Git Issues 搜索结果
+                        if (event.content && event.content.length > 0) {
+                            // 检查上一个内容项是否是相关的工具调用
                             const allContent = aiMessage.content as any[];
-                            const lastMessageContent = allContent
-                                .find(item => item.type === MessageContentType.Text);
-                            const lastMessage = lastMessageContent?.content || '';
-                            
-                            await chatDB.updateConversation(conversationId, {
-                                lastMessage: lastMessage.substring(0, 100) + (lastMessage.length > 100 ? '...' : ''),
-                                updatedAt: Date.now(),
-                            });
-                        } catch (error) {
-                            console.error('保存AI消息失败:', error);
-                        }
-                    }
+                            const lastToolItem = allContent
+                                .filter(item => item.type === MessageContentType.Tool)
+                                .pop();
 
-                    break;
+                            if (lastToolItem &&
+                                (lastToolItem.toolName === 'Github-SearchIssues' ||
+                                    lastToolItem.toolName === 'Gitee-SearchIssues')) {
+                                // 将Issues数据存储到工具调用的结果中
+                                lastToolItem.toolResult = JSON.stringify({
+                                    GitIssues: event.content
+                                });
+                            } else {
+                                // 如果不是相关工具调用，则创建独立的GitIssues内容项
+                                const gitIssuesItem: MessageContentGitIssuesItem = {
+                                    type: MessageContentType.GitIssues,
+                                    gitIssues: JSON.parse(event.content)
+                                };
+                                (aiMessage.content as any[]).push(gitIssuesItem);
+                            }
+
+                            currentContentType = MessageContentType.GitIssues;
+                            setMessages([...messages]);
+                        }
+                        break;
+
+                    case 'tool_call':
+                        // 工具调用
+                        if (event.tool_call_id && event.function_name) {
+                            // 新的工具调用开始，添加到content数组
+                            if (currentContentType !== MessageContentType.Tool) {
+                                currentContentType = MessageContentType.Tool;
+                            }
+
+                            const toolItem: MessageContentToolItem = {
+                                type: MessageContentType.Tool,
+                                toolId: event.tool_call_id,
+                                toolResult: '',
+                                toolArgs: event.function_arguments || '',
+                                toolName: event.function_name || ''
+                            };
+                            (aiMessage.content as any[]).push(toolItem);
+
+                            currentToolCalls.push({
+                                id: event.tool_call_id,
+                                functionName: event.function_name,
+                                arguments: event.function_arguments || '',
+                            });
+                        } else if (currentToolCalls.length > 0) {
+                            // 更新最后一个工具调用的参数
+                            const lastToolCall = currentToolCalls[currentToolCalls.length - 1];
+                            lastToolCall.arguments += event.function_arguments || '';
+
+                            // 同时更新content数组中的工具项
+                            const allContent = aiMessage.content as any[];
+                            const lastToolItem = allContent.filter(item => item.type === MessageContentType.Tool).pop();
+                            if (lastToolItem) {
+                                lastToolItem.toolArgs += event.function_arguments || '';
+                            }
+                        }
+
+                        setMessages([...messages]);
+                        break;
+
+                    case 'message_content':
+                        // 消息内容流式更新
+                        if (isFirstContent) {
+                            // 第一次内容，更新默认的第一个text内容项
+                            const allContent = aiMessage.content as any[];
+                            const firstTextItem = allContent.find(item => item.type === MessageContentType.Text);
+                            if (firstTextItem) {
+                                firstTextItem.content += event.content || '';
+                            }
+                            currentContentType = MessageContentType.Text;
+                            isFirstContent = false;
+                        } else {
+                            // 后续内容，检查是否需要新增内容项
+                            if (currentContentType !== MessageContentType.Text) {
+                                // 当前类型不是text，新增一个text内容项
+                                const textItem: MessageContentTextItem = {
+                                    type: MessageContentType.Text,
+                                    content: ''
+                                };
+                                (aiMessage.content as any[]).push(textItem);
+                                currentContentType = MessageContentType.Text;
+                            }
+
+                            // 更新最后一个text内容项
+                            const allContent = aiMessage.content as any[];
+                            const lastTextItem = allContent.filter(item => item.type === MessageContentType.Text).pop();
+                            if (lastTextItem) {
+                                lastTextItem.content += event.content || '';
+                            }
+                        }
+
+                        setMessages([...messages]);
+                        break;
+
+                    case 'message_start':
+                        break;
+
+                    case 'done':
+                        setMessages([...messages]);
+
+                        // 保存AI消息到IndexedDB
+                        if (conversationId) {
+                            try {
+                                const aiChatMessage: ChatMessage = {
+                                    id: aiMessage.id,
+                                    type: 'message_content',
+                                    content: aiMessage.content as any,
+                                    role: 'assistant',
+                                    timestamp: aiMessage.createdAt.getTime(),
+                                    conversationId: conversationId,
+                                    metadata: {}
+                                };
+                                await chatDB.saveMessage(aiChatMessage);
+
+                                // 更新会话的最后消息
+                                const allContent = aiMessage.content as any[];
+                                const lastMessageContent = allContent
+                                    .find(item => item.type === MessageContentType.Text);
+                                const lastMessage = lastMessageContent?.content || '';
+
+                                await chatDB.updateConversation(conversationId, {
+                                    lastMessage: lastMessage.substring(0, 100) + (lastMessage.length > 100 ? '...' : ''),
+                                    updatedAt: Date.now(),
+                                });
+                            } catch (error) {
+                                console.error('保存AI消息失败:', error);
+                            }
+                        }
+
+                        break;
+                }
             }
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -392,6 +433,7 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                 </Flexbox>
                 <div className="chat-input-container">
                     <ChatInput
+                        loading={isLoading}
                         onClear={handleClear}
                         onSend={handleSendMessage}
                         onStop={handleStopGeneration}

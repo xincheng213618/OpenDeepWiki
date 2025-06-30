@@ -7,9 +7,8 @@ import {
   StarOutlined,
   ForkOutlined,
 } from '@ant-design/icons';
-import { Card, Avatar, Typography } from 'antd';
+import { Card, Avatar, Typography, Tag } from 'antd';
 import { useTranslation } from '../i18n/client';
-import { Tag } from '@lobehub/ui';
 
 const { Text, Title } = Typography;
 
@@ -164,6 +163,8 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
       WebkitBoxOrient: 'vertical' as const,
       overflow: 'hidden',
       textOverflow: 'ellipsis',
+      // 超过行数隐藏
+      maxHeight: '60px',
     } as React.CSSProperties,
     footer: {
       padding: '12px 16px',

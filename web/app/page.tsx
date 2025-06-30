@@ -1,14 +1,15 @@
+'use server'
+
 import { getWarehouse } from './services/warehouseService';
 import { getBasicHomeStats } from './services/statsService';
 import HomeClient from './components/HomeClient';
 import { Suspense } from 'react';
 import { Spin } from 'antd';
-import { ThemeProvider } from '@lobehub/ui';
 
-export default async function Home({ 
-  searchParams 
-}: { 
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }> 
+export default async function Home({
+  searchParams
+}: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   // 确保 searchParams 已经被解析
   const resolvedSearchParams = searchParams ? await searchParams : {};
@@ -29,16 +30,14 @@ export default async function Home({
 
   return (
     <Suspense fallback={<div style={{ textAlign: 'center', marginTop: '20%' }}><Spin size="large" /></div>}>
-      <ThemeProvider>
-        <HomeClient
-          initialRepositories={initialRepositories}
-          initialTotal={initialTotal}
-          initialPage={page}
-          initialPageSize={pageSize}
-          initialSearchValue={keyword}
-          initialStats={statsData}
-        />
-      </ThemeProvider>
+      <HomeClient
+        initialRepositories={initialRepositories}
+        initialTotal={initialTotal}
+        initialPage={page}
+        initialPageSize={pageSize}
+        initialSearchValue={keyword}
+        initialStats={statsData}
+      />  
     </Suspense>
   );
 }

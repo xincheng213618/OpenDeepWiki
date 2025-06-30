@@ -1,3 +1,4 @@
+
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { ConfigProvider, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -80,7 +81,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: t('description') + ' 支持Markdown、API文档生成、多语言、版本控制等功能。',
     keywords: [
-      'KoalaWiki', 'OpenDeepWiki', '技术文档', '文档管理', 'API文档', 
+      'KoalaWiki', 'OpenDeepWiki', '技术文档', '文档管理', 'API文档',
       '知识库', '开源项目', 'Markdown', 'GitHub', 'Gitee',
       '文档平台', '在线文档', '协作文档', '版本控制', '多语言文档'
     ],
@@ -203,14 +204,14 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-title" content="KoalaWiki" />
         <meta name="msapplication-TileColor" content="#1677ff" />
         <meta name="theme-color" content="#1677ff" />
-        
+
         {/* 图标 */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#1677ff" />
         <link rel="manifest" href="/site.webmanifest" />
-        
+
         {/* 结构化数据 */}
         <script
           type="application/ld+json"
@@ -224,10 +225,10 @@ export default async function RootLayout({
             __html: JSON.stringify(organizationStructuredData)
           }}
         />
-        
+
         {/* 外部资源 */}
         <script src="/tailwindcss.js"></script>
-        
+
         {/* 百度统计 */}
         <Script id="baidu-analytics" strategy="afterInteractive">
           {`
@@ -240,7 +241,7 @@ export default async function RootLayout({
             })();
           `}
         </Script>
-        
+
         {/* Google Analytics (如果配置了) */}
         {process.env.NEXT_PUBLIC_GA_ID && (
           <>

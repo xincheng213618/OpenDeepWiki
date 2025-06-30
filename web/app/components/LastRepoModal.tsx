@@ -33,7 +33,6 @@ import {
 } from '@ant-design/icons';
 import { getLastWarehouse } from '../services/warehouseService';
 import { Repository } from '../types';
-import { homepage } from '../const/urlconst';
 import { useTranslation } from '../i18n/client';
 
 const { Text, Title } = Typography;
