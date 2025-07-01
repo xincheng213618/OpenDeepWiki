@@ -55,10 +55,20 @@ public class DocumentOptions
     /// </summary>
     /// <returns></returns>
     public static bool RefineAndEnhanceQuality { get; set; } = true;
+    
+    /// <summary>
+    /// 是否启用仓库提交
+    /// </summary>
+    /// <returns></returns>
+    public static bool EnableWarehouseCommit { get; set; } = true;
 
     public static void InitConfig(IConfiguration configuration)
     {
         configuration.GetSection(Name).Get<DocumentOptions>();
+        
+        var enableWarehouseCommit = configuration.GetValue<bool?>($"ENABLE_WAREHOUSE_COMMIT") ?? true;
+        
+        EnableWarehouseCommit = enableWarehouseCommit;
 
         var enableFileCommit = configuration.GetValue<bool?>($"ENABLE_FILE_COMMIT") ?? true;
 

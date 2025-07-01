@@ -332,9 +332,14 @@ public class WarehouseService(
     [EndpointSummary("上传并且提交仓库")]
     public async Task UploadAndSubmitWarehouseAsync(HttpContext context)
     {
+        if (!DocumentOptions.EnableWarehouseCommit)
+        {
+            throw new Exception("抱歉，管理员暂时关闭了提交新仓库权限，如果您有需求请联系微信：wk28u9123456789");
+        }
+
         if (!DocumentOptions.EnableFileCommit)
         {
-            throw new Exception("当前不允许上传文件，请联系管理员开启");
+            throw new Exception("抱歉，管理员暂时关闭了提交新仓库权限，如果您有需求请联系微信：wk28u9123456789");
         }
 
         var organization = context.Request.Form["organization"].ToString();
@@ -498,6 +503,11 @@ public class WarehouseService(
     [EndpointSummary("提交仓库")]
     public async Task SubmitWarehouseAsync(WarehouseInput input, HttpContext context)
     {
+        if (!DocumentOptions.EnableWarehouseCommit)
+        {
+            throw new Exception("抱歉，管理员暂时关闭了提交新仓库权限，如果您有需求请联系微信：wk28u9123456789");
+        }
+
         try
         {
             input.Address = input.Address.TrimEnd('/');
@@ -588,6 +598,11 @@ public class WarehouseService(
     [EndpointSummary("自定义提交仓库")]
     public async Task CustomSubmitWarehouseAsync(CustomWarehouseInput input, HttpContext context)
     {
+        if (!DocumentOptions.EnableWarehouseCommit)
+        {
+            throw new Exception("抱歉，管理员暂时关闭了提交新仓库权限，如果您有需求请联系微信：wk28u9123456789");
+        }
+
         try
         {
             input.Organization = input.Organization.Trim().ToLower();
@@ -929,6 +944,7 @@ public class WarehouseService(
                 {
                     repository.Description = info.Description;
                 }
+
                 repository.OwnerUrl = info.OwnerUrl;
                 repository.Language = info.Language;
                 repository.License = info.License;
