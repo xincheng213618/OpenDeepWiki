@@ -52,7 +52,6 @@ public class OverviewService
                 },OpenAIOptions.ChatModel);
         }
 
-        history.AddSystemEnhance();
         history.AddUserMessage(prompt);
 
         await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
@@ -60,21 +59,6 @@ public class OverviewService
             if (!string.IsNullOrEmpty(item.Content))
             {
                 sr.Append(item.Content);
-            }
-        }
-        
-        if(DocumentOptions.RefineAndEnhanceQuality)
-        {
-            history.AddAssistantMessage(sr.ToString());
-            history.AddUserMessage("You need to generate more detailed new content and ensure the completeness of the content. Please do your best and spare no effort.");
-
-            sr.Clear();
-            await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
-            {
-                if (!string.IsNullOrEmpty(item.Content))
-                {
-                    sr.Append(item.Content);
-                }
             }
         }
 
