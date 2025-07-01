@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.Console()
@@ -142,6 +144,8 @@ builder.Services.AddHttpClient("KoalaWiki", client =>
 });
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 // 添加自动迁移代码
 using (var scope = app.Services.CreateScope())
