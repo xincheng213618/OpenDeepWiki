@@ -1,5 +1,6 @@
 ﻿using System.IO.Compression;
 using System.Text;
+using System.Web;
 using FastService;
 using KoalaWiki.Domains;
 using KoalaWiki.Domains.DocumentFile;
@@ -348,7 +349,11 @@ public class WarehouseService(
         if (string.IsNullOrEmpty(organization) || string.IsNullOrEmpty(repositoryName))
         {
             throw new Exception("组织名称和仓库名称不能为空");
-        } // 检查是否是URL下载方式
+        }
+
+        // URL decode parameters
+        var decodedOrganization = HttpUtility.UrlDecode(organization);
+        var decodedRepositoryName = HttpUtility.UrlDecode(repositoryName); // 检查是否是URL下载方式
 
         var fileUrl = context.Request.Form["fileUrl"].ToString();
 
@@ -450,7 +455,7 @@ public class WarehouseService(
         }
 
         var value = await koala.Warehouses.FirstOrDefaultAsync(x =>
-            x.OrganizationName == organization && x.Name == repositoryName);
+            x.OrganizationName == decodedOrganization && x.Name == decodedRepositoryName);
         // 判断这个仓库是否已经添加
         if (value?.Status is WarehouseStatus.Completed)
         {
@@ -467,13 +472,13 @@ public class WarehouseService(
 
         // 删除旧的仓库
         var oldWarehouse = await koala.Warehouses
-            .Where(x => x.OrganizationName == organization && x.Name == repositoryName)
+            .Where(x => x.OrganizationName == decodedOrganization && x.Name == decodedRepositoryName)
             .ExecuteDeleteAsync();
 
         var entity = new Warehouse
         {
-            OrganizationName = organization,
-            Name = repositoryName,
+            OrganizationName = decodedOrganization,
+            Name = decodedRepositoryName,
             Address = name,
             Description = string.Empty,
             Version = string.Empty,
@@ -525,8 +530,12 @@ public class WarehouseService(
 
             var repositoryName = names[^1].Replace(".git", "").ToLower();
 
+            // URL decode parameters
+            var decodedOrganization = HttpUtility.UrlDecode(organization);
+            var decodedRepositoryName = HttpUtility.UrlDecode(repositoryName);
+
             var value = await koala.Warehouses.FirstOrDefaultAsync(x =>
-                x.OrganizationName.ToLower() == organization && x.Name.ToLower() == repositoryName &&
+                x.OrganizationName.ToLower() == decodedOrganization.ToLower() && x.Name.ToLower() == decodedRepositoryName.ToLower() &&
                 x.Branch == input.Branch &&
                 x.Status == WarehouseStatus.Completed);
 
@@ -547,8 +556,8 @@ public class WarehouseService(
             {
                 var branch = await koala.Warehouses
                     .AsNoTracking()
-                    .Where(x => x.Branch == input.Branch && x.OrganizationName == organization &&
-                                x.Name == repositoryName)
+                    .Where(x => x.Branch == input.Branch && x.OrganizationName == decodedOrganization &&
+                                x.Name == decodedRepositoryName)
                     .FirstOrDefaultAsync();
 
                 if (branch is { Status: WarehouseStatus.Completed or WarehouseStatus.Processing })
@@ -559,13 +568,13 @@ public class WarehouseService(
 
             // 删除旧的仓库
             var oldWarehouse = await koala.Warehouses
-                .Where(x => x.OrganizationName == organization &&
-                            x.Name == repositoryName && x.Branch == input.Branch)
+                .Where(x => x.OrganizationName == decodedOrganization &&
+                            x.Name == decodedRepositoryName && x.Branch == input.Branch)
                 .ExecuteDeleteAsync();
 
             var entity = mapper.Map<Warehouse>(input);
-            entity.Name = repositoryName;
-            entity.OrganizationName = organization;
+            entity.Name = decodedRepositoryName;
+            entity.OrganizationName = decodedOrganization;
             entity.Description = string.Empty;
             entity.Version = string.Empty;
             entity.Error = string.Empty;
@@ -609,8 +618,12 @@ public class WarehouseService(
 
             var repositoryName = input.RepositoryName.Trim().ToLower();
 
+            // URL decode parameters
+            var decodedOrganization = HttpUtility.UrlDecode(input.Organization);
+            var decodedRepositoryName = HttpUtility.UrlDecode(repositoryName);
+
             var value = await koala.Warehouses.FirstOrDefaultAsync(x =>
-                x.OrganizationName.ToLower() == input.Organization && x.Name.ToLower() == repositoryName &&
+                x.OrganizationName.ToLower() == decodedOrganization.ToLower() && x.Name.ToLower() == decodedRepositoryName.ToLower() &&
                 x.Branch == input.Branch &&
                 x.Status == WarehouseStatus.Completed);
 
@@ -631,8 +644,8 @@ public class WarehouseService(
             {
                 var branch = await koala.Warehouses
                     .AsNoTracking()
-                    .Where(x => x.Branch == input.Branch && x.OrganizationName == input.Organization &&
-                                x.Name == repositoryName)
+                    .Where(x => x.Branch == input.Branch && x.OrganizationName == decodedOrganization &&
+                                x.Name == decodedRepositoryName)
                     .FirstOrDefaultAsync();
 
                 if (branch is { Status: WarehouseStatus.Completed or WarehouseStatus.Processing })
@@ -643,13 +656,13 @@ public class WarehouseService(
 
             // 删除旧的仓库
             var oldWarehouse = await koala.Warehouses
-                .Where(x => x.OrganizationName == input.Organization &&
-                            x.Name == repositoryName && x.Branch == input.Branch)
+                .Where(x => x.OrganizationName == decodedOrganization &&
+                            x.Name == decodedRepositoryName && x.Branch == input.Branch)
                 .ExecuteDeleteAsync();
 
             var entity = mapper.Map<Warehouse>(input);
-            entity.Name = repositoryName;
-            entity.OrganizationName = input.Organization;
+            entity.Name = decodedRepositoryName;
+            entity.OrganizationName = decodedOrganization;
             entity.Description = string.Empty;
             entity.Version = string.Empty;
             entity.Error = string.Empty;
