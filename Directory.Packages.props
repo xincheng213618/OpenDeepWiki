@@ -98,6 +98,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.9.0" />
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.0.0" />
+    <PackageVersion Include="Aspire.Hosting.NodeJs" Version="9.0.0" />
   </ItemGroup>
   <!-- 预发行版本配置 -->
   <PropertyGroup>

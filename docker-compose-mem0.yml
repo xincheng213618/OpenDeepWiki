@@ -27,6 +27,9 @@
       - ENABLE_MEM0=true # 是否启用Mem0 RAG用于增强对话检索能力
       - MEM0_API_KEY=koala-ai # Mem0 API Key
       - MEM0_ENDPOINT=http://mem0:8000 # Mem0 API Endpoint
+      - OTEL_SERVICE_NAME=koalawiki
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
     volumes:
       - ./repositories:/app/repositories
       - ./data:/data
@@ -125,7 +128,14 @@
       - NEO4J_apoc_export_file_enabled=true
       - NEO4J_apoc_import_file_enabled=true
       - NEO4J_apoc_import_file_use__neo4j__config=true
-
+  
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard
+    container_name: aspire-dashboard
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+      - Dashboard:ApplicationName=Aspire
 networks:
   koala_network:
     driver: bridge

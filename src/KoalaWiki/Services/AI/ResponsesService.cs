@@ -1,4 +1,5 @@
 ﻿using System.ClientModel.Primitives;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -25,6 +26,12 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
     [HttpPost("/api/Responses")]
     public async Task ExecuteAsync(HttpContext context, ResponsesInput input)
     {
+        using var activity = Activity.Current?.Source.StartActivity("AI.ResponsesService.Execute");
+        activity?.SetTag("repository.organization", input.OrganizationName);
+        activity?.SetTag("repository.name", input.Name);
+        activity?.SetTag("message.count", input.Messages?.Count ?? 0);
+        activity?.SetTag("model.provider", OpenAIOptions.ModelProvider);
+        activity?.SetTag("model.name", OpenAIOptions.ChatModel);
         var warehouse = await koala.Warehouses
             .AsNoTracking()
             .FirstOrDefaultAsync(x =>
@@ -33,6 +40,8 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
 
         if (warehouse == null)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "Warehouse not found");
+            activity?.SetTag("error.reason", "warehouse_not_found");
             context.Response.StatusCode = 404;
             await context.Response.WriteAsJsonAsync(new
             {
@@ -42,6 +51,10 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
             return;
         }
 
+        activity?.SetTag("warehouse.id", warehouse.Id);
+        activity?.SetTag("warehouse.address", warehouse.Address);
+        activity?.SetTag("warehouse.branch", warehouse.Branch);
+
 
         var document = await koala.Documents
             .AsNoTracking()
@@ -50,6 +63,8 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
 
         if (document == null)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "Document not found");
+            activity?.SetTag("error.reason", "document_not_found");
             context.Response.StatusCode = 404;
             await context.Response.WriteAsJsonAsync(new
             {
@@ -59,12 +74,21 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
             return;
         }
 
+        activity?.SetTag("document.id", document.Id);
+        activity?.SetTag("document.git_path", document.GitPath);
+
 
         // 解析仓库的目录结构
         var path = document.GitPath;
 
+        using var kernelCreateActivity = Activity.Current.Source.StartActivity("AI.KernelCreation");
+        kernelCreateActivity?.SetTag("kernel.path", path);
+        kernelCreateActivity?.SetTag("kernel.model", OpenAIOptions.ChatModel);
+
         var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, path, OpenAIOptions.ChatModel, false);
+
+        kernelCreateActivity?.SetStatus(ActivityStatusCode.Ok);
 
         if (OpenAIOptions.EnableMem0)
         {
@@ -183,12 +207,21 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
         // 是否普通消息
         var isMessage = false;
 
+        using var chatActivity = Activity.Current?.Source.StartActivity("AI.StreamingChatCompletion");
+        chatActivity?.SetTag("chat.max_tokens", DocumentsHelper.GetMaxTokens(OpenAIOptions.DeepResearchModel));
+        chatActivity?.SetTag("chat.temperature", 0.5);
+        chatActivity?.SetTag("chat.tool_behavior", "AutoInvokeKernelFunctions");
+        chatActivity?.SetTag("chat.history_count", history.Count);
+
+        var messageCount = 0;
+        var toolCallCount = 0;
+        var reasoningTokens = 0;
 
         await foreach (var chatItem in chat.GetStreamingChatMessageContentsAsync(history,
                            new OpenAIPromptExecutionSettings()
                            {
                                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-                               MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.DeepResearchModel),
+                               MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.DeepResearchModel),
                                Temperature = 0.5,
                            }, kernel))
         {
@@ -236,6 +269,7 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
                         await context.Response.WriteAsync(
                             $"data: {{\"type\": \"reasoning_content\", \"content\": {JsonSerializer.Serialize(reasoningContent)}}}\n\n");
                         await context.Response.Body.FlushAsync();
+                        reasoningTokens += reasoningContent.Length / 4; // 粗略估算令牌数
                         continue;
                     }
                 }
@@ -269,6 +303,7 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
                     await context.Response.Body.FlushAsync();
                 }
 
+                toolCallCount++;
                 continue;
             }
 
@@ -290,6 +325,7 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
 
                 await context.Response.WriteAsync($"data: {JsonSerializer.Serialize(messageData)}\n\n");
                 await context.Response.Body.FlushAsync();
+                messageCount++;
             }
         }
 
@@ -307,5 +343,15 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
         // 发送结束事件
         await context.Response.WriteAsync($"data: {{\"type\": \"done\"}}\n\n");
         await context.Response.Body.FlushAsync();
+
+        // 设置聊天活动的统计信息
+        chatActivity?.SetTag("chat.message_count", messageCount);
+        chatActivity?.SetTag("chat.tool_call_count", toolCallCount);
+        chatActivity?.SetTag("chat.reasoning_tokens", reasoningTokens);
+        chatActivity?.SetStatus(ActivityStatusCode.Ok);
+
+        // 设置主活动状态
+        activity?.SetStatus(ActivityStatusCode.Ok);
+        activity?.SetTag("response.completed", true);
     }
 }

@@ -68,7 +68,7 @@ public static class GenerateThinkCatalogueService
                 {
                     ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
                     Temperature = 0.5,
-                    MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.AnalysisModel)
+                    MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.AnalysisModel)
                 };
 
                 await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history,

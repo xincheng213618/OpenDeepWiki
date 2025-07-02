@@ -118,7 +118,7 @@ public partial class WarehouseProcessingTask
                 await foreach (var item in chatCompletion.GetStreamingChatMessageContentsAsync(history,
                                    new OpenAIPromptExecutionSettings()
                                    {
-                                       MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.AnalysisModel),
+                                       MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.AnalysisModel),
                                        Temperature = 0.3,
                                    }, kernel))
                 {

@@ -42,7 +42,7 @@ public class Mem0Rag(IServiceProvider service, ILogger<Mem0Rag> logger) : Backgr
                 .Where(x => x.WarehouseId == warehouse.Id)
                 .FirstOrDefaultAsync(stoppingToken);
 
-            var files = DocumentsService.GetCatalogueFiles(documents.GitPath);
+            var files = DocumentsHelper.GetCatalogueFiles(documents.GitPath);
 
             var client = new Mem0Client(OpenAIOptions.Mem0ApiKey, OpenAIOptions.Mem0Endpoint, null, null,
                 new HttpClient()

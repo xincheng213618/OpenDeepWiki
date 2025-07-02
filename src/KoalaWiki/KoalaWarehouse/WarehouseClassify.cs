@@ -20,7 +20,7 @@ public class WarehouseClassify
             new KernelArguments(new OpenAIPromptExecutionSettings()
             {
                 Temperature = 0.1,
-                MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.ChatModel)
+                MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel)
             })
             {
                 ["category"] = catalog,

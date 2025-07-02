@@ -43,7 +43,7 @@ public static class MiniMapService
                            .GetStreamingChatMessageContentsAsync(history, new OpenAIPromptExecutionSettings()
                            {
                                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-                               MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.ChatModel)
+                               MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel)
                            }, kernel))
         {
             if (!string.IsNullOrEmpty(item.Content))

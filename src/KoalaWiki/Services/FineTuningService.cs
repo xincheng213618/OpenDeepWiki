@@ -305,7 +305,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
             await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history,
                                new OpenAIPromptExecutionSettings()
                                {
-                                   MaxTokens = DocumentsService.GetMaxTokens(dataset.Model),
+                                   MaxTokens = DocumentsHelper.GetMaxTokens(dataset.Model),
                                    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
                                    Temperature = 0.3,
                                }, kernel))

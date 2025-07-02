@@ -114,7 +114,7 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
                                new OpenAIPromptExecutionSettings()
                                {
                                    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-                                   MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.ChatModel),
+                                   MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel),
                                    Temperature = 0.5
                                }, fileKernel))
             {

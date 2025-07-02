@@ -1,11 +1,9 @@
-﻿using KoalaWiki.Core.DataAccess;
+﻿using System.Diagnostics;
 using KoalaWiki.Domains;
 using KoalaWiki.Domains.Warehouse;
-using KoalaWiki.Entities;
-using KoalaWiki.Git;
 using Microsoft.EntityFrameworkCore;
 
-namespace KoalaWiki.KoalaWarehouse;
+namespace KoalaWiki.BackendService;
 
 public class WarehouseTask(
     ILogger<WarehouseTask> logger,
@@ -13,6 +11,8 @@ public class WarehouseTask(
     IServiceProvider service)
     : BackgroundService
 {
+    private static readonly ActivitySource s_activitySource = new("KoalaWiki.Warehouse");
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // 读取现有的仓库
@@ -35,12 +35,24 @@ public class WarehouseTask(
                 continue;
             }
 
+            using var activity = s_activitySource.CreateActivity("仓库处理任务", ActivityKind.Server);
+            activity?.SetTag("warehouse.id", value.Id);
+            activity?.SetTag("warehouse.name", value.Name);
+            activity?.SetTag("warehouse.type", value.Type);
+            activity?.SetTag("warehouse.address", value.Address);
+            activity?.SetTag("warehouse.status", value.Status.ToString());
+
             try
             {
                 Document document;
 
                 if (value?.Type?.Equals("git", StringComparison.OrdinalIgnoreCase) == true)
                 {
+                    activity?.SetTag("git.address", value.Address);
+                    activity?.SetTag("git.branch", value?.Branch);
+                    activity?.SetTag("git.has_username", !string.IsNullOrEmpty(value?.GitUserName));
+                    activity?.SetTag("git.has_password", !string.IsNullOrEmpty(value?.GitPassword));
+
                     // 先拉取仓库
                     logger.LogInformation("开始拉取仓库：{Address}", value.Address);
                     var info = GitService.CloneRepository(value.Address, value?.GitUserName ?? string.Empty,
@@ -49,8 +61,14 @@ public class WarehouseTask(
                     logger.LogInformation("仓库拉取完成：{RepositoryName}, 分支：{BranchName}", info.RepositoryName,
                         info.BranchName);
 
+                    activity?.SetTag("git.repository_name", info.RepositoryName);
+                    activity?.SetTag("git.branch_name", info.BranchName);
+                    activity?.SetTag("git.organization", info.Organization);
+                    activity?.SetTag("git.version", info.Version);
+                    activity?.SetTag("git.local_path", info.LocalPath);
+
                     await dbContext!.Warehouses.Where(x => x.Id == value.Id)
-                        .ExecuteUpdateAsync(x => x.SetProperty(a =>  a.Name, info.RepositoryName)
+                        .ExecuteUpdateAsync(x => x.SetProperty(a => a.Name, info.RepositoryName)
                             .SetProperty(x => x.Branch, info.BranchName)
                             .SetProperty(x => x.Version, info.Version)
                             .SetProperty(x => x.Status, WarehouseStatus.Processing)
@@ -84,11 +102,14 @@ public class WarehouseTask(
 
                     logger.LogInformation("数据库更改保存完成，开始处理文档。");
 
+                    // 调用文档处理服务，其Activity将作为当前Activity的子Activity
                     await documentsService.HandleAsync(document, value, dbContext,
                         value.Address.Replace(".git", string.Empty));
                 }
                 else if (value?.Type?.Equals("file", StringComparison.OrdinalIgnoreCase) == true)
                 {
+                    activity?.SetTag("file.address", value.Address);
+
                     await dbContext!.Warehouses.Where(x => x.Id == value.Id)
                         .ExecuteUpdateAsync(x => x.SetProperty(x => x.Status, WarehouseStatus.Processing),
                             stoppingToken);
@@ -121,23 +142,28 @@ public class WarehouseTask(
 
                     logger.LogInformation("数据库更改保存完成，开始处理文档。");
 
+                    // 调用文档处理服务，其Activity将作为当前Activity的子Activity
                     await documentsService.HandleAsync(document, value, dbContext,
                         value.Address.Replace(".git", string.Empty));
                 }
                 else
                 {
+                    activity?.SetTag("error", "不支持的仓库类型");
                     logger.LogError("不支持的仓库类型：{Type}", value.Type);
                     await dbContext.Warehouses.Where(x => x.Id == value.Id)
                         .ExecuteUpdateAsync(x => x.SetProperty(a => a.Status, WarehouseStatus.Failed)
                             .SetProperty(x => x.Error, "不支持的仓库类型"), stoppingToken);
 
                     logger.LogInformation("更新仓库状态为失败，仓库地址：{address}", value.Address);
+                    activity?.SetTag("warehouse.final_status", "failed");
                     return;
                 }
 
                 logger.LogInformation("文档处理完成，仓库地址：{address}", value.Address);
 
-                // 更新仓库状态
+                // 更新仓库状态为完成
+                activity?.SetTag("document.id", document.Id);
+
                 await dbContext.Warehouses.Where(x => x.Id == value.Id)
                     .ExecuteUpdateAsync(x => x.SetProperty(a => a.Status, WarehouseStatus.Completed)
                         .SetProperty(x => x.Error, string.Empty), stoppingToken);
@@ -150,9 +176,17 @@ public class WarehouseTask(
                         .SetProperty(a => a.Status, WarehouseStatus.Completed), stoppingToken);
 
                 logger.LogInformation("文档状态更新为完成，仓库地址：{address}", value.Address);
+
+                activity?.SetTag("processing.success", true);
+                activity?.SetTag("warehouse.final_status", "completed");
             }
             catch (Exception e)
             {
+                activity?.SetTag("error.message", e.Message);
+                activity?.SetTag("error.type", e.GetType().Name);
+                activity?.SetTag("error.occurred", true);
+                activity?.SetTag("warehouse.final_status", "failed");
+
                 logger.LogError("发生错误：{e}", e);
                 await Task.Delay(1000 * 5, stoppingToken);
 

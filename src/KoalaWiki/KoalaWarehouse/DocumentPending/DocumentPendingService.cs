@@ -218,7 +218,7 @@ public class DocumentPendingService
         var settings = new OpenAIPromptExecutionSettings()
         {
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-            MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.ChatModel),
+            MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel),
             Temperature = 0.5,
         };
 

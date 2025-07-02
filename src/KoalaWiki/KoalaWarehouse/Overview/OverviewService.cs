@@ -22,7 +22,7 @@ public class OverviewService
         var settings = new OpenAIPromptExecutionSettings()
         {
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-            MaxTokens = DocumentsService.GetMaxTokens(OpenAIOptions.ChatModel)
+            MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel)
         };
 
         var chat = kernel.GetRequiredService<IChatCompletionService>();
