@@ -110,11 +110,13 @@ export default function AssistantMessage({ messageItem, handleDelete,
                 const { data } = await getFileContentByLine(
                     organizationName,
                     repositoryName,
-                    item.FilePath,
-                    item.StartLine,
-                    item.EndLine
+                    item.FilePath
                 );
-                setFileContents(prev => ({ ...prev, [fileKey]: data.data || '' }));
+                
+                // 获取完整文件内容，用于显示和高亮选择的行数范围
+                const fullContent = data.data || '';
+                
+                setFileContents(prev => ({ ...prev, [fileKey]: fullContent }));
             } catch (error) {
                 console.error('获取文件内容失败:', error);
                 message.error('获取文件内容失败');
@@ -291,8 +293,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
-                                marginBottom: 5,
-                                gap: 8,
+                                gap: 5,
                             }}>
                                 {parsedArgs.items.map((item: any, index: number) => {
                                     const fileKey = `${item.FilePath}-${item.StartLine}-${item.EndLine}`;
@@ -300,7 +301,6 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                     const isLoading = loadingFiles[fileKey];
                                     const content = fileContents[fileKey];
                                     const language = getLanguageFromFileName(item.FilePath);
-
 
                                     return (
                                         <div key={index} style={{
@@ -311,12 +311,12 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                             <div
                                                 onClick={() => handleFileClick(item)}
                                                 style={{
-                                                    padding: '8px 12px',
                                                     cursor: 'pointer',
                                                     backgroundColor: isExpanded ? '#f0f7ff' : '#fafafa',
                                                     borderBottom: isExpanded ? '1px solid #e8e8e8' : 'none',
                                                     display: 'flex',
                                                     alignItems: 'center',
+                                                    padding: '6px',
                                                     justifyContent: 'space-between',
                                                     fontSize: '13px',
                                                     transition: 'all 0.2s ease',
@@ -334,12 +334,18 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                     gap: 8,
                                                 }}>
                                                     <FileText size={14} color="#1890ff" />
+                                                    <Tooltip title={item.FilePath}>
                                                     <span style={{
                                                         color: '#495057',
                                                         fontWeight: 500,
+                                                        width: '75%',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
                                                     }}>
                                                         {item.FilePath}
                                                     </span>
+                                                    </Tooltip>
                                                     <span style={{
                                                         color: '#8c8c8c',
                                                         fontSize: '12px',
@@ -398,7 +404,21 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                         language={language}
                                                         style={vs}
                                                         showLineNumbers={true}
-                                                        startingLineNumber={item.StartLine}
+                                                        startingLineNumber={1}
+                                                        wrapLines={true}
+                                                        lineProps={(lineNumber) => {
+                                                            const actualLineNumber = lineNumber;
+                                                            const isInRange = actualLineNumber >= item.StartLine && actualLineNumber <= item.EndLine;
+                                                            return {
+                                                                style: {
+                                                                    backgroundColor: isInRange ? '#e6f3ff' : 'transparent',
+                                                                    borderLeft: isInRange ? '3px solid #1890ff' : 'none',
+                                                                    paddingLeft: isInRange ? '5px' : '8px',
+                                                                    display: 'block',
+                                                                    width: '100%',
+                                                                }
+                                                            };
+                                                        }}
                                                         customStyle={{
                                                             margin: 0,
                                                             borderRadius: 0,
@@ -412,6 +432,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                             }
                                                         }}
                                                     >
+                                                        
                                                         {content}
                                                     </SyntaxHighlighter>
                                                 </div>
@@ -1199,7 +1220,21 @@ export default function AssistantMessage({ messageItem, handleDelete,
                             language={fullScreenFile.language}
                             style={vs}
                             showLineNumbers={true}
-                            startingLineNumber={fullScreenFile.startLine}
+                            startingLineNumber={1}
+                            wrapLines={true}
+                            lineProps={(lineNumber) => {
+                                const actualLineNumber = lineNumber;
+                                const isInRange = actualLineNumber >= fullScreenFile.startLine && actualLineNumber <= fullScreenFile.endLine;
+                                return {
+                                    style: {
+                                        backgroundColor: isInRange ? '#e6f3ff' : 'transparent',
+                                        borderLeft: isInRange ? '3px solid #1890ff' : 'none',
+                                        paddingLeft: isInRange ? '5px' : '8px',
+                                        display: 'block',
+                                        width: '100%',
+                                    }
+                                };
+                            }}
                             customStyle={{
                                 margin: 0,
                                 borderRadius: 0,

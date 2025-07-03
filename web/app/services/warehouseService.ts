@@ -474,12 +474,10 @@ export async function getMiniMap(
 export async function getFileContentByLine(
   organizationName: string,
   name: string,
-  filePath: string,
-  startLine: number,
-  endLine: number
+  filePath: string
 ) {
   return fetchApi<any>(
-    API_URL + `/api/Warehouse/filecontentLine?organizationName=${organizationName}&name=${name}&filePath=${filePath}&startLine=${startLine}&endLine=${endLine}`,
+    API_URL + `/api/Warehouse/filecontentLine?organizationName=${organizationName}&name=${name}&filePath=${filePath}`,
     {
       method: 'GET',
       cache: 'no-cache'

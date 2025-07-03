@@ -259,7 +259,6 @@ export default function HomeClient({
         
         .content-section {
           border-radius: 16px;
-          padding: 32px;
           margin-bottom: 32px;
           backdrop-filter: blur(10px);
         }

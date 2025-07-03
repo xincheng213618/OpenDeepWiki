@@ -80,7 +80,7 @@ public class AppConfigService(IKoalaWikiContext koala, IUserContext userContext)
     /// <summary>
     /// 根据 AppId 获取应用配置
     /// </summary>
-    [FastService.Route("/{appId}")]
+    [HttpGet("/{appId}")]
     public async Task<AppConfigOutput> GetByAppIdAsync(string appId)
     {
         var appConfig = await koala.AppConfigs
@@ -98,7 +98,7 @@ public class AppConfigService(IKoalaWikiContext koala, IUserContext userContext)
     /// <summary>
     /// 更新应用配置
     /// </summary>
-    [FastService.Route("/{appId}")]
+    [HttpPut("/{appId}")]
     public async Task<AppConfigOutput> UpdateAsync(string appId, AppConfigInput input)
     {
         var appConfig = await koala.AppConfigs
@@ -140,7 +140,7 @@ public class AppConfigService(IKoalaWikiContext koala, IUserContext userContext)
     /// <summary>
     /// 删除应用配置
     /// </summary>
-    [FastService.Route("/{appId}")]
+    [HttpDelete("/{appId}")]
     public async Task DeleteAsync(string appId)
     {
         var appConfig = await koala.AppConfigs
@@ -171,14 +171,14 @@ public class AppConfigService(IKoalaWikiContext koala, IUserContext userContext)
 
         await koala.AppConfigs.Where(x => x.AppId == appId && x.UserId == userContext.CurrentUserId)
             .ExecuteUpdateAsync(x => x.SetProperty(a => a.IsEnabled, a => !a.IsEnabled));
-        
+
         return MapToOutput(appConfig);
     }
 
     /// <summary>
     /// 域名验证（公开接口，不需要登录）
     /// </summary>
-    [FastService.Route("/validatedomain")]
+    [HttpPost("/validatedomain")]
     [AllowAnonymous]
     public async Task<DomainValidationResponse> ValidateDomainAsync(DomainValidationRequest request)
     {
@@ -248,7 +248,7 @@ public class AppConfigService(IKoalaWikiContext koala, IUserContext userContext)
     /// <summary>
     /// 获取应用配置（公开接口，用于第三方脚本）
     /// </summary>
-    [FastService.Route("/public/{appId}")]
+    [HttpGet("/public/{appId}")]
     [AllowAnonymous]
     public async Task<AppConfigOutput?> GetPublicConfigAsync(string appId)
     {

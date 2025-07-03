@@ -131,9 +131,7 @@ builder.Services
 builder.Services.AddHostedService<WarehouseTask>();
 builder.Services.AddHostedService<WarehouseProcessingTask>();
 builder.Services.AddHostedService<DataMigrationTask>();
-builder.Services.AddHostedService<WarehouseDescriptionTask>();
 builder.Services.AddHostedService<Mem0Rag>();
-builder.Services.AddHostedService<WarehouseFunctionPromptTask>();
 
 builder.Services.AddDbContext(builder.Configuration);
 

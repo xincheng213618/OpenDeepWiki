@@ -6,9 +6,9 @@ import { LoadingOutlined, CloseCircleFilled } from '@ant-design/icons';
 import { createStyles } from 'antd-style';
 import type { UploadProps } from 'antd';
 import { ActionIcon } from '@lobehub/ui';
-import { ChatInputActionBar, TokenTag } from '@lobehub/ui/chat';
+import { ChatInputActionBar } from '@lobehub/ui/chat';
 import { ChatInputArea } from '@lobehub/ui/mobile';
-import { Eraser, ImagePlus, Trash2 } from 'lucide-react';
+import { ArrowUp, Eraser, ImagePlus, Trash2 } from 'lucide-react';
 import { Flexbox } from 'react-layout-kit';
 import { Base64Content } from '../../types/chat';
 
@@ -252,6 +252,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     disabled={disabled}
                     loading={loading}
                     textAreaRightAddons={<ChatInputArea.SendButton
+                        icon={<ArrowUp />}
                         onSend={handleSend}
                         onStop={handleStop}
                     />}

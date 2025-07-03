@@ -535,7 +535,8 @@ public class WarehouseService(
             var decodedRepositoryName = HttpUtility.UrlDecode(repositoryName);
 
             var value = await koala.Warehouses.FirstOrDefaultAsync(x =>
-                x.OrganizationName.ToLower() == decodedOrganization.ToLower() && x.Name.ToLower() == decodedRepositoryName.ToLower() &&
+                x.OrganizationName.ToLower() == decodedOrganization.ToLower() &&
+                x.Name.ToLower() == decodedRepositoryName.ToLower() &&
                 x.Branch == input.Branch &&
                 x.Status == WarehouseStatus.Completed);
 
@@ -623,7 +624,8 @@ public class WarehouseService(
             var decodedRepositoryName = HttpUtility.UrlDecode(repositoryName);
 
             var value = await koala.Warehouses.FirstOrDefaultAsync(x =>
-                x.OrganizationName.ToLower() == decodedOrganization.ToLower() && x.Name.ToLower() == decodedRepositoryName.ToLower() &&
+                x.OrganizationName.ToLower() == decodedOrganization.ToLower() &&
+                x.Name.ToLower() == decodedRepositoryName.ToLower() &&
                 x.Branch == input.Branch &&
                 x.Status == WarehouseStatus.Completed);
 
@@ -1123,8 +1125,7 @@ public class WarehouseService(
     /// </summary>
     /// <returns></returns>
     [EndpointSummary("获取指定组织下仓库的指定文件代码内容")]
-    public async Task<ResultDto<string>> GetFileContentLineAsync(string organizationName, string name, string filePath,
-        int startLine = 0, int endLine = 0)
+    public async Task<ResultDto<string>> GetFileContentLineAsync(string organizationName, string name, string filePath)
     {
         if (string.IsNullOrEmpty(organizationName) || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(filePath))
         {
@@ -1156,7 +1157,7 @@ public class WarehouseService(
 
         var fileFunction = new FileFunction(document.GitPath);
 
-        var value = await fileFunction.ReadItem(filePath, startLine, endLine);
+        var value = await fileFunction.ReadFileAsync(filePath);
 
         return ResultDto<string>.Success(value);
     }

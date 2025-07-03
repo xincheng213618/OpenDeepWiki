@@ -228,7 +228,6 @@ const useStyles = createStyles(({ css, token }) => ({
     backdrop-filter: blur(20px);
     
     .ant-card-body {
-      padding: 32px;
     }
     
     .header-title {

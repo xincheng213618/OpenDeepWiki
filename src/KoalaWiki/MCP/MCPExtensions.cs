@@ -21,22 +21,8 @@ public static class MCPExtensions
                 var name = context.Server.ServerOptions.Capabilities.Experimental["name"].ToString();
                 var owner = context.Server.ServerOptions.Capabilities.Experimental["owner"].ToString();
 
-                var dbContext = context.Services.GetService<IKoalaWikiContext>();
-
-                var prompt = await dbContext.Warehouses
-                    .AsNoTracking()
-                    .Where(x => x.OrganizationName.ToLower() == owner.ToLower() &&
-                                x.Name.ToLower() == name.ToLower())
-                    .Select(x => x.Prompt)
-                    .FirstOrDefaultAsync(cancellationToken: token);
-
                 var descript =
                     $"Generate detailed technical documentation for the {owner}/{name} GitHub repository based on user inquiries. Analyzes repository structure, code components, APIs, dependencies, and implementation patterns to create comprehensive developer documentation with troubleshooting guides, architecture explanations, customization options, and implementation insights.";
-                if (!string.IsNullOrEmpty(prompt))
-                {
-                    descript = JsonEncodedText.Encode(prompt, JavaScriptTestEncoder.UnsafeRelaxedJsonEscaping)
-                        .ToString();
-                }
 
                 var input = """
                     {
@@ -54,7 +40,7 @@ public static class MCPExtensions
 
 
                 // 删除特殊字符串
-                var mcpName = $"{owner}{name}Analyzer";
+                var mcpName = $"{owner}_{name}";
                 mcpName = Regex.Replace(mcpName, @"[^a-zA-Z0-9]", "");
                 mcpName = mcpName.Length > 50 ? mcpName.Substring(0, 50) : mcpName;
                 mcpName = mcpName.ToLower();

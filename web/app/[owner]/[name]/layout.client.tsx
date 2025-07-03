@@ -32,7 +32,7 @@ import {
 } from '@ant-design/icons';
 import { SaveAll } from 'lucide-react'
 import Link from 'next/link';
-import { usePathname,  useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ExportMarkdownZip } from '../../services';
 import { useTranslation } from '../../i18n/client';
@@ -103,7 +103,6 @@ export default function RepositoryLayoutClient({
 }: RepositoryLayoutClientProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { token } = theme.useToken();
   const { t } = useTranslation();
 
   const pathParts = pathname.split('/').filter(Boolean);
@@ -112,12 +111,12 @@ export default function RepositoryLayoutClient({
   const [isMobile, setIsMobile] = useState(false);
   const [isMCPModalVisible, setIsMCPModalVisible] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
-  
+
   // 使用URL参数中的branch，如果没有则使用从服务器传递来的currentBranch，或者使用branchs数组的第一项
   const [selectedBranch, setSelectedBranch] = useState<string>(
-    searchParams.get('branch') || 
-    initialCatalogData?.currentBranch || 
-    initialCatalogData?.branchs?.[0] || 
+    searchParams.get('branch') ||
+    initialCatalogData?.currentBranch ||
+    initialCatalogData?.branchs?.[0] ||
     ''
   );
 
@@ -166,7 +165,7 @@ export default function RepositoryLayoutClient({
 
       // 使用完整页面刷新以确保服务器组件重新渲染并获取新数据
       window.location.href = `${pathname}?${params.toString()}`;
-      
+
       // 不再需要设置状态，因为页面会完全刷新
       // setSelectedBranch(value);
     }
@@ -210,8 +209,8 @@ export default function RepositoryLayoutClient({
     return (
       <div key={item.key} className="tree-item-container">
         {item.disabled ? (
-          <div 
-            className="tree-item disabled" 
+          <div
+            className="tree-item disabled"
             style={{ paddingLeft: `${12 + indentLevel}px` }}
           >
             <span className="tree-item-label">{item.label}</span>
@@ -232,7 +231,7 @@ export default function RepositoryLayoutClient({
             </span>
           </Link>
         )}
-        
+
         {/* 渲染子项 */}
         {item.children?.length > 0 && (
           <div className="tree-children">
@@ -349,19 +348,20 @@ export default function RepositoryLayoutClient({
                   color: minimalistDesign.colors.text,
                 }}
               >
-                <span
-                  onClick={() => {
-                    if (initialCatalogData?.git) {
-                      window.open(initialCatalogData.git, '_blank');
-                    }
-                  }}
-                  style={{
-                    cursor: 'pointer',
-                  }}>
-                  {owner}/{name}
-                </span>
+                {!isMobile && (
+                  <span
+                    onClick={() => {
+                      if (initialCatalogData?.git) {
+                        window.open(initialCatalogData.git, '_blank');
+                      }
+                    }}
+                    style={{
+                      cursor: 'pointer',
+                    }}>
+                    {owner}/{name}
+                  </span>)}
               </Typography.Title>
-              
+
               {initialCatalogData?.progress !== undefined && initialCatalogData?.progress < 100 && (
                 <Flex align="center" gap={minimalistDesign.spacing.sm}>
                   <Progress
@@ -386,9 +386,9 @@ export default function RepositoryLayoutClient({
                   onChange={handleBranchChange}
                   style={{ width: isMobile ? 100 : 140 }}
                   size={isMobile ? "small" : "middle"}
-                  options={initialCatalogData.branchs.map((branch: string) => ({ 
-                    label: branch, 
-                    value: branch 
+                  options={initialCatalogData.branchs.map((branch: string) => ({
+                    label: branch,
+                    value: branch
                   }))}
                   placeholder={t('repository_layout.branch.select_placeholder')}
                   suffixIcon={<BranchesOutlined />}
@@ -409,7 +409,7 @@ export default function RepositoryLayoutClient({
               >
                 {isMobile ? 'MCP' : t('repository_layout.header.add_mcp')}
               </Button>
-              
+
               {initialLastUpdated && !isMobile && (
                 <Text style={{
                   fontSize: 12,
@@ -421,7 +421,7 @@ export default function RepositoryLayoutClient({
             </Flex>
           </Flex>
         </Header>
-        
+
         <Modal
           title={
             <Flex align="center" gap={minimalistDesign.spacing.sm}>
@@ -446,8 +446,8 @@ export default function RepositoryLayoutClient({
                   <li>{t('repository_layout.mcp.features.analysis')}</li>
                 </ul>
               }
-              style={{ 
-                marginBottom: minimalistDesign.spacing.lg, 
+              style={{
+                marginBottom: minimalistDesign.spacing.lg,
                 borderRadius: minimalistDesign.borderRadius.lg,
                 border: `1px solid ${minimalistDesign.colors.border}`
               }}
@@ -698,15 +698,15 @@ export default function RepositoryLayoutClient({
           borderTop: `1px solid ${minimalistDesign.colors.border}`,
         }}>
           <Space direction="vertical" size={minimalistDesign.spacing.xs}>
-            <Text style={{ 
-              fontSize: 12, 
-              color: minimalistDesign.colors.textSecondary 
+            <Text style={{
+              fontSize: 12,
+              color: minimalistDesign.colors.textSecondary
             }}>
               Powered by <Text style={{ color: minimalistDesign.colors.primary, fontWeight: 500 }}>OpenDeepWiki</Text>
             </Text>
-            <Text style={{ 
-              fontSize: 12, 
-              color: minimalistDesign.colors.textTertiary 
+            <Text style={{
+              fontSize: 12,
+              color: minimalistDesign.colors.textTertiary
             }}>
               <GlobalOutlined style={{ marginRight: 4 }} /> Powered by .NET 9.0
             </Text>

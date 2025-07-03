@@ -172,21 +172,6 @@ public class FileFunction(string gitPath)
         public ReadFileItemInput[] Items { get; set; } = [];
     }
 
-    public class ReadFileItemInput
-    {
-        [Description(
-            "The absolute or relative path of the target file. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
-        public string FilePath { get; set; }
-
-        [Description(
-            "The starting line number for reading (starting from 0), must be less than or equal to the ending line number, and must be within the actual number of lines in the file.")]
-        public int StartLine { get; set; } = 0;
-
-        [Description(
-            "The ending line number for reading (including this line), must be greater than or equal to the starting line number, and must not exceed the total number of lines in the file.")]
-        public int EndLine { get; set; } = 200;
-    }
-
     /// <summary>
     /// 从指定行数开始读取文件内容
     /// </summary>
@@ -269,4 +254,19 @@ public class FileFunction(string gitPath)
             return $"Error reading file: {ex.Message}";
         }
     }
+}
+
+public class ReadFileItemInput
+{
+    [Description(
+        "The absolute or relative path of the target file. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
+    public string FilePath { get; set; }
+
+    [Description(
+        "The starting line number for reading (starting from 0), must be less than or equal to the ending line number, and must be within the actual number of lines in the file.")]
+    public int StartLine { get; set; } = 0;
+
+    [Description(
+        "The ending line number for reading (including this line), must be greater than or equal to the starting line number, and must not exceed the total number of lines in the file.")]
+    public int EndLine { get; set; } = 200;
 }
