@@ -17,35 +17,28 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
 
         var model = $"{json.model}";
 
-        // GPT o系列不能传递温度,并且使用max_completion_tokens
+        // 兼容旧模型 ( max_completion_tokens => max_tokens )
+        if (json != null && json.max_completion_tokens != null && model.StartsWith("o") == false)
+        {
+            json.max_tokens = json.max_completion_tokens;
+            json.Remove("max_completion_tokens");
+        }
+
+        // GPT o系列不能传递温度
         if (model.StartsWith("o"))
         {
             json.Remove("temperature");
         }
 
-        // 增加max_token，从max_completion_tokens读取
-        if (json != null && json.max_completion_tokens != null && model.StartsWith("o") == false)
+        // 关闭推理模式: qwen3系列
+        if (model.StartsWith("qwen3", StringComparison.CurrentCultureIgnoreCase))
         {
-            var maxToken = json.max_completion_tokens;
-            if (maxToken != null)
+            if (json.extra_body == null)
             {
-                json.max_tokens = maxToken;
-                json.max_completion_tokens = null;
+                json.extra_body = new Newtonsoft.Json.Linq.JObject();
             }
 
-            if (model.StartsWith("qwen3", StringComparison.CurrentCultureIgnoreCase))
-            {
-                // 关闭推理模式
-                json.enable_thinking = false;
-            }
-        }
-        else
-        {
-            if (model.StartsWith("qwen3", StringComparison.CurrentCultureIgnoreCase))
-            {
-                // 关闭推理模式
-                json.enable_thinking = false;
-            }
+            json.extra_body.enable_thinking = false;
         }
 
         // 重写请求体
