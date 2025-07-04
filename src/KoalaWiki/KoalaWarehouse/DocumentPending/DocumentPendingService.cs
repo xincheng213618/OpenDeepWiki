@@ -182,31 +182,21 @@ public class DocumentPendingService
     {
         var chat = kernel.Services.GetService<IChatCompletionService>();
 
-        string prompt = string.Empty;
+        string promptName = nameof(PromptConstant.Warehouse.GenerateDocs);
         if (classify.HasValue)
         {
-            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.GenerateDocs) + classify,
-                new KernelArguments()
-                {
-                    ["catalogue"] = catalogue,
-                    ["prompt"] = catalog.Prompt,
-                    ["git_repository"] = gitRepository.Replace(".git", ""),
-                    ["branch"] = branch,
-                    ["title"] = catalog.Name
-                }, OpenAIOptions.ChatModel);
+            promptName += classify;
         }
-        else
-        {
-            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.GenerateDocs),
-                new KernelArguments()
-                {
-                    ["catalogue"] = catalogue,
-                    ["prompt"] = catalog.Prompt,
-                    ["git_repository"] = gitRepository.Replace(".git", ""),
-                    ["branch"] = branch,
-                    ["title"] = catalog.Name
-                }, OpenAIOptions.ChatModel);
-        }
+
+        string prompt = await PromptContext.Warehouse(promptName,
+            new KernelArguments()
+            {
+                ["catalogue"] = catalogue,
+                ["prompt"] = catalog.Prompt,
+                ["git_repository"] = gitRepository.Replace(".git", ""),
+                ["branch"] = branch,
+                ["title"] = catalog.Name
+            }, OpenAIOptions.ChatModel);
 
         var history = new ChatHistory();
 

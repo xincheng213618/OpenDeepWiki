@@ -17,28 +17,19 @@ public static class GenerateThinkCatalogueService
         string catalogue,
         Warehouse warehouse, ClassifyType? classify)
     {
-        string prompt = string.Empty;
+        string promptName = nameof(PromptConstant.Warehouse.AnalyzeCatalogue);
         if (classify.HasValue)
         {
-            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.AnalyzeCatalogue) + classify,
-                new KernelArguments()
-                {
-                    ["code_files"] = catalogue,
-                    ["git_repository_url"] = gitRepository.Replace(".git", ""),
-                    ["repository_name"] = warehouse.Name
-                }, OpenAIOptions.AnalysisModel);
-        }
-        else
-        {
-            prompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.AnalyzeCatalogue),
-                new KernelArguments()
-                {
-                    ["code_files"] = catalogue,
-                    ["git_repository_url"] = gitRepository.Replace(".git", ""),
-                    ["repository_name"] = warehouse.Name
-                }, OpenAIOptions.AnalysisModel);
+            promptName += classify;
         }
 
+        string prompt = await PromptContext.Warehouse(promptName,
+            new KernelArguments()
+            {
+                ["code_files"] = catalogue,
+                ["git_repository_url"] = gitRepository.Replace(".git", ""),
+                ["repository_name"] = warehouse.Name
+            }, OpenAIOptions.AnalysisModel);
 
         DocumentResultCatalogue? result = null;
 
