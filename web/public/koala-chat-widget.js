@@ -739,8 +739,27 @@
   // 最小化聊天窗口
   function minimizeChat() {
     if (chatContainer) {
-      chatContainer.classList.add('minimized');
-      isMinimized = true;
+      const minimizeBtn = chatContainer.querySelector('.koala-header-btn');
+      
+      if (isMinimized) {
+        // 如果已经最小化，恢复正常大小
+        chatContainer.classList.remove('minimized');
+        isMinimized = false;
+        // 更新按钮状态
+        if (minimizeBtn) {
+          minimizeBtn.innerHTML = '−';
+          minimizeBtn.title = '最小化';
+        }
+      } else {
+        // 最小化窗口
+        chatContainer.classList.add('minimized');
+        isMinimized = true;
+        // 更新按钮状态
+        if (minimizeBtn) {
+          minimizeBtn.innerHTML = '▢';
+          minimizeBtn.title = '恢复';
+        }
+      }
     }
   }
 
