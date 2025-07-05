@@ -33,7 +33,7 @@
     apiUrl: '',
     allowedDomains: [],
     enableDomainValidation: false,
-    theme: 'light',
+    theme: 'auto', // 默认使用auto主题
     // 提示相关配置
     enableTooltip: true,
     tooltipText: '点击我询问您想知道的！',
@@ -49,6 +49,501 @@
   let tooltipElement = null;
   let tooltipShown = false;
   let lastTooltipHideTime = 0;
+
+  // 主题相关变量
+  let currentTheme = 'light';
+  let mediaQuery = null;
+  let themeObserver = null;
+
+  // 主题检测和管理
+  function detectTheme() {
+    if (config.theme === 'auto') {
+      // 检测系统主题
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+      return 'light';
+    }
+    return config.theme;
+  }
+
+  // 初始化主题监听
+  function initThemeListener() {
+    if (config.theme === 'auto') {
+      // 监听系统主题变化
+      if (window.matchMedia) {
+        mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        mediaQuery.addEventListener('change', handleThemeChange);
+      }
+    }
+    
+    // 监听用户手动切换主题（通过网页的主题切换器）
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && 
+            (mutation.attributeName === 'class' || mutation.attributeName === 'data-theme')) {
+          handleThemeChange();
+        }
+      });
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme']
+    });
+    
+    themeObserver = observer;
+  }
+
+  // 处理主题变化
+  function handleThemeChange() {
+    const newTheme = detectTheme();
+    if (newTheme !== currentTheme) {
+      currentTheme = newTheme;
+      updateThemeStyles();
+    }
+  }
+
+  // 更新主题样式
+  function updateThemeStyles() {
+    const styleElement = document.getElementById('koala-chat-widget-styles');
+    if (styleElement) {
+      styleElement.textContent = getThemeStyles();
+    }
+    
+    // 更新悬浮球样式
+    if (floatingButton) {
+      updateFloatingButtonTheme();
+    }
+  }
+
+  // 更新悬浮球主题
+  function updateFloatingButtonTheme() {
+    if (!floatingButton) return;
+    
+    const hasCustomIcon = floatingButton.classList.contains('koala-floating-button-custom-icon');
+    
+    floatingButton.className = `koala-floating-button koala-floating-button-${currentTheme}`;
+    
+    // 如果有自定义图标，重新添加自定义图标类
+    if (hasCustomIcon) {
+      floatingButton.classList.add('koala-floating-button-custom-icon');
+    }
+    
+    // 更新动画效果
+    floatingButton.style.animation = 'none';
+    setTimeout(() => {
+      floatingButton.style.animation = '';
+    }, 10);
+  }
+
+  // 获取主题样式
+  function getThemeStyles() {
+    const lightTheme = {
+      buttonBg: 'linear-gradient(135deg, #1677ff 0%, #0958d9 100%)',
+      buttonHoverBg: 'linear-gradient(135deg, #0958d9 0%, #003eb3 100%)',
+      buttonShadow: '0 4px 20px rgba(22, 119, 255, 0.25)',
+      buttonHoverShadow: '0 6px 30px rgba(22, 119, 255, 0.35)',
+      containerBg: '#ffffff',
+      containerBorder: '#e5e5e5',
+      headerBg: '#ffffff',
+      headerBorder: '#e5e5e5',
+      textColor: '#262626',
+      textColorSecondary: '#8c8c8c',
+      tooltipBg: 'rgba(0, 0, 0, 0.85)',
+      tooltipColor: '#ffffff'
+    };
+
+    const darkTheme = {
+      buttonBg: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+      buttonHoverBg: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+      buttonShadow: '0 4px 20px rgba(59, 130, 246, 0.25)',
+      buttonHoverShadow: '0 6px 30px rgba(59, 130, 246, 0.35)',
+      containerBg: '#1a1a1a',
+      containerBorder: '#333333',
+      headerBg: '#1a1a1a',
+      headerBorder: '#333333',
+      textColor: '#ffffff',
+      textColorSecondary: '#a1a1aa',
+      tooltipBg: 'rgba(255, 255, 255, 0.9)',
+      tooltipColor: '#1a1a1a'
+    };
+
+    const theme = currentTheme === 'dark' ? darkTheme : lightTheme;
+
+    return `
+      .koala-chat-widget {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        direction: ltr;
+      }
+
+      .koala-floating-button {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: ${theme.buttonBg};
+        border: none;
+        box-shadow: ${theme.buttonShadow};
+        z-index: 10000;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .koala-floating-button::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: ${theme.buttonBg};
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+      }
+
+      .koala-floating-button:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: ${theme.buttonHoverShadow};
+        background: ${theme.buttonHoverBg};
+      }
+
+      .koala-floating-button:hover::before {
+        opacity: 1;
+      }
+
+      .koala-floating-button:active {
+        transform: translateY(0) scale(1);
+        transition: transform 0.1s ease;
+      }
+
+      .koala-floating-button img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        border-radius: 50%;
+      }
+
+      /* 添加脉冲动画效果 */
+      .koala-floating-button-pulse {
+        animation: koala-pulse 2s infinite;
+      }
+
+      @keyframes koala-pulse {
+        0% {
+          box-shadow: ${theme.buttonShadow};
+        }
+        50% {
+          box-shadow: ${theme.buttonHoverShadow};
+        }
+        100% {
+          box-shadow: ${theme.buttonShadow};
+        }
+      }
+
+      /* 新消息提示动画 */
+      .koala-floating-button-notification {
+        animation: koala-bounce 0.6s ease-in-out;
+      }
+
+      @keyframes koala-bounce {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      /* 自定义图标样式 - 移除背景，完全显示用户图标 */
+      .koala-floating-button-custom-icon {
+        background: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .koala-floating-button-custom-icon::before {
+        display: none !important;
+      }
+
+      .koala-floating-button-custom-icon:hover {
+        background: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      .koala-floating-button-custom-icon:hover::before {
+        display: none !important;
+      }
+
+      .koala-floating-button-custom-icon img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+
+      .koala-chat-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 550px;
+        height: 700px;
+        background: ${theme.containerBg};
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        z-index: 10001;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid ${theme.containerBorder};
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+
+      .koala-chat-container.visible {
+        display: flex;
+        animation: koala-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes koala-slide-in {
+        from {
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .koala-chat-container.minimized {
+        height: 60px;
+        border-radius: 30px;
+      }
+
+      .koala-chat-container.maximized {
+        width: 550px;
+        height: 100vh;
+        bottom: 0;
+        right: 0;
+        top: 0;
+        border-radius: 0;
+      }
+
+      .koala-chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid ${theme.headerBorder};
+        background: ${theme.headerBg};
+        min-height: 60px;
+      }
+
+      .koala-header-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: ${theme.textColor};
+      }
+
+      .koala-header-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .koala-header-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: ${theme.textColorSecondary};
+        transition: all 0.2s ease;
+        font-size: 16px;
+      }
+
+      .koala-header-btn:hover {
+        background-color: ${currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
+        color: ${theme.textColor};
+        transform: scale(1.1);
+      }
+
+      .koala-chat-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: ${theme.containerBg};
+      }
+
+      .koala-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 24px;
+        text-align: center;
+        color: ${theme.textColorSecondary};
+      }
+
+      .koala-empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+      }
+
+      .koala-empty-title {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: ${theme.textColor};
+        font-weight: 500;
+      }
+
+      .koala-empty-description {
+        font-size: 14px;
+        line-height: 1.6;
+        color: ${theme.textColorSecondary};
+      }
+
+      .koala-iframe-container {
+        flex: 1;
+        border: none;
+        width: 100%;
+        height: 100%;
+        background: ${theme.containerBg};
+      }
+
+      .koala-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        color: ${theme.textColorSecondary};
+      }
+
+      .koala-error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        color: #ff4d4f;
+        text-align: center;
+      }
+
+      .koala-error-title {
+        font-weight: 500;
+        margin-bottom: 8px;
+      }
+
+      .koala-error-description {
+        font-size: 14px;
+        color: ${theme.textColorSecondary};
+      }
+
+      .koala-tooltip {
+        position: fixed;
+        background: ${theme.tooltipBg};
+        color: ${theme.tooltipColor};
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        white-space: nowrap;
+        z-index: 10002;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        pointer-events: none;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      }
+
+      .koala-tooltip.visible {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      .koala-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 8px solid transparent;
+        border-top-color: ${theme.tooltipBg};
+      }
+
+      @media (max-width: 768px) {
+        .koala-chat-container {
+          bottom: 0;
+          right: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 0;
+        }
+
+        .koala-chat-container.maximized {
+          width: 100%;
+          height: 100%;
+        }
+
+        .koala-floating-button {
+          bottom: 20px;
+          right: 20px;
+          width: 56px;
+          height: 56px;
+        }
+
+        .koala-tooltip {
+          bottom: 84px;
+          right: 20px;
+          max-width: calc(100vw - 40px);
+          white-space: pre-wrap;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .koala-floating-button {
+          transition: none;
+        }
+        
+        .koala-floating-button:hover {
+          transform: none;
+        }
+        
+        .koala-chat-container.visible {
+          animation: none;
+        }
+      }
+    `;
+  }
 
   // 获取API URL的辅助函数
   function getApiUrl() {
@@ -262,263 +757,35 @@
 
   // 创建样式
   function createStyles() {
-    const styles = `
-      .koala-chat-widget {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        direction: ltr;
-      }
-
-      .koala-floating-button {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background: #1677ff;
-        border: none;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        z-index: 10000;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 24px;
-        transition: transform 0.2s ease;
-      }
-
-      .koala-floating-button:hover {
-        transform: scale(1.05);
-      }
-
-      .koala-chat-container {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        width: 550px;
-        height: 700px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-        z-index: 10001;
-        display: none;
-        flex-direction: column;
-        overflow: hidden;
-        border: 1px solid #d9d9d9;
-      }
-
-      .koala-chat-container.visible {
-        display: flex;
-      }
-
-      .koala-chat-container.minimized {
-        height: 56px;
-      }
-
-      .koala-chat-container.maximized {
-        width: 550px;
-        height: 100vh;
-        bottom: 0;
-        right: 0;
-        top: 0;
-      }
-
-      .koala-chat-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        border-bottom: 1px solid #d9d9d9;
-        background: white;
-        min-height: 56px;
-      }
-
-      .koala-header-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex: 1;
-        font-size: 16px;
-        font-weight: 600;
-        margin: 0;
-        color: #262626;
-      }
-
-      .koala-header-actions {
-        display: flex;
-        gap: 4px;
-      }
-
-      .koala-header-btn {
-        width: 24px;
-        height: 24px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #8c8c8c;
-        transition: background-color 0.2s;
-      }
-
-      .koala-header-btn:hover {
-        background-color: #f5f5f5;
-        color: #595959;
-      }
-
-      .koala-chat-content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
-
-      .koala-empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        padding: 24px;
-        text-align: center;
-        color: #8c8c8c;
-      }
-
-      .koala-empty-icon {
-        font-size: 48px;
-        margin-bottom: 16px;
-      }
-
-      .koala-empty-title {
-        font-size: 18px;
-        margin-bottom: 8px;
-        color: #262626;
-        font-weight: 500;
-      }
-
-      .koala-empty-description {
-        font-size: 14px;
-        line-height: 1.6;
-        color: #8c8c8c;
-      }
-
-      .koala-iframe-container {
-        flex: 1;
-        border: none;
-        width: 100%;
-        height: 100%;
-      }
-
-      .koala-loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        color: #8c8c8c;
-      }
-
-      .koala-error {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        color: #ff4d4f;
-        text-align: center;
-      }
-
-      .koala-error-title {
-        font-weight: 500;
-        margin-bottom: 8px;
-      }
-
-      .koala-error-description {
-        font-size: 14px;
-        color: #8c8c8c;
-      }
-
-      @media (max-width: 768px) {
-        .koala-chat-container {
-          bottom: 0;
-          right: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          border-radius: 0;
-        }
-
-        .koala-chat-container.maximized {
-          width: 100%;
-          height: 100%;
-        }
-
-        .koala-floating-button {
-          bottom: 20px;
-          right: 20px;
-        }
-
-        .koala-tooltip {
-          bottom: 84px;
-          right: 20px;
-          max-width: calc(100vw - 40px);
-          white-space: pre-wrap;
-        }
-      }
-
-      .koala-tooltip {
-        position: fixed;
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 14px;
-        white-space: nowrap;
-        z-index: 998;
-        opacity: 0;
-        transform: translateY(10px);
-        transition: opacity 0.3s ease, transform 0.3s ease;
-        pointer-events: none;
-      }
-
-      .koala-tooltip.visible {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      .koala-tooltip::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 6px solid transparent;
-        border-top-color: rgba(0, 0, 0, 0.8);
-      }
-    `;
-
+    // 初始化主题
+    currentTheme = detectTheme();
+    
     const styleElement = document.createElement('style');
-    styleElement.textContent = styles;
+    styleElement.id = 'koala-chat-widget-styles';
+    styleElement.textContent = getThemeStyles();
     document.head.appendChild(styleElement);
   }
 
   // 创建悬浮球按钮
   function createFloatingButton() {
     const button = document.createElement('button');
-    button.className = 'koala-floating-button';
+    button.className = `koala-floating-button koala-floating-button-${currentTheme}`;
     button.title = '打开 AI 助手';
     
     if (config.expandIcon) {
-      button.style.backgroundImage = `url(data:image/png;base64,${config.expandIcon})`;
-      button.style.backgroundSize = 'cover';
-      button.style.backgroundPosition = 'center';
+      // 当用户提供了图标时，完全使用用户的图标
+      button.classList.add('koala-floating-button-custom-icon');
+      const img = document.createElement('img');
+      img.src = `data:image/png;base64,${config.expandIcon}`;
+      img.alt = 'AI 助手';
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'cover';
+      img.style.borderRadius = '50%';
+      button.appendChild(img);
     } else {
       const baseUrl = getApiUrl();
-      button.innerHTML = `<img src="${baseUrl}/logo.png" alt="AI 助手" style="width: 64px; height: 64px;">`;
+      button.innerHTML = `<img src="${baseUrl}/logo.png" alt="AI 助手" style="width: 32px; height: 32px; object-fit: contain;">`;
     }
 
     button.addEventListener('click', toggleChat);
@@ -826,12 +1093,18 @@
   // 初始化组件
   function initWidget() {
     try {
+      // 初始化主题
+      currentTheme = detectTheme();
+      
       // 创建样式
       createStyles();
 
       // 创建悬浮球按钮
       floatingButton = createFloatingButton();
       document.body.appendChild(floatingButton);
+
+      // 初始化主题监听
+      initThemeListener();
 
       // 初始化用户活动检测
       initActivityListeners();
@@ -877,6 +1150,34 @@
     lastActivity = Date.now();
     tooltipShown = false;
     lastTooltipHideTime = 0;
+
+    // 断开主题监听
+    if (mediaQuery) {
+      mediaQuery.removeEventListener('change', handleThemeChange);
+    }
+    if (themeObserver) {
+      themeObserver.disconnect();
+    }
+  }
+
+  // 添加新的公共方法以支持主题切换
+  function setTheme(theme) {
+    if (['light', 'dark', 'auto'].includes(theme)) {
+      config.theme = theme;
+      const newTheme = detectTheme();
+      if (newTheme !== currentTheme) {
+        currentTheme = newTheme;
+        updateThemeStyles();
+      }
+    }
+  }
+
+  // 获取当前主题
+  function getCurrentTheme() {
+    return {
+      configTheme: config.theme,
+      currentTheme: currentTheme
+    };
   }
 
   // 暴露全局 API
@@ -886,6 +1187,8 @@
     open: openChat,
     close: closeChat,
     toggle: toggleChat,
+    setTheme: setTheme,
+    getCurrentTheme: getCurrentTheme,
     version: '1.0.0'
   };
 
