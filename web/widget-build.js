@@ -10,6 +10,11 @@
 const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
+const handler = require('serve-handler');
+
+// 配置项
+const PORT = 3366; // 服务器端口号
 
 // 检查是否为监视模式
 const isWatchMode = process.argv.includes('--watch');
@@ -62,6 +67,19 @@ const buildOptions = {
 // 监视模式
 async function watchBuild() {
   try {
+    // 创建HTTP服务器
+    const server = http.createServer((req, res) => {
+      return handler(req, res, {
+        public: './',
+        cleanUrls: false
+      });
+    });
+
+    // 启动服务器
+    server.listen(PORT, () => {
+      console.log(`✅ Http server started on port ${PORT}`);
+    });
+
     const ctx = await esbuild.context({
       ...buildOptions,
       plugins: [
@@ -69,12 +87,25 @@ async function watchBuild() {
         {
           name: 'watch-plugin',
           setup(build) {
+            // 是否已经显示链接
+            let linkShown = false;
+
             build.onEnd(result => {
               if (result.errors.length > 0) {
                 console.error('❌ Build failed:', result.errors);
               } else {
                 const timestamp = new Date().toLocaleTimeString();
                 console.log(`🔄 [${timestamp}] File change detected, rebuild successful`);
+
+                // 首次构建成功后显示链接
+                if (!linkShown) {
+                  linkShown = true;
+                  const sampleURL = `http://localhost:${PORT}/samples/widget.html`;
+                  console.log('');
+                  console.log('🔗 Widget sample available at:');
+                  console.log(`\x1b[36m${sampleURL}\x1b[0m`);
+                  console.log('');
+                }
               }
             });
           },
@@ -85,8 +116,14 @@ async function watchBuild() {
     // 启动监视模式
     await ctx.watch();
 
+    // 显示初始链接
+    const sampleURL = `http://localhost:${PORT}/samples/widget.html`;
     console.log('👀 Watching widget files for changes...');
     console.log('✅ Initial build complete');
+    console.log('');
+    console.log('🔗 Widget sample available at:');
+    console.log(`\x1b[36m${sampleURL}\x1b[0m`);
+    console.log('');
     console.log('📝 Changes to files in widget/ directory will trigger automatic rebuild');
     console.log('💡 Press Ctrl+C to stop watching');
 
