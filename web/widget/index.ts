@@ -6,13 +6,16 @@
  * <script src="https://your-domain.com/koala-chat-widget.js"></script>
  * <script>
  *   KoalaChatWidget.init({
- *     appId: 'your-app-id',
- *     organizationName: 'your-org',
- *     repositoryName: 'your-repo',
- *     title: '我的 AI 助手',
- *     expandIcon: 'base64-icon-data',
- *     closeIcon: 'base64-icon-data',
- *     apiUrl: 'https://your-api-domain.com'
+ *     appId: 'your-app-id',  // 必填：应用ID，用于验证域名
+ *     apiUrl: 'https://opendeep.wiki',  // 必填：API服务器地址
+ *
+ *     // 以下参数都是可选的
+ *     title: '我的 AI 助手',         // 可选：标题（可能被验证接口返回的配置覆盖）
+ *     theme: 'light',                 // 可选：主题 'light'|'dark'
+ *
+ *     // UI自定义
+ *     expandIcon: null, // 可选：展开图标
+ *     closeIcon: null,  // 可选：关闭图标
  *   });
  * </script>
  */

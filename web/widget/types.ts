@@ -16,6 +16,7 @@ export interface KoalaChatWidgetConfig {
   tooltipDuration?: number;
   tooltipRepeatDelay?: number;
   onError?: (errorMessage: string) => void;
+  onValidationFailed?: (domain: string) => void;
 }
 
 /**
@@ -28,6 +29,23 @@ export interface KoalaChatWidgetAPI {
   open(): void;
   close(): void;
   toggle(): void;
+}
+
+export interface ValidationResponse {
+  isValid: boolean;
+  reason?: string;
+  appConfig?: {
+    appId: string;
+    name?: string;
+    isEnabled: boolean;
+    organizationName: string;
+    repositoryName: string;
+    allowedDomains: string[];
+    enableDomainValidation: boolean;
+    description?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+  };
 }
 
 // 声明全局Window接口扩展
