@@ -4,6 +4,7 @@
     "dev": "next dev",
     "build": "next build && npm run build:widget",
     "build:widget": "node widget-build.js",
+    "dev:widget": "node widget-build.js --watch",
     "start": "next start",
     "lint": "next lint"
   },

@@ -1,11 +1,18 @@
 /**
- * esbuild 配置文件
- * 用于打包 widget 代码并压缩内联 CSS
+ * esbuild 统一构建脚本
+ * 支持普通构建和监视模式
+ *
+ * 使用方式:
+ * - node widget-build.js          # 普通构建模式
+ * - node widget-build.js --watch  # 监视模式
  */
 
 const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
+
+// 检查是否为监视模式
+const isWatchMode = process.argv.includes('--watch');
 
 // CSS 压缩函数
 function minifyCSS(css) {
@@ -41,24 +48,70 @@ const cssMinifierPlugin = {
   }
 };
 
-// 打包配置
-async function build() {
+// 构建配置
+const buildOptions = {
+  entryPoints: ['widget/index.ts'],
+  bundle: true,
+  minify: true,
+  sourcemap: true,
+  platform: 'browser',
+  outfile: 'public/koala-chat-widget.js',
+  plugins: [cssMinifierPlugin],
+};
+
+// 监视模式
+async function watchBuild() {
   try {
-    const result = await esbuild.build({
-      entryPoints: ['widget/index.ts'],
-      bundle: true,
-      minify: true,
-      sourcemap: true,
-      platform: 'browser',
-      outfile: 'public/koala-chat-widget.js',
-      plugins: [cssMinifierPlugin],
+    const ctx = await esbuild.context({
+      ...buildOptions,
+      plugins: [
+        ...buildOptions.plugins,
+        {
+          name: 'watch-plugin',
+          setup(build) {
+            build.onEnd(result => {
+              if (result.errors.length > 0) {
+                console.error('❌ Build failed:', result.errors);
+              } else {
+                const timestamp = new Date().toLocaleTimeString();
+                console.log(`🔄 [${timestamp}] File change detected, rebuild successful`);
+              }
+            });
+          },
+        },
+      ],
     });
 
-    console.log('✅ Widget 构建成功');
+    // 启动监视模式
+    await ctx.watch();
+
+    console.log('👀 Watching widget files for changes...');
+    console.log('✅ Initial build complete');
+    console.log('📝 Changes to files in widget/ directory will trigger automatic rebuild');
+    console.log('💡 Press Ctrl+C to stop watching');
+
+    // 保持进程运行
+    await new Promise(() => {}); // 永不解决的 Promise
   } catch (error) {
-    console.error('❌ Widget 构建失败:', error);
+    console.error('❌ Widget watch mode failed to start:', error);
     process.exit(1);
   }
 }
 
-build();
+// 单次构建
+async function singleBuild() {
+  try {
+    await esbuild.build(buildOptions);
+    console.log('✅ Widget build successful');
+  } catch (error) {
+    console.error('❌ Widget build failed:', error);
+    process.exit(1);
+  }
+}
+
+// 根据模式执行不同的构建函数
+if (isWatchMode) {
+  watchBuild();
+} else {
+  singleBuild();
+}
