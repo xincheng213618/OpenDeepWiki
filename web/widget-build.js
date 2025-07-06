@@ -13,6 +13,9 @@ const path = require('path');
 const http = require('http');
 const handler = require('serve-handler');
 
+// 配置项
+const PORT = 3366; // 服务器端口号
+
 // 检查是否为监视模式
 const isWatchMode = process.argv.includes('--watch');
 
@@ -65,7 +68,6 @@ const buildOptions = {
 async function watchBuild() {
   try {
     // 创建HTTP服务器
-    const PORT = 3366;
     const server = http.createServer((req, res) => {
       return handler(req, res, {
         public: './',
@@ -115,7 +117,7 @@ async function watchBuild() {
     await ctx.watch();
 
     // 显示初始链接
-    const sampleURL = `http://localhost:3366/samples/widget.html`;
+    const sampleURL = `http://localhost:${PORT}/samples/widget.html`;
     console.log('👀 Watching widget files for changes...');
     console.log('✅ Initial build complete');
     console.log('');
