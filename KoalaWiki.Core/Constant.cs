@@ -1,4 +1,4 @@
-﻿namespace KoalaWiki;
+﻿namespace KoalaWiki.Core;
 
 public static class Constant
 {

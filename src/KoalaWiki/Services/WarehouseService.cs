@@ -16,6 +16,7 @@ using KoalaWiki.Git;
 using KoalaWiki.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using KoalaWiki.Core;
 
 namespace KoalaWiki.Services;
 

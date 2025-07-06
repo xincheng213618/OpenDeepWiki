@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace KoalaWiki.Extensions
+namespace KoalaWiki.Core.Extensions
 {
     public static class StringExtensions
     {

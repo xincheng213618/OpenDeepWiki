@@ -1,3 +1,4 @@
+using KoalaWiki.Core.Extensions;
 using KoalaWiki.Provider.PostgreSQL;
 using KoalaWiki.Provider.Sqlite;
 using KoalaWiki.Provider.SqlServer;

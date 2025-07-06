@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using KoalaWiki.Core;
 using LibGit2Sharp;
 
 namespace KoalaWiki.Git;

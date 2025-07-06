@@ -1,11 +1,5 @@
 using KoalaWiki.BackendService;
 using KoalaWiki.Mem0;
-using KoalaWiki.Infrastructure;
-using KoalaWiki.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Serilog;
-using Microsoft.AspNetCore.Http.Features;
 
 AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
 

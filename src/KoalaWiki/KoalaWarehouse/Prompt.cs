@@ -1,4 +1,6 @@
-﻿namespace KoalaWiki.KoalaWarehouse;
+﻿using KoalaWiki.Core.Extensions;
+
+namespace KoalaWiki.KoalaWarehouse;
 
 public static class Prompt
 {

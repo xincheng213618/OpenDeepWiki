@@ -1,4 +1,5 @@
-﻿using KoalaWiki.Extensions;
+﻿using KoalaWiki.Core.Extensions;
+using KoalaWiki.Extensions;
 using Newtonsoft.Json;
 
 namespace KoalaWiki.Options;

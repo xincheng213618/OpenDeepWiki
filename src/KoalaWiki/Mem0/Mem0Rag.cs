@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Headers;
+using KoalaWiki.Core.Extensions;
 using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Prompts;
 using Mem0.NET;

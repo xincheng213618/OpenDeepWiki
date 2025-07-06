@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text;
 using System.Text.RegularExpressions;
+using KoalaWiki.Core.Extensions;
 using KoalaWiki.Domains;
 using KoalaWiki.Domains.DocumentFile;
 using KoalaWiki.Domains.Warehouse;
