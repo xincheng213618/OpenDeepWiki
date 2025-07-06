@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Button, Upload, message, Tooltip } from 'antd';
-import { LoadingOutlined, CloseCircleFilled } from '@ant-design/icons';
+import { LoadingOutlined, CloseCircleFilled, CloseCircleOutlined } from '@ant-design/icons';
 import { createStyles } from 'antd-style';
 import type { UploadProps } from 'antd';
 import { ActionIcon } from '@lobehub/ui';
@@ -35,21 +35,21 @@ const useStyles = createStyles(({ css, token }) => ({
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     border: 1px solid ${token.colorBorderSecondary};
     transition: transform 0.2s ease;
-    
+
     &:hover {
       transform: scale(1.02);
-      
+
       .remove-button {
         opacity: 1;
       }
     }
-    
+
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    
+
     .remove-button {
       position: absolute;
       top: 4px;
@@ -65,7 +65,7 @@ const useStyles = createStyles(({ css, token }) => ({
       cursor: pointer;
       opacity: 0.7;
       transition: all 0.2s ease;
-      
+
       &:hover {
         background: rgba(0, 0, 0, 0.8);
         opacity: 1;
@@ -81,13 +81,13 @@ const useStyles = createStyles(({ css, token }) => ({
       padding: ${token.paddingSM}px ${token.paddingMD}px;
       border-color: ${token.colorBorderSecondary};
       transition: all 0.3s;
-      
+
       &:hover, &:focus {
         border-color: ${token.colorPrimary};
         box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
       }
     }
-    
+
     .ant-btn {
       border-radius: ${token.borderRadiusLG}px;
     }
@@ -251,11 +251,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     onSend={handleSend}
                     disabled={disabled}
                     loading={loading}
-                    textAreaRightAddons={<ChatInputArea.SendButton
-                        icon={<ArrowUp />}
-                        onSend={handleSend}
-                        onStop={handleStop}
-                    />}
+                    textAreaRightAddons={
+                        <ChatInputArea.SendButton
+                            disabled={imageUploading || disabled}
+                            loading={loading}
+                            icon={<ArrowUp />}
+                            onSend={handleSend}
+                            onStop={handleStop}
+                        />
+                    }
                     topAddons={
                         <ChatInputActionBar
                             leftAddons={
@@ -284,9 +288,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     <Tooltip title="清空消息">
                                         <ActionIcon
                                             className={styles.actionButton}
-                                            style={{ 
+                                            style={{
                                                 marginLeft: 'auto',
-                                                marginRight: '20px',
                                                 color: 'red',
                                              }}
                                             icon={<Trash2
@@ -295,6 +298,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                             onClick={onClear}
                                         />
                                     </Tooltip>
+                                    {loading && (
+                                        <Tooltip title="停止生成">
+                                            <ActionIcon
+                                                className={styles.actionButton}
+                                                style={{ color: 'grey' }}
+                                                icon={<CloseCircleOutlined />}
+                                                onClick={handleStop}
+                                            />
+                                        </Tooltip>
+                                    )}
                                 </>
                             }
                         />
