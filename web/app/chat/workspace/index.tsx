@@ -351,6 +351,7 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
 
     const handleStopGeneration = () => {
         abortControllerRef.current?.abort();
+        setIsLoading(false);
     }
 
 

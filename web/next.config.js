@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  reactStrictMode: true,  
+  reactStrictMode: true,
   transpilePackages: ['antd','@ant-design/icons'],
   // CSS配置
   experimental: {
@@ -27,11 +27,11 @@ const nextConfig = {
         });
       }
     });
-    
+
     return config;
   },
   async rewrites() {
-    const apiUrl = 'http://localhost:50323/'
+    const apiUrl = 'http://localhost:5085/'
 
     // 如果NEXT_PUBLIC_API_URL环境变量有值则使用
     if (process.env?.NEXT_PUBLIC_API_URL) {
