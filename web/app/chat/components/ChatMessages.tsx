@@ -8,9 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Copy, MoreVertical, RefreshCw, Trash2, User, Bot, Loader2, Sparkles, Wrench } from 'lucide-react';
+import { Copy, MoreVertical, RefreshCw, Trash2, User, Bot, Loader2, Sparkles, Wrench, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { ChatMessageItem } from '..';
 
 interface ChatMessagesProps {
@@ -40,23 +40,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 
   const handleCopyMessage = (content: string) => {
     navigator.clipboard.writeText(content);
-    // 使用原生浏览器API显示简单提示
-    const notification = document.createElement('div');
-    notification.textContent = '已复制到剪贴板';
-    notification.style.position = 'fixed';
-    notification.style.bottom = '20px';
-    notification.style.left = '50%';
-    notification.style.transform = 'translateX(-50%)';
-    notification.style.padding = '8px 16px';
-    notification.style.backgroundColor = 'hsl(var(--primary))';
-    notification.style.color = 'hsl(var(--primary-foreground))';
-    notification.style.borderRadius = '4px';
-    notification.style.zIndex = '9999';
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      document.body.removeChild(notification);
-    }, 2000);
+    toast.success('已复制到剪贴板');
   };
 
   const handleDeleteMessage = (messageId: string) => {
@@ -78,8 +62,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   const renderMessageContent = (message: ChatMessageItem) => {
     if (message.status === 'loading') {
       return (
-        <div className="flex items-center gap-2 p-2 text-muted-foreground">
-          <Skeleton className="h-4 w-4 rounded-full" />
+        <div className="flex items-center gap-2 p-3 text-muted-foreground animate-pulse">
+          <Loader2 className="h-4 w-4 animate-spin" />
           <span>
             正在思考
             <span className="inline-flex items-center ml-1">
@@ -110,27 +94,30 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             case 'reasoning':
               return (
                 <div key={`reasoning-${index}`} className="p-3 bg-muted/50 rounded-md border border-border text-sm">
-                  <div className="flex items-center gap-1.5 mb-1 text-muted-foreground font-medium">
+                  <div className="flex items-center gap-1.5 mb-2 text-muted-foreground font-medium">
                     <Sparkles className="h-4 w-4" />
                     <span>思考过程</span>
                   </div>
-                  <div className="whitespace-pre-wrap">{contentItem.content}</div>
+                  <div className="whitespace-pre-wrap text-xs leading-relaxed">
+                    {contentItem.content}
+                  </div>
                 </div>
               );
               
             case 'tool':
               return (
-                <div key={`tool-${index}`} className="p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-md border border-blue-200 dark:border-blue-900 text-sm">
-                  <div className="flex items-center gap-1.5 mb-1 text-blue-600 dark:text-blue-400 font-medium">
+                <div key={`tool-${index}`} className="p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-md border border-blue-200 dark:border-blue-900/30 text-sm">
+                  <div className="flex items-center gap-1.5 mb-2 text-blue-600 dark:text-blue-400 font-medium">
                     <Wrench className="h-4 w-4" />
-                    <span>工具调用: {contentItem.toolId}</span>
+                    <span>工具调用: {contentItem.toolName || contentItem.toolId}</span>
                   </div>
-                  <div className="font-mono text-xs whitespace-pre-wrap">
-                    参数: {contentItem.toolArgs}
+                  <div className="font-mono text-xs whitespace-pre-wrap bg-background/80 p-2 rounded border border-border/50 max-h-[200px] overflow-auto">
+                    <div className="mb-1 text-muted-foreground">参数:</div>
+                    <div className="mb-2">{contentItem.toolArgs}</div>
                     {contentItem.toolResult && (
                       <>
-                        <br />
-                        结果: {contentItem.toolResult}
+                        <div className="mb-1 text-muted-foreground">结果:</div>
+                        <div>{contentItem.toolResult}</div>
                       </>
                     )}
                   </div>
@@ -163,6 +150,9 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                         alt="图片内容"
                         className="max-w-[200px] max-h-[200px] rounded-md border border-border object-contain hover:opacity-90 transition-opacity"
                       />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                        <span className="text-white text-xs">点击查看大图</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -171,7 +161,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             default:
               // 处理其他类型或未知类型
               return (
-                <div key={`unknown-${index}`} className="text-sm">
+                <div key={`unknown-${index}`} className="text-sm text-muted-foreground italic">
                   {contentItem.content || JSON.stringify(contentItem)}
                 </div>
               );
@@ -183,12 +173,12 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 
   return (
     <div className="h-full p-4 overflow-y-auto bg-background">
-      <div className="flex flex-col gap-6 w-full">
+      <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
         {messages.map((message) => (
           <div
             key={message.id}
             className={cn(
-              "flex gap-3 max-w-full",
+              "flex gap-3 max-w-full group animate-in fade-in-0 duration-200",
               message.role === 'user' ? "flex-row-reverse" : "flex-row"
             )}
           >
@@ -196,16 +186,16 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             <div className="flex-shrink-0">
               <Avatar className={cn(
                 "border-2 border-background",
-                message.role === 'user' ? "bg-primary text-primary-foreground" : "bg-orange-500 text-white"
+                message.role === 'user' ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
               )}>
                 {message.role === 'user' ? (
                   <>
-                    <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
+                    <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
                     <AvatarImage src="/avatar-user.png" />
                   </>
                 ) : (
                   <>
-                    <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
+                    <AvatarFallback><Bot className="h-4 w-4" /></AvatarFallback>
                     <AvatarImage src="/avatar-bot.png" />
                   </>
                 )}
@@ -218,10 +208,10 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
               message.role === 'user' ? "mr-2" : "ml-2"
             )}>
               <Card className={cn(
-                "p-4",
+                "p-4 overflow-hidden",
                 message.role === 'user' 
                   ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" 
-                  : "bg-card text-card-foreground rounded-2xl rounded-tl-sm"
+                  : "bg-card text-card-foreground rounded-2xl rounded-tl-sm shadow-sm"
               )}>
                 {renderMessageContent(message)}
                 
@@ -236,7 +226,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                         <MoreVertical className="h-3.5 w-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align={message.role === 'user' ? "start" : "end"}>
+                    <DropdownMenuContent align={message.role === 'user' ? "start" : "end"} className="w-40">
                       <DropdownMenuItem onClick={() => {
                         // 提取所有文本和推理内容
                         const textContent = message.content
@@ -246,7 +236,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                         handleCopyMessage(textContent);
                       }}>
                         <Copy className="mr-2 h-4 w-4" />
-                        <span>复制</span>
+                        <span>复制内容</span>
                       </DropdownMenuItem>
                       
                       {message.role === 'assistant' && (
@@ -261,7 +251,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                         className="text-destructive focus:text-destructive"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        <span>删除</span>
+                        <span>删除消息</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -273,10 +263,13 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                 "flex items-center gap-2 mt-1 text-xs text-muted-foreground",
                 message.role === 'user' ? "justify-end mr-2" : "justify-start ml-2"
               )}>
-                <Badge variant={message.role === 'user' ? "default" : "secondary"} className="px-1.5 py-0 text-[10px] font-normal">
+                <Badge variant={message.role === 'user' ? "outline" : "secondary"} className="px-1.5 py-0 text-[10px] font-normal">
                   {message.role === 'user' ? '用户' : 'AI'}
                 </Badge>
-                <span>{formatTimestamp(message.createAt)}</span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {formatTimestamp(message.createAt)}
+                </span>
               </div>
             </div>
           </div>
@@ -295,13 +288,17 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              if (activeMessageId) {
-                onDeleteMessage?.(activeMessageId);
-                setActiveMessageId(null);
-              }
-              setDeleteDialogOpen(false);
-            }}>
+            <AlertDialogAction 
+              onClick={() => {
+                if (activeMessageId) {
+                  onDeleteMessage?.(activeMessageId);
+                  setActiveMessageId(null);
+                  toast.success('消息已删除');
+                }
+                setDeleteDialogOpen(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               删除
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -319,13 +316,16 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              if (activeMessageId) {
-                onRegenerateMessage?.(activeMessageId);
-                setActiveMessageId(null);
-              }
-              setRegenerateDialogOpen(false);
-            }}>
+            <AlertDialogAction 
+              onClick={() => {
+                if (activeMessageId) {
+                  onRegenerateMessage?.(activeMessageId);
+                  setActiveMessageId(null);
+                  toast.success('正在重新生成回答');
+                }
+                setRegenerateDialogOpen(false);
+              }}
+            >
               确定
             </AlertDialogAction>
           </AlertDialogFooter>

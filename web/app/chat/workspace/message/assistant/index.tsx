@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { getFileContentByLine } from "../../../../services/warehouseService";
+import { cn } from "@/lib/utils";
 
 interface AssistantMessageProps {
     messageItem: MessageItem;
@@ -289,29 +290,12 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                         <div key={index} className="border border-border rounded-lg overflow-hidden">
                                             <div
                                                 onClick={() => handleFileClick(item)}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    backgroundColor: isExpanded ? '#f0f7ff' : '#fafafa',
-                                                    borderBottom: isExpanded ? '1px solid #e8e8e8' : 'none',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    padding: '6px',
-                                                    justifyContent: 'space-between',
-                                                    fontSize: '13px',
-                                                    transition: 'all 0.2s ease',
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.backgroundColor = isExpanded ? '#e6f3ff' : '#f0f0f0';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.backgroundColor = isExpanded ? '#f0f7ff' : '#fafafa';
-                                                }}
+                                                className={cn(
+                                                    "cursor-pointer flex items-center justify-between p-1.5 px-2 transition-colors",
+                                                    isExpanded ? "bg-primary/5" : "bg-muted/50"
+                                                )}
                                             >
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 8,
-                                                }}>
+                                                <div className="flex items-center gap-2">
                                                     <FileText size={14} className="text-primary" />
                                                     <TooltipProvider>
                                                         <Tooltip>
@@ -325,37 +309,18 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
-                                                    <span style={{
-                                                        color: '#8c8c8c',
-                                                        fontSize: '12px',
-                                                    }}>
+                                                    <span className="text-muted-foreground text-xs">
                                                         {item.StartLine} - {item.EndLine} 行
                                                     </span>
                                                 </div>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 4,
-                                                }}>
+                                                <div className="flex items-center gap-1">
                                                     {isLoading && <Skeleton className="h-4 w-4 rounded-full" />}
                                                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                                 </div>
                                             </div>
                                             {isExpanded && content && (
-                                                <div style={{
-                                                    position: 'relative',
-                                                    maxHeight: '400px',
-                                                    overflowY: 'auto',
-                                                    fontSize: '12px',
-                                                }}>
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        top: '8px',
-                                                        right: '8px',
-                                                        zIndex: 10,
-                                                        display: 'flex',
-                                                        gap: '4px',
-                                                    }}>
+                                                <div className="relative max-h-[400px] overflow-y-auto text-xs">
+                                                    <div className="absolute top-2 right-2 z-10 flex gap-1">
                                                         <TooltipProvider>
                                                             <Tooltip>
                                                                 <TooltipTrigger asChild>
@@ -388,8 +353,8 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                             const isInRange = actualLineNumber >= item.StartLine && actualLineNumber <= item.EndLine;
                                                             return {
                                                                 style: {
-                                                                    backgroundColor: isInRange ? '#e6f3ff' : 'transparent',
-                                                                    borderLeft: isInRange ? '3px solid #1890ff' : 'none',
+                                                                    backgroundColor: isInRange ? 'hsl(var(--primary) / 0.1)' : 'transparent',
+                                                                    borderLeft: isInRange ? '3px solid hsl(var(--primary))' : 'none',
                                                                     paddingLeft: isInRange ? '5px' : '8px',
                                                                     display: 'block',
                                                                     width: '100%',
@@ -423,38 +388,15 @@ export default function AssistantMessage({ messageItem, handleDelete,
                 } else if (type === 'fileInfo') {
                     if (parsedArgs.filePath && Array.isArray(parsedArgs.filePath)) {
                         return (
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                marginBottom: 5,
-                                gap: 8,
-                            }}>
+                            <div className="flex flex-col gap-2">
                                 {parsedArgs.filePath.map((path: string, index: number) => (
-                                    <div key={index} style={{
-                                        border: '1px solid #e8e8e8',
-                                        borderRadius: 8,
-                                        overflow: 'hidden',
-                                    }}>
-                                        <div style={{
-                                            padding: '8px 12px',
-                                            backgroundColor: '#fafafa',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 8,
-                                            fontSize: '13px',
-                                        }}>
-                                            <FileText size={14} color="#1890ff" />
-                                            <span style={{
-                                                color: '#495057',
-                                                fontWeight: 500,
-                                                flex: 1,
-                                            }}>
+                                    <div key={index} className="border border-border rounded-lg overflow-hidden">
+                                        <div className="p-2 bg-muted/50 flex items-center gap-2 text-xs">
+                                            <FileText size={14} className="text-primary" />
+                                            <span className="text-foreground font-medium flex-1">
                                                 {path}
                                             </span>
-                                            <span style={{
-                                                color: '#8c8c8c',
-                                                fontSize: '12px',
-                                            }}>
+                                            <span className="text-muted-foreground text-xs">
                                                 文件信息
                                             </span>
                                         </div>
@@ -465,19 +407,9 @@ export default function AssistantMessage({ messageItem, handleDelete,
                     }
                 } else if (type === 'ragSearch') {
                     return (
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 8,
-                        }}>
+                        <div className="flex flex-col gap-2">
                             <span>RAG搜索</span>
-                            <pre style={{
-                                backgroundColor: '#f8f9fa',
-                                padding: '8px',
-                                borderRadius: 6,
-                                fontSize: '8px',
-                                color: '#495057',
-                            }}>
+                            <pre className="bg-muted p-2 rounded-md text-xs text-muted-foreground overflow-auto border">
                                 {toolCall.arguments}
                             </pre>
                         </div>
@@ -509,53 +441,20 @@ export default function AssistantMessage({ messageItem, handleDelete,
 
                     if (parsedArgs && parsedArgs.GitIssues && Array.isArray(parsedArgs.GitIssues)) {
                         return (
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 12,
-                                maxHeight: '600px',
-                                overflowY: 'auto',
-                            }}>
+                            <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto">
                                 {parsedArgs.GitIssues.map((issue: GitIssueItem, index: number) => (
-                                    <div key={index} style={{
-                                        borderRadius: 8,
-                                        padding: '12px',
-                                        backgroundColor: '#fafafa',
-                                        transition: 'all 0.2s ease',
-                                    }}>
-                                        <div style={{
-                                            display: 'flex',
-                                            alignItems: 'flex-start',
-                                            justifyContent: 'space-between',
-                                            marginBottom: 8,
-                                        }}>
-                                            <div style={{ flex: 1 }}>
+                                    <div key={index} className="rounded-lg p-3 bg-muted/30 transition-all duration-200">
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex-1">
                                                 <h4
                                                     onClick={() => window.open(issue.urlHtml, '_blank')}
-                                                    style={{
-                                                        margin: 0,
-                                                        fontSize: '14px',
-                                                        fontWeight: 600,
-                                                        color: '#1890ff',
-                                                        cursor: 'pointer',
-                                                        lineHeight: '1.4',
-                                                        marginBottom: 4,
-                                                    }}>
+                                                    className="m-0 text-sm font-semibold text-primary cursor-pointer leading-tight mb-1 hover:underline"
+                                                >
                                                     {issue.title}
                                                 </h4>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 12,
-                                                    fontSize: '12px',
-                                                    color: '#8c8c8c',
-                                                    marginBottom: 6,
-                                                }}>
+                                                <div className="flex items-center gap-3 text-xs text-muted-foreground mb-1.5">
                                                     {issue.number && (
-                                                        <span style={{
-                                                            fontWeight: 500,
-                                                            color: '#666',
-                                                        }}>
+                                                        <span className="font-medium text-muted-foreground">
                                                             #{issue.number}
                                                         </span>
                                                     )}
@@ -568,21 +467,13 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                         </Badge>
                                                     )}
                                                     {issue.author && (
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 4,
-                                                        }}>
+                                                        <div className="flex items-center gap-1">
                                                             <User size={12} />
                                                             <span>{issue.author}</span>
                                                         </div>
                                                     )}
                                                     {issue.createdAt && (
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 4,
-                                                        }}>
+                                                        <div className="flex items-center gap-1">
                                                             <Calendar size={12} />
                                                             <span>
                                                                 {new Date(issue.createdAt).toLocaleDateString('zh-CN')}
@@ -593,17 +484,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                             </div>
                                         </div>
                                         {issue.content && (
-                                            <div style={{
-                                                fontSize: '12px',
-                                                color: '#595959',
-                                                lineHeight: '1.5',
-                                                backgroundColor: '#ffffff',
-                                                padding: '8px',
-                                                borderRadius: 4,
-                                                border: '1px solid #f0f0f0',
-                                                maxHeight: '120px',
-                                                overflowY: 'auto',
-                                            }}>
+                                            <div className="text-xs text-muted-foreground leading-relaxed bg-background p-2 rounded border max-h-[120px] overflow-y-auto">
                                                 {issue.content.length > 200
                                                     ? `${issue.content.substring(0, 200)}...`
                                                     : issue.content
@@ -613,12 +494,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                     </div>
                                 ))}
                                 {parsedArgs.GitIssues.length === 0 && (
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: '20px',
-                                        color: '#8c8c8c',
-                                        fontSize: '12px',
-                                    }}>
+                                    <div className="text-center py-5 text-muted-foreground text-xs">
                                         没有找到相关的Issues
                                     </div>
                                 )}
@@ -627,43 +503,22 @@ export default function AssistantMessage({ messageItem, handleDelete,
                     }
                     // 如果不是标准格式，回退到原始显示
                     return (
-                        <pre style={{
-                            backgroundColor: '#f8f9fa',
-                            padding: '8px',
-                            borderRadius: 6,
-                            fontSize: '8px',
-                            color: '#495057',
-                            overflow: 'auto',
-                            border: '1px solid #e9ecef',
-                        }}>
+                        <pre className="bg-muted p-2 rounded-md text-xs text-muted-foreground overflow-auto border">
                             {toolCall.arguments}
                         </pre>
                     );
                 } else {
                     return (
-                        <pre style={{
-                            backgroundColor: '#f8f9fa',
-                            padding: '8px',
-                            borderRadius: 6,
-                            fontSize: '8px',
-                            color: '#495057',
-                            overflow: 'auto',
-                            border: '1px solid #e9ecef',
-                        }}>
+                        <pre className="bg-muted p-2 rounded-md text-xs text-muted-foreground overflow-auto border">
                             {toolCall.arguments}
                         </pre>
                     );
                 }
             } catch (error) {
                 return (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '8px',
-                    }}>
-                        <Loader2 size={16} />
-                        <span style={{ marginLeft: 8, color: '#6c757d' }}>处理中...</span>
+                    <div className="flex items-center justify-center p-2">
+                        <Loader2 size={16} className="animate-spin" />
+                        <span className="ml-2 text-muted-foreground">处理中...</span>
                     </div>
                 );
             }
@@ -671,21 +526,21 @@ export default function AssistantMessage({ messageItem, handleDelete,
 
         const getToolInfo = (functionName: string) => {
             if (functionName === 'FileFunction-FileFromLine') {
-                return { label: '读取文件内容', color: '#52c41a' };
+                return { label: '读取文件内容', color: 'text-green-600 dark:text-green-400' };
             } else if (functionName === 'FileFunction-FileInfo') {
-                return { label: '获取文件信息', color: '#1890ff' };
+                return { label: '获取文件信息', color: 'text-blue-600 dark:text-blue-400' };
             }
             else if (functionName === 'RagFunction-RagSearch') {
-                return { label: 'RAG搜索', color: '#722ed1' };
+                return { label: 'RAG搜索', color: 'text-purple-600 dark:text-purple-400' };
             }
             else if (functionName === 'Github-SearchIssues') {
-                return { label: 'GitHub Issues搜索', color: '#24292e' };
+                return { label: 'GitHub Issues搜索', color: 'text-gray-700 dark:text-gray-300' };
             }
             else if (functionName === 'Gitee-SearchIssues') {
-                return { label: 'Gitee Issues搜索', color: '#c71d23' };
+                return { label: 'Gitee Issues搜索', color: 'text-red-600 dark:text-red-400' };
             }
             else {
-                return { label: functionName, color: '#722ed1' };
+                return { label: functionName, color: 'text-purple-600 dark:text-purple-400' };
             }
         };
 
@@ -717,7 +572,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                 variant="accent"
                 className="rounded-lg overflow-hidden"
                 title={
-                    <div className="flex items-center gap-1 font-medium" style={{ color: toolInfo.color }}>
+                    <div className={cn("flex items-center gap-1 font-medium", toolInfo.color)}>
                         {toolInfo.label}
                     </div>
                 }
@@ -734,8 +589,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
         const allContent = messageItem.content as any[];
 
         return (
-            <Flexbox
-            >
+            <Flexbox>
                 {allContent.map((contentItem, index) => {
                     switch (contentItem.type) {
                         case 'reasoning':
@@ -744,7 +598,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                     key={`reasoning-${index}`}
                                     defaultOpen={true}
                                     variant="accent"
-                                    className="bg-amber-50 dark:bg-amber-950/20 rounded-lg overflow-hidden"
+                                    className="bg-primary/5 dark:bg-primary/10 rounded-lg overflow-hidden"
                                     title={
                                         <div className="flex items-center font-medium">
                                             推理内容
@@ -780,21 +634,9 @@ export default function AssistantMessage({ messageItem, handleDelete,
                             return (
                                 <div key={`text-${index}`}>
                                     {!contentItem.content || contentItem.content === '' ? (
-                                        <div style={{
-                                            borderRadius: 8,
-                                            padding: '8px',
-                                            minHeight: '60px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                        }}>
-                                            <div style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 12,
-                                                color: '#8c8c8c',
-                                            }}>
-                                                <Loader2 size={16} />
+                                        <div className="rounded-lg p-3 min-h-[60px] flex items-center justify-center">
+                                            <div className="flex items-center gap-3 text-muted-foreground">
+                                                <Loader2 size={16} className="animate-spin" />
                                                 <span>正在思考中...</span>
                                             </div>
                                         </div>
@@ -806,6 +648,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                 } else {
                                                     return (
                                                         <Markdown
+                                                            key={partIndex}
                                                             fontSize={12}
                                                             children={part.content}
                                                             enableMermaid
@@ -823,25 +666,22 @@ export default function AssistantMessage({ messageItem, handleDelete,
 
                         case 'image':
                             return contentItem.imageContents && contentItem.imageContents.length > 0 ? (
-                                <div key={`image-${index}`} style={{
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    gap: 8,
-                                    marginBottom: 8
-                                }}>
+                                <div key={`image-${index}`} className="flex flex-wrap gap-2 mb-2">
                                     {contentItem.imageContents.map((image: any, imgIndex: number) => (
-                                        <img
-                                            key={imgIndex}
-                                            src={`data:${image.mimeType};base64,${image.data}`}
-                                            alt="AI生成的图片"
-                                            style={{
-                                                maxWidth: '200px',
-                                                maxHeight: '200px',
-                                                borderRadius: '8px',
-                                                objectFit: 'contain'
-                                            }}
+                                        <div 
+                                            key={imgIndex} 
+                                            className="relative group cursor-pointer"
                                             onClick={() => window.open(`data:${image.mimeType};base64,${image.data}`, '_blank')}
-                                        />
+                                        >
+                                            <img
+                                                src={`data:${image.mimeType};base64,${image.data}`}
+                                                alt="AI生成的图片"
+                                                className="max-w-[200px] max-h-[200px] rounded-md border border-border object-contain hover:opacity-90 transition-opacity"
+                                            />
+                                            <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                                                <span className="text-foreground text-xs">点击查看大图</span>
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             ) : null;
@@ -852,71 +692,71 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                     key={`git-issues-${index}`}
                                     defaultOpen={true}
                                     variant="accent"
-                                    className="bg-green-50 dark:bg-green-950/20 rounded-lg overflow-hidden mb-2"
+                                    className="bg-primary/5 dark:bg-primary/10 rounded-lg overflow-hidden mb-2"
                                     title={
-                                        <div className="flex items-center gap-2 font-medium text-green-600 dark:text-green-400">
+                                        <div className="flex items-center gap-2 font-medium text-primary">
                                             <ExternalLink size={16} />
                                             Issues 搜索结果 ({contentItem.gitIssues.length} 条)
                                         </div>
                                     }
                                 >
                                     <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto px-2 pb-2">
-                                                        {contentItem.gitIssues.map((issue: any, issueIndex: number) => (
-                                                            <div key={issueIndex} className="rounded-lg p-3 transition-all duration-200 hover:bg-muted/50">
-                                                                <div className="flex items-start justify-between mb-2">
-                                                                    <div className="flex-1">
-                                                                        <h4
-                                                                            onClick={() => window.open(issue.urlHtml, '_blank')}
-                                                                            className="m-0 text-sm font-semibold text-primary cursor-pointer leading-tight mb-1 hover:underline"
-                                                                        >
-                                                                            {issue.title}
-                                                                        </h4>
-                                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-1.5">
-                                                                            {issue.number && (
-                                                                                <span className="font-medium text-muted-foreground">
-                                                                                    #{issue.number}
-                                                                                </span>
-                                                                            )}
-                                                                            {issue.state && (
-                                                                                <Badge
-                                                                                    variant={issue.state === 'open' ? 'success' : 'secondary'}
-                                                                                    className="text-xs px-2 py-1 rounded-full"
-                                                                                >
-                                                                                    {issue.state}
-                                                                                </Badge>
-                                                                            )}
-                                                                            {issue.author && (
-                                                                                <div className="flex items-center gap-1">
-                                                                                    <User size={12} />
-                                                                                    <span>{issue.author}</span>
-                                                                                </div>
-                                                                            )}
-                                                                            {issue.createdAt && (
-                                                                                <div className="flex items-center gap-1">
-                                                                                    <Calendar size={12} />
-                                                                                    <span>
-                                                                                        {new Date(issue.createdAt).toLocaleDateString('zh-CN')}
-                                                                                    </span>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
+                                        {contentItem.gitIssues.map((issue: any, issueIndex: number) => (
+                                            <div key={issueIndex} className="rounded-lg p-3 transition-all duration-200 hover:bg-muted/50">
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <div className="flex-1">
+                                                        <h4
+                                                            onClick={() => window.open(issue.urlHtml, '_blank')}
+                                                            className="m-0 text-sm font-semibold text-primary cursor-pointer leading-tight mb-1 hover:underline"
+                                                        >
+                                                            {issue.title}
+                                                        </h4>
+                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-1.5">
+                                                            {issue.number && (
+                                                                <span className="font-medium text-muted-foreground">
+                                                                    #{issue.number}
+                                                                </span>
+                                                            )}
+                                                            {issue.state && (
+                                                                <Badge
+                                                                    variant={issue.state === 'open' ? 'success' : 'secondary'}
+                                                                    className="text-xs px-2 py-1 rounded-full"
+                                                                >
+                                                                    {issue.state}
+                                                                </Badge>
+                                                            )}
+                                                            {issue.author && (
+                                                                <div className="flex items-center gap-1">
+                                                                    <User size={12} />
+                                                                    <span>{issue.author}</span>
                                                                 </div>
-                                                                {issue.content && (
-                                                                    <div className="text-xs text-muted-foreground leading-relaxed bg-background p-2 rounded border max-h-[120px] overflow-y-auto">
-                                                                        {issue.content.length > 200
-                                                                            ? `${issue.content.substring(0, 200)}...`
-                                                                            : issue.content
-                                                                        }
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                        {contentItem.gitIssues.length === 0 && (
-                                                            <div className="text-center py-5 text-muted-foreground text-xs">
-                                                                没有找到相关的Issues
-                                                            </div>
-                                                        )}
+                                                            )}
+                                                            {issue.createdAt && (
+                                                                <div className="flex items-center gap-1">
+                                                                    <Calendar size={12} />
+                                                                    <span>
+                                                                        {new Date(issue.createdAt).toLocaleDateString('zh-CN')}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {issue.content && (
+                                                    <div className="text-xs text-muted-foreground leading-relaxed bg-background p-2 rounded border max-h-[120px] overflow-y-auto">
+                                                        {issue.content.length > 200
+                                                            ? `${issue.content.substring(0, 200)}...`
+                                                            : issue.content
+                                                        }
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {contentItem.gitIssues.length === 0 && (
+                                            <div className="text-center py-5 text-muted-foreground text-xs">
+                                                没有找到相关的Issues
+                                            </div>
+                                        )}
                                     </div>
                                 </CollapsibleCard>
                             ) : null;

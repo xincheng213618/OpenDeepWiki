@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { ArrowUp, Eraser, ImagePlus, Trash2, X, Loader2 } from 'lucide-react';
+import { ArrowUp, Eraser, ImagePlus, Trash2, X, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { Base64Content } from '../../types/chat';
 
 interface ChatInputProps {
@@ -35,6 +36,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [imageList, setImageList] = useState<Base64Content[]>([]);
   const [showClearDialog, setShowClearDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -47,6 +49,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
       onSend?.(inputValue.trim(), imageList.length > 0 ? imageList : undefined);
       setInputValue('');
       setImageList([]);
+      
+      // 重置文本区域高度
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     }
   };
 
@@ -64,6 +71,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const handleClear = () => {
     setInputValue('');
     setImageList([]);
+    
+    // 重置文本区域高度
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
 
   const handleUploadClick = () => {
@@ -79,13 +91,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const file = files[0];
     const isImage = file.type.startsWith('image/');
     if (!isImage) {
-      alert('只能上传图片文件!');
+      toast.error('只能上传图片文件');
       return;
     }
 
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      alert('图片大小不能超过5MB!');
+      toast.error('图片大小不能超过5MB');
       return;
     }
 
@@ -104,7 +116,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       }
     } catch (error) {
       console.error('图片转换失败:', error);
-      alert('图片处理失败，请重试');
+      toast.error('图片处理失败，请重试');
       setImageUploading(false);
     }
   };
@@ -129,11 +141,25 @@ const ChatInput: React.FC<ChatInputProps> = ({
     setImageList(newImageList);
   };
 
+  // 自动调整文本区域高度
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
+  };
+
+  // 监听输入值变化以调整高度
+  React.useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputValue]);
+
   return (
     <div className="w-full space-y-2">
       {/* 图片预览区域 */}
       {imageList.length > 0 && (
-        <div className="flex flex-wrap gap-2 p-2 bg-muted/30 rounded-md border border-dashed">
+        <div className="flex flex-wrap gap-2 p-2 bg-muted/20 rounded-md border border-dashed animate-in fade-in-50 duration-300">
           {imageList.map((image, index) => (
             <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden border border-border group">
               <img 
@@ -153,57 +179,37 @@ const ChatInput: React.FC<ChatInputProps> = ({
       )}
 
       {/* 输入区域 */}
-      <div className="flex flex-col space-y-2">
-        <div className="relative">
-          <Textarea
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled || loading}
-            className="pr-10 min-h-[80px] resize-none"
-          />
-          
-          <div className="absolute bottom-2 right-2">
-            {loading ? (
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                onClick={handleStop}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button 
-                size="icon" 
-                onClick={handleSend}
-                disabled={(!inputValue.trim() && imageList.length === 0) || disabled || imageUploading}
-                className="h-8 w-8"
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* 工具栏 */}
-        <div className="flex items-center">
-          <div className="flex-1 flex gap-1">
+      <div className="relative flex flex-col rounded-md border bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring focus-within:border-input">
+        <Textarea
+          ref={textareaRef}
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled || loading}
+          className="min-h-[60px] max-h-[200px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-3 pb-12"
+        />
+        
+        {/* 工具栏 - 固定在底部 */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-2 border-t bg-muted/10">
+          <div className="flex items-center gap-1">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8" 
-                    disabled={disabled || loading}
+                    className="h-8 w-8 rounded-full" 
+                    disabled={disabled || loading || imageUploading}
                     onClick={handleUploadClick}
                   >
-                    {imageUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                    {imageUploading ? 
+                      <Loader2 className="h-4 w-4 animate-spin" /> : 
+                      <ImagePlus className="h-4 w-4" />
+                    }
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>上传图片</TooltipContent>
+                <TooltipContent side="top">上传图片</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             
@@ -213,33 +219,57 @@ const ChatInput: React.FC<ChatInputProps> = ({
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8" 
+                    className="h-8 w-8 rounded-full" 
                     disabled={!inputValue && imageList.length === 0}
                     onClick={handleClear}
                   >
                     <Eraser className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>清空输入</TooltipContent>
+                <TooltipContent side="top">清空输入</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10" 
+                    onClick={() => setShowClearDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">清空所有消息</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" 
-                  onClick={() => setShowClearDialog(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>清空消息</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div>
+            {loading ? (
+              <Button 
+                size="sm" 
+                variant="destructive" 
+                onClick={handleStop}
+                className="h-8 px-3 rounded-full"
+              >
+                <X className="h-4 w-4 mr-1" />
+                停止
+              </Button>
+            ) : (
+              <Button 
+                size="sm"
+                onClick={handleSend}
+                disabled={(!inputValue.trim() && imageList.length === 0) || disabled || imageUploading}
+                className="h-8 px-3 rounded-full"
+              >
+                <Send className="h-3.5 w-3.5 mr-1" />
+                发送
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -263,10 +293,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              onClear?.();
-              setShowClearDialog(false);
-            }}>
+            <AlertDialogAction 
+              onClick={() => {
+                onClear?.();
+                setShowClearDialog(false);
+                toast.success('已清空所有消息');
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               确认清空
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -206,6 +206,9 @@ const FloatingChat: React.FC<FloatingChatProps> = ({
       {/* 聊天窗口 */}
       {(isExpanded || embedded) && domainValidated && (
         <Card
+          style={{
+            padding: 0,
+          }}
           className={cn(
             styles.chatContainer,
             isMinimized && styles.chatContainerMinimized,

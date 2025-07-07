@@ -1,13 +1,12 @@
 'use client'
 
-import { ChatItem, ChatList } from "@lobehub/ui/chat";
 import { useState, useEffect, useRef } from "react";
 import { Flexbox } from "react-layout-kit";
 import ChatInput from "../components/ChatInput";
 import Message from "./message";
 import { chatService } from "../services/chatService";
 import { chatDB, ChatMessage, Conversation } from "../utils/indexedDB";
-import { Modal, Button } from "antd";
+import { Modal } from "antd";
 import { MessageContentType, MessageItem, MessageContentReasoningItem, MessageContentTextItem, MessageContentToolItem, MessageContentGitIssuesItem } from "../../types/chat";
 
 interface WorkspaceProps {
@@ -445,17 +444,14 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
             <style jsx>{`
                 .workspace-container {
                     height: 100%;
-                    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
                     display: flex;
                     flex-direction: column;
                 }
 
                 .messages-container {
-                    background: rgba(255, 255, 255, 0.7);
                     backdrop-filter: blur(10px);
                     border-radius: 16px;
                     margin: 16px;
-                    border: 1px solid rgba(226, 232, 240, 0.8);
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                 }
 
@@ -464,20 +460,17 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                 }
 
                 .messages-container::-webkit-scrollbar-track {
-                    background: rgba(241, 245, 249, 0.5);
                     border-radius: 8px;
                     margin: 8px 0;
                 }
 
                 .messages-container::-webkit-scrollbar-thumb {
-                    background: linear-gradient(135deg, #cbd5e1, #94a3b8);
                     border-radius: 8px;
                     border: 2px solid transparent;
                     background-clip: content-box;
                 }
 
                 .messages-container::-webkit-scrollbar-thumb:hover {
-                    background: linear-gradient(135deg, #94a3b8, #64748b);
                     background-clip: content-box;
                 }
 
@@ -528,7 +521,6 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                     gap: 8px;
                     padding: 12px 24px;
                     background: linear-gradient(135deg, #3b82f6, #2563eb);
-                    color: white;
                     text-decoration: none;
                     border-radius: 12px;
                     font-weight: 500;
@@ -541,12 +533,10 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                     background: linear-gradient(135deg, #2563eb, #1d4ed8);
                     transform: translateY(-1px);
                     box-shadow: 0 8px 12px -2px rgba(59, 130, 246, 0.4);
-                    color: white;
                 }
 
                 .chat-input-container {
                     padding: 0 16px 16px 16px;
-                    background: rgba(255, 255, 255, 0.8);
                     backdrop-filter: blur(10px);
                     border-top: 1px solid rgba(226, 232, 240, 0.6);
                 }

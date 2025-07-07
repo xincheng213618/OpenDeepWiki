@@ -1,8 +1,10 @@
 'use client'
 
 import './globals.css'
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster as UIToaster } from "@/components/ui/toaster"
+import { Toaster } from "sonner"
 import { RootProvider } from 'fumadocs-ui/provider';
+
 export default function RootLayout({
   children,
 }: {
@@ -14,7 +16,8 @@ export default function RootLayout({
         <RootProvider>
           {children}
         </RootProvider>
-        <Toaster />
+        <UIToaster />
+        <Toaster position="top-center" richColors closeButton />
       </body>
     </html>
   )
