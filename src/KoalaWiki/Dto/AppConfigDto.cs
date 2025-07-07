@@ -1,6 +1,22 @@
 namespace KoalaWiki.Dto;
 
 /// <summary>
+/// MCP配置
+/// </summary>
+public class AppConfigMcpDto
+{
+    /// <summary>
+    /// MCP服务URL
+    /// </summary>
+    public string Url { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 请求头配置
+    /// </summary>
+    public Dictionary<string, string> Headers { get; set; } = new();
+}
+
+/// <summary>
 /// 应用配置输入
 /// </summary>
 public class AppConfigInput
@@ -39,6 +55,31 @@ public class AppConfigInput
     /// 应用描述
     /// </summary>
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 默认提示词
+    /// </summary>
+    public string? Prompt { get; set; }
+
+    /// <summary>
+    /// 开场白
+    /// </summary>
+    public string? Introduction { get; set; }
+
+    /// <summary>
+    /// 选择模型
+    /// </summary>
+    public string? Model { get; set; }
+
+    /// <summary>
+    /// 设置推荐提问
+    /// </summary>
+    public List<string>? RecommendedQuestions { get; set; }
+
+    /// <summary>
+    /// MCP配置列表
+    /// </summary>
+    public List<AppConfigMcpDto> Mcps { get; set; } = new();
 }
 
 /// <summary>
@@ -95,6 +136,31 @@ public class AppConfigOutput
     /// 更新时间
     /// </summary>
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// 默认提示词
+    /// </summary>
+    public string? Prompt { get; set; }
+
+    /// <summary>
+    /// 开场白
+    /// </summary>
+    public string? Introduction { get; set; }
+
+    /// <summary>
+    /// 选择模型
+    /// </summary>
+    public string? Model { get; set; }
+
+    /// <summary>
+    /// 设置推荐提问
+    /// </summary>
+    public List<string>? RecommendedQuestions { get; set; }
+
+    /// <summary>
+    /// MCP配置列表
+    /// </summary>
+    public List<AppConfigMcpDto> Mcps { get; set; } = new();
 }
 
 /// <summary>

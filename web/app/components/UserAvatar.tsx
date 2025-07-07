@@ -1,33 +1,50 @@
 'use client'
 
-import { useState, useEffect} from 'react';
-import { Avatar, Button, Dropdown, Space, Typography,  message } from 'antd';
-import { 
-  UserOutlined, 
-  LoginOutlined, 
-  LogoutOutlined, 
-  SettingOutlined,
-  DownOutlined,
-  MailOutlined,
-  CalendarOutlined
-} from '@ant-design/icons';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '../i18n/client';
+import { 
+  User, 
+  LogOut, 
+  Settings,
+  Mail,
+  Calendar
+} from 'lucide-react';
 
-const { Text } = Typography;
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
 
-interface UserInfo {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-  createdAt: string;
-  lastLoginAt?: string;
-}
+import { UserInfo } from '../services/userService';
 
 interface UserAvatarProps {
   className?: string;
+}
+
+// 格式化日期
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString();
+}
+
+// 获取角色文本
+function getRoleText(role: string) {
+  switch (role.toLowerCase()) {
+    case 'admin':
+      return '管理员';
+    case 'user':
+      return '普通用户';
+    default:
+      return role;
+  }
 }
 
 export default function UserAvatar({ className }: UserAvatarProps) {
@@ -36,6 +53,7 @@ export default function UserAvatar({ className }: UserAvatarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
+  const { toast } = useToast();
 
   // 检查登录状态
   useEffect(() => {
@@ -81,209 +99,124 @@ export default function UserAvatar({ className }: UserAvatarProps) {
   };
 
   // 处理登出
-  const handleLogout = () => {
-    // 清除登录信息
-    localStorage.removeItem('userToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userInfo');
-    localStorage.removeItem('redirectPath');
-    
-    setIsLoggedIn(false);
-    setUserInfo(null);
-    setDropdownOpen(false);
-    
-    message.success(t('auth.logout_success', '退出登录成功'));
-    
-    // 刷新页面以更新状态
-    window.location.reload();
-  };
-
-  // 获取用户头像
-  const getUserAvatar = () => {
-    if (userInfo?.avatar) {
-      return userInfo.avatar;
+  const handleLogout = async () => {
+    try {
+      // 清除本地存储的用户信息
+      localStorage.removeItem('userToken');
+      localStorage.removeItem('userInfo');
+      setIsLoggedIn(false);
+      setUserInfo(null);
+      setDropdownOpen(false);
+      toast({
+        title: "已登出",
+        description: "您已成功退出登录",
+      });
+      // 重定向到首页
+      router.push('/');
+    } catch (error) {
+      console.error('登出失败:', error);
+      toast({
+        title: "登出失败",
+        description: "请稍后重试",
+        variant: "destructive",
+      });
     }
-    return null;
   };
 
   // 获取用户显示名称
   const getUserDisplayName = () => {
-    return userInfo?.name || t('auth.user', '用户');
+    if (!userInfo) return '游客';
+    return userInfo.name || userInfo.email || '用户';
   };
 
-  // 获取角色显示文本
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return t('auth.role.admin', '管理员');
-      case 'editor':
-        return t('auth.role.editor', '编辑者');
-      default:
-        return t('auth.role.user', '用户');
-    }
+  // 为头像URL添加时间戳以防止缓存
+  const getAvatarUrl = () => {
+    if (!userInfo?.avatar) return '';
+    const timestamp = new Date().getTime();
+    return `${userInfo.avatar}?t=${timestamp}`;
   };
-
-  // 格式化日期
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch {
-      return dateString;
-    }
-  };
-
-  // 如果未登录，显示登录按钮
-  if (!isLoggedIn) {
-    return (
-      <Button
-        type="text"
-        icon={<LoginOutlined />}
-        onClick={handleLogin}
-        className={className}
-      >
-        {t('auth.login', '登录')}
-      </Button>
-    );
-  }
-
-  // 用户信息下拉菜单项
-  const dropdownItems = [
-    {
-      key: 'user-info',
-      label: (
-        <div style={{ padding: '8px 0', minWidth: '200px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-            <Avatar
-              src={getUserAvatar()}
-              icon={<UserOutlined />}
-              size={40}
-              style={{ marginRight: '12px' }}
-            />
-            <div>
-              <Text strong style={{ display: 'block', fontSize: '14px' }}>
-                {getUserDisplayName()}
-              </Text>
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                {getRoleText(userInfo?.role || 'user')}
-              </Text>
-            </div>
-          </div>
-          
-          {userInfo?.email && (
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-              <MailOutlined style={{ marginRight: '8px', color: '#8c8c8c' }} />
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                {userInfo.email}
-              </Text>
-            </div>
-          )}
-          
-          {userInfo?.createdAt && (
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <CalendarOutlined style={{ marginRight: '8px', color: '#8c8c8c' }} />
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                {t('auth.joined', '加入于')} {formatDate(userInfo.createdAt)}
-              </Text>
-            </div>
-          )}
-        </div>
-      ),
-      disabled: true,
-    },
-    {
-      type: 'divider' as const,
-    },
-    {
-      key: 'settings',
-      label: (
-        <Space>
-          <SettingOutlined />
-          {t('auth.settings', '设置')}
-        </Space>
-      ),
-      onClick: () => {
-        setDropdownOpen(false);
-        router.push('/settings');
-      },
-    },
-    // 只有管理员才显示管理面板菜单项
-    ...(userInfo?.role === 'admin' ? [{
-      key: 'admin',
-      label: (
-        <Space>
-          <UserOutlined />
-          {t('auth.admin_panel', '管理面板')}
-        </Space>
-      ),
-      onClick: () => {
-        setDropdownOpen(false);
-        router.push('/admin');
-      },
-    }] : []),
-    {
-      type: 'divider' as const,
-    },
-    {
-      key: 'logout',
-      label: (
-        <Space>
-          <LogoutOutlined />
-          {t('auth.logout', '退出登录')}
-        </Space>
-      ),
-      onClick: handleLogout,
-      danger: true,
-    },
-  ];
 
   return (
-    <Dropdown
-      menu={{ items: dropdownItems }}
-      trigger={['click']}
-      open={dropdownOpen}
-      onOpenChange={setDropdownOpen}
-      placement="bottomRight"
-      className={className}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          cursor: 'pointer',
-          padding: '4px 8px',
-          borderRadius: '8px',
-          transition: 'background-color 0.2s',
-          backgroundColor: dropdownOpen ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
-        }}
-        onMouseEnter={(e) => {
-          if (!dropdownOpen) {
-            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.04)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!dropdownOpen) {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }
-        }}
-      >
-        <Avatar
-          src={getUserAvatar()}
-          icon={<UserOutlined />}
-          size={32}
-          style={{ marginRight: '8px' }}
-        />
-        <Text style={{ marginRight: '4px', fontSize: '14px' }}>
-          {getUserDisplayName()}
-        </Text>
-        <DownOutlined
-          style={{
-            fontSize: '12px',
-            color: '#8c8c8c',
-            transition: 'transform 0.2s',
-            transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
-        />
-      </div>
-    </Dropdown>
+    <div className={className}>
+      {isLoggedIn ? (
+        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className={cn("relative h-8 w-8 rounded-full", className)}>
+              <Avatar className="h-8 w-8">
+                {userInfo?.avatar ? (
+                  <AvatarImage src={getAvatarUrl()} alt={getUserDisplayName()} />
+                ) : (
+                  <AvatarFallback>
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                )}
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="flex items-center p-2">
+              <Avatar className="h-10 w-10 mr-3">
+                {userInfo?.avatar ? (
+                  <AvatarImage src={getAvatarUrl()} alt={getUserDisplayName()} />
+                ) : (
+                  <AvatarFallback>
+                    <User className="h-5 w-5" />
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium">{getUserDisplayName()}</p>
+                <p className="text-xs text-muted-foreground">{getRoleText(userInfo?.role || 'user')}</p>
+              </div>
+            </div>
+            
+            {userInfo?.email && (
+              <div className="px-2 py-1.5 flex items-center text-xs text-muted-foreground">
+                <Mail className="h-3.5 w-3.5 mr-2" />
+                <span>{userInfo.email}</span>
+              </div>
+            )}
+            
+            {userInfo?.createdAt && (
+              <div className="px-2 py-1.5 flex items-center text-xs text-muted-foreground">
+                <Calendar className="h-3.5 w-3.5 mr-2" />
+                <span>{t('auth.joined', '加入于')} {formatDate(userInfo.createdAt)}</span>
+              </div>
+            )}
+            
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
+              <Settings className="h-4 w-4 mr-2" />
+              <span>{t('auth.settings', '设置')}</span>
+            </DropdownMenuItem>
+            
+            {userInfo?.role === 'admin' && (
+              <DropdownMenuItem onClick={() => router.push('/admin')}>
+                <User className="h-4 w-4 mr-2" />
+                <span>{t('auth.admin_panel', '管理面板')}</span>
+              </DropdownMenuItem>
+            )}
+            
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              <span>{t('auth.logout', '退出登录')}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handleLogin}
+          className="px-4"
+        >
+          {t('auth.login', '登录')}
+        </Button>
+      )}
+    </div>
   );
 } 

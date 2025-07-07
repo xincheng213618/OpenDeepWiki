@@ -1,6 +1,12 @@
 import { API_URL } from './api';
 import { fetchApi, ApiResponse } from './fetchApi';
 
+// MCP配置接口
+export interface AppConfigMcp {
+  url: string;
+  headers: Record<string, string>;
+}
+
 // 应用配置接口
 export interface AppConfigInput {
   appId: string;
@@ -10,6 +16,11 @@ export interface AppConfigInput {
   allowedDomains: string[];
   enableDomainValidation: boolean;
   description: string;
+  prompt?: string;
+  introduction?: string;
+  model?: string;
+  recommendedQuestions?: string[];
+  mcps?: AppConfigMcp[];
 }
 
 export interface AppConfigOutput {
@@ -20,6 +31,11 @@ export interface AppConfigOutput {
   allowedDomains: string[];
   enableDomainValidation: boolean;
   description: string;
+  prompt?: string;
+  introduction?: string;
+  model?: string;
+  recommendedQuestions?: string[];
+  mcps?: AppConfigMcp[];
   createdAt: string;
   updatedAt: string;
   isEnabled?: boolean;

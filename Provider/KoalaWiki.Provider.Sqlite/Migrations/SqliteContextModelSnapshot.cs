@@ -48,6 +48,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .HasColumnType("INTEGER")
                         .HasComment("是否启用域名验证");
 
+                    b.Property<string>("Introduction")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("INTEGER")
                         .HasComment("是否启用");
@@ -55,6 +58,13 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                     b.Property<DateTime?>("LastUsedAt")
                         .HasColumnType("TEXT")
                         .HasComment("最后使用时间");
+
+                    b.Property<string>("Mcps")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Model")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -67,6 +77,12 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT")
                         .HasComment("组织名称");
+
+                    b.Property<string>("Prompt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RecommendedQuestions")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("RepositoryName")
                         .IsRequired()

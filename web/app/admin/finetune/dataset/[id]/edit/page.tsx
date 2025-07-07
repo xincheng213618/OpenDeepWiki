@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Select, message, Space, Alert, Spin } from 'antd';
+import { Card, Form, Input, Button, Select, message, Space, Alert } from 'antd';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { getDataset, updateDataset, TrainingDataset, UpdateDatasetInput } from '../../../../../services/fineTuningService';
@@ -83,7 +84,7 @@ export default function EditDatasetPage({ params }: any) {
   if (fetchLoading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
-        <Spin size="large" />
+        <Skeleton className="w-32 h-32 mx-auto" />
         <div style={{ marginTop: '20px' }}>加载数据集信息...</div>
       </div>
     );

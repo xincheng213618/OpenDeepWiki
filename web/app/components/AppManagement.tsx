@@ -1,430 +1,110 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  Button,
-  Modal,
-  Form,
-  Input,
-  Switch,
-  Select,
-  Space,
-  Typography,
-  message,
-  Popconfirm,
-  Tag,
-  Tooltip,
-  Card,
-  Row,
-  Col,
-  Alert,
-  Divider,
-  Badge
-} from 'antd';
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  CopyOutlined,
-  EyeOutlined,
-  PoweroffOutlined,
-  ApiOutlined,
-  GlobalOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  CodeOutlined
-} from '@ant-design/icons';
-import { createStyles } from 'antd-style';
-import {
-  getAppConfigs,
-  createAppConfig,
-  updateAppConfig,
-  deleteAppConfig,
-  toggleAppConfigEnabled,
-  generateAppId,
-  type AppConfigInput,
-  type AppConfigOutput
+import { 
+  getAppConfigs, 
+  createAppConfig, 
+  updateAppConfig, 
+  deleteAppConfig, 
+  toggleAppConfigEnabled, 
+  generateAppId, 
+  type AppConfigInput, 
+  type AppConfigOutput 
 } from '../services/appConfigService';
 
-const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { toast } from "@/components/ui/use-toast";
 
-const useStyles = createStyles(({ css, token }) => ({
-  container: css`
-    /* 自定义滚动条样式 */
-    * {
-      &::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      
-      &::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 3px;
-      }
-      
-      &::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 3px;
-        transition: background 0.3s ease;
-      }
-      
-      &::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.25);
-      }
-    }
-    
-    .ant-card {
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-      transition: all 0.3s ease;
-      
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.2);
-      }
-    }
-    
-    /* 模态框深色主题 */
-    .ant-modal {
-      .ant-modal-content {
-        background: #1a1a1a;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-      }
-      
-      .ant-modal-header {
-        background: #1a1a1a;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px 12px 0 0;
-        
-        .ant-modal-title {
-          color: #ffffff;
-          font-weight: 600;
-        }
-      }
-      
-      .ant-modal-body {
-        background: #1a1a1a;
-        color: #ffffff;
-      }
-      
-      .ant-modal-footer {
-        background: #1a1a1a;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 0 0 12px 12px;
-      }
-      
-      .ant-modal-close {
-        color: rgba(255, 255, 255, 0.6);
-        
-        &:hover {
-          color: #ffffff;
-        }
-      }
-    }
-    
-    /* 表单深色主题 */
-    .ant-form-item-label > label {
-      color: #ffffff;
-      font-weight: 500;
-    }
-    
-    .ant-input,
-    .ant-input-number,
-    .ant-select-selector,
-    .ant-input-affix-wrapper {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-      border-radius: 8px;
-      
-      &:hover {
-        border-color: rgba(255, 255, 255, 0.25);
-        background: rgba(255, 255, 255, 0.08);
-      }
-      
-      &:focus,
-      &.ant-input-focused,
-      &.ant-select-focused .ant-select-selector {
-        border-color: #1890ff;
-        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-        background: rgba(255, 255, 255, 0.08);
-      }
-      
-      &::placeholder {
-        color: rgba(255, 255, 255, 0.4);
-      }
-    }
-    
-    .ant-select-arrow {
-      color: rgba(255, 255, 255, 0.6);
-    }
-    
-    .ant-switch {
-      background: rgba(255, 255, 255, 0.2);
-      
-      &.ant-switch-checked {
-        background: #1890ff;
-      }
-    }
-    
-    /* 下拉菜单深色主题 */
-    .ant-select-dropdown {
-      background: #1a1a1a;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 8px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-      
-      .ant-select-item {
-        color: #ffffff;
-        
-        &:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-        
-        &.ant-select-item-option-selected {
-          background: rgba(24, 144, 255, 0.2);
-        }
-      }
-    }
-    
-    /* 消息提示深色主题 */
-    .ant-message {
-      .ant-message-notice-content {
-        background: #1a1a1a;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 8px;
-        color: #ffffff;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      }
-    }
-    
-    /* 确认弹窗深色主题 */
-    .ant-popover {
-      .ant-popover-inner {
-        background: #1a1a1a;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 8px;
-        color: #ffffff;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-      }
-      
-      .ant-popover-arrow::before {
-        background: #1a1a1a;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-      }
-    }
-  `,
-  
-  headerCard: css`
-    margin-bottom: 24px;
-    background: linear-gradient(135deg, rgba(24, 144, 255, 0.8) 0%, rgba(114, 46, 209, 0.8) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    
-    .ant-card-body {
-    }
-    
-    .header-title {
-      color: white;
-      margin: 0;
-      font-weight: 600;
-    }
-    
-    .header-description {
-      color: rgba(255, 255, 255, 0.9);
-      margin-top: 8px;
-      font-size: 14px;
-    }
-  `,
-  
-  statsCard: css`
-    text-align: center;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    
-    .stat-number {
-      font-size: 28px;
-      font-weight: 700;
-      color: #1890ff;
-      margin-bottom: 4px;
-      background: linear-gradient(135deg, #1890ff, #722ed1);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
-    .stat-label {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 13px;
-      font-weight: 500;
-    }
-  `,
-  
-  appCard: css`
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.3s ease;
-    height: 100%;
-    
-    &:hover {
-      border-color: rgba(24, 144, 255, 0.4);
-      background: rgba(255, 255, 255, 0.05);
-      transform: translateY(-4px);
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-    }
-    
-    .ant-card-actions {
-      background: rgba(255, 255, 255, 0.02);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      
-      li {
-        &:not(:last-child) {
-          border-right: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        
-        > span {
-          color: rgba(255, 255, 255, 0.7);
-          transition: all 0.3s ease;
-          
-          &:hover {
-            color: #1890ff;
-            transform: scale(1.1);
-          }
-        }
-      }
-    }
-  `,
-  
-  codeBlock: css`
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 16px;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 13px;
-    margin: 16px 0;
-    overflow-x: auto;
-    position: relative;
-    
-    pre {
-      margin: 0;
-      white-space: pre-wrap;
-      color: #ffffff;
-    }
-    
-    .copy-button {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-    }
-  `,
-  
-  domainList: css`
-    .ant-tag {
-      margin-bottom: 4px;
-      background: rgba(24, 144, 255, 0.1);
-      border: 1px solid rgba(24, 144, 255, 0.3);
-      color: #1890ff;
-      border-radius: 6px;
-      font-size: 11px;
-    }
-  `,
-  
-  emptyState: css`
-    text-align: center;
-    padding: 80px 20px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 2px dashed rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    
-    @keyframes pulse {
-      0%, 100% { 
-        opacity: 0.6; 
-        transform: scale(1); 
-      }
-      50% { 
-        opacity: 1; 
-        transform: scale(1.1); 
-      }
-    }
-    
-    .empty-icon {
-      font-size: 48px;
-      color: rgba(255, 255, 255, 0.2);
-      margin-bottom: 16px;
-      
-      &.loading {
-        animation: pulse 2s infinite;
-      }
-    }
-    
-    .empty-title {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 16px;
-      margin-bottom: 8px;
-    }
-    
-    .empty-description {
-      color: rgba(255, 255, 255, 0.4);
-      font-size: 14px;
-      margin-bottom: 24px;
-    }
-  `,
-  
-  usageModal: css`
-    .ant-modal-content {
-      background: #1a1a1a;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    }
-    
-    .ant-modal-header {
-      background: #1a1a1a;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .ant-modal-title {
-      color: #ffffff;
-    }
-    
-    .ant-modal-body {
-      padding: 24px;
-    }
-    
-    .ant-modal-footer {
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 16px 24px;
-    }
-    
-    .ant-btn-default:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.3);
-      color: #ffffff;
-    }
-  `
-}));
+import {
+  Plus,
+  Pencil,
+  Trash,
+  Copy,
+  Eye,
+  Power,
+  Globe,
+  Code,
+} from "lucide-react";
 
 interface AppManagementProps {
   className?: string;
 }
 
 const AppManagement: React.FC<AppManagementProps> = ({ className }) => {
-  const { styles } = useStyles();
-  
   // 状态管理
   const [apps, setApps] = useState<AppConfigOutput[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingApp, setEditingApp] = useState<AppConfigOutput | null>(null);
-  const [form] = Form.useForm();
   const [usageModalVisible, setUsageModalVisible] = useState(false);
   const [selectedApp, setSelectedApp] = useState<AppConfigOutput | null>(null);
+  const [confirmDeleteApp, setConfirmDeleteApp] = useState<AppConfigOutput | null>(null);
+  
+  // 表单状态
+  const [formValues, setFormValues] = useState<{
+    appId: string;
+    name: string;
+    organizationName: string;
+    repositoryName: string;
+    description: string;
+    enableDomainValidation: boolean;
+    allowedDomains: string[];
+    prompt?: string;
+    introduction?: string;
+    model?: string;
+    recommendedQuestions?: string[];
+    mcps?: { url: string; headers: Record<string, string> }[];
+  }>({
+    appId: '',
+    name: '',
+    organizationName: '',
+    repositoryName: '',
+    description: '',
+    enableDomainValidation: false,
+    allowedDomains: [],
+    prompt: '',
+    introduction: '',
+    model: '',
+    recommendedQuestions: [],
+    mcps: [],
+  });
 
   // 加载应用列表
   const loadApps = async () => {
@@ -434,11 +114,19 @@ const AppManagement: React.FC<AppManagementProps> = ({ className }) => {
       if (response.code === 200) {
         setApps(response.data);
       } else {
-        message.error(response.message || '加载应用列表失败');
+        toast({
+          title: "加载失败",
+          description: response.message || '加载应用列表失败',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('加载应用列表失败:', error);
-      message.error('加载应用列表失败');
+      toast({
+        title: "加载失败",
+        description: '加载应用列表失败',
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -450,18 +138,24 @@ const AppManagement: React.FC<AppManagementProps> = ({ className }) => {
   }, []);
 
   // 处理表单提交
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       setLoading(true);
       
       const appData: AppConfigInput = {
-        appId: values.appId,
-        name: values.name,
-        organizationName: values.organizationName,
-        repositoryName: values.repositoryName,
-        allowedDomains: values.allowedDomains || [],
-        enableDomainValidation: values.enableDomainValidation || false,
-        description: values.description || ''
+        appId: formValues.appId,
+        name: formValues.name,
+        organizationName: formValues.organizationName,
+        repositoryName: formValues.repositoryName,
+        allowedDomains: formValues.allowedDomains || [],
+        enableDomainValidation: formValues.enableDomainValidation || false,
+        description: formValues.description || '',
+        prompt: formValues.prompt,
+        introduction: formValues.introduction,
+        model: formValues.model,
+        recommendedQuestions: formValues.recommendedQuestions,
+        mcps: formValues.mcps
       };
 
       let response;
@@ -472,17 +166,28 @@ const AppManagement: React.FC<AppManagementProps> = ({ className }) => {
       }
 
       if (response.code === 200) {
-        message.success(editingApp ? '应用更新成功' : '应用创建成功');
+        toast({
+          title: editingApp ? "更新成功" : "创建成功",
+          description: editingApp ? '应用更新成功' : '应用创建成功',
+        });
         setModalVisible(false);
         setEditingApp(null);
-        form.resetFields();
+        resetForm();
         loadApps();
       } else {
-        message.error(response.message || '操作失败');
+        toast({
+          title: "操作失败",
+          description: response.message || '操作失败',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('操作失败:', error);
-      message.error('操作失败');
+      toast({
+        title: "操作失败",
+        description: '操作失败',
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -494,16 +199,28 @@ const AppManagement: React.FC<AppManagementProps> = ({ className }) => {
       setLoading(true);
       const response = await deleteAppConfig(appId);
       if (response.code === 200) {
-        message.success('应用删除成功');
+        toast({
+          title: "删除成功",
+          description: '应用删除成功',
+        });
         loadApps();
       } else {
-        message.error(response.message || '删除失败');
+        toast({
+          title: "删除失败",
+          description: response.message || '删除失败',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('删除失败:', error);
-      message.error('删除失败');
+      toast({
+        title: "删除失败",
+        description: '删除失败',
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
+      setConfirmDeleteApp(null);
     }
   };
 
@@ -513,14 +230,25 @@ const AppManagement: React.FC<AppManagementProps> = ({ className }) => {
       setLoading(true);
       const response = await toggleAppConfigEnabled(appId);
       if (response.code === 200) {
-        message.success('应用状态更新成功');
+        toast({
+          title: "状态更新",
+          description: '应用状态更新成功',
+        });
         loadApps();
       } else {
-        message.error(response.message || '状态更新失败');
+        toast({
+          title: "状态更新失败",
+          description: response.message || '状态更新失败',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('状态更新失败:', error);
-      message.error('状态更新失败');
+      toast({
+        title: "状态更新失败",
+        description: '状态更新失败',
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -529,14 +257,19 @@ const AppManagement: React.FC<AppManagementProps> = ({ className }) => {
   // 打开编辑模态框
   const handleEdit = (app: AppConfigOutput) => {
     setEditingApp(app);
-    form.setFieldsValue({
+    setFormValues({
       appId: app.appId,
       name: app.name,
       organizationName: app.organizationName,
       repositoryName: app.repositoryName,
-      allowedDomains: app.allowedDomains,
-      enableDomainValidation: app.enableDomainValidation,
-      description: app.description
+      allowedDomains: app.allowedDomains || [],
+      enableDomainValidation: app.enableDomainValidation || false,
+      description: app.description || '',
+      prompt: app.prompt || '',
+      introduction: app.introduction || '',
+      model: app.model || '',
+      recommendedQuestions: app.recommendedQuestions || [],
+      mcps: app.mcps || [],
     });
     setModalVisible(true);
   };
@@ -544,12 +277,30 @@ const AppManagement: React.FC<AppManagementProps> = ({ className }) => {
   // 创建新应用
   const handleCreate = () => {
     setEditingApp(null);
-    form.resetFields();
-    form.setFieldsValue({
+    resetForm();
+    setFormValues(prev => ({
+      ...prev,
       appId: generateAppId(),
-      enableDomainValidation: false
-    });
+    }));
     setModalVisible(true);
+  };
+
+  // 重置表单
+  const resetForm = () => {
+    setFormValues({
+      appId: '',
+      name: '',
+      organizationName: '',
+      repositoryName: '',
+      description: '',
+      enableDomainValidation: false,
+      allowedDomains: [],
+      prompt: '',
+      introduction: '',
+      model: '',
+      recommendedQuestions: [],
+      mcps: [],
+    });
   };
 
   // 显示使用说明
@@ -561,14 +312,10 @@ const AppManagement: React.FC<AppManagementProps> = ({ className }) => {
   // 复制到剪贴板
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    message.success('已复制到剪贴板');
-  };
-
-  // 统计数据
-  const stats = {
-    total: apps.length,
-    enabled: apps.filter(app => app.isEnabled !== false).length,
-    withDomainValidation: apps.filter(app => app.enableDomainValidation).length
+    toast({
+      title: "已复制",
+      description: '已复制到剪贴板',
+    });
   };
 
   // 生成使用代码
@@ -591,449 +338,502 @@ KoalaChatWidget.init({
 </script>`;
   };
 
+  // 处理域名输入
+  const handleDomainInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+      e.preventDefault();
+      const newDomain = e.currentTarget.value.trim();
+      if (!formValues.allowedDomains.includes(newDomain)) {
+        setFormValues(prev => ({
+          ...prev,
+          allowedDomains: [...prev.allowedDomains, newDomain]
+        }));
+      }
+      e.currentTarget.value = '';
+    }
+  };
+
+  // 删除域名
+  const removeDomain = (domain: string) => {
+    setFormValues(prev => ({
+      ...prev,
+      allowedDomains: prev.allowedDomains.filter(d => d !== domain)
+    }));
+  };
+
+  // 处理推荐问题输入
+  const handleQuestionInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+      e.preventDefault();
+      const newQuestion = e.currentTarget.value.trim();
+      const currentQuestions = formValues.recommendedQuestions || [];
+      if (!currentQuestions.includes(newQuestion)) {
+        setFormValues(prev => ({
+          ...prev,
+          recommendedQuestions: [...currentQuestions, newQuestion]
+        }));
+      }
+      e.currentTarget.value = '';
+    }
+  };
+
+  // 删除推荐问题
+  const removeQuestion = (index: number) => {
+    setFormValues(prev => ({
+      ...prev,
+      recommendedQuestions: (prev.recommendedQuestions || []).filter((_, i) => i !== index)
+    }));
+  };
+
   return (
-    <div className={`${styles.container} ${className}`}>
+    <div className={`${className} space-y-6`}>
       {/* 头部卡片 */}
-      <Card className={styles.headerCard}>
-        <Row align="middle" justify="space-between">
-          <Col>
-            <Title level={3} className="header-title">
-              <ApiOutlined style={{ marginRight: '8px' }} />
-              应用管理
-            </Title>
-            <Paragraph className="header-description">
-              创建和管理您的 AI 聊天应用，配置域名验证和访问权限
-            </Paragraph>
-          </Col>
-          <Col>
-            <Button
-              type="primary"
-              size="large"
-              icon={<PlusOutlined />}
-              onClick={handleCreate}
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'transparent' }}
-            >
+      <Card className="border-none shadow-md bg-gradient-to-r from-primary/10 to-primary/5">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                应用管理
+              </CardTitle>
+              <CardDescription>
+                创建和管理您的 AI 聊天应用，配置域名验证和访问权限
+              </CardDescription>
+            </div>
+            <Button onClick={handleCreate}>
+              <Plus className="h-4 w-4 mr-1" />
               创建应用
             </Button>
-          </Col>
-        </Row>
+          </div>
+        </CardHeader>
       </Card>
+
       {/* 应用卡片列表 */}
       {loading ? (
-        <div className={styles.emptyState}>
-          <div className="empty-icon loading">⏳</div>
-          <div className="empty-title">加载中...</div>
-          <div className="empty-description">正在获取应用列表</div>
+        <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-lg">
+          <div className="text-4xl mb-4">⏳</div>
+          <h3 className="text-lg font-medium mb-1">加载中...</h3>
+          <p className="text-muted-foreground">正在获取应用列表</p>
         </div>
       ) : apps.length === 0 ? (
-        <div className={styles.emptyState}>
-          <div className="empty-icon">📱</div>
-          <div className="empty-title">暂无应用</div>
-          <div className="empty-description">创建您的第一个 AI 聊天应用</div>
-          <Button 
-            type="primary" 
-            size="large"
-            icon={<PlusOutlined />} 
-            onClick={handleCreate}
-            style={{ 
-              background: 'linear-gradient(135deg, #1890ff, #722ed1)',
-              border: 'none',
-              borderRadius: '8px',
-              height: '44px',
-              padding: '0 24px'
-            }}
-          >
+        <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-lg">
+          <div className="text-4xl mb-4">📱</div>
+          <h3 className="text-lg font-medium mb-1">暂无应用</h3>
+          <p className="text-muted-foreground mb-6">创建您的第一个 AI 聊天应用</p>
+          <Button onClick={handleCreate}>
+            <Plus className="h-4 w-4 mr-1" />
             创建第一个应用
           </Button>
         </div>
       ) : (
-        <Row gutter={[20, 20]}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {apps.map((app) => (
-            <Col key={app.appId} xs={24} sm={12} lg={8} xl={6}>
-              <Card
-                className={styles.appCard}
-                bodyStyle={{ padding: '24px' }}
-                actions={[
-                  <Tooltip 
-                  style={{
-                      color:'ActiveBorder'
-                  }} title="查看使用说明" key="usage">
-                    <EyeOutlined onClick={() => showUsage(app)} />
-                  </Tooltip>,
-                  <Tooltip
-                    style={{
-                        color:'ActiveBorder'
-                    }}
-                    title="编辑" key="edit">
-                    <EditOutlined onClick={() => handleEdit(app)} />
-                  </Tooltip>,
-                  <Tooltip title={app.isEnabled !== false ? '禁用' : '启用'} key="toggle">
-                    <PoweroffOutlined 
-                      onClick={() => handleToggleEnabled(app.appId)}
-                      style={{ color: app.isEnabled !== false ? '#52c41a' : '#ff4d4f' }}
-                    />
-                  </Tooltip>,
-                  <Popconfirm
-                    title="确定要删除这个应用吗？"
-                    description="删除后将无法恢复，请谨慎操作。"
-                    onConfirm={() => handleDelete(app.appId)}
-                    okText="确定"
-                    cancelText="取消"
-                    key="delete"
-                  >
-                    <Tooltip title="删除">
-                      <DeleteOutlined style={{ color: '#ff4d4f' }} />
-                    </Tooltip>
-                  </Popconfirm>
-                ]}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <Title level={5} style={{ margin: 0, flex: 1, color: '#ffffff', fontSize: '16px', fontWeight: 600 }}>
-                      {app.name}
-                    </Title>
-                    <Badge
-                      status={app.isEnabled !== false ? 'success' : 'error'}
-                      text={app.isEnabled !== false ? '启用' : '禁用'}
-                      style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)' }}
-                    />
+            <Card key={app.appId} className="overflow-hidden transition-all hover:shadow-md">
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-base">{app.name}</CardTitle>
+                  <Badge variant={app.isEnabled !== false ? "default" : "outline"}>
+                    {app.isEnabled !== false ? '启用' : '禁用'}
+                  </Badge>
+                </div>
+                <CardDescription className="text-xs">
+                  ID: {app.appId}
+                </CardDescription>
+                <div className="text-xs text-muted-foreground flex items-center">
+                  <Globe className="h-3 w-3 mr-1" />
+                  {app.organizationName}/{app.repositoryName}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pb-2">
+                {app.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                    {app.description}
+                  </p>
+                )}
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground">域名验证</span>
+                    <Badge variant={app.enableDomainValidation ? "secondary" : "outline"} className="text-xs">
+                      {app.enableDomainValidation ? '已启用' : '未启用'}
+                    </Badge>
                   </div>
                   
-                  <Text style={{ fontSize: '12px', display: 'block', marginBottom: '4px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    ID: {app.appId}
-                  </Text>
-                  
-                  <Text style={{ fontSize: '12px', display: 'block', marginBottom: '16px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    <GlobalOutlined style={{ marginRight: '4px' }} />
-                    {app.organizationName}/{app.repositoryName}
-                  </Text>
-
-                  {app.description && (
-                    <Paragraph 
-                      ellipsis={{ rows: 2, expandable: false }} 
-                      style={{ fontSize: '13px', margin: '0 0 16px 0', color: 'rgba(255, 255, 255, 0.7)', lineHeight: '1.5' }}
-                    >
-                      {app.description}
-                    </Paragraph>
-                  )}
-
-                  <div style={{ marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <Text style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', fontWeight: 500 }}>域名验证</Text>
-                      <Tag 
-                        color={app.enableDomainValidation ? 'green' : 'default'}
-                        style={{ 
-                          fontSize: '11px',
-                          background: app.enableDomainValidation ? 'rgba(82, 196, 26, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-                          color: app.enableDomainValidation ? '#52c41a' : 'rgba(255, 255, 255, 0.6)',
-                          border: `1px solid ${app.enableDomainValidation ? 'rgba(82, 196, 26, 0.4)' : 'rgba(255, 255, 255, 0.2)'}`,
-                          borderRadius: '4px'
-                        }}
-                      >
-                        {app.enableDomainValidation ? '已启用' : '未启用'}
-                      </Tag>
-                    </div>
-                    
-                    {app.enableDomainValidation && app.allowedDomains.length > 0 && (
-                      <div className={styles.domainList}>
-                        {app.allowedDomains.slice(0, 2).map(domain => (
-                          <Tag key={domain}>
-                            {domain}
-                          </Tag>
-                        ))}
-                        {app.allowedDomains.length > 2 && (
-                          <Tooltip title={app.allowedDomains.slice(2).join(', ')}>
-                            <Tag>
-                              +{app.allowedDomains.length - 2}
-                            </Tag>
+                  {app.enableDomainValidation && app.allowedDomains.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {app.allowedDomains.slice(0, 2).map(domain => (
+                        <Badge key={domain} variant="outline" className="text-xs">
+                          {domain}
+                        </Badge>
+                      ))}
+                      {app.allowedDomains.length > 2 && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-xs">
+                                +{app.allowedDomains.length - 2}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {app.allowedDomains.slice(2).join(', ')}
+                            </TooltipContent>
                           </Tooltip>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    <Text style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)' }}>
-                      创建于 {new Date(app.createdAt).toLocaleDateString()}
-                    </Text>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              
+              <CardFooter className="pt-2 border-t">
+                <div className="flex justify-between items-center w-full">
+                  <span className="text-xs text-muted-foreground">
+                    创建于 {new Date(app.createdAt).toLocaleDateString()}
+                  </span>
+                  <div className="flex gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => showUsage(app)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>查看使用说明</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(app)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>编辑</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            onClick={() => handleToggleEnabled(app.appId)}
+                          >
+                            <Power className={`h-4 w-4 ${app.isEnabled !== false ? "text-green-500" : "text-muted-foreground"}`} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{app.isEnabled !== false ? '禁用' : '启用'}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive hover:text-destructive" 
+                            onClick={() => setConfirmDeleteApp(app)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>删除</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
-              </Card>
-            </Col>
+              </CardFooter>
+            </Card>
           ))}
-        </Row>
+        </div>
       )}
 
       {/* 创建/编辑模态框 */}
-      <Modal
-        title={editingApp ? '编辑应用' : '创建应用'}
-        open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          setEditingApp(null);
-          form.resetFields();
-        }}
-        onOk={() => form.submit()}
-        confirmLoading={loading}
-        width={600}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
-          <Form.Item
-            name="appId"
-            label="应用 ID"
-            rules={[
-              { required: true, message: '请输入应用 ID' },
-              { pattern: /^[a-zA-Z0-9_-]+$/, message: '应用 ID 只能包含字母、数字、下划线和短横线' }
-            ]}
-          >
-            <Input placeholder="应用的唯一标识符" disabled={!!editingApp} />
-          </Form.Item>
-
-          <Form.Item
-            name="name"
-            label="应用名称"
-            rules={[{ required: true, message: '请输入应用名称' }]}
-          >
-            <Input placeholder="应用的显示名称" />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="organizationName"
-                label="组织名称"
-                rules={[{ required: true, message: '请输入组织名称' }]}
-              >
-                <Input placeholder="组织或用户名" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="repositoryName"
-                label="仓库名称"
-                rules={[{ required: true, message: '请输入仓库名称' }]}
-              >
-                <Input placeholder="仓库名称" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="description"
-            label="应用描述"
-          >
-            <TextArea rows={3} placeholder="应用的详细描述（可选）" />
-          </Form.Item>
-
-          <Form.Item
-            name="enableDomainValidation"
-            label="启用域名验证"
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            noStyle
-            shouldUpdate={(prevValues, currentValues) =>
-              prevValues.enableDomainValidation !== currentValues.enableDomainValidation
-            }
-          >
-            {({ getFieldValue }) =>
-              getFieldValue('enableDomainValidation') ? (
-                <Form.Item
-                  name="allowedDomains"
-                  label="允许的域名"
-                  rules={[{ required: true, message: '请输入至少一个域名' }]}
-                >
-                  <Select
-                    mode="tags"
-                    placeholder="输入域名，按回车添加多个"
-                    tokenSeparators={[',', '\n']}
+      <Dialog open={modalVisible} onOpenChange={setModalVisible}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{editingApp ? '编辑应用' : '创建应用'}</DialogTitle>
+            <DialogDescription>
+              {editingApp ? '修改应用信息和配置' : '创建一个新的 AI 聊天应用'}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="appId">应用 ID</Label>
+                <Input
+                  id="appId"
+                  value={formValues.appId}
+                  onChange={(e) => setFormValues({...formValues, appId: e.target.value})}
+                  disabled={!!editingApp}
+                  placeholder="应用的唯一标识符"
+                  required
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="name">应用名称</Label>
+                <Input
+                  id="name"
+                  value={formValues.name}
+                  onChange={(e) => setFormValues({...formValues, name: e.target.value})}
+                  placeholder="应用的显示名称"
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="organizationName">组织名称</Label>
+                  <Input
+                    id="organizationName"
+                    value={formValues.organizationName}
+                    onChange={(e) => setFormValues({...formValues, organizationName: e.target.value})}
+                    placeholder="组织或用户名"
+                    required
                   />
-                </Form.Item>
-              ) : null
-            }
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* 使用说明模态框 */}
-      <Modal
-        title={
-          <Space style={{ color: '#ffffff' }}>
-            <CodeOutlined style={{ color: '#1890ff' }} />
-            使用说明 - {selectedApp?.name}
-          </Space>
-        }
-        open={usageModalVisible}
-        onCancel={() => setUsageModalVisible(false)}
-        footer={[
-          <Button 
-            key="close" 
-            onClick={() => setUsageModalVisible(false)}
-            style={{ 
-              background: 'rgba(255, 255, 255, 0.1)', 
-              borderColor: 'rgba(255, 255, 255, 0.2)',
-              color: '#ffffff'
-            }}
-          >
-            关闭
-          </Button>
-        ]}
-        width={800}
-        className={styles.usageModal}
-        closeIcon={<span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>×</span>}
-      >
-        {selectedApp && (
-          <div>
-            <div 
-              style={{ 
-                padding: '16px 20px',
-                borderRadius: '8px',
-                background: 'rgba(24, 144, 255, 0.1)',
-                border: '1px solid rgba(24, 144, 255, 0.2)',
-                marginBottom: '24px',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '12px'
-              }}
-            >
-              <div style={{ fontSize: '20px', marginTop: '2px' }}>💡</div>
-              <div>
-                <div style={{ color: '#1890ff', fontWeight: 500, marginBottom: '4px' }}>集成说明</div>
-                <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px' }}>
-                  将以下代码添加到您的网站页面中，即可启用 AI 聊天功能。
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="repositoryName">仓库名称</Label>
+                  <Input
+                    id="repositoryName"
+                    value={formValues.repositoryName}
+                    onChange={(e) => setFormValues({...formValues, repositoryName: e.target.value})}
+                    placeholder="仓库名称"
+                    required
+                  />
                 </div>
               </div>
-            </div>
-
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <Title level={5} style={{ color: '#ffffff', margin: 0 }}>HTML 集成代码</Title>
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<CopyOutlined />}
-                  onClick={() => copyToClipboard(generateUsageCode(selectedApp))}
-                  style={{ 
-                    color: '#1890ff',
-                    background: 'rgba(24, 144, 255, 0.1)',
-                    border: '1px solid rgba(24, 144, 255, 0.3)',
-                    borderRadius: '6px',
-                    height: '28px'
-                  }}
-                >
-                  复制全部
-                </Button>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="description">应用描述</Label>
+                <Textarea
+                  id="description"
+                  value={formValues.description}
+                  onChange={(e) => setFormValues({...formValues, description: e.target.value})}
+                  placeholder="应用的详细描述（可选）"
+                  rows={3}
+                />
               </div>
-              <div className={styles.codeBlock}>
-                <pre>{generateUsageCode(selectedApp)}</pre>
-                <div 
-                  style={{ 
-                    position: 'absolute', 
-                    top: '-1px', 
-                    left: '-1px', 
-                    padding: '4px 8px', 
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    borderRadius: '8px 0 8px 0',
-                    fontSize: '11px',
-                    color: 'rgba(255, 255, 255, 0.6)'
-                  }}
-                >
-                  HTML
-                </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="prompt">默认提示词</Label>
+                <Textarea
+                  id="prompt"
+                  value={formValues.prompt || ''}
+                  onChange={(e) => setFormValues({...formValues, prompt: e.target.value})}
+                  placeholder="设置AI助手的默认提示词（可选）"
+                  rows={3}
+                />
               </div>
-            </div>
 
-            <div style={{ 
-              background: 'rgba(255, 255, 255, 0.03)', 
-              borderRadius: '12px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              padding: '20px',
-              marginBottom: '24px'
-            }}>
-              <Title level={5} style={{ color: '#ffffff', marginBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px' }}>
-                配置信息
-              </Title>
-              <Row gutter={[24, 24]}>
-                <Col span={12}>
-                  <div style={{ marginBottom: '8px' }}>
-                    <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>应用 ID</Text>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Text style={{ color: '#ffffff', fontSize: '14px' }}>{selectedApp.appId}</Text>
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<CopyOutlined />}
-                      onClick={() => copyToClipboard(selectedApp.appId)}
-                      style={{ 
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        padding: '0 4px',
-                        height: '22px',
-                        lineHeight: '20px'
-                      }}
-                    />
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div style={{ marginBottom: '8px' }}>
-                    <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>应用名称</Text>
-                  </div>
-                  <Text style={{ color: '#ffffff', fontSize: '14px' }}>{selectedApp.name}</Text>
-                </Col>
-                <Col span={12}>
-                  <div style={{ marginBottom: '8px' }}>
-                    <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>组织/仓库</Text>
-                  </div>
-                  <Text style={{ color: '#ffffff', fontSize: '14px' }}>
-                    <GlobalOutlined style={{ marginRight: '6px', fontSize: '12px' }} />
-                    {selectedApp.organizationName}/{selectedApp.repositoryName}
-                  </Text>
-                </Col>
-                <Col span={12}>
-                  <div style={{ marginBottom: '8px' }}>
-                    <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>域名验证</Text>
-                  </div>
-                  <Tag 
-                    style={{
-                      background: selectedApp.enableDomainValidation ? 'rgba(82, 196, 26, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-                      color: selectedApp.enableDomainValidation ? '#52c41a' : 'rgba(255, 255, 255, 0.6)',
-                      border: `1px solid ${selectedApp.enableDomainValidation ? 'rgba(82, 196, 26, 0.4)' : 'rgba(255, 255, 255, 0.2)'}`,
-                      borderRadius: '4px'
-                    }}
-                  >
-                    {selectedApp.enableDomainValidation ? '已启用' : '未启用'}
-                  </Tag>
-                </Col>
-              </Row>
-            </div>
+              <div className="grid gap-2">
+                <Label htmlFor="introduction">开场白</Label>
+                <Textarea
+                  id="introduction"
+                  value={formValues.introduction || ''}
+                  onChange={(e) => setFormValues({...formValues, introduction: e.target.value})}
+                  placeholder="设置AI助手的开场白（可选）"
+                  rows={2}
+                />
+              </div>
 
-            {selectedApp.enableDomainValidation && selectedApp.allowedDomains.length > 0 && (
-              <div style={{ 
-                background: 'rgba(255, 255, 255, 0.03)', 
-                borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                padding: '20px'
-              }}>
-                <Title level={5} style={{ color: '#ffffff', marginBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px' }}>
-                  允许的域名
-                </Title>
-                <div className={styles.domainList}>
-                  {selectedApp.allowedDomains.map(domain => (
-                    <Tag key={domain}>{domain}</Tag>
+              <div className="grid gap-2">
+                <Label htmlFor="model">选择模型</Label>
+                <Input
+                  id="model"
+                  value={formValues.model || ''}
+                  onChange={(e) => setFormValues({...formValues, model: e.target.value})}
+                  placeholder="指定使用的AI模型（可选）"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="recommendedQuestions">推荐问题</Label>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {(formValues.recommendedQuestions || []).map((question, index) => (
+                    <Badge key={index} variant="secondary" className="flex gap-1 items-center">
+                      {question}
+                      <button
+                        type="button"
+                        onClick={() => removeQuestion(index)}
+                        className="rounded-full h-4 w-4 inline-flex items-center justify-center hover:bg-secondary-foreground/20"
+                      >
+                        ×
+                      </button>
+                    </Badge>
                   ))}
                 </div>
+                <Input
+                  id="recommendedQuestions"
+                  placeholder="输入推荐问题，按回车添加"
+                  onKeyDown={handleQuestionInput}
+                />
               </div>
-            )}
-          </div>
-        )}
-      </Modal>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="enableDomainValidation"
+                  checked={formValues.enableDomainValidation}
+                  onCheckedChange={(checked) => setFormValues({...formValues, enableDomainValidation: checked})}
+                />
+                <Label htmlFor="enableDomainValidation">启用域名验证</Label>
+              </div>
+              
+              {formValues.enableDomainValidation && (
+                <div className="grid gap-2">
+                  <Label htmlFor="allowedDomains">允许的域名</Label>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {formValues.allowedDomains.map(domain => (
+                      <Badge key={domain} variant="secondary" className="flex gap-1 items-center">
+                        {domain}
+                        <button 
+                          type="button" 
+                          onClick={() => removeDomain(domain)}
+                          className="rounded-full h-4 w-4 inline-flex items-center justify-center hover:bg-secondary-foreground/20"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <Input
+                    id="allowedDomains"
+                    placeholder="输入域名，按回车添加"
+                    onKeyDown={handleDomainInput}
+                  />
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setModalVisible(false)}>
+                取消
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? '处理中...' : editingApp ? '保存' : '创建'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={!!confirmDeleteApp} onOpenChange={(open) => !open && setConfirmDeleteApp(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确定要删除这个应用吗？</AlertDialogTitle>
+            <AlertDialogDescription>
+              删除后将无法恢复，请谨慎操作。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmDeleteApp && handleDelete(confirmDeleteApp.appId)}>
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 使用说明模态框 */}
+      <Dialog open={usageModalVisible} onOpenChange={setUsageModalVisible}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Code className="h-5 w-5" />
+              使用说明 - {selectedApp?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedApp && (
+            <div className="space-y-6">
+              <div className="bg-primary/5 p-4 rounded-md border border-primary/10 flex items-start gap-3">
+                <div className="text-xl mt-0.5">💡</div>
+                <div>
+                  <h4 className="font-medium text-sm">集成说明</h4>
+                  <p className="text-sm text-muted-foreground">
+                    将以下代码添加到您的网站页面中，即可启用 AI 聊天功能。
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">HTML 集成代码</h4>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => copyToClipboard(generateUsageCode(selectedApp))}
+                    className="h-8"
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    复制全部
+                  </Button>
+                </div>
+                <div className="relative bg-muted p-4 rounded-md overflow-x-auto">
+                  <pre className="text-sm font-mono">{generateUsageCode(selectedApp)}</pre>
+                  <div className="absolute top-0 left-0 px-2 py-1 text-xs text-muted-foreground bg-muted rounded-br-md">
+                    HTML
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-muted/50 rounded-md p-4 space-y-4">
+                <h4 className="font-medium border-b pb-2">配置信息</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">应用 ID</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{selectedApp.appId}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6" 
+                        onClick={() => copyToClipboard(selectedApp.appId)}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">应用名称</p>
+                    <span className="text-sm">{selectedApp.name}</span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">组织/仓库</p>
+                    <span className="text-sm flex items-center">
+                      <Globe className="h-3 w-3 mr-1" />
+                      {selectedApp.organizationName}/{selectedApp.repositoryName}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">域名验证</p>
+                    <Badge variant={selectedApp.enableDomainValidation ? "secondary" : "outline"}>
+                      {selectedApp.enableDomainValidation ? '已启用' : '未启用'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {selectedApp.enableDomainValidation && selectedApp.allowedDomains.length > 0 && (
+                <div className="bg-muted/50 rounded-md p-4 space-y-4">
+                  <h4 className="font-medium border-b pb-2">允许的域名</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedApp.allowedDomains.map(domain => (
+                      <Badge key={domain} variant="outline">{domain}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

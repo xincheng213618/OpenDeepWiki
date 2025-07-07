@@ -4,7 +4,7 @@ import { getWarehouse } from './services/warehouseService';
 import { getBasicHomeStats } from './services/statsService';
 import HomeClient from './components/HomeClient';
 import { Suspense } from 'react';
-import { Spin } from 'antd';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default async function Home({
   searchParams
@@ -29,7 +29,7 @@ export default async function Home({
   const initialTotal = response.success ? response.data.total : 0;
 
   return (
-    <Suspense fallback={<div style={{ textAlign: 'center', marginTop: '20%' }}><Spin size="large" /></div>}>
+    <Suspense fallback={<div style={{ textAlign: 'center', marginTop: '20%' }}><Skeleton className="w-32 h-32 mx-auto" /></div>}>
       <HomeClient
         initialRepositories={initialRepositories}
         initialTotal={initialTotal}

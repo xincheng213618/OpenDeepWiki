@@ -1,5 +1,6 @@
 import { Metadata, ResolvingMetadata } from 'next';
 import RepositoryLayoutServer from './layout.server';
+import { NextProvider } from 'fumadocs-core/framework/next';
 
 type Props = {
   params: Promise<{ owner: string; name: string; branch: string }>
@@ -48,12 +49,14 @@ export default async function RepositoryLayout({
   const { owner, name, branch } = await params;
   
   return (
-    <RepositoryLayoutServer
-      owner={owner}
-      name={name}
-      branch={branch}
-    >
-      {children}
-    </RepositoryLayoutServer>
+    <NextProvider>
+      <RepositoryLayoutServer
+        owner={owner}
+        name={name}
+        branch={branch}
+      >
+        {children}
+      </RepositoryLayoutServer>
+    </NextProvider>
   );
 } 

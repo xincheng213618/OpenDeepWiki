@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, Spin, message, Result, Button } from 'antd';
+import { Card, message, Result, Button } from 'antd';
+import { Skeleton } from '@/components/ui/skeleton';
 import { LoadingOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { githubLogin, googleLogin } from '../../services/authService';
 import styles from '../../login/auth.module.css';
@@ -104,14 +105,10 @@ function OAuthCallbackContent() {
       <div className={styles.authContainer}>
         <div className={styles.authWrapper}>
           <Card className={styles.authCard}>
-            <div className={styles.authHeader}>
-              <Spin 
-                indicator={<LoadingOutlined style={{ fontSize: 48, color: '#1890ff' }} spin />} 
-                size="large" 
-              />
-              <h2 style={{ marginTop: 24, textAlign: 'center' }}>正在处理登录...</h2>
-              <p style={{ textAlign: 'center', color: '#666' }}>
-                请稍候，我们正在验证您的身份
+            <div style={{ textAlign: 'center', padding: '50px 0' }}>
+              <Skeleton className="w-12 h-12 rounded-full mx-auto" />
+              <p style={{ marginTop: 20, fontSize: 16, color: '#666' }}>
+                正在处理 GitHub 登录...
               </p>
             </div>
           </Card>
@@ -174,12 +171,11 @@ function LoadingFallback() {
     <div className={styles.authContainer}>
       <div className={styles.authWrapper}>
         <Card className={styles.authCard}>
-          <div className={styles.authHeader}>
-            <Spin 
-              indicator={<LoadingOutlined style={{ fontSize: 48, color: '#1890ff' }} spin />} 
-              size="large" 
-            />
-            <h2 style={{ marginTop: 24, textAlign: 'center' }}>正在加载...</h2>
+          <div style={{ textAlign: 'center', padding: '50px 0' }}>
+            <Skeleton className="w-12 h-12 rounded-full mx-auto" />
+            <p style={{ marginTop: 20, fontSize: 16, color: '#666' }}>
+              正在处理 Google 登录...
+            </p>
           </div>
         </Card>
       </div>

@@ -53,6 +53,9 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         .HasColumnType("bit")
                         .HasComment("是否启用域名验证");
 
+                    b.Property<string>("Introduction")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit")
                         .HasComment("是否启用");
@@ -60,6 +63,13 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                     b.Property<DateTime?>("LastUsedAt")
                         .HasColumnType("datetime2")
                         .HasComment("最后使用时间");
+
+                    b.Property<string>("Mcps")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Model")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -72,6 +82,12 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasComment("组织名称");
+
+                    b.Property<string>("Prompt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecommendedQuestions")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RepositoryName")
                         .IsRequired()

@@ -1,321 +1,279 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Button, Upload, message, Tooltip } from 'antd';
-import { LoadingOutlined, CloseCircleFilled, CloseCircleOutlined } from '@ant-design/icons';
-import { createStyles } from 'antd-style';
-import type { UploadProps } from 'antd';
-import { ActionIcon } from '@lobehub/ui';
-import { ChatInputActionBar } from '@lobehub/ui/chat';
-import { ChatInputArea } from '@lobehub/ui/mobile';
-import { ArrowUp, Eraser, ImagePlus, Trash2 } from 'lucide-react';
-import { Flexbox } from 'react-layout-kit';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { ArrowUp, Eraser, ImagePlus, Trash2, X, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Base64Content } from '../../types/chat';
 
-const useStyles = createStyles(({ css, token }) => ({
-    container: css`
-    z-index: 10;
-  `,
-    imagePreviewContainer: css`
-    display: flex;
-    flex-wrap: wrap;
-    gap: ${token.marginSM}px;
-    margin-bottom: ${token.marginSM}px;
-    padding: ${token.paddingSM}px;
-    background: ${token.colorBgElevated};
-    border-radius: ${token.borderRadiusLG}px;
-    border: 1px dashed ${token.colorBorder};
-  `,
-    imagePreviewItem: css`
-    position: relative;
-    width: 80px;
-    height: 80px;
-    border-radius: ${token.borderRadiusLG}px;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    border: 1px solid ${token.colorBorderSecondary};
-    transition: transform 0.2s ease;
-
-    &:hover {
-      transform: scale(1.02);
-
-      .remove-button {
-        opacity: 1;
-      }
-    }
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .remove-button {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: rgba(0, 0, 0, 0.6);
-      color: white;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      opacity: 0.7;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.8);
-        opacity: 1;
-      }
-    }
-  `,
-    uploadButton: css`
-    display: none;
-  `,
-    inputWrapper: css`
-    .ant-input {
-      border-radius: ${token.borderRadiusLG}px;
-      padding: ${token.paddingSM}px ${token.paddingMD}px;
-      border-color: ${token.colorBorderSecondary};
-      transition: all 0.3s;
-
-      &:hover, &:focus {
-        border-color: ${token.colorPrimary};
-        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
-      }
-    }
-
-    .ant-btn {
-      border-radius: ${token.borderRadiusLG}px;
-    }
-  `,
-    actionButton: css`
-    &:hover {
-      color: ${token.colorPrimary};
-      background-color: ${token.colorBgTextHover};
-    }
-  `
-}));
-
 interface ChatInputProps {
-    value?: string;
-    placeholder?: string;
-    loading?: boolean;
-    disabled?: boolean;
-    onSend?: (message: string, imageContents?: Base64Content[]) => void;
-    onStop?: () => void;
-    onChange?: (value: string) => void;
-    onClear?: () => void;
+  value?: string;
+  placeholder?: string;
+  loading?: boolean;
+  disabled?: boolean;
+  onSend?: (message: string, imageContents?: Base64Content[]) => void;
+  onStop?: () => void;
+  onChange?: (value: string) => void;
+  onClear?: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
-    value,
-    placeholder = '输入消息...',
-    loading = false,
-    disabled = false,
-    onSend,
-    onStop,
-    onChange,
-    onClear,
+  value,
+  placeholder = '输入消息...',
+  loading = false,
+  disabled = false,
+  onSend,
+  onStop,
+  onChange,
+  onClear,
 }) => {
-    const { styles } = useStyles();
-    const [inputValue, setInputValue] = useState(value || '');
-    const [imageUploading, setImageUploading] = useState(false);
-    const [imageList, setImageList] = useState<Base64Content[]>([]);
-    const [expand, setExpand] = useState(false);
-    const uploadRef = useRef<any>(null);
+  const [inputValue, setInputValue] = useState(value || '');
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageList, setImageList] = useState<Base64Content[]>([]);
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleInputChange = (value: string) => {
-        setInputValue(value);
-        onChange?.(value);
-    };
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    onChange?.(value);
+  };
 
-    const handleSend = () => {
-        if ((inputValue.trim() || imageList.length > 0) && !loading && !disabled) {
-            onSend?.(inputValue.trim(), imageList.length > 0 ? imageList : undefined);
-            setInputValue('');
-            setImageList([]);
-            setExpand(false);
-        }
-    };
+  const handleSend = () => {
+    if ((inputValue.trim() || imageList.length > 0) && !loading && !disabled) {
+      onSend?.(inputValue.trim(), imageList.length > 0 ? imageList : undefined);
+      setInputValue('');
+      setImageList([]);
+    }
+  };
 
-    const handleStop = () => {
-        onStop?.();
-    };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
-    const handleClear = () => {
-        setInputValue('');
-        setImageList([]);
-        message.success('已清空输入内容');
-    };
+  const handleStop = () => {
+    onStop?.();
+  };
 
-    const handleUploadClick = () => {
-        if (uploadRef.current) {
-            uploadRef.current.upload.uploader.onClick();
-        }
-    };
+  const handleClear = () => {
+    setInputValue('');
+    setImageList([]);
+  };
 
-    const handleImageUpload: UploadProps['beforeUpload'] = async (file) => {
-        const isImage = file.type.startsWith('image/');
-        if (!isImage) {
-            message.error('只能上传图片文件!');
-            return Upload.LIST_IGNORE;
-        }
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
-        const isLt5M = file.size / 1024 / 1024 < 5;
-        if (!isLt5M) {
-            message.error('图片大小不能超过5MB!');
-            return Upload.LIST_IGNORE;
-        }
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-        try {
-            setImageUploading(true);
-            const base64Content = await convertFileToBase64(file);
-            setImageList([...imageList, {
-                data: base64Content,
-                mimeType: file.type
-            }]);
-            setImageUploading(false);
-            return false; // 阻止默认上传行为
-        } catch (error) {
-            console.error('图片转换失败:', error);
-            message.error('图片处理失败，请重试');
-            setImageUploading(false);
-            return Upload.LIST_IGNORE;
-        }
-    };
+    const file = files[0];
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      alert('只能上传图片文件!');
+      return;
+    }
 
-    const convertFileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                const result = reader.result as string;
-                // 移除 data:image/jpeg;base64, 前缀
-                const base64 = result.split(',')[1];
-                resolve(base64);
-            };
-            reader.onerror = (error) => reject(error);
-        });
-    };
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      alert('图片大小不能超过5MB!');
+      return;
+    }
 
-    const removeImage = (index: number) => {
-        const newImageList = [...imageList];
-        newImageList.splice(index, 1);
-        setImageList(newImageList);
-    };
+    try {
+      setImageUploading(true);
+      const base64Content = await convertFileToBase64(file);
+      setImageList([...imageList, {
+        data: base64Content,
+        mimeType: file.type
+      }]);
+      setImageUploading(false);
+      
+      // 重置input以便可以再次选择同一文件
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('图片转换失败:', error);
+      alert('图片处理失败，请重试');
+      setImageUploading(false);
+    }
+  };
 
-    return (
-        <div className={styles.container}>
-            {imageList.length > 0 && (
-                <div className={styles.imagePreviewContainer}>
-                    {imageList.map((image, index) => (
-                        <div key={index} className={styles.imagePreviewItem}>
-                            <img src={`data:${image.mimeType};base64,${image.data}`} alt="上传图片" />
-                            <div className="remove-button" onClick={() => removeImage(index)}>
-                                <CloseCircleFilled />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // 移除 data:image/jpeg;base64, 前缀
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
-            <Flexbox className={styles.inputWrapper}>
-                <Upload
-                    ref={uploadRef}
-                    className={styles.uploadButton}
-                    accept="image/*"
-                    showUploadList={false}
-                    beforeUpload={handleImageUpload}
-                    maxCount={5}
-                >
-                    <Button
-                        size="small"
-                        type="text"
-                    >上传</Button>
-                </Upload>
+  const removeImage = (index: number) => {
+    const newImageList = [...imageList];
+    newImageList.splice(index, 1);
+    setImageList(newImageList);
+  };
 
-                <ChatInputArea
-                    expand={expand}
-                    setExpand={setExpand}
-                    size="small"
-                    placeholder={placeholder}
-                    value={inputValue}
-                    onChange={(e) => {
-                        handleInputChange(e.target.value)
-                    }}
-                    onInput={(e) => handleInputChange(e)}
-                    onSend={handleSend}
-                    disabled={disabled}
-                    loading={loading}
-                    textAreaRightAddons={
-                        <ChatInputArea.SendButton
-                            disabled={imageUploading || disabled}
-                            loading={loading}
-                            icon={<ArrowUp />}
-                            onSend={handleSend}
-                            onStop={handleStop}
-                        />
-                    }
-                    topAddons={
-                        <ChatInputActionBar
-                            leftAddons={
-                                <>
-                                    <Tooltip title="上传图片">
-                                        <ActionIcon
-                                            className={styles.actionButton}
-                                            icon={imageUploading ? <LoadingOutlined
-                                                size={16}
-                                            /> : <ImagePlus
-                                                size={16}
-                                            />}
-                                            onClick={handleUploadClick}
-                                            disabled={disabled || loading}
-                                        />
-                                    </Tooltip>
-                                    <Tooltip title="清空输入">
-                                        <ActionIcon
-                                            className={styles.actionButton}
-                                            icon={<Eraser
-                                                size={16} />}
-                                            onClick={handleClear}
-                                            disabled={!inputValue && imageList.length === 0}
-                                        />
-                                    </Tooltip>
-                                    <Tooltip title="清空消息">
-                                        <ActionIcon
-                                            className={styles.actionButton}
-                                            style={{
-                                                marginLeft: 'auto',
-                                                color: 'red',
-                                             }}
-                                            icon={<Trash2
-                                                size={16}
-                                            />}
-                                            onClick={onClear}
-                                        />
-                                    </Tooltip>
-                                    {loading && (
-                                        <Tooltip title="停止生成">
-                                            <ActionIcon
-                                                className={styles.actionButton}
-                                                style={{ color: 'grey' }}
-                                                icon={<CloseCircleOutlined />}
-                                                onClick={handleStop}
-                                            />
-                                        </Tooltip>
-                                    )}
-                                </>
-                            }
-                        />
-                    }
-                />
-            </Flexbox>
+  return (
+    <div className="w-full space-y-2">
+      {/* 图片预览区域 */}
+      {imageList.length > 0 && (
+        <div className="flex flex-wrap gap-2 p-2 bg-muted/30 rounded-md border border-dashed">
+          {imageList.map((image, index) => (
+            <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden border border-border group">
+              <img 
+                src={`data:${image.mimeType};base64,${image.data}`} 
+                alt="上传图片" 
+                className="w-full h-full object-cover"
+              />
+              <button 
+                onClick={() => removeImage(index)}
+                className="absolute top-1 right-1 bg-background/80 text-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
         </div>
-    );
+      )}
+
+      {/* 输入区域 */}
+      <div className="flex flex-col space-y-2">
+        <div className="relative">
+          <Textarea
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled || loading}
+            className="pr-10 min-h-[80px] resize-none"
+          />
+          
+          <div className="absolute bottom-2 right-2">
+            {loading ? (
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                onClick={handleStop}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button 
+                size="icon" 
+                onClick={handleSend}
+                disabled={(!inputValue.trim() && imageList.length === 0) || disabled || imageUploading}
+                className="h-8 w-8"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* 工具栏 */}
+        <div className="flex items-center">
+          <div className="flex-1 flex gap-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8" 
+                    disabled={disabled || loading}
+                    onClick={handleUploadClick}
+                  >
+                    {imageUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>上传图片</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8" 
+                    disabled={!inputValue && imageList.length === 0}
+                    onClick={handleClear}
+                  >
+                    <Eraser className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>清空输入</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" 
+                  onClick={() => setShowClearDialog(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>清空消息</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+
+      {/* 文件上传输入 */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleImageUpload}
+      />
+
+      {/* 清空消息确认对话框 */}
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认清空</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要清空所有聊天消息吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              onClear?.();
+              setShowClearDialog(false);
+            }}>
+              确认清空
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 };
 
 export default ChatInput;

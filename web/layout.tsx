@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import Script from 'next/script';
 import { ConfigProvider } from '@lobehub/ui';
 
 export default function AdminLayout({
@@ -77,11 +76,6 @@ export default function AdminLayout({
 
   return (
     <>
-      <Script
-        id="tailwind-cdn"
-        src="/tailwindcss.js"
-        strategy="beforeInteractive"
-      />
       <ConfigProvider
         config={{
           proxy: 'custom',

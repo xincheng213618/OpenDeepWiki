@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, Typography, Tag, Button, Table, Space, Descriptions, message, Spin, Divider, Tree, Modal, Form, Input, Dropdown, Menu, Row, Col } from 'antd';
+import { Card, Typography, Tag, Button, Table, Space, Descriptions, message, Divider, Tree, Modal, Form, Input, Dropdown, Menu, Row, Col } from 'antd';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, FolderOutlined, FileOutlined, ExclamationCircleOutlined, DownloadOutlined, PlayCircleOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { getDataset, deleteDataset, TrainingDataset, createTask, getTasks, FineTuningTask, getTask, deleteTask, startTask, startTaskStream, updateDataset } from '../../../../services/fineTuningService';
@@ -778,7 +779,7 @@ export default function DatasetDetailPage() {
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
-        <Spin size="large" />
+        <Skeleton className="w-32 h-32 mx-auto" />
         <div style={{ marginTop: '20px' }}>加载数据集详情...</div>
       </div>
     );
@@ -866,7 +867,7 @@ export default function DatasetDetailPage() {
         <Card style={{ width: 300, marginRight: 16, height: '100%', overflow: 'auto' }}>
           {loadingTree ? (
             <div style={{ textAlign: 'center', padding: '20px' }}>
-              <Spin size="small" />
+              <Skeleton className="h-4 w-4 rounded-full" />
               <div style={{ marginTop: '10px' }}>加载目录中...</div>
             </div>
           ) : (
@@ -897,7 +898,7 @@ export default function DatasetDetailPage() {
         >
           {fileLoading ? (
             <div style={{ textAlign: 'center', padding: '50px' }}>
-              <Spin size="small" />
+              <Skeleton className="h-32 w-full" />
               <div style={{ marginTop: '10px' }}>加载文件内容...</div>
             </div>
           ) : selectedFile ? (
@@ -980,7 +981,7 @@ export default function DatasetDetailPage() {
       >
         {taskDetailsLoading ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            <Spin />
+            <Skeleton />
             <div style={{ marginTop: '10px' }}>加载任务详情...</div>
           </div>
         ) : taskDetails ? (
@@ -1115,7 +1116,7 @@ export default function DatasetDetailPage() {
       >
         {taskDetailsLoading ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            <Spin />
+            <Skeleton />
             <div style={{ marginTop: '10px' }}>加载任务详情...</div>
           </div>
         ) : (

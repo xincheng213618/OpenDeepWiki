@@ -1,7 +1,11 @@
 import { getWarehouseOverview } from '../../services';
-import ClientRepositoryPage from './ClientRepositoryPage';
 import RepositoryInfo from './RepositoryInfo';
 import { checkGitHubRepoExists } from '../../services/githubService';
+import { DocsBody, DocsDescription, DocsPage, DocsTitle } from 'fumadocs-ui/page';
+import RenderMarkdown from '@/app/components/renderMarkdown';
+import { getMDXComponents } from '@/components/mdx-components';
+import FloatingChatClient from './FloatingChatClient';
+import ReloadButtonClient from './ReloadButtonClient';
 
 // 服务器组件，处理数据获取
 export default async function RepositoryPage({ params, searchParams }: any) {
@@ -22,7 +26,7 @@ export default async function RepositoryPage({ params, searchParams }: any) {
     if (!response.success || !response.data) {
       // 检查GitHub仓库是否存在
       const githubRepoExists = await checkGitHubRepoExists(owner, name, branch);
-      
+
       // 如果GitHub仓库存在，则显示GitHub仓库信息
       if (githubRepoExists) {
         return (
@@ -33,7 +37,6 @@ export default async function RepositoryPage({ params, searchParams }: any) {
           />
         );
       } else {
-        // 如果GitHub仓库也不存在，则显示添加仓库提示
         return (
           <RepositoryInfo
             owner={owner}
@@ -44,24 +47,75 @@ export default async function RepositoryPage({ params, searchParams }: any) {
       }
     }
 
+    const compiled = await RenderMarkdown({
+      markdown: response.data.content,
+    });
+    const MdxContent = compiled!.body;
+
+    const { title, description } = compiled!.frontmatter as any;
+
     // 将数据传递给客户端组件进行渲染
     return (
-      <ClientRepositoryPage
-        owner={owner}
-        name={name}
-        document={response.data}
-      />
+      <DocsPage toc={compiled!.toc}>
+        <DocsTitle>{title ?? ""}</DocsTitle>
+        <DocsDescription>{description ?? ""}</DocsDescription>
+        <>
+          <DocsBody>
+            <MdxContent
+              components={getMDXComponents({
+              })}
+            />
+          </DocsBody>
+          <FloatingChatClient
+            appId={`builtin_${owner}_${name}`}
+            organizationName={owner}
+            repositoryName={name}
+            title={`${name} AI 助手`}
+            theme="light"
+            enableDomainValidation={false}
+            embedded={false}
+          />
+        </>
+      </DocsPage>
     );
   } catch (error) {
-    const owner = params?.owner || "";
-    const name = params?.name || "";
-    const branch = searchParams?.branch as string | undefined;
+    console.error('Repository page error:', error);
+
     return (
-      <RepositoryInfo
-        owner={owner}
-        name={name}
-        branch={branch}
-      />
+      <DocsPage>
+        <DocsTitle>页面加载失败</DocsTitle>
+        <DocsBody>
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-destructive mb-2">
+                无法加载仓库页面
+              </h2>
+              <p className="text-muted-foreground mb-4">
+                仓库 <code className="bg-muted px-2 py-1 rounded">{params.owner}/{params.name}</code> 可能不存在或暂时无法访问
+              </p>
+              <p className="text-sm text-muted-foreground mb-6">
+                错误详情: {error instanceof Error ? error.message : '未知错误'}
+              </p>
+            </div>
+
+            <div className="flex gap-4">
+              <ReloadButtonClient />
+              <a
+                href={`/${params.owner}`}
+                className="px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
+              >
+                返回 {params.owner}
+              </a>
+              <a
+                href="/"
+                className="px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
+              >
+                返回首页
+              </a>
+            </div>
+          </div>
+        </DocsBody>
+      </DocsPage>
     );
   }
 }

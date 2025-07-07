@@ -13,8 +13,8 @@ import {
   Row, 
   Col,
   Divider,
-  Spin
-} from 'antd';
+    } from 'antd';
+  import { Skeleton } from '@/components/ui/skeleton';
 import { 
   DatabaseOutlined, 
   FolderOutlined, 
@@ -381,7 +381,7 @@ const RolePermissionsPage: React.FC = () => {
           >
             {loading ? (
               <div style={{ textAlign: 'center', padding: '50px' }}>
-                <Spin size="large" />
+                <Skeleton className="w-32 h-32 mx-auto" />
               </div>
             ) : (
               <>

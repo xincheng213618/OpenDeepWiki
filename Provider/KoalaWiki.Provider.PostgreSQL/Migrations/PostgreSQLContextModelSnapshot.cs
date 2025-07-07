@@ -53,6 +53,9 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         .HasColumnType("boolean")
                         .HasComment("是否启用域名验证");
 
+                    b.Property<string>("Introduction")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean")
                         .HasComment("是否启用");
@@ -60,6 +63,13 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                     b.Property<DateTime?>("LastUsedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasComment("最后使用时间");
+
+                    b.Property<string>("Mcps")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Model")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -72,6 +82,12 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasComment("组织名称");
+
+                    b.Property<string>("Prompt")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecommendedQuestions")
+                        .HasColumnType("text");
 
                     b.Property<string>("RepositoryName")
                         .IsRequired()

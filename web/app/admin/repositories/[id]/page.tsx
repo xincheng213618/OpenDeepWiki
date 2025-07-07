@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { Card, Spin, Tabs, Button, Form, Input, Select, message, Space, Tree, Typography, Dropdown, Modal } from 'antd';
+import { Card, Tabs, Button, Form, Input, Select, message, Space, Tree, Typography, Dropdown, Modal } from 'antd';
+import { Skeleton } from '@/components/ui/skeleton';
 import { EditOutlined, SaveOutlined, FolderOutlined, FileOutlined, DeleteOutlined, PlusOutlined, MenuOutlined } from '@ant-design/icons';
 import { useParams } from 'next/navigation';
 import { MdEditor } from 'md-editor-rt';
@@ -507,7 +508,7 @@ export default function RepositoryDetailPage() {
   if (loading) {
     return (
       <div style={{ padding: 24, textAlign: 'center' }}>
-        <Spin size="large" />
+                  <Skeleton className="w-32 h-32 mx-auto" />
         <div style={{ marginTop: 16 }}>加载仓库详情中...</div>
       </div>
     );
@@ -711,7 +712,10 @@ export default function RepositoryDetailPage() {
           </Form.Item>
           {aiGenerating && (
             <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <Spin tip="AI 内容生成中，请稍候..." />
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <Skeleton className="w-32 h-8 mx-auto mb-4" />
+                <div>AI 内容生成中，请稍候...</div>
+              </div>
               <p style={{ marginTop: 8, color: '#1677ff' }}>
                 正在根据提示词生成内容，这可能需要一些时间...
               </p>

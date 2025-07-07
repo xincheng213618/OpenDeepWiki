@@ -1,8 +1,14 @@
 import { ChatItem } from "@lobehub/ui/chat";
 import { GitIssueItem, MessageItem } from "../../../../types/chat";
-import { Button, message, Modal, Spin, Tag, Tooltip } from "antd";
-import { Collapse, Markdown } from "@lobehub/ui";
-import { Copy, MoreHorizontal, Trash2, FileText, Brain, Settings, ChevronDown, ChevronRight, Maximize2, ExternalLink, Calendar, User } from "lucide-react";
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CollapsibleCard, Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { toast } from "sonner";
+import { Markdown } from "@lobehub/ui";
+import { Copy, MoreHorizontal, Trash2, FileText, Brain, Settings, ChevronDown, ChevronRight, Maximize2, ExternalLink, Calendar, User, Loader2 } from "lucide-react";
 import { Flexbox } from "react-layout-kit";
 import { useState } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -119,7 +125,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                 setFileContents(prev => ({ ...prev, [fileKey]: fullContent }));
             } catch (error) {
                 console.error('获取文件内容失败:', error);
-                message.error('获取文件内容失败');
+                toast.error('获取文件内容失败');
                 setLoadingFiles(prev => ({ ...prev, [fileKey]: false }));
                 return;
             }
@@ -238,48 +244,29 @@ export default function AssistantMessage({ messageItem, handleDelete,
 
     // 渲染思考组件
     const renderThinkingComponent = (content: string, index: number) => {
-        return (<Collapse
-            defaultActiveKey={["thinking"]}
-            size='small'
-            style={{
-                marginBottom: 5,
-                borderRadius: 8,
-            }}
-            bordered
-            
-            items={[
-                {
-                    key: "thinking",
-                    label: (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            fontWeight: 500,
-                        }}>
-                            <Brain size={14} />
-                            思考过程
-                        </div>
-                    ),
-                    children: (
-                        <div style={{
-                            maxHeight: 300,
-                            overflowY: 'auto',
-                            padding: '0 6px 6px',
-                        }}>
-                            <Markdown
-                                fontSize={12}
-                                children={content}
-                                enableMermaid
-                                enableImageGallery
-                                enableLatex
-                                enableCustomFootnotes
-                            />
-                        </div>
-                    ),
+        return (
+            <CollapsibleCard
+                defaultOpen={true}
+                variant="accent"
+                className="mb-2"
+                title={
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                        <Brain size={14} />
+                        思考过程
+                    </div>
                 }
-            ]}
-        />
+            >
+                <div className="max-h-72 overflow-y-auto">
+                    <Markdown
+                        fontSize={12}
+                        children={content}
+                        enableMermaid
+                        enableImageGallery
+                        enableLatex
+                        enableCustomFootnotes
+                    />
+                </div>
+            </CollapsibleCard>
         );
     };
 
@@ -290,11 +277,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                 if (type === 'fileFromLine') {
                     if (parsedArgs.items) {
                         return (
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 5,
-                            }}>
+                            <div className="flex flex-col gap-1.5">
                                 {parsedArgs.items.map((item: any, index: number) => {
                                     const fileKey = `${item.FilePath}-${item.StartLine}-${item.EndLine}`;
                                     const isExpanded = expandedFiles[fileKey];
@@ -303,11 +286,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                     const language = getLanguageFromFileName(item.FilePath);
 
                                     return (
-                                        <div key={index} style={{
-                                            border: '1px solid #e8e8e8',
-                                            borderRadius: 8,
-                                            overflow: 'hidden',
-                                        }}>
+                                        <div key={index} className="border border-border rounded-lg overflow-hidden">
                                             <div
                                                 onClick={() => handleFileClick(item)}
                                                 style={{
@@ -333,19 +312,19 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                     alignItems: 'center',
                                                     gap: 8,
                                                 }}>
-                                                    <FileText size={14} color="#1890ff" />
-                                                    <Tooltip title={item.FilePath}>
-                                                    <span style={{
-                                                        color: '#495057',
-                                                        fontWeight: 500,
-                                                        width: '75%',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                    }}>
-                                                        {item.FilePath}
-                                                    </span>
-                                                    </Tooltip>
+                                                    <FileText size={14} className="text-primary" />
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span className="text-foreground font-medium w-3/4 overflow-hidden text-ellipsis whitespace-nowrap">
+                                                                    {item.FilePath}
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>{item.FilePath}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                     <span style={{
                                                         color: '#8c8c8c',
                                                         fontSize: '12px',
@@ -358,7 +337,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                     alignItems: 'center',
                                                     gap: 4,
                                                 }}>
-                                                    {isLoading && <Spin size="small" />}
+                                                    {isLoading && <Skeleton className="h-4 w-4 rounded-full" />}
                                                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                                 </div>
                                             </div>
@@ -377,28 +356,26 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                         display: 'flex',
                                                         gap: '4px',
                                                     }}>
-                                                        <Tooltip title="全屏查看">
-                                                            <Button
-                                                                type="text"
-                                                                size="small"
-                                                                icon={<Maximize2 size={14} />}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleFullScreen(item, content);
-                                                                }}
-                                                                style={{
-                                                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                                                                    border: '1px solid #d9d9d9',
-                                                                    borderRadius: '4px',
-                                                                    padding: '2px 6px',
-                                                                    height: '24px',
-                                                                    width: '24px',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                }}
-                                                            />
-                                                        </Tooltip>
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="icon"
+                                                                        className="h-6 w-6 bg-background/80 backdrop-blur-sm"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleFullScreen(item, content);
+                                                                        }}
+                                                                    >
+                                                                        <Maximize2 size={14} />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>全屏查看</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
                                                     </div>
                                                     <SyntaxHighlighter
                                                         language={language}
@@ -583,17 +560,12 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                         </span>
                                                     )}
                                                     {issue.state && (
-                                                        <Tag
-                                                            color={issue.state === 'open' ? 'green' : 'default'}
-                                                            style={{
-                                                                fontSize: '11px',
-                                                                padding: '2px 6px',
-                                                                borderRadius: 10,
-                                                                lineHeight: '1.2',
-                                                            }}
+                                                        <Badge
+                                                            variant={issue.state === 'open' ? 'success' : 'secondary'}
+                                                            className="text-xs px-2 py-1 rounded-full"
                                                         >
                                                             {issue.state}
-                                                        </Tag>
+                                                        </Badge>
                                                     )}
                                                     {issue.author && (
                                                         <div style={{
@@ -690,7 +662,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                         justifyContent: 'center',
                         padding: '8px',
                     }}>
-                        <Spin size="small" />
+                        <Loader2 size={16} />
                         <span style={{ marginLeft: 8, color: '#6c757d' }}>处理中...</span>
                     </div>
                 );
@@ -741,36 +713,19 @@ export default function AssistantMessage({ messageItem, handleDelete,
 
 
         return (
-            <div style={{
-                borderRadius: 8,
-                overflow: 'hidden',
-            }}>
-                <Collapse
-                    size="small"
-                    items={[
-                        {
-                            key: toolCall.functionName,
-                            label: (
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 2,
-                                    color: toolInfo.color,
-                                    fontWeight: 500,
-                                }}>
-                                    {toolInfo.label}
-                                </div>
-                            ),
-                            children: <Flexbox style={{
-                                overflow: 'auto',
-                                maxHeight: '180px'
-                            }}>
-                                {renderArguments(functionType)}
-                            </Flexbox>,
-                        }
-                    ]}
-                />
-            </div>
+            <CollapsibleCard
+                variant="accent"
+                className="rounded-lg overflow-hidden"
+                title={
+                    <div className="flex items-center gap-1 font-medium" style={{ color: toolInfo.color }}>
+                        {toolInfo.label}
+                    </div>
+                }
+            >
+                <Flexbox className="overflow-auto max-h-44">
+                    {renderArguments(functionType)}
+                </Flexbox>
+            </CollapsibleCard>
         );
     }
 
@@ -785,45 +740,28 @@ export default function AssistantMessage({ messageItem, handleDelete,
                     switch (contentItem.type) {
                         case 'reasoning':
                             return (
-                                <div key={`reasoning-${index}`} style={{
-                                    backgroundColor: '#fff7e6',
-                                    borderRadius: 8,
-                                    overflow: 'hidden',
-                                }}>
-                                    <Collapse
-                                        defaultActiveKey={["thinking"]}
-                                        items={[
-                                            {
-                                                key: "thinking",
-                                                label: (
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        fontWeight: 500,
-                                                    }}>
-                                                        推理内容
-                                                    </div>
-                                                ),
-                                                children: (
-                                                    <div style={{
-                                                        maxHeight: 300,
-                                                        overflowY: 'auto',
-                                                        padding: '0 6px 6px',
-                                                    }}>
-                                                        <Markdown
-                                                            fontSize={12}
-                                                            children={contentItem.content || ''}
-                                                            enableMermaid
-                                                            enableImageGallery
-                                                            enableLatex
-                                                            enableCustomFootnotes
-                                                        />
-                                                    </div>
-                                                ),
-                                            }
-                                        ]}
-                                    />
-                                </div>
+                                <CollapsibleCard
+                                    key={`reasoning-${index}`}
+                                    defaultOpen={true}
+                                    variant="accent"
+                                    className="bg-amber-50 dark:bg-amber-950/20 rounded-lg overflow-hidden"
+                                    title={
+                                        <div className="flex items-center font-medium">
+                                            推理内容
+                                        </div>
+                                    }
+                                >
+                                    <div className="max-h-72 overflow-y-auto">
+                                        <Markdown
+                                            fontSize={12}
+                                            children={contentItem.content || ''}
+                                            enableMermaid
+                                            enableImageGallery
+                                            enableLatex
+                                            enableCustomFootnotes
+                                        />
+                                    </div>
+                                </CollapsibleCard>
                             );
 
                         case 'tool':
@@ -856,7 +794,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                 gap: 12,
                                                 color: '#8c8c8c',
                                             }}>
-                                                <Spin size="small" />
+                                                <Loader2 size={16} />
                                                 <span>正在思考中...</span>
                                             </div>
                                         </div>
@@ -910,108 +848,51 @@ export default function AssistantMessage({ messageItem, handleDelete,
 
                         case 'git_issues':
                             return contentItem.gitIssues && contentItem.gitIssues.length > 0 ? (
-                                <div key={`git-issues-${index}`} style={{
-                                    backgroundColor: '#f6ffed',
-                                    borderRadius: 8,
-                                    overflow: 'hidden',
-                                    marginBottom: 8,
-                                }}>
-                                    <Collapse
-                                        defaultActiveKey={["git-issues"]}
-                                        size="small"
-                                        items={[
-                                            {
-                                                key: "git-issues",
-                                                label: (
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 8,
-                                                        fontWeight: 500,
-                                                        color: '#52c41a',
-                                                    }}>
-                                                        <ExternalLink size={16} />
-                                                        Issues 搜索结果 ({contentItem.gitIssues.length} 条)
-                                                    </div>
-                                                ),
-                                                children: (
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        gap: 12,
-                                                        maxHeight: '600px',
-                                                        overflowY: 'auto',
-                                                        padding: '0 8px 8px',
-                                                    }}>
+                                <CollapsibleCard
+                                    key={`git-issues-${index}`}
+                                    defaultOpen={true}
+                                    variant="accent"
+                                    className="bg-green-50 dark:bg-green-950/20 rounded-lg overflow-hidden mb-2"
+                                    title={
+                                        <div className="flex items-center gap-2 font-medium text-green-600 dark:text-green-400">
+                                            <ExternalLink size={16} />
+                                            Issues 搜索结果 ({contentItem.gitIssues.length} 条)
+                                        </div>
+                                    }
+                                >
+                                    <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto px-2 pb-2">
                                                         {contentItem.gitIssues.map((issue: any, issueIndex: number) => (
-                                                            <div key={issueIndex} style={{
-                                                                borderRadius: 8,
-                                                                padding: '12px',
-                                                                transition: 'all 0.2s ease',
-                                                            }}>
-                                                                <div style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'flex-start',
-                                                                    justifyContent: 'space-between',
-                                                                    marginBottom: 8,
-                                                                }}>
-                                                                    <div style={{ flex: 1 }}>
-                                                                        <h4 onClick={() => window.open(issue.urlHtml, '_blank')} style={{
-                                                                            margin: 0,
-                                                                            fontSize: '14px',
-                                                                            fontWeight: 600,
-                                                                            color: '#1890ff',
-                                                                            cursor: 'pointer',
-                                                                            lineHeight: '1.4',
-                                                                            marginBottom: 4,
-                                                                        }}>
+                                                            <div key={issueIndex} className="rounded-lg p-3 transition-all duration-200 hover:bg-muted/50">
+                                                                <div className="flex items-start justify-between mb-2">
+                                                                    <div className="flex-1">
+                                                                        <h4
+                                                                            onClick={() => window.open(issue.urlHtml, '_blank')}
+                                                                            className="m-0 text-sm font-semibold text-primary cursor-pointer leading-tight mb-1 hover:underline"
+                                                                        >
                                                                             {issue.title}
                                                                         </h4>
-                                                                        <div style={{
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: 12,
-                                                                            fontSize: '12px',
-                                                                            color: '#8c8c8c',
-                                                                            marginBottom: 6,
-                                                                        }}>
+                                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-1.5">
                                                                             {issue.number && (
-                                                                                <span style={{
-                                                                                    fontWeight: 500,
-                                                                                    color: '#666',
-                                                                                }}>
+                                                                                <span className="font-medium text-muted-foreground">
                                                                                     #{issue.number}
                                                                                 </span>
                                                                             )}
                                                                             {issue.state && (
-                                                                                <Tag
-                                                                                    color={issue.state === 'open' ? 'green' : 'default'}
-                                                                                    style={{
-                                                                                        fontSize: '11px',
-                                                                                        padding: '2px 6px',
-                                                                                        borderRadius: 10,
-                                                                                        lineHeight: '1.2',
-                                                                                    }}
+                                                                                <Badge
+                                                                                    variant={issue.state === 'open' ? 'success' : 'secondary'}
+                                                                                    className="text-xs px-2 py-1 rounded-full"
                                                                                 >
                                                                                     {issue.state}
-                                                                                </Tag>
+                                                                                </Badge>
                                                                             )}
                                                                             {issue.author && (
-                                                                                <div style={{
-                                                                                    display: 'flex',
-                                                                                    alignItems: 'center',
-                                                                                    gap: 4,
-                                                                                }}>
+                                                                                <div className="flex items-center gap-1">
                                                                                     <User size={12} />
                                                                                     <span>{issue.author}</span>
                                                                                 </div>
                                                                             )}
                                                                             {issue.createdAt && (
-                                                                                <div style={{
-                                                                                    display: 'flex',
-                                                                                    alignItems: 'center',
-                                                                                    gap: 4,
-                                                                                }}>
+                                                                                <div className="flex items-center gap-1">
                                                                                     <Calendar size={12} />
                                                                                     <span>
                                                                                         {new Date(issue.createdAt).toLocaleDateString('zh-CN')}
@@ -1022,17 +903,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                                     </div>
                                                                 </div>
                                                                 {issue.content && (
-                                                                    <div style={{
-                                                                        fontSize: '12px',
-                                                                        color: '#595959',
-                                                                        lineHeight: '1.5',
-                                                                        backgroundColor: '#ffffff',
-                                                                        padding: '8px',
-                                                                        borderRadius: 4,
-                                                                        border: '1px solid #f0f0f0',
-                                                                        maxHeight: '120px',
-                                                                        overflowY: 'auto',
-                                                                    }}>
+                                                                    <div className="text-xs text-muted-foreground leading-relaxed bg-background p-2 rounded border max-h-[120px] overflow-y-auto">
                                                                         {issue.content.length > 200
                                                                             ? `${issue.content.substring(0, 200)}...`
                                                                             : issue.content
@@ -1042,36 +913,21 @@ export default function AssistantMessage({ messageItem, handleDelete,
                                                             </div>
                                                         ))}
                                                         {contentItem.gitIssues.length === 0 && (
-                                                            <div style={{
-                                                                textAlign: 'center',
-                                                                padding: '20px',
-                                                                color: '#8c8c8c',
-                                                                fontSize: '12px',
-                                                            }}>
+                                                            <div className="text-center py-5 text-muted-foreground text-xs">
                                                                 没有找到相关的Issues
                                                             </div>
                                                         )}
-                                                    </div>
-                                                ),
-                                            }
-                                        ]}
-                                    />
-                                </div>
+                                    </div>
+                                </CollapsibleCard>
                             ) : null;
 
                         default:
                             return (
-                                <div key={`other-${index}`} style={{
-                                    backgroundColor: '#f8f9fa',
-                                    borderRadius: 8,
-                                    padding: '12px',
-                                    color: '#6c757d',
-                                    fontSize: '12px'
-                                }}>
-                                    <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                                <div key={`other-${index}`} className="bg-muted rounded-lg p-3 text-muted-foreground text-xs">
+                                    <div className="font-medium mb-1">
                                         未知内容类型: {contentItem.type}
                                     </div>
-                                    <pre style={{ margin: 0, fontFamily: 'inherit' }}>
+                                    <pre className="m-0 font-inherit">
                                         {JSON.stringify(contentItem, null, 2)}
                                     </pre>
                                 </div>
@@ -1082,18 +938,16 @@ export default function AssistantMessage({ messageItem, handleDelete,
         )
     }
 
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
     const handleDeleteClick = () => {
-        Modal.confirm({
-            title: '确定删除该消息吗？',
-            content: '删除后将无法恢复',
-            okText: '确定删除',
-            cancelText: '取消',
-            okType: 'danger',
-            onOk: () => {
-                handleDelete(messageItem.id);
-            }
-        });
-    }
+        setShowDeleteDialog(true);
+    };
+
+    const handleConfirmDelete = () => {
+        handleDelete(messageItem.id);
+        setShowDeleteDialog(false);
+    };
 
     const handleCopyClick = () => {
         // 提取所有文本和推理内容进行复制
@@ -1103,60 +957,46 @@ export default function AssistantMessage({ messageItem, handleDelete,
             .map(item => item.content || '')
             .join('\n\n');
         navigator.clipboard.writeText(textContent);
-        message.success('已复制到剪贴板');
+        toast.success('已复制到剪贴板');
     }
 
     const renderActions = () => {
         return (
-            <Flexbox
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 4,
-                }}
-            >
-                <Tooltip title="复制回复内容">
-                    <Button
-                        size="small"
-                        type="text"
-                        onClick={handleCopyClick}
-                        style={{
-                            color: '#8c8c8c',
-                            transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.color = '#1890ff';
-                            e.currentTarget.style.backgroundColor = '#f0f8ff';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.color = '#8c8c8c';
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                    >
-                        <Copy size={14} />
-                    </Button>
-                </Tooltip>
-                <Tooltip title="删除消息">
-                    <Button
-                        size="small"
-                        type="text"
-                        onClick={handleDeleteClick}
-                        style={{
-                            color: '#8c8c8c',
-                            transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.color = '#ff4d4f';
-                            e.currentTarget.style.backgroundColor = '#fff2f0';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.color = '#8c8c8c';
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                    >
-                        <Trash2 size={14} />
-                    </Button>
-                </Tooltip>
+            <Flexbox className="flex-row items-center gap-1">
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleCopyClick}
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                            >
+                                <Copy size={14} />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>复制回复内容</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleDeleteClick}
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                            >
+                                <Trash2 size={14} />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>删除消息</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </Flexbox>
         )
     }
@@ -1176,85 +1016,80 @@ export default function AssistantMessage({ messageItem, handleDelete,
                 }}
             />
 
-            <Modal
-                zIndex={1002}
-                title={
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        fontSize: '16px',
-                        fontWeight: 500,
-                    }}>
-                        <FileText size={18} />
-                        <span>{fullScreenFile?.filePath}</span>
-                        <span style={{
-                            color: '#8c8c8c',
-                            fontSize: '14px',
-                            fontWeight: 400,
-                        }}>
-                            ({fullScreenFile?.startLine} - {fullScreenFile?.endLine} 行)
-                        </span>
+            {/* 删除确认对话框 */}
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>确定删除该消息吗？</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-muted-foreground">删除后将无法恢复</p>
                     </div>
-                }
-                open={!!fullScreenFile}
-                onCancel={handleCloseFullScreen}
-                footer={null}
-                width="90vw"
-                centered
-                style={{
-                    maxHeight: '90vh',
-                }}
-                bodyStyle={{
-                    padding: 0,
-                    maxHeight: '80vh',
-                    overflow: 'hidden',
-                }}
-            >
-                {fullScreenFile && (
-                    <div style={{
-                        height: '80vh',
-                        overflow: 'auto',
-                    }}>
-                        <SyntaxHighlighter
-                            language={fullScreenFile.language}
-                            style={vs}
-                            showLineNumbers={true}
-                            startingLineNumber={1}
-                            wrapLines={true}
-                            lineProps={(lineNumber) => {
-                                const actualLineNumber = lineNumber;
-                                const isInRange = actualLineNumber >= fullScreenFile.startLine && actualLineNumber <= fullScreenFile.endLine;
-                                return {
-                                    style: {
-                                        backgroundColor: isInRange ? '#e6f3ff' : 'transparent',
-                                        borderLeft: isInRange ? '3px solid #1890ff' : 'none',
-                                        paddingLeft: isInRange ? '5px' : '8px',
-                                        display: 'block',
-                                        width: '100%',
-                                    }
-                                };
-                            }}
-                            customStyle={{
-                                margin: 0,
-                                borderRadius: 0,
-                                fontSize: '14px',
-                                lineHeight: '1.5',
-                                height: '100%',
-                                overflow: 'auto',
-                            }}
-                            codeTagProps={{
-                                style: {
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                            取消
+                        </Button>
+                        <Button variant="destructive" onClick={handleConfirmDelete}>
+                            确定删除
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!fullScreenFile} onOpenChange={(open) => !open && handleCloseFullScreen()}>
+                <DialogContent className="max-w-[90vw] max-h-[90vh] p-0">
+                    <DialogHeader className="px-6 py-4 border-b">
+                        <DialogTitle className="flex items-center gap-2 text-base font-medium">
+                            <FileText size={18} className="text-primary" />
+                            <span className="flex-1 truncate">{fullScreenFile?.filePath}</span>
+                            <span className="text-sm text-muted-foreground font-normal">
+                                ({fullScreenFile?.startLine} - {fullScreenFile?.endLine} 行)
+                            </span>
+                        </DialogTitle>
+                    </DialogHeader>
+                    {fullScreenFile && (
+                        <div className="h-[75vh] overflow-auto">
+                            <SyntaxHighlighter
+                                language={fullScreenFile.language}
+                                style={vs}
+                                showLineNumbers={true}
+                                startingLineNumber={1}
+                                wrapLines={true}
+                                lineProps={(lineNumber) => {
+                                    const actualLineNumber = lineNumber;
+                                    const isInRange = actualLineNumber >= fullScreenFile.startLine && actualLineNumber <= fullScreenFile.endLine;
+                                    return {
+                                        style: {
+                                            backgroundColor: isInRange ? 'hsl(var(--primary) / 0.1)' : 'transparent',
+                                            borderLeft: isInRange ? '3px solid hsl(var(--primary))' : 'none',
+                                            paddingLeft: isInRange ? '5px' : '8px',
+                                            display: 'block',
+                                            width: '100%',
+                                        }
+                                    };
+                                }}
+                                customStyle={{
+                                    margin: 0,
+                                    borderRadius: 0,
                                     fontSize: '14px',
-                                    fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
-                                }
-                            }}
-                        >
-                            {fullScreenFile.content}
-                        </SyntaxHighlighter>
-                    </div>
-                )}
-            </Modal>
+                                    lineHeight: '1.5',
+                                    height: '100%',
+                                    overflow: 'auto',
+                                    backgroundColor: 'transparent',
+                                }}
+                                codeTagProps={{
+                                    style: {
+                                        fontSize: '14px',
+                                        fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
+                                    }
+                                }}
+                            >
+                                {fullScreenFile.content}
+                            </SyntaxHighlighter>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </>
     )
 }

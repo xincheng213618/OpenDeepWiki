@@ -1,11 +1,25 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button,  notification, Tooltip } from 'antd';
-import { MessageOutlined, CloseOutlined, MinusOutlined, ExpandOutlined, CompressOutlined, RobotOutlined, CopyOutlined, RedoOutlined, DeleteOutlined } from '@ant-design/icons';
-import { createStyles } from 'antd-style';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  X,
+  Minus,
+  Maximize2,
+  Minimize2,
+  Brain,
+  MessageCircle
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 import Workspace from './workspace';
-import { Brain } from 'lucide-react';
 
 // 保持原有的内部消息类型
 export interface ChatMessageItem {
@@ -36,183 +50,27 @@ interface ReferenceFile {
   content?: string;
 }
 
-const useStyles = createStyles(({ css, token }) => ({
-  // 悬浮球按钮
-  floatingButton: css`
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 20px rgba(24, 144, 255, 0.25);
-    z-index: 1000;
-    font-size: 24px;
-    border: none;
-    color: white;
-    transition: all 0.3s ease;
-  `,
-
-  // 聊天窗口容器
-  chatContainer: css`
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 550px;
-    height: 700px;
-    background: ${token.colorBgContainer};
-    border-radius: ${token.borderRadiusLG}px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    z-index: 1001;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-    border: 1px solid ${token.colorBorderSecondary};
-    
-    &.minimized {
-      height: 60px;
-      border-radius: ${token.borderRadiusLG}px ${token.borderRadiusLG}px ${token.borderRadiusSM}px ${token.borderRadiusSM}px;
-    }
-    
-    &.maximized {
-      width: 580px;
-      height: 100%;
-      bottom: 0px;
-      right: 0px;
-    }
-    
-    &.embedded {
-      position: relative !important;
-      bottom: auto !important;
-      right: auto !important;
-      width: 100% !important;
-      height: 100% !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      border: none !important;
-    }
-  `,
-
-  // 聊天窗口头部
-  chatHeader: css`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: ${token.paddingMD}px ${token.paddingLG}px;
-    border-bottom: 1px solid ${token.colorBorderSecondary};
-    background: linear-gradient(to right, ${token.colorBgContainer}, ${token.colorBgLayout});
-    min-height: 60px;
-  `,
-
-  headerTitle: css`
-    display: flex;
-    align-items: center;
-    gap: ${token.marginSM}px;
-    flex: 1;
-    
-    .title-icon {
-      color: ${token.colorPrimary};
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: ${token.colorBgContainer};
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    }
-    
-    .title-text {
-      font-size: ${token.fontSizeLG}px;
-      font-weight: 600;
-      margin: 0;
-      color: ${token.colorTextHeading};
-    }
-  `,
-
-  headerActions: css`
-    display: flex;
-    gap: ${token.marginSM}px;
-    
-    .ant-btn {
-      border: none;
-      background: transparent;
-      color: ${token.colorTextSecondary};
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s;
-      
-      &:hover {
-        background: ${token.colorBgTextHover};
-        color: ${token.colorText};
-      }
-    }
-  `,
-
-  // 聊天内容区域
-  chatContent: css`
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: ${token.colorBgLayout};
-  `,
-
-  messagesContainer: css`
-    flex: 1;
-    overflow: hidden;
-  `,
-
-  inputContainer: css`
-  `,
-
-  // 空状态
-  emptyState: css`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: ${token.paddingLG}px;
-    text-align: center;
-    color: ${token.colorTextSecondary};
-    
-    .empty-icon {
-      font-size: 48px;
-      margin-bottom: ${token.marginMD}px;
-      color: ${token.colorPrimary};
-      opacity: 0.8;
-    }
-    
-    .empty-title {
-      font-size: ${token.fontSizeLG}px;
-      margin-bottom: ${token.marginSM}px;
-      color: ${token.colorText};
-      font-weight: 600;
-    }
-    
-    .empty-description {
-      font-size: ${token.fontSize}px;
-      line-height: 1.6;
-      max-width: 280px;
-      margin: 0 auto;
-    }
-    
-    .empty-button {
-      margin-top: ${token.marginMD}px;
-      border-radius: ${token.borderRadiusLG}px;
-    }
-  `
-}));
+// Tailwind CSS 类名常量
+const styles = {
+  floatingButton: "fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center shadow-lg z-[1000] transition-all duration-300 hover:scale-105 hover:shadow-xl",
+  chatContainer: "fixed bottom-6 right-6 w-[550px] h-[700px] bg-card rounded-lg shadow-xl z-[1001] flex flex-col overflow-hidden transition-all duration-300 border",
+  chatContainerMinimized: "h-[60px]",
+  chatContainerMaximized: "w-[580px] h-full bottom-0 right-0",
+  chatContainerEmbedded: "relative !bottom-auto !right-auto !w-full !h-full !rounded-none !shadow-none !border-none",
+  chatHeader: "flex items-center justify-between p-4 border-b bg-gradient-to-r from-card to-muted/20 min-h-[60px]",
+  headerTitle: "flex items-center gap-3 flex-1",
+  titleIcon: "text-primary text-xl flex items-center justify-center w-8 h-8 rounded-full bg-background shadow-sm",
+  titleText: "text-lg font-semibold text-card-foreground",
+  headerActions: "flex gap-2",
+  actionButton: "w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors",
+  chatContent: "flex-1 flex flex-col overflow-hidden bg-muted/30",
+  messagesContainer: "flex-1 overflow-hidden",
+  emptyState: "flex flex-col items-center justify-center h-full p-6 text-center text-muted-foreground",
+  emptyIcon: "text-5xl mb-4 text-primary opacity-80",
+  emptyTitle: "text-lg mb-2 text-foreground font-semibold",
+  emptyDescription: "text-sm leading-relaxed max-w-[280px] mx-auto",
+  emptyButton: "mt-4 rounded-lg"
+};
 
 interface FloatingChatProps {
   // 应用配置
@@ -250,7 +108,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({
   onError,
   onValidationFailed,
 }) => {
-  const { styles } = useStyles();
+  const { toast } = useToast();
 
   // 状态管理
   const [isExpanded, setIsExpanded] = useState(false);
@@ -297,9 +155,10 @@ const FloatingChat: React.FC<FloatingChatProps> = ({
   // 切换展开状态
   const toggleExpanded = () => {
     if (!domainValidated) {
-      notification.error({
-        message: '域名验证失败',
+      toast({
+        title: '域名验证失败',
         description: '当前域名未被授权使用此功能',
+        variant: 'destructive',
       });
       return;
     }
@@ -335,61 +194,106 @@ const FloatingChat: React.FC<FloatingChatProps> = ({
     <>
       {!embedded && !isExpanded && domainValidated && (
         <Button
-          type="primary"
-          className={styles.floatingButton}
+          className={cn(styles.floatingButton, "bg-primary text-primary-foreground hover:bg-primary/90")}
           onClick={toggleExpanded}
           aria-label="打开聊天"
+          size="icon"
         >
-          <Brain />
+          <Brain className="w-6 h-6" />
         </Button>
       )}
 
       {/* 聊天窗口 */}
       {(isExpanded || embedded) && domainValidated && (
-        <div
-          className={`${styles.chatContainer} ${isMinimized ? 'minimized' : ''} ${isMaximized ? 'maximized' : ''} ${embedded ? 'embedded' : ''}`}
+        <Card
+          className={cn(
+            styles.chatContainer,
+            isMinimized && styles.chatContainerMinimized,
+            isMaximized && styles.chatContainerMaximized,
+            embedded && styles.chatContainerEmbedded
+          )}
         >
           {/* 聊天窗口头部 */}
           {!embedded && (
             <div className={styles.chatHeader}>
+              <div className={styles.headerTitle}>
+                <div className={styles.titleIcon}>
+                  <MessageCircle className="w-4 h-4" />
+                </div>
+                <h3 className={styles.titleText}>{title}</h3>
+              </div>
               <div className={styles.headerActions}>
-                {!isMinimized ? (
-                  <>
-                    <Tooltip title={isMaximized ? '恢复大小' : '最大化'}>
-                      <Button
-                        type="text"
-                        icon={isMaximized ? <CompressOutlined /> : <ExpandOutlined />}
-                        onClick={toggleMaximize}
-                        aria-label={isMaximized ? '恢复大小' : '最大化'}
-                      />
+                <TooltipProvider>
+                  {!isMinimized ? (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={styles.actionButton}
+                            onClick={toggleMaximize}
+                            aria-label={isMaximized ? '恢复大小' : '最大化'}
+                          >
+                            {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{isMaximized ? '恢复大小' : '最大化'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={styles.actionButton}
+                            onClick={minimize}
+                            aria-label="最小化"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>最小化</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={styles.actionButton}
+                          onClick={() => setIsMinimized(false)}
+                          aria-label="展开"
+                        >
+                          <Maximize2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>展开</p>
+                      </TooltipContent>
                     </Tooltip>
-                    <Tooltip title="最小化">
+                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <Button
-                        type="text"
-                        icon={<MinusOutlined />}
-                        onClick={minimize}
-                        aria-label="最小化"
-                      />
-                    </Tooltip>
-                  </>
-                ) : (
-                  <Tooltip title="展开">
-                    <Button
-                      type="text"
-                      icon={<ExpandOutlined />}
-                      onClick={minimize}
-                      aria-label="展开"
-                    />
+                        variant="ghost"
+                        size="icon"
+                        className={styles.actionButton}
+                        onClick={close}
+                        aria-label="关闭"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>关闭</p>
+                    </TooltipContent>
                   </Tooltip>
-                )}
-                <Tooltip title="关闭">
-                  <Button
-                    type="text"
-                    icon={<CloseOutlined />}
-                    onClick={close}
-                    aria-label="关闭"
-                  />
-                </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           )}
@@ -400,7 +304,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({
               <Workspace organizationName={organizationName} name={repositoryName} />
             </div>
           )}
-        </div>
+        </Card>
       )}
     </>
   );

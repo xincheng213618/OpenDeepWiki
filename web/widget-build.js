@@ -7,11 +7,11 @@
  * - node widget-build.js --watch  # 监视模式
  */
 
-const esbuild = require('esbuild');
-const fs = require('fs');
-const path = require('path');
-const http = require('http');
-const handler = require('serve-handler');
+import esbuild from 'esbuild';
+import fs from 'fs';
+import path from 'path';
+import http from 'http';
+import handler from 'serve-handler';
 
 // 配置项
 const PORT = 3366; // 服务器端口号

@@ -3,7 +3,6 @@
 import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import { Markdown, Mermaid } from '@lobehub/ui';
 import RenderThinking from './Component';
-
 import { normalizeThinkTags,extractThinkContent } from './thinking/remarkPlugin';
 
 interface DocumentContentProps {

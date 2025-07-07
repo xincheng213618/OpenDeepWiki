@@ -51,6 +51,15 @@ public class AppConfigService(IKoalaWikiContext koala, IUserContext userContext)
             AllowedDomainsJson = JsonSerializer.Serialize(input.AllowedDomains),
             EnableDomainValidation = input.EnableDomainValidation,
             Description = input.Description,
+            Prompt = input.Prompt,
+            Introduction = input.Introduction,
+            Model = input.Model,
+            RecommendedQuestions = input.RecommendedQuestions,
+            Mcps = input.Mcps?.Select(m => new Domains.AppConfigMcp
+            {
+                Url = m.Url,
+                Headers = m.Headers
+            }).ToList() ?? new(),
             UserId = userContext.CurrentUserId ?? throw new Exception("用户未登录"),
             IsEnabled = true,
             CreatedAt = DateTime.UtcNow
@@ -131,6 +140,15 @@ public class AppConfigService(IKoalaWikiContext koala, IUserContext userContext)
         appConfig.AllowedDomainsJson = JsonSerializer.Serialize(input.AllowedDomains);
         appConfig.EnableDomainValidation = input.EnableDomainValidation;
         appConfig.Description = input.Description;
+        appConfig.Prompt = input.Prompt;
+        appConfig.Introduction = input.Introduction;
+        appConfig.Model = input.Model;
+        appConfig.RecommendedQuestions = input.RecommendedQuestions;
+        appConfig.Mcps = input.Mcps?.Select(m => new Domains.AppConfigMcp
+        {
+            Url = m.Url,
+            Headers = m.Headers
+        }).ToList() ?? new();
 
         await koala.SaveChangesAsync();
 
@@ -294,6 +312,15 @@ public class AppConfigService(IKoalaWikiContext koala, IUserContext userContext)
             AllowedDomains = allowedDomains,
             EnableDomainValidation = appConfig.EnableDomainValidation,
             Description = appConfig.Description,
+            Prompt = appConfig.Prompt,
+            Introduction = appConfig.Introduction,
+            Model = appConfig.Model,
+            RecommendedQuestions = appConfig.RecommendedQuestions,
+            Mcps = appConfig.Mcps?.Select(m => new Dto.AppConfigMcpDto
+            {
+                Url = m.Url,
+                Headers = m.Headers
+            }).ToList() ?? new(),
             IsEnabled = appConfig.IsEnabled,
             CreatedAt = appConfig.CreatedAt,
             UpdatedAt = appConfig.CreatedAt // 这里可以根据需要添加 UpdatedAt 字段

@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Card, Spin, message, Button, Tooltip } from 'antd';
+import { Card, message, Button, Tooltip } from 'antd';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useParams, useSearchParams } from 'next/navigation';
 import { getMiniMap } from '../../../services/warehouseService';
 import { useTranslation } from '../../../i18n/client';
@@ -225,7 +226,7 @@ const MindMapPage: React.FC = () => {
                 alignItems: 'center',
                 height: '60vh'
             }}>
-                <Spin size="large" />
+                <Skeleton className="w-32 h-32" />
             </div>
         );
     }

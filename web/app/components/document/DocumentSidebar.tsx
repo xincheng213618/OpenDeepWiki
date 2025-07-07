@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import './DocumentSidebar.css';
+import { cn } from "@/lib/utils";
+import { ChevronRight } from "lucide-react";
 
 interface AnchorItem {
   key: string;
@@ -12,11 +13,15 @@ interface AnchorItem {
 interface DocumentSidebarProps {
   anchorItems: AnchorItem[];
   documentData?: any;
+  repositoryName?: string;
+  organizationName?: string;
 }
 
 const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   anchorItems,
-  documentData
+  documentData,
+  repositoryName,
+  organizationName
 }) => {
   const [activeAnchor, setActiveAnchor] = useState<string>('');
 
@@ -31,7 +36,6 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
       try {
         element = document.querySelector(href);
       } catch (error) {
-        // 如果选择器无效，跳过ID查找
         console.warn('无效的CSS选择器:', href);
       }
       
@@ -96,7 +100,6 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
       try {
         element = document.querySelector(href);
       } catch (error) {
-        // 如果选择器无效，跳过ID查找
         console.warn('无效的CSS选择器:', href);
       }
       
@@ -154,38 +157,61 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   }, [anchorItems]);
 
   return (
-    <div className="document-sidebar">
-      <nav className="sidebar-navigation">
+    <div className="w-full h-full bg-background border-r">
+      <div className="p-4 border-b">
+        <h3 className="font-medium text-sm">
+          {repositoryName ? `${organizationName}/${repositoryName}` : '文档目录'}
+        </h3>
+      </div>
+      <nav className="p-2">
         {anchorItems && anchorItems.length > 0 ? (
-          <ul className="sidebar-list">
+          <ul className="space-y-1">
             {anchorItems.map((item) => (
               <li 
                 key={item.key} 
-                className={`sidebar-item ${activeAnchor === item.href ? 'active' : ''}`}
+                className={cn(
+                  "text-sm",
+                  activeAnchor === item.href && "font-medium"
+                )}
               >
                 <a 
                   href={item.href}
-                  className="sidebar-link"
+                  className={cn(
+                    "flex items-center gap-2 rounded-md px-3 py-2 hover:bg-accent transition-colors",
+                    activeAnchor === item.href ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                  )}
                   onClick={(e) => handleAnchorClick(e, item.href || '', item.title)}
                 >
-                  <span className="dot-indicator"></span>
-                  {item.title}
+                  <div className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    activeAnchor === item.href ? "bg-primary" : "bg-muted-foreground/60"
+                  )} />
+                  <span>{item.title}</span>
                 </a>
                 
                 {item.children && item.children.length > 0 && (
-                  <ul className="sidebar-sublist">
+                  <ul className="ml-4 mt-1 space-y-1">
                     {item.children.map((child) => (
                       <li 
                         key={child.key} 
-                        className={`sidebar-subitem ${activeAnchor === child.href ? 'active' : ''}`}
+                        className={cn(
+                          "text-xs",
+                          activeAnchor === child.href && "font-medium"
+                        )}
                       >
                         <a 
                           href={child.href}
-                          className="sidebar-sublink"
+                          className={cn(
+                            "flex items-center gap-2 rounded-md px-3 py-1.5 hover:bg-accent transition-colors",
+                            activeAnchor === child.href ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                          )}
                           onClick={(e) => handleAnchorClick(e, child.href || '', child.title)}
                         >
-                          <span className="dot-indicator small"></span>
-                          {child.title}
+                          <div className={cn(
+                            "h-1 w-1 rounded-full",
+                            activeAnchor === child.href ? "bg-primary" : "bg-muted-foreground/60"
+                          )} />
+                          <span>{child.title}</span>
                         </a>
                       </li>
                     ))}
@@ -195,7 +221,9 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
             ))}
           </ul>
         ) : (
-          <div className="sidebar-empty">暂无目录</div>
+          <div className="flex items-center justify-center h-32 text-sm text-muted-foreground bg-muted/30 rounded-md">
+            暂无目录
+          </div>
         )}
       </nav>
     </div>

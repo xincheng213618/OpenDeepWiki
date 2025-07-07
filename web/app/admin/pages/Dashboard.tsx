@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Tag, Table, Progress, Spin, Alert } from 'antd';
+import { Card, Row, Col, Statistic, Typography, Space, Tag, Table, Progress, Alert } from 'antd';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   UserOutlined,
   DatabaseOutlined,
@@ -103,7 +104,7 @@ export default function Dashboard() {
         alignItems: 'center', 
         height: '400px'
       }}>
-        <Spin size="large" />
+        <Skeleton className="w-32 h-32 mx-auto" />
         <Text style={{ marginLeft: '16px', color: '#8c8c8c' }}>
           数据加载中...
         </Text>

@@ -361,6 +361,9 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             options.Property(x => x.AllowedDomainsJson).IsRequired().HasComment("允许的域名列表JSON");
             options.Property(x => x.EnableDomainValidation).HasComment("是否启用域名验证");
             options.Property(x => x.Description).HasComment("应用描述");
+            options.Property(x => x.Prompt).HasComment("默认提示词");
+            options.Property(x => x.Introduction).HasComment("开场白");
+            options.Property(x => x.Model).HasComment("选择模型");
             options.Property(x => x.UserId).IsRequired().HasComment("创建用户ID");
             options.Property(x => x.IsEnabled).HasComment("是否启用");
             options.Property(x => x.LastUsedAt).HasComment("最后使用时间");
@@ -373,9 +376,18 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             options.HasIndex(x => x.IsEnabled);
             options.HasIndex(x => x.CreatedAt);
             options.HasIndex(x => new { x.OrganizationName, x.RepositoryName });
+
+            options.Property(x => x.Mcps)
+                .HasConversion((mcps => JsonSerializer.Serialize(mcps, JsonSerializerOptions.Web)),
+                    (s => JsonSerializer.Deserialize<List<AppConfigMcp>>(s, JsonSerializerOptions.Web)));
+
+            options.Property(x => x.RecommendedQuestions)
+                .HasConversion(x => JsonSerializer.Serialize(x, JsonSerializerOptions.Web),
+                    (s => JsonSerializer.Deserialize<List<string>>(s, JsonSerializerOptions.Web)));
+
             options.HasComment("应用配置表");
         });
-        
+
         modelBuilder.Entity<MiniMap>(options =>
         {
             options.HasKey(x => x.Id);

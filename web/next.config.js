@@ -1,8 +1,12 @@
+import { createMDX } from 'fumadocs-mdx/next';
+
+const withMDX = createMDX();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  transpilePackages: ['antd','@ant-design/icons'],
+  transpilePackages: ['antd','@ant-design/icons','fumadocs-ui'],
   // CSS配置
   experimental: {
     cssChunking: 'strict',
@@ -52,4 +56,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default withMDX(nextConfig);

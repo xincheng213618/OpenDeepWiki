@@ -8,11 +8,13 @@ export interface RepositoryFormValues {
   enableGitAuth?: boolean;   // 是否启用Git认证
   gitUserName?: string;      // Git用户名 (私有仓库)
   gitPassword?: string;      // Git密码/令牌 (私有仓库)
-  submitType?: 'git' | 'upload'; // 提交方式：Git仓库或上传压缩包
+  submitType?: 'git' | 'upload' | 'custom'; // 提交方式：Git仓库、上传压缩包或自定义
   organization?: string;     // 组织名称 (上传压缩包时)
   repositoryName?: string;   // 仓库名称 (上传压缩包时)
   uploadMethod?: 'file' | 'url'; // 上传方式：文件上传或URL下载
   fileUrl?: string;          // 压缩包URL地址 (URL下载时)
+  file?: File;               // 上传的文件对象 (文件上传时)
+  email?: string;            // 邮箱地址（可选）
 }
 
 /**
