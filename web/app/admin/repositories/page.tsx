@@ -1,67 +1,87 @@
 'use client'
-import { Card, Table, Button, Input, Space, Tag, Dropdown, Modal, Form, Select, Badge, Avatar, message, Typography, Switch } from 'antd';
-import {
-  SearchOutlined,
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  EyeOutlined,
-  StarOutlined,
-  MoreOutlined,
-  FolderOutlined,
-  ClockCircleOutlined,
-  UserOutlined,
-  ReloadOutlined
-} from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
 import { useState, useEffect } from 'react';
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Star,
+  MoreHorizontal,
+  Folder,
+  Clock,
+  User,
+  RotateCcw,
+  GitBranch
+} from 'lucide-react';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 import { getRepositoryList, createGitRepository, updateRepository, deleteRepository, resetRepository, RepositoryInfo, CreateGitRepositoryRequest, UpdateRepositoryRequest } from '../../services/repositoryService';
 import Link from 'next/link';
-import { Tooltip } from '@lobehub/ui';
 
-const { Title, Text } = Typography;
-
-// 仓库状态映射 - 优化色彩方案
-const statusMap = {
-  0: { 
-    text: '待处理', 
-    color: '#faad14',
-    backgroundColor: '#fff7e6',
-    borderColor: '#faad14'
-  },
-  1: { 
-    text: '处理中', 
-    color: '#1677ff',
-    backgroundColor: '#e6f4ff',
-    borderColor: '#1677ff'
-  },
-  2: { 
-    text: '已完成', 
-    color: '#52c41a',
-    backgroundColor: '#f6ffed',
-    borderColor: '#52c41a'
-  },
-  3: { 
-    text: '已取消', 
-    color: '#8c8c8c',
-    backgroundColor: '#f5f5f5',
-    borderColor: '#8c8c8c'
-  },
-  4: { 
-    text: '未授权', 
-    color: '#ff4d4f',
-    backgroundColor: '#fff2f0',
-    borderColor: '#ff4d4f'
-  },
-  99: { 
-    text: '已失败', 
-    color: '#ff4d4f',
-    backgroundColor: '#fff2f0',
-    borderColor: '#ff4d4f'
+// 仓库状态映射
+const getStatusBadgeVariant = (status: number) => {
+  switch (status) {
+    case 0: return 'secondary'; // 待处理
+    case 1: return 'default'; // 处理中
+    case 2: return 'default'; // 已完成
+    case 3: return 'secondary'; // 已取消
+    case 4: return 'destructive'; // 未授权
+    case 99: return 'destructive'; // 已失败
+    default: return 'secondary';
   }
 };
 
+const getStatusText = (status: number) => {
+  const statusMap = {
+    0: '待处理',
+    1: '处理中',
+    2: '已完成',
+    3: '已取消',
+    4: '未授权',
+    99: '已失败'
+  };
+  return statusMap[status as keyof typeof statusMap] || '未知';
+};
+
 export default function RepositoriesPage() {
+  const { toast } = useToast();
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
   const [repositories, setRepositories] = useState<RepositoryInfo[]>([]);
@@ -71,8 +91,17 @@ export default function RepositoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentRepository, setCurrentRepository] = useState<RepositoryInfo | null>(null);
-  const [form] = Form.useForm();
-  const [editForm] = Form.useForm();
+  const [formData, setFormData] = useState({
+    name: '',
+    url: '',
+    description: '',
+    isPrivate: false,
+  });
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    description: '',
+    isPrivate: false,
+  });
 
   // 加载仓库数据
   const loadRepositories = async (page = currentPage, size = pageSize, keyword = searchText) => {
@@ -83,11 +112,19 @@ export default function RepositoriesPage() {
         setRepositories(data.items);
         setTotal(data.total);
       } else {
-        message.error('获取仓库列表失败');
+        toast({
+          title: "错误",
+          description: "获取仓库列表失败",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('加载仓库数据失败:', error);
-      message.error('加载仓库数据失败');
+      toast({
+        title: "错误",
+        description: "加载仓库数据失败",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -104,597 +141,391 @@ export default function RepositoriesPage() {
     loadRepositories(1, pageSize, searchText);
   };
 
-  // 处理分页变化
-  const handleTableChange = (pagination: any) => {
-    setCurrentPage(pagination.current);
-    setPageSize(pagination.pageSize);
-    loadRepositories(pagination.current, pagination.pageSize, searchText);
-  };
-
   // 处理仓库操作（编辑、删除等）
   const handleRepositoryAction = async (action: string, repository: RepositoryInfo) => {
     if (action === 'edit') {
       setCurrentRepository(repository);
-      editForm.setFieldsValue({
-        description: repository.description,
-        isRecommended: repository.isRecommended,
-        prompt: repository.prompt,
+      setEditFormData({
+        name: repository.name,
+        description: repository.description || '',
+        isPrivate: repository.isPrivate || false,
       });
       setIsEditModalOpen(true);
     } else if (action === 'delete') {
-      Modal.confirm({
-        title: '确认删除',
-        content: `确定要删除仓库 ${repository.organizationName}/${repository.name} 吗？此操作不可恢复。`,
-        okText: '删除',
-        okType: 'danger',
-        cancelText: '取消',
-        onOk: async () => {
-          try {
-            const response = await deleteRepository(repository.id);
-            if (response.code === 200 && response.data) {
-              message.success('仓库删除成功');
-              loadRepositories(); // 重新加载仓库列表
-            } else {
-              message.error(response.message || '删除仓库失败');
-            }
-          } catch (error) {
-            console.error('删除仓库失败:', error);
-            message.error('删除仓库失败');
-          }
-        },
-      });
+      try {
+        const response = await deleteRepository(repository.id);
+        if (response.code === 200 && response.data) {
+          toast({
+            title: "成功",
+            description: "仓库删除成功",
+          });
+          loadRepositories(); // 重新加载仓库列表
+        } else {
+          toast({
+            title: "错误",
+            description: response.message || "删除仓库失败",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('删除仓库失败:', error);
+        toast({
+          title: "错误",
+          description: "删除仓库失败",
+          variant: "destructive",
+        });
+      }
     } else if (action === 'reprocess') {
-      Modal.confirm({
-        title: '确认重新处理',
-        content: `确定要重新处理仓库 ${repository.organizationName}/${repository.name} 吗？`,
-        okText: '确定',
-        cancelText: '取消',
-        onOk: async () => {
-          try {
-            const response = await resetRepository(repository.id);
-            if (response.code === 200 && response.data) {
-              message.success('已提交重新处理请求');
-              loadRepositories(); // 重新加载仓库列表
-            } else {
-              message.error(response.message || '提交重新处理请求失败');
-            }
-          } catch (error) {
-            console.error('重新处理仓库失败:', error);
-            message.error('重新处理仓库失败');
+      if (confirm(`确定要重新处理仓库 ${repository.organizationName}/${repository.name} 吗？`)) {
+        try {
+          const response = await resetRepository(repository.id);
+          if (response.code === 200 && response.data) {
+            toast({
+              title: "成功",
+              description: "已提交重新处理请求",
+            });
+            loadRepositories(); // 重新加载仓库列表
+          } else {
+            toast({
+              title: "错误",
+              description: response.message || "提交重新处理请求失败",
+              variant: "destructive",
+            });
           }
-        },
-      });
+        } catch (error) {
+          console.error('重新处理仓库失败:', error);
+          toast({
+            title: "错误",
+            description: "重新处理仓库失败",
+            variant: "destructive",
+          });
+        }
+      }
     }
   };
 
   // 处理创建仓库表单提交
-  const handleFormSubmit = () => {
-    form.validateFields().then(async (values) => {
-      try {
-        // 创建Git仓库
-        const createData: CreateGitRepositoryRequest = {
-          address: values.address,
-          branch: values.branch,
-          gitUserName: values.enableGitAuth ? values.gitUserName : undefined,
-          gitPassword: values.enableGitAuth ? values.gitPassword : undefined,
-        };
+  const handleFormSubmit = async () => {
+    if (!formData.url) {
+      toast({
+        title: "错误",
+        description: "请填写仓库地址",
+        variant: "destructive",
+      });
+      return;
+    }
 
-        const response = await createGitRepository(createData);
-        if (response.code === 200) {
-          message.success('仓库创建成功');
-          setIsModalOpen(false);
-          loadRepositories(); // 重新加载仓库列表
-        } else {
-          message.error(response.message || '创建仓库失败');
-        }
-      } catch (error) {
-        console.error('提交表单失败:', error);
-        message.error('操作失败，请重试');
+    try {
+      // 创建Git仓库
+      const createData: CreateGitRepositoryRequest = {
+        address: formData.url,
+        branch: 'main', // 默认分支
+      };
+
+      const response = await createGitRepository(createData);
+      if (response.code === 200) {
+        toast({
+          title: "成功",
+          description: "仓库创建成功",
+        });
+        setIsModalOpen(false);
+        setFormData({ name: '', url: '', description: '', isPrivate: false });
+        loadRepositories(); // 重新加载仓库列表
+      } else {
+        toast({
+          title: "错误",
+          description: response.message || "创建仓库失败",
+          variant: "destructive",
+        });
       }
-    });
+    } catch (error) {
+      console.error('提交表单失败:', error);
+      toast({
+        title: "错误",
+        description: "操作失败，请重试",
+        variant: "destructive",
+      });
+    }
   };
 
   // 处理编辑仓库表单提交
-  const handleEditFormSubmit = () => {
+  const handleEditFormSubmit = async () => {
     if (!currentRepository) return;
 
-    editForm.validateFields().then(async (values) => {
-      try {
-        // 更新仓库
-        const updateData: UpdateRepositoryRequest = {
-          description: values.description,
-          isRecommended: values.isRecommended,
-          prompt: values.prompt,
-        };
+    if (!editFormData.name) {
+      toast({
+        title: "错误",
+        description: "请填写仓库名称",
+        variant: "destructive",
+      });
+      return;
+    }
 
-        const response = await updateRepository(currentRepository.id, updateData);
-        if (response.code === 200) {
-          message.success('仓库更新成功');
-          setIsEditModalOpen(false);
-          loadRepositories(); // 重新加载仓库列表
-        } else {
-          message.error(response.message || '更新仓库失败');
-        }
-      } catch (error) {
-        console.error('提交表单失败:', error);
-        message.error('操作失败，请重试');
+    try {
+      // 更新仓库
+      const updateData: UpdateRepositoryRequest = {
+        description: editFormData.description,
+        isRecommended: false, // 默认值
+        prompt: '', // 默认值
+      };
+
+      const response = await updateRepository(currentRepository.id, updateData);
+      if (response.code === 200) {
+        toast({
+          title: "成功",
+          description: "仓库更新成功",
+        });
+        setIsEditModalOpen(false);
+        setCurrentRepository(null);
+        setEditFormData({ name: '', description: '', isPrivate: false });
+        loadRepositories(); // 重新加载仓库列表
+      } else {
+        toast({
+          title: "错误",
+          description: response.message || "更新仓库失败",
+          variant: "destructive",
+        });
       }
-    });
+    } catch (error) {
+      console.error('提交表单失败:', error);
+      toast({
+        title: "错误",
+        description: "操作失败，请重试",
+        variant: "destructive",
+      });
+    }
   };
 
   // 创建新仓库
   const handleAddRepository = () => {
-    form.resetFields();
+    setFormData({ name: '', url: '', description: '', isPrivate: false });
     setIsModalOpen(true);
   };
 
-  // 表格列定义
-  const columns: ColumnsType<RepositoryInfo> = [
-    {
-      title: '仓库名称',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text, record) => (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-            <FolderOutlined style={{ 
-              fontSize: '16px', 
-              color: '#1677ff',
-              marginRight: '8px' 
-            }} />
-            <Link href={`/admin/repositories/${record.id}`} passHref>
-              <Text strong style={{ 
-                color: '#000000',
-                textDecoration: 'none',
-                fontSize: '14px'
-              }}>
-                {record.organizationName}/{text}
-              </Text>
-            </Link>
-          </div>
-          {record.isRecommended && (
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <StarOutlined style={{ 
-                fontSize: '12px', 
-                color: '#faad14',
-                marginRight: '4px' 
-              }} />
-              <Text style={{ 
-                fontSize: '12px',
-                color: '#faad14',
-                fontWeight: 500
-              }}>
-                推荐
-              </Text>
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
-      render: (text) => (
-        <Text style={{ 
-          color: '#8c8c8c',
-          fontSize: '14px'
-        }}>
-          {text || '暂无描述'}
-        </Text>
-      ),
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => {
-        const statusInfo = statusMap[status as keyof typeof statusMap];
-        return (
-          <Tag
-            style={{
-              color: statusInfo.color,
-              backgroundColor: statusInfo.backgroundColor,
-              border: 'none',
-              borderRadius: '4px',
-              padding: '2px 8px',
-              fontSize: '12px',
-              fontWeight: 500,
-            }}
-          >
-            {statusInfo.text}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: '文档数',
-      dataIndex: 'documentCount',
-      key: 'documentCount',
-      render: (count) => (
-        <Text style={{ 
-          color: '#000000',
-          fontSize: '14px',
-          fontWeight: 500
-        }}>
-          {count || 0}
-        </Text>
-      ),
-    },
-    {
-      title: '分支',
-      dataIndex: 'branch',
-      key: 'branch',
-      render: (branch) => (
-        <Tag
-          style={{
-            color: '#1677ff',
-            backgroundColor: '#e6f4ff',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '2px 8px',
-            fontSize: '12px',
-            fontWeight: 500,
-          }}
-        >
-          {branch || 'main'}
-        </Tag>
-      ),
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (text) => (
-        <Text style={{ 
-          color: '#8c8c8c',
-          fontSize: '14px'
-        }}>
-          {new Date(text).toLocaleDateString()}
-        </Text>
-      ),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 120,
-      render: (_, record) => (
-        <Dropdown
-          menu={{
-            items: [
-              {
-                key: 'view',
-                icon: <EyeOutlined />,
-                label: '查看',
-                onClick: () => window.open(`/admin/repositories/${record.id}`, '_blank'),
-              },
-              {
-                key: 'edit',
-                icon: <EditOutlined />,
-                label: '编辑',
-                onClick: () => handleRepositoryAction('edit', record),
-              },
-              {
-                key: 'reprocess',
-                icon: <ReloadOutlined />,
-                label: '重新处理',
-                onClick: () => handleRepositoryAction('reprocess', record),
-              },
-              {
-                type: 'divider',
-              },
-              {
-                key: 'delete',
-                icon: <DeleteOutlined />,
-                label: '删除',
-                danger: true,
-                onClick: () => handleRepositoryAction('delete', record),
-              },
-            ],
-          }}
-        >
-          <Button 
-            type="text" 
-            icon={<MoreOutlined />}
-            style={{
-              color: '#8c8c8c',
-              borderRadius: '4px',
-            }}
-          />
-        </Dropdown>
-      ),
-    },
-  ];
-
   return (
-    <div>
-      <div style={{ marginBottom: '32px' }}>
-        <Title level={2} style={{ 
-          fontSize: '24px', 
-          fontWeight: 600, 
-          margin: 0,
-          color: '#000000'
-        }}>
-          仓库管理
-        </Title>
-        <Text style={{ 
-          fontSize: '14px', 
-          color: '#8c8c8c',
-          marginTop: '8px',
-          display: 'block'
-        }}>
-          管理 Git 仓库和文档处理状态
-        </Text>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">仓库管理</h1>
+        <p className="text-sm text-muted-foreground mt-2">
+          管理Git仓库和文档处理状态
+        </p>
       </div>
 
-      <Card style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e8e8e8',
-        borderRadius: '8px',
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginBottom: '24px' 
-        }}>
-          <Space>
-            <Input
-              placeholder="搜索仓库名称或描述"
-              prefix={<SearchOutlined />}
-              style={{ 
-                width: 300,
-                borderRadius: '4px',
-                border: '1px solid #e8e8e8',
-              }}
-              value={searchText}
-              onChange={e => setSearchText(e.target.value)}
-              onPressEnter={handleSearch}
-              allowClear
-            />
-            <Button 
-              type="primary" 
-              onClick={handleSearch}
-              style={{
-                backgroundColor: '#1677ff',
-                borderColor: '#1677ff',
-                borderRadius: '4px',
-                fontWeight: 500,
-              }}
-            >
-              搜索
-            </Button>
-          </Space>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAddRepository}
-            style={{
-              backgroundColor: '#1677ff',
-              borderColor: '#1677ff',
-              borderRadius: '4px',
-              fontWeight: 500,
-            }}
-          >
-            添加仓库
-          </Button>
-        </div>
-
-        <Table
-          columns={columns}
-          dataSource={repositories}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            current: currentPage,
-            pageSize: pageSize,
-            total: total,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条记录`,
-            style: {
-              marginTop: '24px',
-            },
-          }}
-          onChange={handleTableChange}
-          style={{
-            borderRadius: '8px',
-          }}
-        />
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center gap-2">
+              <GitBranch className="h-5 w-5" />
+              仓库列表
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="搜索仓库名称"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="pl-8 w-80"
+                />
+              </div>
+              <Button onClick={handleSearch} variant="outline">
+                搜索
+              </Button>
+              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={handleAddRepository}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    添加仓库
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>添加Git仓库</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">仓库名称</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        placeholder="请输入仓库名称"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="url">仓库地址</Label>
+                      <Input
+                        id="url"
+                        value={formData.url}
+                        onChange={(e) => setFormData({...formData, url: e.target.value})}
+                        placeholder="https://github.com/user/repo.git"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="description">描述</Label>
+                      <Input
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        placeholder="仓库描述（可选）"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="isPrivate"
+                        checked={formData.isPrivate}
+                        onCheckedChange={(checked) => setFormData({...formData, isPrivate: checked})}
+                      />
+                      <Label htmlFor="isPrivate">私有仓库</Label>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                        取消
+                      </Button>
+                      <Button onClick={handleFormSubmit}>
+                        创建
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>仓库名称</TableHead>
+                <TableHead>描述</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>文档数</TableHead>
+                <TableHead>分支</TableHead>
+                <TableHead>更新时间</TableHead>
+                <TableHead>操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {repositories.map((repo) => (
+                <TableRow key={repo.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Folder className="h-4 w-4 text-blue-500" />
+                      <div>
+                        <Link href={`/admin/repositories/${repo.id}`} className="font-medium hover:underline">
+                          {repo.organizationName}/{repo.name}
+                        </Link>
+                        {repo.isRecommended && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Star className="h-3 w-3 text-yellow-500" />
+                            <span className="text-xs text-yellow-600">推荐</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {repo.description || '暂无描述'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusBadgeVariant(repo.status)}>
+                      {getStatusText(repo.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {repo.documentCount || 0}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {repo.branch || 'main'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(repo.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => window.open(`/admin/repositories/${repo.id}`, '_blank')}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          查看
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleRepositoryAction('edit', repo)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          编辑
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleRepositoryAction('reprocess', repo)}>
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          重新处理
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleRepositoryAction('delete', repo)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          删除
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
       </Card>
 
-      {/* 创建仓库表单 */}
-      <Modal
-        title={
-          <Text strong style={{ fontSize: '16px', color: '#000000' }}>
-            添加仓库
-          </Text>
-        }
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        onOk={handleFormSubmit}
-        okText="创建"
-        cancelText="取消"
-        okButtonProps={{
-          style: {
-            backgroundColor: '#1677ff',
-            borderColor: '#1677ff',
-            borderRadius: '4px',
-            fontWeight: 500,
-          }
-        }}
-        cancelButtonProps={{
-          style: {
-            borderColor: '#e8e8e8',
-            borderRadius: '4px',
-            fontWeight: 500,
-          }
-        }}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{ 
-            branch: 'main',
-            enableGitAuth: false
-          }}
-          style={{ marginTop: '24px' }}
-        >
-          <Form.Item
-            name="address"
-            label={<Text strong style={{ color: '#000000' }}>仓库地址</Text>}
-            rules={[
-              { required: true, message: '请输入仓库地址' },
-              { type: 'url', message: '请输入有效的URL' }
-            ]}
-          >
-            <Input 
-              placeholder="https://github.com/owner/repo.git"
-              style={{
-                borderRadius: '4px',
-                border: '1px solid #e8e8e8',
-              }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="branch"
-            label={<Text strong style={{ color: '#000000' }}>分支</Text>}
-            rules={[{ required: true, message: '请输入分支名称' }]}
-          >
-            <Input 
-              placeholder="main"
-              style={{
-                borderRadius: '4px',
-                border: '1px solid #e8e8e8',
-              }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="enableGitAuth"
-            valuePropName="checked"
-            label={<Text strong style={{ color: '#000000' }}>启用Git认证</Text>}
-          >
-            <Switch 
-              checkedChildren="开启" 
-              unCheckedChildren="关闭"
-            />
-          </Form.Item>
-
-          <Form.Item
-            noStyle
-            shouldUpdate={(prevValues, currentValues) => prevValues.enableGitAuth !== currentValues.enableGitAuth}
-          >
-            {({ getFieldValue }) => {
-              return getFieldValue('enableGitAuth') ? (
-                <>
-                  <Form.Item
-                    name="gitUserName"
-                    label={<Text strong style={{ color: '#000000' }}>Git用户名</Text>}
-                    rules={[{ required: true, message: '请输入Git用户名' }]}
-                  >
-                    <Input 
-                      placeholder="Git用户名"
-                      style={{
-                        borderRadius: '4px',
-                        border: '1px solid #e8e8e8',
-                      }}
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="gitPassword"
-                    label={<Text strong style={{ color: '#000000' }}>Git密码/Token</Text>}
-                    rules={[{ required: true, message: '请输入Git密码或Token' }]}
-                  >
-                    <Input.Password 
-                      placeholder="Git密码或Personal Access Token"
-                      style={{
-                        borderRadius: '4px',
-                        border: '1px solid #e8e8e8',
-                      }}
-                    />
-                  </Form.Item>
-                </>
-              ) : null;
-            }}
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* 编辑仓库表单 */}
-      <Modal
-        title={
-          <Text strong style={{ fontSize: '16px', color: '#000000' }}>
-            编辑仓库
-          </Text>
-        }
-        open={isEditModalOpen}
-        onCancel={() => setIsEditModalOpen(false)}
-        onOk={handleEditFormSubmit}
-        okText="保存"
-        cancelText="取消"
-        okButtonProps={{
-          style: {
-            backgroundColor: '#1677ff',
-            borderColor: '#1677ff',
-            borderRadius: '4px',
-            fontWeight: 500,
-          }
-        }}
-        cancelButtonProps={{
-          style: {
-            borderColor: '#e8e8e8',
-            borderRadius: '4px',
-            fontWeight: 500,
-          }
-        }}
-      >
-        <Form
-          form={editForm}
-          layout="vertical"
-          style={{ marginTop: '24px' }}
-        >
-          <Form.Item
-            name="description"
-            label={<Text strong style={{ color: '#000000' }}>描述</Text>}
-          >
-            <Input.TextArea 
-              placeholder="仓库描述"
-              rows={3}
-              style={{
-                borderRadius: '4px',
-                border: '1px solid #e8e8e8',
-              }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="isRecommended"
-            valuePropName="checked"
-            label={<Text strong style={{ color: '#000000' }}>推荐仓库</Text>}
-          >
-            <Switch 
-              checkedChildren="推荐" 
-              unCheckedChildren="普通"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="prompt"
-            label={<Text strong style={{ color: '#000000' }}>提示词</Text>}
-          >
-            <Input.TextArea 
-              placeholder="自定义提示词"
-              rows={4}
-              style={{
-                borderRadius: '4px',
-                border: '1px solid #e8e8e8',
-              }}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+      {/* 编辑仓库对话框 */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>编辑仓库</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="editName">仓库名称</Label>
+              <Input
+                id="editName"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                placeholder="请输入仓库名称"
+                disabled
+              />
+            </div>
+            <div>
+              <Label htmlFor="editDescription">描述</Label>
+              <Input
+                id="editDescription"
+                value={editFormData.description}
+                onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                placeholder="仓库描述（可选）"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="editIsPrivate"
+                checked={editFormData.isPrivate}
+                onCheckedChange={(checked) => setEditFormData({...editFormData, isPrivate: checked})}
+              />
+              <Label htmlFor="editIsPrivate">私有仓库</Label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                取消
+              </Button>
+              <Button onClick={handleEditFormSubmit}>
+                更新
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-} 
+}

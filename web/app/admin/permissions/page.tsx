@@ -2,19 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Row, Col, Button, Typography, Space, Statistic, message } from 'antd';
 import {
-  UserOutlined,
-  TeamOutlined,
-  SecurityScanOutlined,
-  RightOutlined,
-  SettingOutlined,
-  KeyOutlined,
-} from '@ant-design/icons';
+  User,
+  Users,
+  Shield,
+  ChevronRight,
+  Settings,
+  Key,
+  Database,
+  Lock
+} from 'lucide-react';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+
 import { getUserList } from '../../services/userService';
 import { roleService } from '../../services/roleService';
-
-const { Title, Paragraph, Text } = Typography;
 
 interface PermissionStats {
   totalUsers: number;
@@ -25,6 +29,7 @@ interface PermissionStats {
 
 export default function PermissionsPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [stats, setStats] = useState<PermissionStats>({
     totalUsers: 0,
     totalRoles: 0,
@@ -66,7 +71,11 @@ export default function PermissionsPage() {
         setStats(newStats);
       } catch (error) {
         console.error('获取权限统计数据失败:', error);
-        message.error('获取统计数据失败');
+        toast({
+          title: "错误",
+          description: "获取统计数据失败",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -79,194 +88,150 @@ export default function PermissionsPage() {
     {
       title: '角色管理',
       description: '管理系统角色和角色权限',
-      icon: <TeamOutlined style={{ fontSize: '24px', color: '#1890ff' }} />,
-      path: '/admin/permissions/roles',
-      color: '#1890ff',
+      icon: <Users className="h-6 w-6 text-blue-500" />,
+      path: '/admin/roles',
+      color: 'blue',
     },
     {
-      title: '用户角色',
-      description: '分配和管理用户角色',
-      icon: <UserOutlined style={{ fontSize: '24px', color: '#52c41a' }} />,
-      path: '/admin/permissions/users',
-      color: '#52c41a',
+      title: '用户管理',
+      description: '管理用户和用户权限',
+      icon: <User className="h-6 w-6 text-green-500" />,
+      path: '/admin/users',
+      color: 'green',
+    },
+    {
+      title: '仓库权限',
+      description: '管理仓库访问权限',
+      icon: <Database className="h-6 w-6 text-purple-500" />,
+      path: '/admin/repositories',
+      color: 'purple',
+    },
+    {
+      title: '系统设置',
+      description: '配置系统权限设置',
+      icon: <Settings className="h-6 w-6 text-orange-500" />,
+      path: '/admin/settings',
+      color: 'orange',
     },
   ];
 
   return (
-    <div style={{ padding: '0', color: '#f0f6fc' }}>
+    <div className="space-y-6">
       {/* 页面标题 */}
-      <div style={{ marginBottom: '32px' }}>
-        <Title level={2} style={{ color: '#f0f6fc', marginBottom: '8px' }}>
-          <SecurityScanOutlined style={{ marginRight: '12px' }} />
+      <div>
+        <h1 className="text-2xl font-semibold flex items-center gap-3">
+          <Shield className="h-6 w-6" />
           权限管理
-        </Title>
-        <Paragraph style={{ color: '#8b949e', fontSize: '16px', margin: 0 }}>
+        </h1>
+        <p className="text-sm text-muted-foreground mt-2">
           管理系统用户权限、角色分配和访问控制
-        </Paragraph>
+        </p>
       </div>
 
       {/* 统计卡片 */}
-      <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            style={{
-              background: '#1a1d21',
-              border: '1px solid #30363d',
-              borderRadius: '12px',
-            }}
-            bodyStyle={{ padding: '24px' }}
-          >
-            <Statistic
-              title={<span style={{ color: '#8b949e' }}>总用户数</span>}
-              value={stats.totalUsers}
-              loading={loading}
-              prefix={<UserOutlined style={{ color: '#58a6ff' }} />}
-              valueStyle={{ color: '#f0f6fc', fontSize: '28px', fontWeight: '600' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            style={{
-              background: '#1a1d21',
-              border: '1px solid #30363d',
-              borderRadius: '12px',
-            }}
-            bodyStyle={{ padding: '24px' }}
-          >
-            <Statistic
-              title={<span style={{ color: '#8b949e' }}>系统角色</span>}
-              value={stats.totalRoles}
-              loading={loading}
-              prefix={<TeamOutlined style={{ color: '#7c3aed' }} />}
-              valueStyle={{ color: '#f0f6fc', fontSize: '28px', fontWeight: '600' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            style={{
-              background: '#1a1d21',
-              border: '1px solid #30363d',
-              borderRadius: '12px',
-            }}
-            bodyStyle={{ padding: '24px' }}
-          >
-            <Statistic
-              title={<span style={{ color: '#8b949e' }}>权限项目</span>}
-              value={stats.totalPermissions}
-              loading={loading}
-              prefix={<KeyOutlined style={{ color: '#f59e0b' }} />}
-              valueStyle={{ color: '#f0f6fc', fontSize: '28px', fontWeight: '600' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            style={{
-              background: '#1a1d21',
-              border: '1px solid #30363d',
-              borderRadius: '12px',
-            }}
-            bodyStyle={{ padding: '24px' }}
-          >
-            <Statistic
-              title={<span style={{ color: '#8b949e' }}>最近分配</span>}
-              value={stats.recentAssignments}
-              loading={loading}
-              prefix={<SettingOutlined style={{ color: '#10b981' }} />}
-              valueStyle={{ color: '#f0f6fc', fontSize: '28px', fontWeight: '600' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">总用户数</p>
+                <p className="text-2xl font-bold">{loading ? '...' : stats.totalUsers}</p>
+              </div>
+              <User className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">系统角色</p>
+                <p className="text-2xl font-bold">{loading ? '...' : stats.totalRoles}</p>
+              </div>
+              <Users className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">权限项目</p>
+                <p className="text-2xl font-bold">{loading ? '...' : stats.totalPermissions}</p>
+              </div>
+              <Key className="h-8 w-8 text-yellow-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">最近分配</p>
+                <p className="text-2xl font-bold">{loading ? '...' : stats.recentAssignments}</p>
+              </div>
+              <Lock className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* 快速操作 */}
-      <div style={{ marginBottom: '32px' }}>
-        <Title level={3} style={{ color: '#f0f6fc', marginBottom: '20px' }}>
-          快速操作
-        </Title>
-        <Row gutter={[24, 24]}>
+      <div>
+        <h2 className="text-xl font-semibold mb-4">快速操作</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {quickActions.map((action, index) => (
-            <Col xs={24} md={12} key={index}>
-              <Card
-                hoverable
-                style={{
-                  background: '#1a1d21',
-                  border: '1px solid #30363d',
-                  borderRadius: '12px',
-                  height: '100%',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                }}
-                bodyStyle={{ padding: '24px' }}
-                onClick={() => router.push(action.path)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = action.color;
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = `0 4px 12px rgba(0, 0, 0, 0.3)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#30363d';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                    <div style={{ marginRight: '16px' }}>
-                      {action.icon}
-                    </div>
+            <Card
+              key={index}
+              className="cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-1"
+              onClick={() => router.push(action.path)}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {action.icon}
                     <div>
-                      <Title level={4} style={{ color: '#f0f6fc', margin: '0 0 8px 0' }}>
-                        {action.title}
-                      </Title>
-                      <Text style={{ color: '#8b949e', fontSize: '14px' }}>
-                        {action.description}
-                      </Text>
+                      <h3 className="font-semibold">{action.title}</h3>
+                      <p className="text-sm text-muted-foreground">{action.description}</p>
                     </div>
                   </div>
-                  <RightOutlined style={{ color: '#8b949e', fontSize: '16px' }} />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </div>
-              </Card>
-            </Col>
+              </CardContent>
+            </Card>
           ))}
-        </Row>
+        </div>
       </div>
 
       {/* 权限管理说明 */}
-      <Card
-        style={{
-          background: '#1a1d21',
-          border: '1px solid #30363d',
-          borderRadius: '12px',
-        }}
-        bodyStyle={{ padding: '24px' }}
-      >
-        <Title level={4} style={{ color: '#f0f6fc', marginBottom: '16px' }}>
-          权限管理说明
-        </Title>
-        <div style={{ color: '#8b949e', lineHeight: '1.6' }}>
-          <div style={{ marginBottom: '12px' }}>
-            <Text strong style={{ color: '#f0f6fc' }}>角色管理：</Text>
-            <Text style={{ color: '#8b949e', marginLeft: '8px' }}>
+      <Card>
+        <CardHeader>
+          <CardTitle>权限管理说明</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h4 className="font-semibold">角色管理</h4>
+            <p className="text-sm text-muted-foreground">
               创建和管理系统角色，定义角色权限范围
-            </Text>
-          </div>
-          <div style={{ marginBottom: '12px' }}>
-            <Text strong style={{ color: '#f0f6fc' }}>用户角色：</Text>
-            <Text style={{ color: '#8b949e', marginLeft: '8px' }}>
-              为用户分配角色，控制用户访问权限
-            </Text>
+            </p>
           </div>
           <div>
-            <Text strong style={{ color: '#f0f6fc' }}>访问控制：</Text>
-            <Text style={{ color: '#8b949e', marginLeft: '8px' }}>
-              基于角色的访问控制 (RBAC)，确保系统安全
-            </Text>
+            <h4 className="font-semibold">用户管理</h4>
+            <p className="text-sm text-muted-foreground">
+              为用户分配角色，控制用户访问权限
+            </p>
           </div>
-        </div>
+          <div>
+            <h4 className="font-semibold">访问控制</h4>
+            <p className="text-sm text-muted-foreground">
+              基于角色的访问控制 (RBAC)，确保系统安全
+            </p>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );
-} 
+}

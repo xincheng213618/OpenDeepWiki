@@ -17,6 +17,10 @@ export interface RepositoryInfo {
   version?: string;
   isEmbedded: boolean;
   isRecommended: boolean;
+  /** 是否私有仓库 */
+  isPrivate?: boolean;
+  /** 文档数量 */
+  documentCount?: number;
   createdAt: string;
 }
 

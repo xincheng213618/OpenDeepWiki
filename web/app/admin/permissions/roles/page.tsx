@@ -1,37 +1,42 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Select, 
-  Tree, 
-  Button, 
-  message, 
-  Space, 
-  Tag, 
-  Checkbox, 
-  Row, 
-  Col,
-  Divider,
-    } from 'antd';
-  import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  DatabaseOutlined, 
-  FolderOutlined, 
-  SaveOutlined,
-  ReloadOutlined 
-} from '@ant-design/icons';
+import { Tree } from 'antd';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  Database,
+  Folder,
+  Save,
+  RefreshCw,
+} from 'lucide-react';
 import type { DataNode } from 'antd/es/tree';
 import { roleService, Role } from '../../../services/roleService';
-import { 
-  permissionService, 
-  WarehousePermissionTree, 
-  RolePermission, 
-  WarehousePermission 
+import {
+  permissionService,
+  WarehousePermissionTree,
+  RolePermission,
+  WarehousePermission,
 } from '../../../services/permissionService';
 
-const { Option } = Select;
-
+// 类型定义
 interface PermissionNode extends DataNode {
   key: string;
   title: React.ReactNode;
@@ -50,6 +55,7 @@ interface NodePermissions {
 }
 
 const RolePermissionsPage: React.FC = () => {
+  const { toast } = useToast();
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [permissionTree, setPermissionTree] = useState<PermissionNode[]>([]);
@@ -64,7 +70,7 @@ const RolePermissionsPage: React.FC = () => {
       const allRoles = await roleService.getAllRoles();
       setRoles(allRoles.items.filter((role: Role) => !role.isSystemRole)); // 过滤系统角色
     } catch (error) {
-      message.error('加载角色列表失败');
+      toast({ description: '加载角色列表失败', variant: 'destructive' });
       console.error('加载角色列表失败:', error);
     }
   };
@@ -106,7 +112,7 @@ const RolePermissionsPage: React.FC = () => {
       buildNodePermissions(tree);
       setNodePermissions(permissions);
     } catch (error) {
-      message.error('加载权限树失败');
+      toast({ description: '加载权限树失败', variant: 'destructive' });
       console.error('加载权限树失败:', error);
     } finally {
       setLoading(false);
@@ -144,7 +150,7 @@ const RolePermissionsPage: React.FC = () => {
 
   // 渲染树节点标题
   const renderTreeTitle = (nodeId: string, nodeName: string, nodeType: 'organization' | 'warehouse', isSelected: boolean, permission?: WarehousePermission) => {
-    const icon = nodeType === 'organization' ? <FolderOutlined /> : <DatabaseOutlined />;
+    const icon = nodeType === 'organization' ? <Folder className="size-4 mr-1" /> : <Database className="size-4 mr-1" />;
     const currentPermissions = nodePermissions[nodeId] || {
       isReadOnly: permission?.isReadOnly || true,
       isWrite: permission?.isWrite || false,
@@ -153,39 +159,42 @@ const RolePermissionsPage: React.FC = () => {
     
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-        <Space>
+        <div className="flex items-center gap-2">
           {icon}
           <span>{nodeName}</span>
-          {isSelected && <Tag color="green">已授权</Tag>}
-        </Space>
+          {isSelected && <Badge variant="success">已授权</Badge>}
+        </div>
         {nodeType === 'warehouse' && checkedKeys.includes(nodeId) && (
-          <Space size="small" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1">
             <Checkbox
               checked={currentPermissions.isReadOnly}
-              onChange={(e) => handlePermissionChange(nodeId, 'isReadOnly', e.target.checked)}
-            >
-              <Tag color="blue">读</Tag>
-            </Checkbox>
+              onCheckedChange={(checked) =>
+                handlePermissionChange(nodeId, 'isReadOnly', checked === true)
+              }
+            />
+            <Badge variant="secondary">读</Badge>
             <Checkbox
               checked={currentPermissions.isWrite}
-              onChange={(e) => handlePermissionChange(nodeId, 'isWrite', e.target.checked)}
-            >
-              <Tag color="orange">写</Tag>
-            </Checkbox>
+              onCheckedChange={(checked) =>
+                handlePermissionChange(nodeId, 'isWrite', checked === true)
+              }
+            />
+            <Badge variant="secondary">写</Badge>
             <Checkbox
               checked={currentPermissions.isDelete}
-              onChange={(e) => handlePermissionChange(nodeId, 'isDelete', e.target.checked)}
-            >
-              <Tag color="red">删</Tag>
-            </Checkbox>
-          </Space>
+              onCheckedChange={(checked) =>
+                handlePermissionChange(nodeId, 'isDelete', checked === true)
+              }
+            />
+            <Badge variant="destructive">删</Badge>
+          </div>
         )}
         {nodeType === 'warehouse' && !checkedKeys.includes(nodeId) && permission && (
-          <Space size="small">
-            {permission.isReadOnly && <Tag color="blue">读</Tag>}
-            {permission.isWrite && <Tag color="orange">写</Tag>}
-            {permission.isDelete && <Tag color="red">删</Tag>}
-          </Space>
+          <div className="flex items-center gap-1">
+            {permission.isReadOnly && <Badge variant="secondary">读</Badge>}
+            {permission.isWrite && <Badge variant="secondary">写</Badge>}
+            {permission.isDelete && <Badge variant="destructive">删</Badge>}
+          </div>
         )}
       </div>
     );
@@ -251,7 +260,7 @@ const RolePermissionsPage: React.FC = () => {
   // 保存权限配置
   const handleSave = async () => {
     if (!selectedRoleId) {
-      message.warning('请先选择角色');
+      toast({ description: '请先选择角色' });
       return;
     }
 
@@ -290,12 +299,12 @@ const RolePermissionsPage: React.FC = () => {
       };
 
       await permissionService.setRolePermissions(rolePermission);
-      message.success('保存权限配置成功');
+      toast({ description: '保存权限配置成功' });
       
       // 重新加载权限树以显示最新状态
       loadPermissionTree(selectedRoleId);
     } catch (error) {
-      message.error('保存权限配置失败');
+      toast({ description: '保存权限配置失败', variant: 'destructive' });
       console.error('保存权限配置失败:', error);
     } finally {
       setSaving(false);
@@ -317,98 +326,78 @@ const RolePermissionsPage: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Row gutter={[16, 16]}>
-        {/* 角色选择区域 */}
-        <Col span={24}>
-          <Card title="角色权限配置" size="small">
-            <Row gutter={16} align="middle">
-              <Col span={6}>
-                <label>选择角色：</label>
-                <Select
-                  style={{ width: '100%' }}
-                  placeholder="请选择要配置权限的角色"
-                  value={selectedRoleId}
-                  onChange={handleRoleChange}
-                  allowClear
-                >
-                  {roles.map(role => (
-                    <Option key={role.id} value={role.id}>
-                      <Space>
-                        {role.name}
-                        {!role.isActive && <Tag color="red">禁用</Tag>}
-                      </Space>
-                    </Option>
-                  ))}
-                </Select>
-              </Col>
-              <Col>
-                <Space>
-                  <Button
-                    type="primary"
-                    icon={<SaveOutlined />}
-                    onClick={handleSave}
-                    loading={saving}
-                    disabled={!selectedRoleId}
-                  >
-                    保存配置
-                  </Button>
-                  <Button
-                    icon={<ReloadOutlined />}
-                    onClick={handleRefresh}
-                    loading={loading}
-                  >
-                    刷新
-                  </Button>
-                </Space>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
+    <div className="p-6 space-y-6">
+      {/* 角色选择卡片 */}
+      <Card>
+        <CardHeader className="space-y-1">
+          <CardTitle>角色权限配置</CardTitle>
+          <CardDescription>先选择角色，再配置其仓库权限</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2 w-64">
+            <span className="text-sm whitespace-nowrap">选择角色：</span>
+            <Select value={selectedRoleId} onValueChange={handleRoleChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="请选择角色" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id} disabled={!role.isActive}>
+                    <span className="flex items-center gap-2">
+                      {role.name}
+                      {!role.isActive && <Badge variant="destructive">禁用</Badge>}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* 权限树区域 */}
-        <Col span={24}>
-          <Card 
-            title="仓库权限树" 
-            size="small"
-            extra={
-              selectedRoleId && (
-                <Tag color="blue">
-                  已选择: {roles.find(r => r.id === selectedRoleId)?.name}
-                </Tag>
-              )
-            }
-          >
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '50px' }}>
-                <Skeleton className="w-32 h-32 mx-auto" />
+          <div className="flex items-center gap-2">
+            <Button onClick={handleSave} disabled={!selectedRoleId || saving}>
+              <Save className="size-4 mr-1" /> 保存配置
+            </Button>
+            <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+              <RefreshCw className="size-4 mr-1" /> 刷新
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 权限树卡片 */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>仓库权限树</CardTitle>
+          {selectedRoleId && (
+            <Badge>已选择: {roles.find((r) => r.id === selectedRoleId)?.name}</Badge>
+          )}
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <Skeleton className="w-32 h-32" />
+            </div>
+          ) : (
+            <>
+              <div className="mb-4 text-xs text-muted-foreground flex items-center gap-2">
+                <Badge>说明</Badge>
+                <span>
+                  选择组织将自动选择该组织下的所有仓库。选中仓库后，可以在右侧配置具体的读、写、删除权限。
+                </span>
               </div>
-            ) : (
-              <>
-                <div style={{ marginBottom: 16 }}>
-                  <Tag color="blue">说明</Tag>
-                  <span style={{ color: '#666', fontSize: '12px' }}>
-                    选择组织将自动选择该组织下的所有仓库。选中仓库后，可以在右侧配置具体的读、写、删除权限。
-                  </span>
-                </div>
-                
-                <Tree
-                  checkable
-                  checkedKeys={checkedKeys}
-                  onCheck={handleCheck}
-                  treeData={getTreeDataForRender()}
-                  height={500}
-                  style={{ 
-                    border: '1px solid #d9d9d9', 
-                    borderRadius: '4px', 
-                    padding: '8px',
-                  }}
-                />
-              </>
-            )}
-          </Card>
-        </Col>
-      </Row>
+
+              <Tree
+                checkable
+                checkedKeys={checkedKeys}
+                onCheck={handleCheck as any}
+                treeData={getTreeDataForRender()}
+                height={500}
+                className="border rounded-md p-2"
+              />
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -424,15 +424,7 @@ export async function ExportMarkdownZip(warehouseId: string) {
 }
 
 
-export async function Customsubmitwarehouse(data:{
-  organization: string,
-  repositoryName: string,
-  address: string,
-  branch: string,
-  gitUserName?: string,
-  gitPassword?: string,
-  email?: string
-}){
+export async function Customsubmitwarehouse(data:any){
   // @ts-ignore
   return fetchApi<Repository>(API_URL + '/api/Warehouse/customsubmitwarehouse', {
     method: 'POST',

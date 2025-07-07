@@ -36,5 +36,13 @@ export interface RepositoryFormValues {
   address: string;
   type: string;
   branch: string;
-  prompt: string;
+  submitType:string;
+  enableGitAuth:boolean;
+  uploadMethod:string;
+  repositoryName?:string;
+  organization?:string;
+  gitPassword?:string;
+  gitUserName?:string;
+  file?:any;
+  fileUrl?:string;
 } 

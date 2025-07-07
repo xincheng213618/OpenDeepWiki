@@ -2,28 +2,57 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Layout, Menu, Button, Avatar, Dropdown, Space, Typography } from 'antd';
 import {
-  MenuOutlined,
-  DashboardOutlined,
-  UserOutlined,
-  DatabaseOutlined,
-  SettingOutlined,
-  ApiOutlined,
-  LogoutOutlined,
-  TeamOutlined,
-  KeyOutlined,
-} from '@ant-design/icons';
-import { menuService, MenuItem, UserMenu } from '../services/menuService';
+  BarChart3,
+  Users,
+  Database,
+  Settings,
+  Zap,
+  LogOut,
+  UserCheck,
+  Key,
+  Menu,
+  User
+} from 'lucide-react';
 
-const { Header, Sider, Content } = Layout;
-const { Text } = Typography;
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
+} from '@/components/ui/sidebar';
+
+import { menuService, MenuItem, UserMenu } from '../services/menuService';
 
 // 菜单项类型定义
 interface MenuItemType {
   key: string;
   icon: React.ReactNode;
   label: string;
+  url?: string;
   children?: MenuItemType[];
 }
 
@@ -32,13 +61,11 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [collapsed, setCollapsed] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState('管理员');
   const [userRole, setUserRole] = useState('user');
   const [userMenu, setUserMenu] = useState<UserMenu | null>(null);
-  const [openKeys, setOpenKeys] = useState<string[]>([]); // 添加菜单展开状态
   const pathname = usePathname();
   const router = useRouter();
 
@@ -54,62 +81,63 @@ export default function AdminLayout({
     return 'dashboard';
   };
 
-  // 初始化菜单展开状态
-  const getInitialOpenKeys = () => {
-    if (pathname.startsWith('/admin/permissions')) return ['permissions'];
-    if (pathname.startsWith('/admin/roles')) return ['permissions'];
-    return [];
-  };
-
   // 导航菜单配置
   const getNavItems = (): MenuItemType[] => {
     const allItems: MenuItemType[] = [
       {
         key: 'dashboard',
-        icon: <DashboardOutlined />,
+        icon: <BarChart3 className="h-4 w-4" />,
         label: '数据统计',
+        url: '/admin',
       },
       {
         key: 'users',
-        icon: <UserOutlined />,
+        icon: <Users className="h-4 w-4" />,
         label: '用户管理',
+        url: '/admin/users',
       },
       {
         key: 'repositories',
-        icon: <DatabaseOutlined />,
+        icon: <Database className="h-4 w-4" />,
         label: '仓库管理',
+        url: '/admin/repositories',
       },
       {
         key: 'finetune',
-        icon: <ApiOutlined />,
+        icon: <Zap className="h-4 w-4" />,
         label: '数据微调',
+        url: '/admin/finetune',
       },
       {
         key: 'permissions',
-        icon: <KeyOutlined />,
+        icon: <Key className="h-4 w-4" />,
         label: '权限管理',
         children: [
           {
             key: 'roles',
-            icon: <TeamOutlined />,
+            icon: <UserCheck className="h-4 w-4" />,
             label: '角色管理',
+            url: '/admin/roles',
           },
           {
             key: 'permissions-roles',
-            icon: <KeyOutlined />,
+            icon: <Key className="h-4 w-4" />,
             label: '角色权限',
+            url: '/admin/permissions/roles',
           },
           {
             key: 'permissions-users',
-            icon: <UserOutlined />,
+            icon: <Users className="h-4 w-4" />,
             label: '用户角色',
+            url: '/admin/permissions/users',
           },
         ],
       },
       {
         key: 'settings',
-        icon: <SettingOutlined />,
+        icon: <Settings className="h-4 w-4" />,
         label: '系统设置',
+        url: '/admin/settings',
       },
     ];
 
@@ -126,26 +154,22 @@ export default function AdminLayout({
     }
   };
 
-  // 用户下拉菜单
+  // 用户下拉菜单项
   const userMenuItems = [
     {
       key: 'profile',
       label: '个人信息',
-      icon: <UserOutlined />,
+      icon: <User className="h-4 w-4" />,
     },
     {
       key: 'settings',
       label: '设置',
-      icon: <SettingOutlined />,
-    },
-    {
-      type: 'divider' as const,
+      icon: <Settings className="h-4 w-4" />,
     },
     {
       key: 'logout',
       label: '退出登录',
-      icon: <LogoutOutlined />,
-      danger: true,
+      icon: <LogOut className="h-4 w-4" />,
     },
   ];
 
@@ -186,16 +210,6 @@ export default function AdminLayout({
     checkLoginStatus();
   }, [router, pathname]);
 
-  // 初始化菜单展开状态
-  useEffect(() => {
-    setOpenKeys(getInitialOpenKeys());
-  }, [pathname]);
-
-  // 处理菜单展开/收起
-  const handleOpenChange = (keys: string[]) => {
-    setOpenKeys(keys);
-  };
-
   // 处理登出
   const handleLogout = () => {
     console.log('用户退出登录');
@@ -203,50 +217,21 @@ export default function AdminLayout({
     localStorage.removeItem('userName');
     localStorage.removeItem('userInfo');
     localStorage.removeItem('redirectPath');
-    
+
     setIsLoggedIn(false);
     setUserName('管理员');
     setUserRole('user');
-    
+
     router.push('/login');
   };
 
   // 处理菜单点击
-  const handleMenuClick = (e: any) => {
-    const key = e.key;
-    switch (key) {
-      case 'dashboard':
-        router.push('/admin');
-        break;
-      case 'users':
-        router.push('/admin/users');
-        break;
-      case 'repositories':
-        router.push('/admin/repositories');
-        break;
-      case 'finetune':
-        router.push('/admin/finetune');
-        break;
-      case 'roles':
-        router.push('/admin/roles');
-        break;
-      case 'permissions-roles':
-        router.push('/admin/permissions/roles');
-        break;
-      case 'permissions-users':
-        router.push('/admin/permissions/users');
-        break;
-      case 'settings':
-        router.push('/admin/settings');
-        break;
-      default:
-        break;
-    }
+  const handleMenuClick = (url: string) => {
+    router.push(url);
   };
 
   // 处理用户菜单点击
-  const handleUserMenuClick = (e: any) => {
-    const key = e.key;
+  const handleUserMenuClick = (key: string) => {
     switch (key) {
       case 'profile':
         router.push('/admin/settings/profile');
@@ -265,14 +250,8 @@ export default function AdminLayout({
   // 如果正在加载，显示加载状态
   if (isLoading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        backgroundColor: '#ffffff'
-      }}>
-        <Text>加载中...</Text>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-sm text-muted-foreground">加载中...</div>
       </div>
     );
   }
@@ -283,172 +262,125 @@ export default function AdminLayout({
   }
 
   return (
-    <Layout style={{ 
-      height: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      overflow: 'hidden', // 防止整体滚动
-    }}>
-      {/* 侧边栏 */}
-      <Sider
-        trigger={null}
-        collapsible
-        collapsed={collapsed}
-        style={{
-          backgroundColor: '#ffffff',
-          borderRight: '1px solid #e8e8e8',
-          boxShadow: 'none',
-          height: '100vh',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 100,
-          overflow: 'auto', // 允许侧边栏内部滚动
-        }}
-        width={240}
-      >
-        {/* Logo区域 */}
-        <div style={{
-          height: '64px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          padding: collapsed ? '0' : '0 24px',
-          borderBottom: '1px solid #e8e8e8',
-          backgroundColor: '#ffffff',
-          position: 'sticky',
-          top: 0,
-          zIndex: 101,
-        }}>
-          {!collapsed && (
-            <Text strong style={{ 
-              fontSize: '18px',
-              color: '#000000',
-              fontWeight: 600
-            }}>
-              KoalaWiki
-            </Text>
-          )}
-          {collapsed && (
-            <div style={{
-              width: '32px',
-              height: '32px',
-              backgroundColor: '#000000',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              fontSize: '16px',
-              fontWeight: 600
-            }}>
-              K
+    <SidebarProvider>
+      <div className="flex h-screen w-full">
+        <Sidebar className="border-r">
+          <SidebarHeader className="border-b px-6 py-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded bg-primary text-primary-foreground text-sm font-semibold">
+                K
+              </div>
+              <span className="text-lg font-semibold">KoalaWiki</span>
             </div>
-          )}
-        </div>
-        
-        {/* 菜单 */}
-        <Menu
-          mode="inline"
-          selectedKeys={[getActiveKey()]}
-          openKeys={openKeys}
-          onOpenChange={handleOpenChange}
-          items={getNavItems()}
-          onClick={handleMenuClick}
-          style={{
-            backgroundColor: '#ffffff',
-            border: 'none',
-            fontSize: '14px',
-            fontWeight: 400,
-            height: 'calc(100vh - 64px)', // 减去logo区域高度
-            overflow: 'auto', // 菜单可滚动
-          }}
-        />
-      </Sider>
-      
-      {/* 主内容区域 */}
-      <Layout style={{ 
-        marginLeft: collapsed ? 80 : 240,
-        height: '100vh',
-        overflow: 'hidden', // 防止布局容器滚动
-      }}>
-        {/* 头部 */}
-        <Header style={{
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e8e8e8',
-          padding: '0 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: '64px',
-          position: 'sticky',
-          top: 0,
-          zIndex: 99,
-        }}>
-          <Button
-            type="text"
-            icon={<MenuOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          />
-          
-          <Dropdown
-            menu={{ 
-              items: userMenuItems,
-              onClick: handleUserMenuClick
-            }}
-            placement="bottomRight"
-          >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              cursor: 'pointer',
-              padding: '8px',
-              borderRadius: '4px',
-              transition: 'background-color 0.2s',
-            }}>
-              <Avatar
-                size={32}
-                style={{
-                  backgroundColor: '#000000',
-                  marginRight: '8px',
-                  fontSize: '14px',
-                  fontWeight: 500
-                }}
-              >
-                {userName.slice(0, 1).toUpperCase()}
-              </Avatar>
-              <Text style={{ 
-                color: '#000000',
-                fontSize: '14px',
-                fontWeight: 500
-              }}>
-                {userName}
-              </Text>
+          </SidebarHeader>
+
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {getNavItems().map((item) => (
+                    <SidebarMenuItem key={item.key}>
+                      {item.children ? (
+                        <SidebarMenuSub>
+                          <SidebarMenuButton
+                            isActive={getActiveKey() === item.key}
+                            className="w-full"
+                          >
+                            {item.icon}
+                            <span>{item.label}</span>
+                          </SidebarMenuButton>
+                          {item.children.map((child) => (
+                            <SidebarMenuSubItem key={child.key}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={getActiveKey() === child.key}
+                              >
+                                <button
+                                  onClick={() => child.url && handleMenuClick(child.url)}
+                                  className="w-full"
+                                >
+                                  {child.icon}
+                                  <span>{child.label}</span>
+                                </button>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      ) : (
+                        <SidebarMenuButton
+                          asChild
+                          isActive={getActiveKey() === item.key}
+                        >
+                          <button
+                            onClick={() => item.url && handleMenuClick(item.url)}
+                            className="w-full"
+                          >
+                            {item.icon}
+                            <span>{item.label}</span>
+                          </button>
+                        </SidebarMenuButton>
+                      )}
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+
+        <SidebarInset>
+          {/* 头部 */}
+          <header className="flex h-16 shrink-0 items-center justify-between border-b px-6">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger />
             </div>
-          </Dropdown>
-        </Header>
-        
-        {/* 内容区域 */}
-        <Content style={{
-          margin: '24px',
-          padding: '24px',
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          border: '1px solid #e8e8e8',
-          height: 'calc(100vh - 112px)', // 减去头部和边距
-          overflow: 'auto', // 只有内容区域滚动
-        }}>
-          {children}
-        </Content>
-      </Layout>
-    </Layout>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 px-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                      {userName.slice(0, 1).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">{userName}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {userMenuItems.map((item) => (
+                  item.key === 'logout' ? (
+                    <div key={item.key}>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleUserMenuClick(item.key)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </DropdownMenuItem>
+                    </div>
+                  ) : (
+                    <DropdownMenuItem
+                      key={item.key}
+                      onClick={() => handleUserMenuClick(item.key)}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </DropdownMenuItem>
+                  )
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </header>
+
+          {/* 内容区域 */}
+          <main className="flex-1 overflow-auto p-6">
+            <div className="mx-auto max-w-full">
+              {children}
+            </div>
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
-} 
+}

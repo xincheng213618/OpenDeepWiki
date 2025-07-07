@@ -376,7 +376,6 @@ export default function RepositoryInfo({ owner, name, branch }: RepositoryInfoPr
                     address: `https://github.com/${owner}/${name}`,
                     type: 'git',
                     branch: currentBranch || repoInfo.default_branch || 'main',
-                    prompt: '',
                   }}
                   onSubmit={handleAddRepository}
                   onCancel={() => setFormVisible(false)}
