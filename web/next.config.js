@@ -6,7 +6,7 @@ const withMDX = createMDX();
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  transpilePackages: ['antd','@ant-design/icons','fumadocs-ui'],
+  transpilePackages: ['fumadocs-ui'],
   // CSS配置
   experimental: {
     cssChunking: 'strict',

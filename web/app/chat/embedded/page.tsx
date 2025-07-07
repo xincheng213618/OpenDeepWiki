@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ConfigProvider, theme } from 'antd';
 import FloatingChat from '../index';
 import './page.css';
 
@@ -49,20 +48,17 @@ const EmbeddedChatContent: React.FC = () => {
   }
 
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: config.theme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
-      }}
-    >
-      <div style={{
+    <div
+      className={config.theme === 'dark' ? 'dark' : ''}
+      style={{
         width: '100%',
         height: '100% !important',
         overflow: 'hidden',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      }}>
-        <EmbeddedFloatingChat {...config} />
-      </div>
-    </ConfigProvider>
+      }}
+    >
+      <EmbeddedFloatingChat {...config} />
+    </div>
   );
 };
 
@@ -99,12 +95,7 @@ interface EmbeddedFloatingChatProps {
 
 const EmbeddedFloatingChat: React.FC<EmbeddedFloatingChatProps> = (props) => {
   return (
-    <div style={{
-      position: 'relative',
-      width: '100%',
-      height: '100%',
-      background: props.theme === 'dark' ? '#141414' : '#ffffff',
-    }}>
+    <div className="relative w-full h-full bg-background">
       <FloatingChatContent {...props} />
     </div>
   );
@@ -126,13 +117,7 @@ const FloatingChatContent: React.FC<EmbeddedFloatingChatProps> = ({
 
   if (!mounted) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100%',
-        color: theme === 'dark' ? '#ffffff' : '#000000'
-      }}>
+      <div className="flex items-center justify-center h-full text-foreground">
         正在初始化...
       </div>
     );
@@ -140,50 +125,14 @@ const FloatingChatContent: React.FC<EmbeddedFloatingChatProps> = ({
 
   // 使用原有的 FloatingChat 组件，但强制展开状态
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <style jsx global>{`
-        .koala-chat-embedded .koala-floating-button {
-          display: none !important;
-        }
-        
-        .koala-chat-embedded .koala-chat-container {
-          position: relative !important;
-          bottom: auto !important;
-          right: auto !important;
-          width: 100% !important;
-          height: 100% !important;
-          border-radius: 0 !important;
-          box-shadow: none !important;
-          border: none !important;
-        }
-        
-        .koala-chat-embedded .koala-chat-header {
-          border-bottom: 1px solid ${theme === 'dark' ? '#424242' : '#d9d9d9'};
-          background: ${theme === 'dark' ? '#1f1f1f' : '#ffffff'};
-        }
-        
-        .koala-chat-embedded .koala-header-title {
-          color: ${theme === 'dark' ? '#ffffff' : '#262626'};
-        }
-        
-        .koala-chat-embedded .koala-chat-content {
-          background: ${theme === 'dark' ? '#141414' : '#ffffff'};
-        }
-        
-        .koala-chat-embedded{
-            height: 100vh !important;
-        }
-      `}</style>
-      
-      <div className="koala-chat-embedded">
-        <EmbeddedFloatingChatInner
-          appId={appId}
-          organizationName={organizationName}
-          repositoryName={repositoryName}
-          title={title}
-          theme={theme}
-        />
-      </div>
+    <div className="relative w-full h-full">
+      <EmbeddedFloatingChatInner
+        appId={appId}
+        organizationName={organizationName}
+        repositoryName={repositoryName}
+        title={title}
+        theme={theme}
+      />
     </div>
   );
 };

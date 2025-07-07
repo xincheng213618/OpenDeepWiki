@@ -2,18 +2,19 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, message, Result, Button } from 'antd';
-import { Skeleton } from '@/components/ui/skeleton';
-import { LoadingOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { githubLogin, googleLogin } from '../../services/authService';
-import styles from '../../login/auth.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { githubLogin } from '../../services/authService';
+import { useToast } from '@/components/ui/use-toast';
 
 function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(true);
+
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -66,7 +67,10 @@ function OAuthCallbackContent() {
           }
 
           setStatus('success');
-          message.success('登录成功！');
+          toast({
+            title: "登录成功！",
+            description: "正在跳转到主页面...",
+          });
 
           // 延迟跳转
           setTimeout(() => {
@@ -83,9 +87,11 @@ function OAuthCallbackContent() {
         console.error('OAuth回调处理错误:', error);
         setStatus('error');
         setErrorMessage(error instanceof Error ? error.message : '未知错误');
-        message.error('登录失败');
-      } finally {
-        setLoading(false);
+        toast({
+          title: "登录失败",
+          description: error instanceof Error ? error.message : '未知错误',
+          variant: "destructive",
+        });
       }
     };
 
@@ -102,62 +108,80 @@ function OAuthCallbackContent() {
 
   if (status === 'loading') {
     return (
-      <div className={styles.authContainer}>
-        <div className={styles.authWrapper}>
-          <Card className={styles.authCard}>
-            <div style={{ textAlign: 'center', padding: '50px 0' }}>
-              <Skeleton className="w-12 h-12 rounded-full mx-auto" />
-              <p style={{ marginTop: 20, fontSize: 16, color: '#666' }}>
-                正在处理 GitHub 登录...
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8 space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium">正在处理登录</h3>
+              <p className="text-sm text-muted-foreground">
+                请稍候，正在验证您的身份...
               </p>
             </div>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (status === 'success') {
     return (
-      <div className={styles.authContainer}>
-        <div className={styles.authWrapper}>
-          <Card className={styles.authCard}>
-            <Result
-              icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-              title="登录成功！"
-              subTitle="正在跳转到主页面..."
-              extra={
-                <Button type="primary" onClick={() => router.push('/admin')}>
-                  立即跳转
-                </Button>
-              }
-            />
-          </Card>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8 space-y-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="rounded-full bg-green-100 p-3 dark:bg-green-900/20">
+                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-lg font-semibold">登录成功！</h3>
+                <p className="text-sm text-muted-foreground">
+                  正在跳转到主页面...
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => router.push('/admin')}
+              className="w-full"
+            >
+              立即跳转
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (status === 'error') {
     return (
-      <div className={styles.authContainer}>
-        <div className={styles.authWrapper}>
-          <Card className={styles.authCard}>
-            <Result
-              icon={<CloseCircleOutlined style={{ color: '#ff4d4f' }} />}
-              title="登录失败"
-              subTitle={errorMessage}
-              extra={[
-                <Button type="primary" key="retry" onClick={handleRetry}>
-                  重新登录
-                </Button>,
-                <Button key="home" onClick={() => router.push('/')}>
-                  返回首页
-                </Button>
-              ]}
-            />
-          </Card>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8 space-y-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="rounded-full bg-red-100 p-3 dark:bg-red-900/20">
+                <XCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-lg font-semibold">登录失败</h3>
+                <p className="text-sm text-muted-foreground">
+                  {errorMessage || '登录过程中发生错误，请重试'}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col w-full space-y-3">
+              <Button onClick={handleRetry} className="w-full">
+                重新登录
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push('/')}
+                className="w-full"
+              >
+                返回首页
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -168,17 +192,18 @@ function OAuthCallbackContent() {
 // 加载中的回退组件
 function LoadingFallback() {
   return (
-    <div className={styles.authContainer}>
-      <div className={styles.authWrapper}>
-        <Card className={styles.authCard}>
-          <div style={{ textAlign: 'center', padding: '50px 0' }}>
-            <Skeleton className="w-12 h-12 rounded-full mx-auto" />
-            <p style={{ marginTop: 20, fontSize: 16, color: '#666' }}>
-              正在处理 Google 登录...
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="flex flex-col items-center justify-center p-8 space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-medium">正在加载</h3>
+            <p className="text-sm text-muted-foreground">
+              请稍候...
             </p>
           </div>
-        </Card>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

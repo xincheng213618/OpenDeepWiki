@@ -17,7 +17,8 @@ export class UIComponents {
   createFloatingButton(onClick: () => void): HTMLButtonElement {
     const button = document.createElement("button");
     button.className = "koala-floating-button";
-    button.title = "打开 AI 助手";
+    // 使用配置中的title，如果没有则使用默认值
+    button.title = `打开 ${this.config.title || "AI 助手"}`;
 
     if (this.config.expandIcon) {
       button.style.backgroundImage = `url(data:image/png;base64,${this.config.expandIcon})`;
@@ -25,11 +26,165 @@ export class UIComponents {
       button.style.backgroundPosition = "center";
     } else {
       const baseUrl = getApiUrl(this.config);
-      button.innerHTML = `<img src="${baseUrl}/logo.png" alt="AI 助手" style="width: 64px; height: 64px;">`;
+      button.innerHTML = `<img src="${baseUrl}/logo.png" alt="${this.config.title || "AI 助手"}" style="width: 64px; height: 64px;">`;
     }
+
+    // 添加拖动功能
+    this.addDragFunctionality(button);
 
     button.addEventListener("click", onClick);
     return button;
+  }
+
+  /**
+   * 为悬浮球添加拖动功能
+   */
+  private addDragFunctionality(button: HTMLButtonElement): void {
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let buttonStartX = 0;
+    let buttonStartY = 0;
+    let hasMoved = false;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      hasMoved = false;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+
+      const rect = button.getBoundingClientRect();
+      buttonStartX = rect.left;
+      buttonStartY = rect.top;
+
+      button.style.transition = 'none';
+      button.classList.add('dragging');
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      e.preventDefault();
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      const deltaX = e.clientX - dragStartX;
+      const deltaY = e.clientY - dragStartY;
+
+      // 如果移动距离超过5px，认为是拖动而不是点击
+      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        hasMoved = true;
+      }
+
+      const newX = buttonStartX + deltaX;
+      const newY = buttonStartY + deltaY;
+
+      // 限制在视窗范围内
+      const maxX = window.innerWidth - button.offsetWidth;
+      const maxY = window.innerHeight - button.offsetHeight;
+
+      const clampedX = Math.max(0, Math.min(newX, maxX));
+      const clampedY = Math.max(0, Math.min(newY, maxY));
+
+      button.style.left = `${clampedX}px`;
+      button.style.top = `${clampedY}px`;
+      button.style.right = 'auto';
+      button.style.bottom = 'auto';
+    };
+
+    const handleMouseUp = () => {
+      isDragging = false;
+      button.style.transition = 'transform 0.2s ease';
+      button.classList.remove('dragging');
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      // 如果没有移动，则阻止点击事件的触发
+      if (hasMoved) {
+        // 延迟一点时间再允许点击，避免拖动结束时误触发点击
+        setTimeout(() => {
+          hasMoved = false;
+        }, 100);
+      }
+    };
+
+    // 触摸事件支持（移动端）
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+
+      const touch = e.touches[0];
+      isDragging = true;
+      hasMoved = false;
+      dragStartX = touch.clientX;
+      dragStartY = touch.clientY;
+
+      const rect = button.getBoundingClientRect();
+      buttonStartX = rect.left;
+      buttonStartY = rect.top;
+
+      button.style.transition = 'none';
+      button.classList.add('dragging');
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+      e.preventDefault();
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging || e.touches.length !== 1) return;
+
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - dragStartX;
+      const deltaY = touch.clientY - dragStartY;
+
+      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        hasMoved = true;
+      }
+
+      const newX = buttonStartX + deltaX;
+      const newY = buttonStartY + deltaY;
+
+      const maxX = window.innerWidth - button.offsetWidth;
+      const maxY = window.innerHeight - button.offsetHeight;
+
+      const clampedX = Math.max(0, Math.min(newX, maxX));
+      const clampedY = Math.max(0, Math.min(newY, maxY));
+
+      button.style.left = `${clampedX}px`;
+      button.style.top = `${clampedY}px`;
+      button.style.right = 'auto';
+      button.style.bottom = 'auto';
+
+      e.preventDefault();
+    };
+
+    const handleTouchEnd = () => {
+      isDragging = false;
+      button.style.transition = 'transform 0.2s ease';
+      button.classList.remove('dragging');
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+
+      if (hasMoved) {
+        setTimeout(() => {
+          hasMoved = false;
+        }, 100);
+      }
+    };
+
+    // 修改点击事件处理，如果刚刚拖动过则不触发
+    const originalClick = button.onclick;
+    button.onclick = (e) => {
+      if (hasMoved) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      if (originalClick) {
+        return originalClick.call(button, e);
+      }
+    };
+
+    button.addEventListener('mousedown', handleMouseDown);
+    button.addEventListener('touchstart', handleTouchStart, { passive: false });
   }
 
   /**

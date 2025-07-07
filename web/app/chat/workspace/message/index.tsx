@@ -1,7 +1,7 @@
-import { ChatItem, ChatMessage } from "@lobehub/ui/chat";
 import UserMessage from "./user";
 import AssistantMessage from "./assistant";
 import { MessageItem } from "../../../types/chat";
+import './index.css'
 
 interface MessageProps {
     messageItem: MessageItem;

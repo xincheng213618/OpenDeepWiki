@@ -30,8 +30,10 @@ export default async function RepositoryLayoutServer({
   children: React.ReactNode;
   branch: string;
 }) {
+  
   const { catalogData, lastUpdated } = await getRepositoryData(owner, name, branch);
-
+  console.log('Test',catalogData,owner,name,branch);
+  
   const processTreeItems = (items: any[]): any[] => {
     return items.map((item: any) => ({
       name: <Link href={`/${owner}/${name}/${item.url}`}>{item.label}</Link>,
@@ -41,6 +43,7 @@ export default async function RepositoryLayoutServer({
       children: item.children && item.children.length > 0 ? processTreeItems(item.children) : undefined
     }));
   };
+
 
   const tree = [
     {
@@ -58,7 +61,7 @@ export default async function RepositoryLayoutServer({
     {
       type: 'separator',
     },
-    ...processTreeItems(catalogData.items)
+    ...processTreeItems(catalogData?.items ?? [])
   ];
 
   return (<DocsLayout

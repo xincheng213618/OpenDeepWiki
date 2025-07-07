@@ -32,7 +32,17 @@ public class PermissionMiddleware
             }
         }
 
-        await _next(context);
+        try
+        {
+
+            await _next(context);
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            _logger.LogWarning(e, "Unauthorized access attempt");
+            context.Response.StatusCode = 401; // 未授权
+            await context.Response.WriteAsync("Unauthorized access");
+        }
     }
 
     /// <summary>

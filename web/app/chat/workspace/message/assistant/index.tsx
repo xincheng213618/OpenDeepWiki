@@ -1,4 +1,4 @@
-import { ChatItem } from "@lobehub/ui/chat";
+import { ChatItem } from "@/components/ui/chat-item";
 import { GitIssueItem, MessageItem } from "../../../../types/chat";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -802,58 +802,35 @@ export default function AssistantMessage({ messageItem, handleDelete,
 
     const renderActions = () => {
         return (
-            <Flexbox className="flex-row items-center gap-1">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleCopyClick}
-                                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
-                            >
-                                <Copy size={14} />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>复制回复内容</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleDeleteClick}
-                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                            >
-                                <Trash2 size={14} />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>删除消息</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </Flexbox>
+            <div className="flex items-center gap-1">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyClick}
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                >
+                    <Copy size={14} />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeleteClick}
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                >
+                    <Trash2 size={14} />
+                </Button>
+            </div>
         )
     }
 
     return (
         <>
             <ChatItem
-                avatar={{
-                    avatar: "🤖",
-                    title: "AI助手",
-                }}
-                actions={renderActions()}
+                className="assistant-message"
+                actions={renderActions}
                 renderMessage={renderMessage}
                 key={messageItem.id}
-                style={{
-                    marginBottom: 16,
-                }}
+                role="assistant"
             />
 
             {/* 删除确认对话框 */}

@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from "react";
-import { Flexbox } from "react-layout-kit";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import ChatInput from "../components/ChatInput";
 import Message from "./message";
 import { chatService } from "../services/chatService";
 import { chatDB, ChatMessage, Conversation } from "../utils/indexedDB";
-import { Modal } from "antd";
 import { MessageContentType, MessageItem, MessageContentReasoningItem, MessageContentTextItem, MessageContentToolItem, MessageContentGitIssuesItem } from "../../types/chat";
 
 interface WorkspaceProps {
@@ -19,6 +19,7 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [conversationId, setConversationId] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [showClearDialog, setShowClearDialog] = useState(false);
     const abortControllerRef = useRef<AbortController>(
         new AbortController()
     );
@@ -362,29 +363,21 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
     }
 
     const handleClear = () => {
-        Modal.confirm({
-            title: '确定要清空消息吗？',
-            onOk: () => {
-                setMessages([]);
-                // 清空IndexedDB
-                chatDB.clearMessages(conversationId);
-            }
-        });
+        setShowClearDialog(true);
+    }
+
+    const handleConfirmClear = () => {
+        setMessages([]);
+        // 清空IndexedDB
+        chatDB.clearMessages(conversationId);
+        setShowClearDialog(false);
     }
 
     return (
         <div className="workspace-container">
-            <Flexbox gap={24} style={{ flex: 1, height: '100%' }}>
-                <Flexbox
-                    className="messages-container"
-                    style={{
-                        flex: 1,
-                        overflowY: 'auto',
-                        minHeight: 0,
-                        overflowX: 'hidden',
-                        padding: '0 4px',
-                    }}
-                >
+            <div className="flex flex-col gap-6 h-full">
+                <div className="messages-container flex-1 overflow-y-auto min-h-0 overflow-x-hidden px-1">
+
                     {
                         messages.length === 0 && (
                             <div className="empty-state">
@@ -430,7 +423,7 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                         />
                     ))}
                     <div ref={messagesEndRef} />
-                </Flexbox>
+                </div>
                 <div className="chat-input-container">
                     <ChatInput
                         loading={isLoading}
@@ -439,7 +432,27 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                         onStop={handleStopGeneration}
                     />
                 </div>
-            </Flexbox>
+            </div>
+
+            {/* 清空消息确认对话框 */}
+            <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>确定要清空消息吗？</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-muted-foreground">清空后将无法恢复</p>
+                    </div>
+                    <DialogFooter className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowClearDialog(false)}>
+                            取消
+                        </Button>
+                        <Button variant="destructive" onClick={handleConfirmClear}>
+                            确定清空
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <style jsx>{`
                 .workspace-container {
@@ -448,30 +461,21 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                     flex-direction: column;
                 }
 
-                .messages-container {
-                    backdrop-filter: blur(10px);
-                    border-radius: 16px;
-                    margin: 16px;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-                }
-
                 .messages-container::-webkit-scrollbar {
-                    width: 8px;
+                    width: 6px;
                 }
 
                 .messages-container::-webkit-scrollbar-track {
-                    border-radius: 8px;
-                    margin: 8px 0;
+                    background: transparent;
                 }
 
                 .messages-container::-webkit-scrollbar-thumb {
-                    border-radius: 8px;
-                    border: 2px solid transparent;
-                    background-clip: content-box;
+                    background: hsl(var(--border));
+                    border-radius: 3px;
                 }
 
                 .messages-container::-webkit-scrollbar-thumb:hover {
-                    background-clip: content-box;
+                    background: hsl(var(--border) / 0.8);
                 }
 
                 .empty-state {
@@ -489,25 +493,24 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                 }
 
                 .empty-state-icon {
-                    color: #3b82f6;
+                    color: hsl(var(--primary));
                     margin-bottom: 24px;
                     display: flex;
                     justify-content: center;
                 }
 
                 .empty-state-title {
-                    font-size: 24px;
+                    font-size: 20px;
                     font-weight: 600;
-                    color: #1e293b;
-                    margin: 0 0 16px 0;
-                    letter-spacing: -0.025em;
+                    color: hsl(var(--foreground));
+                    margin: 0 0 12px 0;
                 }
 
                 .empty-state-description {
-                    font-size: 16px;
-                    color: #64748b;
+                    font-size: 14px;
+                    color: hsl(var(--muted-foreground));
                     line-height: 1.6;
-                    margin: 0 0 32px 0;
+                    margin: 0 0 24px 0;
                 }
 
                 .empty-state-actions {
@@ -519,26 +522,25 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                     display: inline-flex;
                     align-items: center;
                     gap: 8px;
-                    padding: 12px 24px;
-                    background: linear-gradient(135deg, #3b82f6, #2563eb);
+                    padding: 8px 16px;
+                    background: hsl(var(--muted));
+                    color: hsl(var(--muted-foreground));
                     text-decoration: none;
-                    border-radius: 12px;
-                    font-weight: 500;
+                    border-radius: 8px;
                     font-size: 14px;
-                    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+                    font-weight: 500;
                     transition: all 0.2s ease;
                 }
 
                 .learn-more-link:hover {
-                    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-                    transform: translateY(-1px);
-                    box-shadow: 0 8px 12px -2px rgba(59, 130, 246, 0.4);
+                    background: hsl(var(--muted) / 0.8);
+                    color: hsl(var(--foreground));
                 }
 
                 .chat-input-container {
-                    padding: 0 16px 16px 16px;
-                    backdrop-filter: blur(10px);
-                    border-top: 1px solid rgba(226, 232, 240, 0.6);
+                    padding: 16px;
+                    border-top: 1px solid hsl(var(--border));
+                    background: hsl(var(--background));
                 }
             `}</style>
         </div>

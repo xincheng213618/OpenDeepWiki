@@ -75,7 +75,7 @@ public class UserService(
 
         if (user == null)
         {
-            return ResultDto<UserInfoDto>.Error("用户不存在");
+            throw new UnauthorizedAccessException();
         }
 
         // 将实体映射为DTO
@@ -104,7 +104,7 @@ public class UserService(
 
         if (user == null)
         {
-            return ResultDto<UserInfoDto>.Error("用户不存在");
+            throw new UnauthorizedAccessException();
         }
 
         // 将实体映射为DTO
@@ -144,7 +144,7 @@ public class UserService(
             var existingUser = await dbContext.Users.FindAsync(userId);
             if (existingUser == null)
             {
-                return ResultDto<UserInfoDto>.Error("用户不存在");
+                throw new UnauthorizedAccessException();
             }
 
             // 如果修改了用户名，检查是否已存在
@@ -214,7 +214,7 @@ public class UserService(
 
             if (user == null)
             {
-                return ResultDto<bool>.Error("用户不存在");
+                throw new UnauthorizedAccessException();
             }
 
             // 这里应该使用密码哈希验证，暂时使用简单比较

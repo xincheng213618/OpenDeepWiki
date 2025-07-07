@@ -10,6 +10,7 @@ import { getMDXComponents } from '@/components/mdx-components';
 import { documentById, getWarehouseOverview } from '../../../services/warehouseService';
 
 import { DocumentData, Heading } from './types';
+import FloatingChatClient from '../FloatingChatClient';
 
 // 生成SEO友好的描述
 function generateSEODescription(document: DocumentData, owner: string, name: string, path: string): string {
@@ -295,6 +296,15 @@ export default async function DocumentPage({
           })}
         />
       </DocsBody>
+      <FloatingChatClient
+        appId={`builtin_${owner}_${name}`}
+        organizationName={owner}
+        repositoryName={name}
+        title={`${name} AI 助手`}
+        theme="light"
+        enableDomainValidation={false}
+        embedded={false}
+      />
     </DocsPage>
   );
 }

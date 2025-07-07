@@ -27,7 +27,7 @@ OpenDeepWiki 前端是一个基于 Next.js 15 和 React 19 构建的现代化 We
 - **服务端渲染**: 支持 SSR/SSG，优化 SEO 和首屏加载
 - **国际化支持**: 支持 18 种语言，覆盖全球主要地区
 - **响应式设计**: 完美适配桌面端和移动端
-- **组件化架构**: 基于 Ant Design 5.x 构建的现代化 UI
+- **组件化架构**: 基于 shadcn/ui 构建的现代化 UI
 
 ### 🎯 功能特性
 - **快速转换**: 几分钟内将任何代码仓库转换为智能知识库
@@ -66,7 +66,7 @@ OpenDeepWiki 前端是一个基于 Next.js 15 和 React 19 构建的现代化 We
 - **[TypeScript 5.8.3](https://www.typescriptlang.org/)** - 类型安全的 JavaScript
 
 ### UI 组件库
-- **[Ant Design 5.24.8](https://ant.design/)** - 企业级 UI 设计语言
+- **[shadcn/ui](https://ui.shadcn.com/)** - 现代化组件库
 - **[Tailwind CSS 4.1.7](https://tailwindcss.com/)** - 原子化 CSS 框架
 - **[Framer Motion 11.18.2](https://www.framer.com/motion/)** - 动画库
 - **[Lucide React 0.511.0](https://lucide.dev/)** - 图标库
@@ -262,8 +262,7 @@ const nextConfig = {
   output: 'standalone',           // 独立输出模式
   reactStrictMode: true,          // React 严格模式
   transpilePackages: [            // 需要转译的包
-    'antd', 
-    '@ant-design/icons'
+    'fumadocs-ui'
   ],
   async rewrites() {              // API 代理配置
     return [

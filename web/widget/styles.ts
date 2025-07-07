@@ -28,10 +28,27 @@ export function createStyles(): void {
       color: white;
       font-size: 24px;
       transition: transform 0.2s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      touch-action: none;
     }
 
     .koala-floating-button:hover {
       transform: scale(1.05);
+    }
+
+    .koala-floating-button:active {
+      transform: scale(0.95);
+    }
+
+    /* 拖动时的样式 */
+    .koala-floating-button.dragging {
+      cursor: grabbing;
+      cursor: -webkit-grabbing;
+      transform: scale(1.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
     }
 
     .koala-chat-container {
