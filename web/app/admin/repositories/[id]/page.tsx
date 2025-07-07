@@ -178,7 +178,7 @@ export default function RepositoryDetailPage() {
   const [showContextMenu, setShowContextMenu] = useState(false);
   // 添加AI生成相关状态
   const [isAiModalVisible, setIsAiModalVisible] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
+
   const [aiGenerating, setAiGenerating] = useState(false);
 
   // 表单管理
@@ -383,7 +383,6 @@ export default function RepositoryDetailPage() {
 
     // 设置默认prompt为选中菜单的prompt
     const defaultPrompt = selectedCatalog.catalog?.prompt || '';
-    setAiPrompt(defaultPrompt);
     promptForm.reset({ prompt: defaultPrompt });
 
     // 显示AI生成对话框
@@ -419,7 +418,7 @@ export default function RepositoryDetailPage() {
       setAiGenerating(true);
 
       // 调用API生成内容
-      const response = await aiGenerateFileContent(selectedCatalog.catalog.id, prompt);
+      await aiGenerateFileContent(selectedCatalog.catalog.id, prompt);
 
       // 重新获取文件内容
       const fileContentResponse = await getRepositoryFileContent(selectedCatalog.catalog.id);
@@ -990,7 +989,6 @@ export default function RepositoryDetailPage() {
                 value={promptForm.watch('prompt')}
                 onChange={(e) => {
                   promptForm.setValue('prompt', e.target.value);
-                  setAiPrompt(e.target.value);
                 }}
                 disabled={aiGenerating}
               />
