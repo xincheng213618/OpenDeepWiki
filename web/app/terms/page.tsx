@@ -1,11 +1,11 @@
 'use client';
 
-import { Layout, Card, Breadcrumb } from 'antd';
-import { HomeOutlined } from '@ant-design/icons';
+import { Card, CardContent } from '@/components/ui/card';
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
+import { Home } from 'lucide-react';
 import Link from 'next/link';
 import { marked } from 'marked';
 import { useEffect, useState } from 'react';
-const { Content } = Layout;
 
 const termsContent = `# OpenDeepWiki 服务条款
 
@@ -145,32 +145,34 @@ export default function TermsOfServicePage() {
   }, []);
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f8fafc' }}>
-      <Content style={{ padding: '24px', maxWidth: 1200, margin: '0 auto' }}>
-        <Card style={{
-          borderRadius: 12,
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)'
-        }}>
-          <Breadcrumb style={{ marginBottom: 24 }}>
-            <Breadcrumb.Item>
-              <Link href="/">
-                <HomeOutlined /> 首页
-              </Link>
-            </Breadcrumb.Item>
-            <Breadcrumb.Item>服务条款</Breadcrumb.Item>
-          </Breadcrumb>
+    <div className="min-h-screen bg-slate-50">
+      <div className="container mx-auto max-w-4xl p-6">
+        <Card className="rounded-xl shadow-lg">
+          <CardContent className="p-6">
+            <Breadcrumb className="mb-6">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/" className="flex items-center gap-1">
+                      <Home className="h-4 w-4" />
+                      首页
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>服务条款</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
 
-          <div
-            className="markdown-content"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
-            style={{
-              fontSize: 16,
-              lineHeight: 1.8,
-              color: '#1e293b'
-            }}
-          />
+            <div
+              className="markdown-content prose prose-slate max-w-none"
+              dangerouslySetInnerHTML={{ __html: htmlContent }}
+            />
+          </CardContent>
         </Card>
-      </Content>
-    </Layout>
+      </div>
+    </div>
   );
 } 

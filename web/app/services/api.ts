@@ -1,4 +1,4 @@
-import { message } from 'antd';
+import { toast } from '@/components/ui/use-toast';
 
 interface ApiResponse<T> {
   data?: T;
@@ -83,7 +83,11 @@ async function clientFetchApi<T>(
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData.message || `请求失败: ${response.status}`;
-      message.error(errorMessage);
+      toast({
+        title: "请求失败",
+        description: errorMessage,
+        variant: "destructive",
+      });
       return { success: false, error: errorMessage, message: errorMessage };
     }
 
@@ -104,7 +108,11 @@ async function clientFetchApi<T>(
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '请求异常';
-    message.error(errorMessage);
+    toast({
+      title: "请求异常",
+      description: errorMessage,
+      variant: "destructive",
+    });
     return { success: false, error: errorMessage, message: errorMessage };
   }
 }

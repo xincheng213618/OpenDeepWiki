@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Tree } from 'antd';
 import {
   Card,
   CardHeader,
@@ -26,8 +25,9 @@ import {
   Folder,
   Save,
   RefreshCw,
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
-import type { DataNode } from 'antd/es/tree';
 import { roleService, Role } from '../../../services/roleService';
 import {
   permissionService,
@@ -37,13 +37,14 @@ import {
 } from '../../../services/permissionService';
 
 // 类型定义
-interface PermissionNode extends DataNode {
+interface PermissionNode {
   key: string;
-  title: React.ReactNode;
+  title: string;
   children?: PermissionNode[];
   permission?: WarehousePermission;
   type: 'organization' | 'warehouse';
   isSelected: boolean;
+  expanded?: boolean;
 }
 
 interface NodePermissions {
@@ -61,6 +62,7 @@ const RolePermissionsPage: React.FC = () => {
   const [permissionTree, setPermissionTree] = useState<PermissionNode[]>([]);
   const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
   const [nodePermissions, setNodePermissions] = useState<NodePermissions>({});
+  const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -129,12 +131,48 @@ const RolePermissionsPage: React.FC = () => {
   const convertToTreeData = (tree: WarehousePermissionTree[]): PermissionNode[] => {
     return tree.map(node => ({
       key: node.id,
-      title: node.name, // 先设置简单的标题
+      title: node.name,
       children: node.children ? convertToTreeData(node.children) : undefined,
       permission: node.permission,
       type: node.type,
       isSelected: node.isSelected,
+      expanded: expandedKeys.includes(node.id),
     }));
+  };
+
+  // 切换节点展开状态
+  const toggleExpanded = (nodeKey: string) => {
+    setExpandedKeys(prev =>
+      prev.includes(nodeKey)
+        ? prev.filter(key => key !== nodeKey)
+        : [...prev, nodeKey]
+    );
+  };
+
+  // 切换节点选中状态
+  const toggleChecked = (nodeKey: string) => {
+    setCheckedKeys(prev => {
+      const newCheckedKeys = prev.includes(nodeKey)
+        ? prev.filter(key => key !== nodeKey)
+        : [...prev, nodeKey];
+
+      // 为新选中的仓库节点设置默认权限
+      if (!prev.includes(nodeKey)) {
+        const node = findNodeByKey(permissionTree, nodeKey);
+        if (node && node.type === 'warehouse' && !nodePermissions[nodeKey]) {
+          setNodePermissions(prevPermissions => ({
+            ...prevPermissions,
+            [nodeKey]: {
+              isReadOnly: true,
+              isWrite: false,
+              isDelete: false,
+            }
+          }));
+        }
+      }
+
+      return newCheckedKeys;
+    });
   };
 
   // 处理权限变更
@@ -148,70 +186,97 @@ const RolePermissionsPage: React.FC = () => {
     }));
   };
 
-  // 渲染树节点标题
-  const renderTreeTitle = (nodeId: string, nodeName: string, nodeType: 'organization' | 'warehouse', isSelected: boolean, permission?: WarehousePermission) => {
-    const icon = nodeType === 'organization' ? <Folder className="size-4 mr-1" /> : <Database className="size-4 mr-1" />;
-    const currentPermissions = nodePermissions[nodeId] || {
-      isReadOnly: permission?.isReadOnly || true,
-      isWrite: permission?.isWrite || false,
-      isDelete: permission?.isDelete || false,
+  // 渲染自定义树节点
+  const renderTreeNode = (node: PermissionNode, level: number = 0): React.ReactNode => {
+    const isChecked = checkedKeys.includes(node.key);
+    const isExpanded = expandedKeys.includes(node.key);
+    const hasChildren = node.children && node.children.length > 0;
+    const icon = node.type === 'organization' ? <Folder className="size-4" /> : <Database className="size-4" />;
+
+    const currentPermissions = nodePermissions[node.key] || {
+      isReadOnly: node.permission?.isReadOnly || true,
+      isWrite: node.permission?.isWrite || false,
+      isDelete: node.permission?.isDelete || false,
     };
-    
+
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-        <div className="flex items-center gap-2">
-          {icon}
-          <span>{nodeName}</span>
-          {isSelected && <Badge variant="success">已授权</Badge>}
-        </div>
-        {nodeType === 'warehouse' && checkedKeys.includes(nodeId) && (
-          <div className="flex items-center gap-1">
+      <div key={node.key} className="select-none">
+        <div
+          className="flex items-center justify-between p-2 hover:bg-accent rounded-md"
+          style={{ paddingLeft: `${level * 20 + 8}px` }}
+        >
+          <div className="flex items-center gap-2 flex-1">
+            {hasChildren && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0"
+                onClick={() => toggleExpanded(node.key)}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+              </Button>
+            )}
+            {!hasChildren && <div className="w-4" />}
+
             <Checkbox
-              checked={currentPermissions.isReadOnly}
-              onCheckedChange={(checked) =>
-                handlePermissionChange(nodeId, 'isReadOnly', checked === true)
-              }
+              checked={isChecked}
+              onCheckedChange={() => toggleChecked(node.key)}
             />
-            <Badge variant="secondary">读</Badge>
-            <Checkbox
-              checked={currentPermissions.isWrite}
-              onCheckedChange={(checked) =>
-                handlePermissionChange(nodeId, 'isWrite', checked === true)
-              }
-            />
-            <Badge variant="secondary">写</Badge>
-            <Checkbox
-              checked={currentPermissions.isDelete}
-              onCheckedChange={(checked) =>
-                handlePermissionChange(nodeId, 'isDelete', checked === true)
-              }
-            />
-            <Badge variant="destructive">删</Badge>
+
+            {icon}
+            <span className="text-sm">{node.title}</span>
+            {node.isSelected && <Badge variant="default">已授权</Badge>}
           </div>
-        )}
-        {nodeType === 'warehouse' && !checkedKeys.includes(nodeId) && permission && (
-          <div className="flex items-center gap-1">
-            {permission.isReadOnly && <Badge variant="secondary">读</Badge>}
-            {permission.isWrite && <Badge variant="secondary">写</Badge>}
-            {permission.isDelete && <Badge variant="destructive">删</Badge>}
+
+          {node.type === 'warehouse' && isChecked && (
+            <div className="flex items-center gap-1">
+              <Checkbox
+                checked={currentPermissions.isReadOnly}
+                onCheckedChange={(checked) =>
+                  handlePermissionChange(node.key, 'isReadOnly', checked === true)
+                }
+              />
+              <Badge variant="secondary">读</Badge>
+              <Checkbox
+                checked={currentPermissions.isWrite}
+                onCheckedChange={(checked) =>
+                  handlePermissionChange(node.key, 'isWrite', checked === true)
+                }
+              />
+              <Badge variant="secondary">写</Badge>
+              <Checkbox
+                checked={currentPermissions.isDelete}
+                onCheckedChange={(checked) =>
+                  handlePermissionChange(node.key, 'isDelete', checked === true)
+                }
+              />
+              <Badge variant="destructive">删</Badge>
+            </div>
+          )}
+
+          {node.type === 'warehouse' && !isChecked && node.permission && (
+            <div className="flex items-center gap-1">
+              {node.permission.isReadOnly && <Badge variant="secondary">读</Badge>}
+              {node.permission.isWrite && <Badge variant="secondary">写</Badge>}
+              {node.permission.isDelete && <Badge variant="destructive">删</Badge>}
+            </div>
+          )}
+        </div>
+
+        {hasChildren && isExpanded && (
+          <div>
+            {node.children!.map(child => renderTreeNode(child, level + 1))}
           </div>
         )}
       </div>
     );
   };
 
-  // 获取渲染用的树数据
-  const getTreeDataForRender = (): PermissionNode[] => {
-    const updateTreeData = (nodes: PermissionNode[]): PermissionNode[] => {
-      return nodes.map(node => ({
-        ...node,
-        title: renderTreeTitle(node.key, node.title as string, node.type, node.isSelected, node.permission),
-        children: node.children ? updateTreeData(node.children) : undefined,
-      }));
-    };
-    
-    return updateTreeData(permissionTree);
-  };
+
 
   // 处理角色选择变化
   const handleRoleChange = (roleId: string) => {
@@ -219,29 +284,7 @@ const RolePermissionsPage: React.FC = () => {
     loadPermissionTree(roleId);
   };
 
-  // 处理树节点选择
-  const handleCheck = (checkedKeysValue: any) => {
-    setCheckedKeys(checkedKeysValue);
-    
-    // 为新选中的仓库节点设置默认权限
-    const newCheckedKeys = Array.isArray(checkedKeysValue) ? checkedKeysValue : checkedKeysValue.checked;
-    const addedKeys = newCheckedKeys.filter((key: string) => !checkedKeys.includes(key));
-    
-    if (addedKeys.length > 0) {
-      const newPermissions = { ...nodePermissions };
-      addedKeys.forEach((key: string) => {
-        const node = findNodeByKey(permissionTree, key);
-        if (node && node.type === 'warehouse' && !newPermissions[key]) {
-          newPermissions[key] = {
-            isReadOnly: true,
-            isWrite: false,
-            isDelete: false,
-          };
-        }
-      });
-      setNodePermissions(newPermissions);
-    }
-  };
+
 
   // 查找节点
   const findNodeByKey = (nodes: PermissionNode[], key: string): PermissionNode | null => {
@@ -323,7 +366,24 @@ const RolePermissionsPage: React.FC = () => {
   useEffect(() => {
     loadRoles();
     loadPermissionTree();
-  }, []);
+    // 默认展开所有组织节点
+    const expandAllOrganizations = (nodes: PermissionNode[]): string[] => {
+      const keys: string[] = [];
+      nodes.forEach(node => {
+        if (node.type === 'organization') {
+          keys.push(node.key);
+        }
+        if (node.children) {
+          keys.push(...expandAllOrganizations(node.children));
+        }
+      });
+      return keys;
+    };
+
+    if (permissionTree.length > 0) {
+      setExpandedKeys(expandAllOrganizations(permissionTree));
+    }
+  }, [permissionTree]);
 
   return (
     <div className="p-6 space-y-6">
@@ -386,14 +446,9 @@ const RolePermissionsPage: React.FC = () => {
                 </span>
               </div>
 
-              <Tree
-                checkable
-                checkedKeys={checkedKeys}
-                onCheck={handleCheck as any}
-                treeData={getTreeDataForRender()}
-                height={500}
-                className="border rounded-md p-2"
-              />
+              <div className="border rounded-md p-4 max-h-[500px] overflow-y-auto">
+                {permissionTree.map(node => renderTreeNode(node))}
+              </div>
             </>
           )}
         </CardContent>

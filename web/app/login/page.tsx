@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { message } from 'antd'
-import { GithubIcon } from 'lucide-react'
+import { toast } from 'sonner'
+import { GithubIcon, Loader2 } from 'lucide-react'
 import { GoogleIcon } from '@/components/icons/GoogleIcon'
 
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -57,7 +56,7 @@ export default function LoginPage() {
     const formData = new FormData(event.currentTarget)
     const username = formData.get('username') as string
     const password = formData.get('password') as string
-    const remember = formData.get('remember') === 'on'
+    // 如果需要“记住我”功能，可在此处处理
 
     try {
       setLoading(true)
@@ -80,15 +79,16 @@ export default function LoginPage() {
           // 检查是否有上一个页面的路径（比如从管理页面重定向来的）
           const redirectPath = localStorage.getItem('redirectPath') || '/admin'
           localStorage.removeItem('redirectPath') // 清除重定向路径
+          toast.success('登录成功')
           router.push(redirectPath)
         }, 1000)
       } else {
         // 登录失败
-        message.error(data.errorMessage || '用户名或密码错误')
+        toast.error(data.errorMessage || '用户名或密码错误')
       }
     } catch (error) {
       console.error('登录错误:', error)
-      message.error('登录过程中发生错误，请重试')
+      toast.error('登录过程中发生错误，请重试')
     } finally {
       setLoading(false)
     }
@@ -200,6 +200,7 @@ export default function LoginPage() {
                       </Label>
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {loading ? '登录中...' : '登录'}
                     </Button>
                   </div>

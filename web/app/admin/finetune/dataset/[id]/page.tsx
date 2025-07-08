@@ -1,7 +1,28 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, Typography, Tag, Button, Table, Space, Descriptions, message, Divider, Tree, Modal, Form, Input, Dropdown, Menu, Row, Col } from 'antd';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tag } from '@/components/ui/tag';
+import { Descriptions } from '@/components/ui/descriptions';
+import { message } from '@/components/ui/message';
+import { Separator as Divider } from '@/components/ui/separator';
+import { DirectoryTree } from '@/components/ui/tree';
+import { Modal } from '@/components/ui/modal';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, FolderOutlined, FileOutlined, ExclamationCircleOutlined, DownloadOutlined, PlayCircleOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
@@ -10,10 +31,9 @@ import { getRepositoryFiles, getRepositoryFileContent, saveRepositoryFileContent
 import { MdEditor } from 'md-editor-rt';
 import 'md-editor-rt/lib/style.css';
 import { useParams } from 'next/navigation';
-
-const { Title, Text } = Typography;
-const { DirectoryTree } = Tree;
-const { TextArea } = Input;
+import { Dropdown, Form, Menu, TextArea } from '@lobehub/ui';
+import { Button } from '@/components/ui/button';
+import { Space } from 'lucide-react';
 
 // 定义文件树节点类型
 interface TreeNode {
@@ -178,7 +198,6 @@ export default function DatasetDetailPage() {
   const handleDelete = async () => {
     Modal.confirm({
       title: '删除确认',
-      icon: <ExclamationCircleOutlined />,
       content: '确定要删除此数据集吗？此操作不可撤销。',
       okText: '确定',
       cancelText: '取消',
@@ -323,7 +342,7 @@ export default function DatasetDetailPage() {
         color = 'default';
         text = '未知';
     }
-    return <Tag color={color}>{text}</Tag>;
+    return <Tag>{text}</Tag>;
   };
 
   // 对API密钥进行脱敏处理
@@ -369,7 +388,6 @@ export default function DatasetDetailPage() {
   const handleDeleteTask = async (taskId: string) => {
     Modal.confirm({
       title: '删除确认',
-      icon: <ExclamationCircleOutlined />,
       content: '确定要删除此微调任务吗？此操作不可撤销。',
       okText: '确定',
       cancelText: '取消',
@@ -713,7 +731,7 @@ export default function DatasetDetailPage() {
     }
   };
 
-  // 定义表格列
+  // 定义表格列（用于参考，不再直接使用）
   const columns = [
     {
       title: '任务名称',
@@ -736,42 +754,43 @@ export default function DatasetDetailPage() {
       title: '操作',
       key: 'action',
       render: (_, record: FineTuningTask) => (
-        <Space size="small">
+        <div className="flex space-x-2">
           <Button
-            type="link"
-            size="small"
+            variant="ghost"
+            size="sm"
             onClick={() => handleViewTask(record.id)}
           >
             查看
           </Button>
           <Button
-            type="link"
-            size="small"
-            danger
+            variant="ghost"
+            size="sm"
+            className="text-red-500 hover:text-red-600"
             onClick={() => handleDeleteTask(record.id)}
-            loading={deletingTask}
+            disabled={deletingTask}
           >
             删除
           </Button>
-          <Dropdown overlay={
-            <Menu>
-              <Menu.Item key="advanced" onClick={() => handleAdvancedStartTask(record.id, record.status)}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={record.status === 1}
+              >
+                {record.status === 1 ? '任务运行中' : '启动'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleAdvancedStartTask(record.id, record.status)}>
                 启动任务
-              </Menu.Item>
-              <Menu.Item key="immediate" onClick={() => handleImmediateStartTask(record.id, record.status)}>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleImmediateStartTask(record.id, record.status)}>
                 立即启动
-              </Menu.Item>
-            </Menu>
-          } disabled={record.status === 1}>
-            <Button
-              type="link"
-              size="small"
-              disabled={record.status === 1}
-            >
-              {record.status === 1 ? '任务运行中' : '启动'}
-            </Button>
-          </Dropdown>
-        </Space>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
   ];
@@ -793,9 +812,9 @@ export default function DatasetDetailPage() {
         </Button>
         <Card>
           <div style={{ textAlign: 'center', padding: '50px' }}>
-            <Text type="danger">未找到数据集或数据集已删除</Text>
+            <span>未找到数据集或数据集已删除</span>
             <div style={{ marginTop: '20px' }}>
-              <Button type="primary" onClick={handleBack}>
+              <Button onClick={handleBack}>
                 返回列表
               </Button>
             </div>
@@ -810,12 +829,24 @@ export default function DatasetDetailPage() {
 
   // 导出菜单项
   const exportMenu = (
-    <Menu onClick={({ key }) => handleExportDataset(key as string)}>
-      <Menu.Item key="llamaFactory">LLaMA-Factory 格式</Menu.Item>
-      <Menu.Item key="alpaca">Alpaca 格式</Menu.Item>
-      <Menu.Item key="chatML">ChatML 格式</Menu.Item>
-      <Menu.Item key="raw">原始格式</Menu.Item>
-    </Menu>
+    <Menu onClick={({ key }) => handleExportDataset(key as string)} items={[
+      {
+        key: 'llamaFactory',
+        label: 'LLaMA-Factory 格式',
+      },
+      {
+        key: 'alpaca',
+        label: 'Alpaca 格式',
+      },
+      {
+        key: 'chatML',
+        label: 'ChatML 格式',
+      },
+      {
+        key: 'raw',
+        label: '原始格式',
+      },
+    ]} />
   );
 
   return (
@@ -823,44 +854,52 @@ export default function DatasetDetailPage() {
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <Button
-            icon={<ArrowLeftOutlined />}
+            variant="outline"
             onClick={handleBack}
             style={{ marginRight: '8px' }}
+            className="flex items-center"
           >
+            <ArrowLeftOutlined className="mr-1" />
             返回
           </Button>
           <span style={{ fontSize: '18px', fontWeight: 'bold' }}>数据集: {dataset.name}</span>
         </div>
-        <Space>
+        <div className="flex gap-2">
           <Button
-            icon={<DownloadOutlined />}
+            variant="outline"
             onClick={handleExportEntireDataset}
-            loading={entireDatasetLoading}
+            disabled={entireDatasetLoading}
+            className="flex items-center"
           >
+            <DownloadOutlined className="mr-1" />
             导出整体数据集
           </Button>
           <Button
-            icon={<ReloadOutlined />}
+            variant="outline"
             onClick={fetchDataset}
+            className="flex items-center"
           >
+            <ReloadOutlined className="mr-1" />
             刷新
           </Button>
           <Button
-            type="primary"
-            icon={<EditOutlined />}
+            variant="default"
             onClick={handleEdit}
+            className="flex items-center"
           >
+            <EditOutlined className="mr-1" />
             编辑
           </Button>
           <Button
-            danger
-            icon={<DeleteOutlined />}
+            variant="destructive"
             onClick={handleDelete}
-            loading={deleting}
+            disabled={deleting}
+            className="flex items-center"
           >
+            <DeleteOutlined className="mr-1" />
             删除
           </Button>
-        </Space>
+        </div>
       </div>
 
       <div style={{ display: 'flex', height: 'calc(100vh - 220px)', minHeight: '400px' }}>
@@ -881,43 +920,106 @@ export default function DatasetDetailPage() {
         </Card>
 
         {/* 右侧文件内容 */}
-        <Card
-          style={{ flex: 1, height: '100%', overflow: 'auto' }}
-          title={selectedFile || '微调数据列表'}
-          extra={
-            selectedFile && (
-              <Button
-                type="primary"
-                onClick={handleCreateTask}
-                disabled={fileLoading}
-              >
+        <Card style={{ flex: 1, height: '100%', overflow: 'auto' }}>
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle>{selectedFile || '微调数据列表'}</CardTitle>
+            {selectedFile && (
+              <Button onClick={handleCreateTask} disabled={fileLoading}>
                 创建微调任务
               </Button>
-            )
-          }
-        >
-          {fileLoading ? (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <Skeleton className="h-32 w-full" />
-              <div style={{ marginTop: '10px' }}>加载文件内容...</div>
-            </div>
-          ) : selectedFile ? (
-            <div>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>关联的微调任务</div>
-              <Table
-                dataSource={tasksList.filter(task => task.documentCatalogId === selectedCatalog?.catalog?.id)}
-                columns={columns}
-                rowKey="id"
-                loading={tasksLoading}
-                pagination={false}
-                size="small"
-              />
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <div>请从左侧选择一个文件来查看内容并创建微调任务</div>
-            </div>
-          )}
+            )}
+          </CardHeader>
+          <CardContent>
+            {fileLoading ? (
+              <div style={{ textAlign: 'center', padding: '50px' }}>
+                <Skeleton className="h-32 w-full" />
+                <div style={{ marginTop: '10px' }}>加载文件内容...</div>
+              </div>
+            ) : selectedFile ? (
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>关联的微调任务</div>
+                {tasksLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                    <span className="ml-2">加载中...</span>
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>任务名称</TableHead>
+                          <TableHead>创建时间</TableHead>
+                          <TableHead>状态</TableHead>
+                          <TableHead>操作</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {tasksList.filter(task => task.documentCatalogId === selectedCatalog?.catalog?.id).length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center">暂无关联的微调任务</TableCell>
+                          </TableRow>
+                        ) : (
+                          tasksList
+                            .filter(task => task.documentCatalogId === selectedCatalog?.catalog?.id)
+                            .map((task) => (
+                              <TableRow key={task.id}>
+                                <TableCell>{task.name}</TableCell>
+                                <TableCell>{new Date(task.createdAt).toLocaleString()}</TableCell>
+                                <TableCell>{renderStatus(task.status)}</TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleViewTask(task.id)}
+                                    >
+                                      查看
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-red-500 hover:text-red-600"
+                                      onClick={() => handleDeleteTask(task.id)}
+                                      disabled={deletingTask}
+                                    >
+                                      删除
+                                    </Button>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          disabled={task.status === 1}
+                                        >
+                                          {task.status === 1 ? '任务运行中' : '启动'}
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent>
+                                        <DropdownMenuItem onClick={() => handleAdvancedStartTask(task.id, task.status)}>
+                                          启动任务
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleImmediateStartTask(task.id, task.status)}>
+                                          立即启动
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '50px' }}>
+                <div>请从左侧选择一个文件来查看内容并创建微调任务</div>
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
 
@@ -927,7 +1029,6 @@ export default function DatasetDetailPage() {
         open={isModalVisible}
         onCancel={handleCancelTask}
         footer={null}
-        destroyOnClose
       >
         <Form
           form={taskForm}
@@ -951,10 +1052,19 @@ export default function DatasetDetailPage() {
 
           <Form.Item>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button style={{ marginRight: '8px' }} onClick={handleCancelTask}>
+              <Button
+                variant="outline"
+                style={{ marginRight: '8px' }}
+                onClick={handleCancelTask}
+                type="button"
+              >
                 取消
               </Button>
-              <Button type="primary" htmlType="submit" loading={creating}>
+              <Button
+                variant="default"
+                type="submit"
+                disabled={creating}
+              >
                 创建
               </Button>
             </div>
@@ -969,9 +1079,6 @@ export default function DatasetDetailPage() {
         onCancel={handleCloseTaskDetails}
         footer={
           <Space>
-            <Dropdown overlay={exportMenu} disabled={!taskDetails?.dataset}>
-              <Button icon={<DownloadOutlined />}>导出数据集</Button>
-            </Dropdown>
             <Button onClick={handleCloseTaskDetails}>
               关闭
             </Button>
@@ -1055,7 +1162,6 @@ export default function DatasetDetailPage() {
         footer={[
           <Button
             key="download"
-            type="primary"
             icon={<DownloadOutlined />}
             loading={exportLoading}
             onClick={downloadExportFile}
@@ -1071,25 +1177,21 @@ export default function DatasetDetailPage() {
         <div style={{ marginBottom: '16px' }}>
           <Space>
             <Button
-              type={exportFormat === 'llamaFactory' ? 'primary' : 'default'}
               onClick={() => handleExportDataset('llamaFactory')}
             >
               LLaMA-Factory
             </Button>
             <Button
-              type={exportFormat === 'alpaca' ? 'primary' : 'default'}
               onClick={() => handleExportDataset('alpaca')}
             >
               Alpaca
             </Button>
             <Button
-              type={exportFormat === 'chatML' ? 'primary' : 'default'}
               onClick={() => handleExportDataset('chatML')}
             >
               ChatML
             </Button>
             <Button
-              type={exportFormat === 'raw' ? 'primary' : 'default'}
               onClick={() => handleExportDataset('raw')}
             >
               原始格式
@@ -1121,8 +1223,8 @@ export default function DatasetDetailPage() {
           </div>
         ) : (
           <div style={{ height: '100%' }}>
-            <Row gutter={16} style={{ height: '100%' }}>
-              <Col span={12} style={{ height: '100%' }}>
+            <div className="grid grid-cols-2 gap-4" style={{ height: '100%' }}>
+              <div className="col-span-1" style={{ height: '100%' }}>
                 <div style={{ marginBottom: '16px', height: '100%' }}>
                   <div style={{ position: 'relative', height: '100%' }}>
                     <TextArea
@@ -1145,43 +1247,37 @@ export default function DatasetDetailPage() {
                     />
                   </div>
                 </div>
-              </Col>
+              </div>
 
               {/* 右侧 - 微调结果 */}
-              <Col span={12} style={{ height: '100%' }}>
-                <Card
-                  title="微调进度"
-                  style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-                  bodyStyle={{ flex: 1, overflow: 'auto' }}
-                  extra={
-                    <Button
-                      type="primary"
-                      icon={<CaretRightOutlined />}
-                      onClick={handleStartFinetuning}
-                      loading={isFinetuning}
-                      disabled={isFinetuning}
-                    >
+              <div className="col-span-1" style={{ height: '100%' }}>
+                <Card style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <CardHeader className="flex items-center justify-between">
+                    <CardTitle>微调进度</CardTitle>
+                    <Button onClick={handleStartFinetuning} loading={isFinetuning} disabled={isFinetuning} className="shrink-0">
+                      <CaretRightOutlined className="mr-1" />
                       开始微调
                     </Button>
-                  }
-                >
-                  <div
-                    style={{
-                      flex: 1,
-                      overflow: 'auto',
-                      border: '1px solid #e8e8e8',
-                      borderRadius: '4px',
-                      backgroundColor: '#f5f5f5',
-                      padding: '12px',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-all'
-                    }}
-                  >
-                    {taskProgress || '点击"开始微调"开始执行任务...'}
-                  </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 overflow-auto">
+                    <div
+                      style={{
+                        flex: 1,
+                        overflow: 'auto',
+                        border: '1px solid #e8e8e8',
+                        borderRadius: '4px',
+                        backgroundColor: '#f5f5f5',
+                        padding: '12px',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all'
+                      }}
+                    >
+                      {taskProgress || '点击"开始微调"开始执行任务...'}
+                    </div>
+                  </CardContent>
                 </Card>
-              </Col>
-            </Row>
+              </div>
+            </div>
 
             <div style={{ marginTop: '16px', textAlign: 'right' }}>
               <Button onClick={handleCloseAdvancedStartModal}>

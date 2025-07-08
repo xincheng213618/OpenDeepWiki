@@ -9,6 +9,21 @@ namespace KoalaWiki.Functions;
 public class FileFunction(string gitPath)
 {
     /// <summary>
+    /// 获取当前仓库压缩结构
+    /// </summary>
+    public string GetTree()
+    {
+        var ignoreFiles = DocumentsHelper.GetIgnoreFiles(gitPath);
+        var pathInfos = new List<PathInfo>();
+
+        // 递归扫描目录所有文件和目录
+        DocumentsHelper.ScanDirectory(gitPath, pathInfos, ignoreFiles);
+        
+        var fileTree = FileTreeBuilder.BuildTree(pathInfos, gitPath);
+        return FileTreeBuilder.ToCompactString(fileTree);
+    }
+    
+    /// <summary>
     /// 获取文件基本信息
     /// </summary>
     /// <returns></returns>

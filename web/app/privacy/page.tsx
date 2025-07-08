@@ -1,11 +1,18 @@
-'use client';
+"use client"
 
-import { Layout, Card, Breadcrumb } from 'antd';
-import { HomeOutlined } from '@ant-design/icons';
-import Link from 'next/link';
-import { marked } from 'marked';
-import { useEffect, useState } from 'react';
-const { Content } = Layout;
+import { Card } from "@/components/ui/card"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Home } from "lucide-react"
+import Link from "next/link"
+import { marked } from "marked"
+import { useEffect, useState } from "react"
 
 const privacyContent = `# OpenDeepWiki 隐私政策
 
@@ -96,42 +103,42 @@ const privacyContent = `# OpenDeepWiki 隐私政策
 本隐私政策受中华人民共和国法律管辖。在法律允许的范围内，我们保留对本政策进行解释和修改的权利。`;
 
 export default function PrivacyPolicyPage() {
-  const [htmlContent, setHtmlContent] = useState('');
+  const [htmlContent, setHtmlContent] = useState("")
 
   useEffect(() => {
     const processMarkdown = async () => {
-      const html = await marked.parse(privacyContent);
-      setHtmlContent(html);
+      const html = await marked.parse(privacyContent)
+      setHtmlContent(html)
     }
-    processMarkdown();
-  }, []);
-  return (
-    <Layout style={{ minHeight: '100vh', background: '#f8fafc' }}>
-      <Content style={{ padding: '24px', maxWidth: 1200, margin: '0 auto' }}>
-        <Card style={{
-          borderRadius: 12,
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)'
-        }}>
-          <Breadcrumb style={{ marginBottom: 24 }}>
-            <Breadcrumb.Item>
-              <Link href="/">
-                <HomeOutlined /> 首页
-              </Link>
-            </Breadcrumb.Item>
-            <Breadcrumb.Item>隐私政策</Breadcrumb.Item>
-          </Breadcrumb>
+    processMarkdown()
+  }, [])
 
+  return (
+    <div className="bg-background min-h-screen py-6">
+      <div className="container mx-auto max-w-4xl space-y-6 px-4">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/" className="inline-flex items-center gap-1">
+                  <Home className="h-4 w-4" /> 首页
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>隐私政策</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        <Card className="p-6">
           <div
-            className="markdown-content"
+            className="prose max-w-none text-sm leading-7"
             dangerouslySetInnerHTML={{ __html: htmlContent }}
-            style={{
-              fontSize: 16,
-              lineHeight: 1.8,
-              color: '#1e293b'
-            }}
           />
         </Card>
-      </Content>
-    </Layout>
-  );
+      </div>
+    </div>
+  )
 } 

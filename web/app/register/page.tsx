@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { message } from 'antd'
-import { GithubIcon } from 'lucide-react'
+import { toast } from 'sonner'
+import { GithubIcon, Loader2 } from 'lucide-react'
 import { GoogleIcon } from '@/components/icons/GoogleIcon'
 
 import { Button } from "@/components/ui/button"
@@ -62,27 +62,27 @@ export default function RegisterPage() {
 
     // 表单验证
     if (!username || username.length < 4) {
-      message.error('用户名至少4个字符')
+      toast.error('用户名至少4个字符')
       return
     }
 
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      message.error('请输入有效的邮箱地址')
+      toast.error('请输入有效的邮箱地址')
       return
     }
 
     if (!password || password.length < 8) {
-      message.error('密码至少8个字符')
+      toast.error('密码至少8个字符')
       return
     }
 
     if (password !== confirmPassword) {
-      message.error('两次输入的密码不一致')
+      toast.error('两次输入的密码不一致')
       return
     }
 
     if (!agreement) {
-      message.error('请阅读并同意用户协议和隐私政策')
+      toast.error('请阅读并同意用户协议和隐私政策')
       return
     }
 
@@ -94,6 +94,7 @@ export default function RegisterPage() {
       console.log('注册响应:', data)
       if (data.success) {
         // 登录成功
+        toast.success('注册成功')
         // 保存登录状态
         localStorage.setItem('userToken', data.token)
         localStorage.setItem('refreshToken', data.refreshToken)
@@ -112,11 +113,11 @@ export default function RegisterPage() {
         }, 1000)
       } else {
         // 登录失败
-        message.error(data.errorMessage || '注册失败')
+        toast.error(data.errorMessage || '注册失败')
       }
     } catch (error) {
       console.error('注册错误:', error)
-      message.error('注册过程中发生错误，请重试')
+      toast.error('注册过程中发生错误，请重试')
     } finally {
       setLoading(false)
     }
@@ -240,6 +241,7 @@ export default function RegisterPage() {
                       </Label>
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {loading ? '注册中...' : '注册'}
                     </Button>
                   </div>

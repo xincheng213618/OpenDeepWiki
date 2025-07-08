@@ -29,9 +29,6 @@ import {
 import {
   getDetailedStatistics,
   DetailedStatistics,
-  SystemStats,
-  RecentRepository,
-  RecentUser
 } from '../../services/dashboardService';
 
 export default function Dashboard() {
@@ -193,7 +190,7 @@ export default function Dashboard() {
         alignItems: 'center', 
         height: '400px'
       }}>
-        <Text style={{ color: '#8c8c8c' }}>暂无数据</Text>
+        <span className="text-muted-foreground">暂无数据</span>
       </div>
     );
   }
