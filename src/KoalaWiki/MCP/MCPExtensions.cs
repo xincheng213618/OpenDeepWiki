@@ -52,7 +52,7 @@ public static class MCPExtensions
                 {
                     new()
                     {
-                        Name = mcpName,
+                        Name = mcpName + "_GenerateDocument",
                         Description =
                             descript,
                         InputSchema =
@@ -64,7 +64,7 @@ public static class MCPExtensions
                 {
                     tools.Add(new Tool()
                     {
-                        Name = "RagCode-Search",
+                        Name = $"{mcpName}-Search",
                         Description =
                             $"Query {owner}/{name} repository for relevant code snippets and documentation based on user inquiries.",
                         InputSchema = JsonSerializer.Deserialize<JsonElement>("""
@@ -94,7 +94,7 @@ public static class MCPExtensions
 
                 tools.Add(new Tool()
                 {
-                    Name = "GitFile-" + nameof(FileFunction.ReadFileFromLineAsync),
+                    Name = $"{mcpName}-" + nameof(FileFunction.ReadFileFromLineAsync),
                     Description =
                         "Returns the file content from the specified starting line to the ending line (inclusive). If the total output length exceeds 10,000 characters, only the first 10,000 characters are returned, the content order is consistent with the original file, and the original line breaks are retained.",
                     InputSchema = JsonSerializer.Deserialize<JsonElement>(
@@ -134,7 +134,7 @@ public static class MCPExtensions
 
                 tools.Add(new Tool()
                 {
-                    Name = "GiteFile-" + nameof(FileFunction.GetTree),
+                    Name = $"{mcpName}-" + nameof(FileFunction.GetTree),
                     Description = "Returns the file tree of the repository, including directories and files.",
                     InputSchema = JsonSerializer.Deserialize<JsonElement>("""
                                                                           {
@@ -157,8 +157,16 @@ public static class MCPExtensions
                 var owner = context.Server.ServerOptions.Capabilities!.Experimental["owner"].ToString().ToLower();
                 var name = context.Server.ServerOptions.Capabilities.Experimental["name"].ToString().ToLower();
 
+
+                // 删除特殊字符串
+                var mcpName = $"{owner}_{name}";
+                mcpName = Regex.Replace(mcpName, @"[^a-zA-Z0-9]", "");
+                mcpName = mcpName.Length > 50 ? mcpName.Substring(0, 50) : mcpName;
+                mcpName = mcpName.ToLower();
+
+
                 var functionName = context.Params.Name;
-                if (functionName.Equals("GitFile-" + nameof(FileFunction.ReadFileFromLineAsync),
+                if (functionName.Equals(mcpName + "-" + nameof(FileFunction.ReadFileFromLineAsync),
                         StringComparison.CurrentCulture))
                 {
                     var items = context.Params?.Arguments?["items"];
@@ -194,7 +202,7 @@ public static class MCPExtensions
 
                     var result = await
                         fileFunction.ReadFileFromLineAsync(
-                            JsonSerializer.Deserialize<ReadFileItemInput[]>(itemsElement,JsonSerializerOptions.Web));
+                            JsonSerializer.Deserialize<ReadFileItemInput[]>(itemsElement, JsonSerializerOptions.Web));
 
                     sw.Stop();
 
@@ -213,7 +221,8 @@ public static class MCPExtensions
                         ]
                     };
                 } // 在这里需要根据不同方法名称调用不同实现
-                if (functionName.Equals("GiteFile-" + nameof(FileFunction.GetTree),
+
+                if (functionName.Equals(mcpName + "-" + nameof(FileFunction.GetTree),
                         StringComparison.CurrentCulture))
                 {
                     var dbContext = context.Services!.GetService<IKoalaWikiContext>();
@@ -249,7 +258,7 @@ public static class MCPExtensions
                         ]
                     };
                 }
-                else if (functionName.Equals("RagCode-Search", StringComparison.CurrentCulture) &&
+                else if (functionName.Equals(mcpName + "-Search", StringComparison.CurrentCulture) &&
                          OpenAIOptions.EnableMem0)
                 {
                     var dbContext = context.Services!.GetService<IKoalaWikiContext>();
