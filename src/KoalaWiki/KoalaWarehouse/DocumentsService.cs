@@ -300,7 +300,7 @@ public partial class DocumentsService
         var codeDirSimplifier = analysisModel.Plugins["CodeAnalysis"]["CodeDirSimplifier"];
 
         // 使用优化的目录结构作为输入
-        var optimizedInput = DocumentsHelper.GetCatalogueOptimized(path, "unix");
+        var optimizedInput = DocumentsHelper.GetCatalogueOptimized(path, "compact");
         activity?.SetTag("optimized_input.length", optimizedInput?.Length ?? 0);
 
         var sb = new StringBuilder();
