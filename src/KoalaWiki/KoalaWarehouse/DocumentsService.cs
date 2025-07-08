@@ -10,6 +10,7 @@ using KoalaWiki.Functions;
 using KoalaWiki.KoalaWarehouse.DocumentPending;
 using KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 using KoalaWiki.KoalaWarehouse.Overview;
+using KoalaWiki.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -300,7 +301,7 @@ public partial class DocumentsService
         var codeDirSimplifier = analysisModel.Plugins["CodeAnalysis"]["CodeDirSimplifier"];
 
         // 使用优化的目录结构作为输入
-        var optimizedInput = DocumentsHelper.GetCatalogueOptimized(path, "compact");
+        var optimizedInput = DocumentsHelper.GetCatalogueOptimized(path, DocumentOptions.CatalogueFormat);
         activity?.SetTag("optimized_input.length", optimizedInput?.Length ?? 0);
 
         var sb = new StringBuilder();
