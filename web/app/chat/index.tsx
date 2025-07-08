@@ -304,7 +304,11 @@ const FloatingChat: React.FC<FloatingChatProps> = ({
           {/* 聊天内容区域 - 最小化时隐藏 */}
           {!isMinimized && (
             <div className={styles.chatContent}>
-              <Workspace organizationName={organizationName} name={repositoryName} />
+              <Workspace 
+                appId={appId}
+                organizationName={organizationName}
+                name={repositoryName}
+              />
             </div>
           )}
         </Card>

@@ -297,7 +297,6 @@ export default async function DocumentPage({
         />
       </DocsBody>
       <FloatingChatClient
-        appId={`builtin_${owner}_${name}`}
         organizationName={owner}
         repositoryName={name}
         title={`${name} AI 助手`}

@@ -3,7 +3,7 @@
 import FloatingChat from '@/app/chat';
 
 interface FloatingChatClientProps {
-  appId: string;
+  appId?: string;
   organizationName: string;
   repositoryName: string;
   title: string;
@@ -13,7 +13,6 @@ interface FloatingChatClientProps {
 }
 
 export default function FloatingChatClient({
-  appId,
   organizationName,
   repositoryName,
   title,
@@ -23,7 +22,6 @@ export default function FloatingChatClient({
 }: FloatingChatClientProps) {
   return (
     <FloatingChat
-      appId={appId}
       organizationName={organizationName}
       repositoryName={repositoryName}
       title={title}

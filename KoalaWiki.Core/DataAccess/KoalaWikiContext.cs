@@ -379,11 +379,17 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
 
             options.Property(x => x.Mcps)
                 .HasConversion((mcps => JsonSerializer.Serialize(mcps, JsonSerializerOptions.Web)),
-                    (s => JsonSerializer.Deserialize<List<AppConfigMcp>>(s, JsonSerializerOptions.Web)));
+                    (s => string.IsNullOrEmpty(s)
+                        ? (new List<AppConfigMcp>())
+                        : (JsonSerializer.Deserialize<List<AppConfigMcp>>(s, JsonSerializerOptions.Web) ??
+                           new List<AppConfigMcp>())));
 
             options.Property(x => x.RecommendedQuestions)
                 .HasConversion(x => JsonSerializer.Serialize(x, JsonSerializerOptions.Web),
-                    (s => JsonSerializer.Deserialize<List<string>>(s, JsonSerializerOptions.Web)));
+                    (s => string.IsNullOrEmpty(s)
+                        ? new List<string>()
+                        : (JsonSerializer.Deserialize<List<string>>(s, JsonSerializerOptions.Web) ??
+                           new List<string>())));
 
             options.HasComment("应用配置表");
         });

@@ -1,4 +1,6 @@
-/* OpenAI风格的简洁对话设计 - 无背景色，无边框，内容为主 */
+.ant-highlighter-shiki .shiki {
+    color: hsl(var(--muted)) !important;
+}
 
 /* 确保消息内容的样式 */
 .chat-message-content {

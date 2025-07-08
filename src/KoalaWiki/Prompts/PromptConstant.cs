@@ -24,6 +24,8 @@ public class PromptConstant
         FirstDeepChat = 20,
 
         Responses = 30,
+        
+        ResponsesDeepResearch = 40
     }
 
     public enum Mem0

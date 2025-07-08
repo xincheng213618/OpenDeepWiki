@@ -7,19 +7,20 @@ import ChatInput from "../components/ChatInput";
 import Message from "./message";
 import { chatService } from "../services/chatService";
 import { chatDB, ChatMessage, Conversation } from "../utils/indexedDB";
-import { MessageContentType, MessageItem, MessageContentReasoningItem, MessageContentTextItem, MessageContentToolItem, MessageContentGitIssuesItem } from "../../types/chat";
+import { MessageContentType, MessageItem, MessageContentReasoningItem, MessageContentTextItem, MessageContentToolItem, MessageContentGitIssuesItem, Base64Content, MessageContentImageItem } from "../../types/chat";
 
 interface WorkspaceProps {
     organizationName: string;
     name: string;
+    appId?: string;
 }
 
 
-export default function Workspace({ organizationName, name }: WorkspaceProps) {
+export default function Workspace({ organizationName, name, appId }: WorkspaceProps) {
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [conversationId, setConversationId] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [showClearDialog, setShowClearDialog] = useState(false);
+    const [deepResearch, setDeepResearch] = useState<boolean>(false);
     const abortControllerRef = useRef<AbortController>(
         new AbortController()
     );
@@ -96,7 +97,7 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
         });
     }
 
-    const handleSendMessage = async (message: string) => {
+    const handleSendMessage = async (message: string, imageContents?: Base64Content[]) => {
         if (isLoading) {
             return;
         }
@@ -104,15 +105,25 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
         setIsLoading(true);
 
         try {
+            // 创建用户消息内容
+            const userMessageContent: (MessageContentTextItem | MessageContentImageItem)[] = [
+                {
+                    type: MessageContentType.Text,
+                    content: message
+                } as MessageContentTextItem
+            ];
+
+            // 如果有图片，添加到content中
+            if (imageContents && imageContents.length > 0) {
+                userMessageContent.push({
+                    type: MessageContentType.Image,
+                    imageContents: imageContents
+                } as MessageContentImageItem);
+            }
 
             const userMessage = {
                 id: uuidv4(),
-                content: [
-                    {
-                        type: MessageContentType.Text,
-                        content: message
-                    }
-                ],
+                content: userMessageContent,
                 role: "user",
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -169,6 +180,8 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                 }),
                 organizationName: organizationName,
                 name: name,
+                deepResearch: deepResearch,
+                appId: appId,
                 abortController: abortControllerRef.current,
             }
 
@@ -363,14 +376,9 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
     }
 
     const handleClear = () => {
-        setShowClearDialog(true);
-    }
-
-    const handleConfirmClear = () => {
         setMessages([]);
         // 清空IndexedDB
         chatDB.clearMessages(conversationId);
-        setShowClearDialog(false);
     }
 
     return (
@@ -430,29 +438,11 @@ export default function Workspace({ organizationName, name }: WorkspaceProps) {
                         onClear={handleClear}
                         onSend={handleSendMessage}
                         onStop={handleStopGeneration}
+                        onDeepResearch={() => setDeepResearch(!deepResearch)}
+                        deepResearch={deepResearch}
                     />
                 </div>
             </div>
-
-            {/* 清空消息确认对话框 */}
-            <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>确定要清空消息吗？</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <p className="text-sm text-muted-foreground">清空后将无法恢复</p>
-                    </div>
-                    <DialogFooter className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setShowClearDialog(false)}>
-                            取消
-                        </Button>
-                        <Button variant="destructive" onClick={handleConfirmClear}>
-                            确定清空
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
             <style jsx>{`
                 .workspace-container {

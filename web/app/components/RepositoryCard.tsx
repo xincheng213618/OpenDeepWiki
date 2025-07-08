@@ -127,9 +127,18 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
   return (
     <Card 
       className="cursor-pointer transition-all hover:shadow-md border-border/50 hover:border-border"
+      style={{
+        height:'230px',
+        minHeight:'230px',
+        maxHeight:'230px',
+      }}
       onClick={handleCardClick}
     >
-      <CardHeader className="pb-4">
+      <CardHeader style={{
+        height:'140px',
+        minHeight:'140px',
+        maxHeight:'140px',
+      }} className="pb-4">
         <div className="flex items-start gap-3">
           <Avatar className="h-10 w-10 mt-1">
             <AvatarImage src={avatarUrl || ''} alt={repository.organizationName} />

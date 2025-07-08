@@ -157,7 +157,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
     // 解析Markdown内容，提取thinking代码块
     const parseThinkingBlocks = (content: string) => {
         // 检查是否包含```thinking开头
-        const hasThinkingStart = content.includes('```thinking');
+        const hasThinkingStart = content.includes('<thinking>');
 
         if (!hasThinkingStart) {
             // 没有thinking块，返回正常文本内容
@@ -168,7 +168,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
         }
 
         // 检查是否有完整的thinking块（包含结束标签）
-        const thinkingRegex = /```thinking\n([\s\S]*?)\n```/g;
+        const thinkingRegex = /<thinking>\n([\s\S]*?)\n<\/thinking>/g;
         const parts = [];
         let lastIndex = 0;
         let match;
@@ -215,9 +215,9 @@ export default function AssistantMessage({ messageItem, handleDelete,
 
         // 如果有```thinking开头但没有完整的闭合标签，说明是正在输出的thinking内容
         // 提取```thinking之后的所有内容作为推理内容
-        const thinkingStartIndex = content.indexOf('```thinking');
+        const thinkingStartIndex = content.indexOf('<thinking>');
         const beforeThinking = content.slice(0, thinkingStartIndex).trim();
-        const thinkingContent = content.slice(thinkingStartIndex + '```thinking'.length).replace(/^\n/, '').trim();
+        const thinkingContent = content.slice(thinkingStartIndex + '<thinking>'.length).replace(/^\n/, '').trim();
 
         const result = [];
 
@@ -778,17 +778,6 @@ export default function AssistantMessage({ messageItem, handleDelete,
         )
     }
 
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
-    const handleDeleteClick = () => {
-        setShowDeleteDialog(true);
-    };
-
-    const handleConfirmDelete = () => {
-        handleDelete(messageItem.id);
-        setShowDeleteDialog(false);
-    };
-
     const handleCopyClick = () => {
         // 提取所有文本和推理内容进行复制
         const allContent = messageItem.content as any[];
@@ -814,7 +803,7 @@ export default function AssistantMessage({ messageItem, handleDelete,
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleDeleteClick}
+                    onClick={() => handleDelete(messageItem.id)}
                     className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                 >
                     <Trash2 size={14} />
@@ -832,26 +821,6 @@ export default function AssistantMessage({ messageItem, handleDelete,
                 key={messageItem.id}
                 role="assistant"
             />
-
-            {/* 删除确认对话框 */}
-            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>确定删除该消息吗？</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <p className="text-sm text-muted-foreground">删除后将无法恢复</p>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                            取消
-                        </Button>
-                        <Button variant="destructive" onClick={handleConfirmDelete}>
-                            确定删除
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
 
             <Dialog open={!!fullScreenFile} onOpenChange={(open) => !open && handleCloseFullScreen()}>
                 <DialogContent className="max-w-[90vw] max-h-[90vh] p-0">

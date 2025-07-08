@@ -1,10 +1,7 @@
 import { ChatItem } from "@/components/ui/chat-item";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Markdown } from "@lobehub/ui";
-import { useState } from "react";
 import { Base64Content, MessageContentAudioItem, MessageContentCodeItem, MessageContentFileItem, MessageContentImageItem, MessageContentItem, MessageContentLinkItem, MessageContentReasoningItem, MessageContentTableItem, MessageContentTextItem, MessageContentToolItem, MessageContentType, MessageItem } from "../../../../types/chat";
 
 interface UserMessageProps {
@@ -13,15 +10,9 @@ interface UserMessageProps {
 }
 
 export default function UserMessage({ messageItem, handleDelete }: UserMessageProps) {
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
     const handleDeleteClick = () => {
-        setShowDeleteDialog(true);
-    }
-
-    const handleConfirmDelete = () => {
         handleDelete(messageItem.id);
-        setShowDeleteDialog(false);
+        toast.success('消息已删除');
     }
 
     const handleCopyClick = () => {
@@ -95,34 +86,12 @@ export default function UserMessage({ messageItem, handleDelete }: UserMessagePr
     }
 
     return (
-        <>
-            <ChatItem
-                className="user-message"
-                actions={renderActions}
-                key={messageItem.id}
-                renderMessage={renderMessage}
-                role="user"
-            />
-
-            {/* 删除确认对话框 */}
-            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>确定删除该消息吗？</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <p className="text-sm text-muted-foreground">删除后将无法恢复</p>
-                    </div>
-                    <DialogFooter className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                            取消
-                        </Button>
-                        <Button variant="destructive" onClick={handleConfirmDelete}>
-                            确定删除
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </>
+        <ChatItem
+            className="user-message"
+            actions={renderActions}
+            key={messageItem.id}
+            renderMessage={renderMessage}
+            role="user"
+        />
     )
 }

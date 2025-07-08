@@ -3,8 +3,7 @@
 
 import { Metadata } from 'next';
 import { documentById } from '../../../services/warehouseService';
-import Script from 'next/script';
-import FloatingChat from '@/app/chat';
+import Script from 'next/script';;
 
 // 获取文档内容以生成更精确的SEO元数据
 async function getDocument(owner: string, name: string, path: string) {

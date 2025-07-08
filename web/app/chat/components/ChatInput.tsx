@@ -4,11 +4,10 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { ArrowUp, Eraser, ImagePlus, Trash2, X, Loader2, Send } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Eraser, ImagePlus, Trash2, X, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Base64Content } from '../../types/chat';
+import { Toggle } from '@/components/ui/toggle';
 
 interface ChatInputProps {
   value?: string;
@@ -19,6 +18,8 @@ interface ChatInputProps {
   onStop?: () => void;
   onChange?: (value: string) => void;
   onClear?: () => void;
+  onDeepResearch?: () => void;
+  deepResearch?: boolean;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -30,11 +31,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onStop,
   onChange,
   onClear,
+  onDeepResearch,
+  deepResearch = false,
 }) => {
   const [inputValue, setInputValue] = useState(value || '');
   const [imageUploading, setImageUploading] = useState(false);
   const [imageList, setImageList] = useState<Base64Content[]>([]);
-  const [showClearDialog, setShowClearDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -49,7 +51,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       onSend?.(inputValue.trim(), imageList.length > 0 ? imageList : undefined);
       setInputValue('');
       setImageList([]);
-      
+
       // 重置文本区域高度
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
@@ -71,7 +73,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const handleClear = () => {
     setInputValue('');
     setImageList([]);
-    
+
     // 重置文本区域高度
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -109,7 +111,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         mimeType: file.type
       }]);
       setImageUploading(false);
-      
+
       // 重置input以便可以再次选择同一文件
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -162,12 +164,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
         <div className="flex flex-wrap gap-2 p-2 bg-muted/20 rounded-md border border-dashed animate-in fade-in-50 duration-300">
           {imageList.map((image, index) => (
             <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden border border-border group">
-              <img 
-                src={`data:${image.mimeType};base64,${image.data}`} 
-                alt="上传图片" 
+              <img
+                src={`data:${image.mimeType};base64,${image.data}`}
+                alt="上传图片"
                 className="w-full h-full object-cover"
               />
-              <button 
+              <button
                 onClick={() => removeImage(index)}
                 className="absolute top-1 right-1 bg-background/80 text-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
               >
@@ -189,22 +191,29 @@ const ChatInput: React.FC<ChatInputProps> = ({
           disabled={disabled || loading}
           className="min-h-[60px] max-h-[200px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-3 pb-12"
         />
-        
+
         {/* 工具栏 - 固定在底部 */}
         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-2 border-t bg-muted/10">
           <div className="flex items-center gap-1">
+            <Toggle 
+              onClick={() => {
+                onDeepResearch?.();
+              }}
+              aria-label="Toggle italic">
+              深入研究
+            </Toggle>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 rounded-full" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
                     disabled={disabled || loading || imageUploading}
                     onClick={handleUploadClick}
                   >
-                    {imageUploading ? 
-                      <Loader2 className="h-4 w-4 animate-spin" /> : 
+                    {imageUploading ?
+                      <Loader2 className="h-4 w-4 animate-spin" /> :
                       <ImagePlus className="h-4 w-4" />
                     }
                   </Button>
@@ -212,14 +221,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 <TooltipContent side="top">上传图片</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
+
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 rounded-full" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
                     disabled={!inputValue && imageList.length === 0}
                     onClick={handleClear}
                   >
@@ -229,15 +238,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 <TooltipContent side="top">清空输入</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
+
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10" 
-                    onClick={() => setShowClearDialog(true)}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      onClear?.();
+                      toast.success('已清空所有消息');
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -246,12 +258,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-          
+
           <div>
             {loading ? (
-              <Button 
-                size="sm" 
-                variant="destructive" 
+              <Button
+                size="sm"
+                variant="destructive"
                 onClick={handleStop}
                 className="h-8 px-3 rounded-full"
               >
@@ -259,7 +271,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 停止
               </Button>
             ) : (
-              <Button 
+              <Button
                 size="sm"
                 onClick={handleSend}
                 disabled={(!inputValue.trim() && imageList.length === 0) || disabled || imageUploading}
@@ -282,30 +294,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         onChange={handleImageUpload}
       />
 
-      {/* 清空消息确认对话框 */}
-      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认清空</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定要清空所有聊天消息吗？此操作无法撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                onClear?.();
-                setShowClearDialog(false);
-                toast.success('已清空所有消息');
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              确认清空
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* 删除确认弹窗相关代码已移除 */}
     </div>
   );
 };

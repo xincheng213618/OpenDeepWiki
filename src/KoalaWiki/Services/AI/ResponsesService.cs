@@ -33,11 +33,11 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
         activity?.SetTag("message.count", input.Messages?.Count ?? 0);
         activity?.SetTag("model.provider", OpenAIOptions.ModelProvider);
         activity?.SetTag("model.name", OpenAIOptions.ChatModel);
-        
+
         // URL decode parameters
         var decodedOrganizationName = HttpUtility.UrlDecode(input.OrganizationName);
         var decodedName = HttpUtility.UrlDecode(input.Name);
-        
+
         var warehouse = await koala.Warehouses
             .AsNoTracking()
             .FirstOrDefaultAsync(x =>
@@ -56,6 +56,7 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
             });
             return;
         }
+
 
         activity?.SetTag("warehouse.id", warehouse.Id);
         activity?.SetTag("warehouse.address", warehouse.Address);
@@ -118,14 +119,66 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
 
         var history = new ChatHistory();
 
-        history.AddSystemMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.Responses),
-            new KernelArguments()
+        string tree = string.Empty;
+
+        try
+        {
+            var ignoreFiles = DocumentsHelper.GetIgnoreFiles(path);
+            var pathInfos = new List<PathInfo>();
+
+            // 递归扫描目录所有文件和目录
+            DocumentsHelper.ScanDirectory(path, pathInfos, ignoreFiles);
+
+            var fileTree = FileTreeBuilder.BuildTree(pathInfos, path);
+            tree = FileTreeBuilder.ToCompactString(fileTree);
+        }
+        catch (Exception)
+        {
+            tree = warehouse.OptimizedDirectoryStructure;
+        }
+
+
+        if (input.DeepResearch)
+        {
+            history.AddSystemMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.ResponsesDeepResearch),
+                new KernelArguments()
+                {
+                    ["catalogue"] = tree,
+                    ["repository"] = warehouse.Address.Replace(".git", ""),
+                    ["repository_name"] = warehouse.Name,
+                    ["branch"] = warehouse.Branch
+                }, OpenAIOptions.DeepResearchModel));
+        }
+        else
+        {
+            history.AddSystemMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.Responses),
+                new KernelArguments()
+                {
+                    ["catalogue"] = tree,
+                    ["repository"] = warehouse.Address.Replace(".git", ""),
+                    ["repository_name"] = warehouse.Name,
+                    ["branch"] = warehouse.Branch
+                }, OpenAIOptions.DeepResearchModel));
+        }
+
+        if (!string.IsNullOrEmpty(input.AppId))
+        {
+            var appConfig = await koala.AppConfigs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.AppId == input.AppId);
+
+            if (appConfig == null)
             {
-                ["catalogue"] = warehouse.OptimizedDirectoryStructure,
-                ["repository"] = warehouse.Address.Replace(".git", ""),
-                ["repository_name"] = warehouse.Name,
-                ["branch"] = warehouse.Branch
-            }, OpenAIOptions.DeepResearchModel));
+                throw new Exception(
+                    "AppConfig is not supported in this endpoint. Please use the appropriate API for app configurations.");
+            }
+
+
+            if (!string.IsNullOrEmpty(appConfig?.Prompt))
+            {
+                history.AddUserMessage($"<system>\n{appConfig?.Prompt}\n</system>");
+            }
+        }
 
         // 添加消息历史记录
         foreach (var msg in input.Messages)
@@ -146,12 +199,14 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
                     {
                         contents.Add(new TextContent(messageContentInput.Content));
                     }
-                    else if (messageContentInput.Type == ResponsesMessageContentType.Image)
+                    else if (messageContentInput.Type == ResponsesMessageContentType.Image &&
+                             messageContentInput.ImageContents != null)
                     {
-                        // 图片内容
-                        var imageContent = new ImageContent(messageContentInput.Content);
-                        contents.Add(new BinaryContent(
-                            $"data:{imageContent.MimeType};base64,{imageContent.Data}"));
+                        foreach (var imageContent in messageContentInput.ImageContents)
+                        {
+                            contents.Add(new BinaryContent(
+                                $"data:{imageContent.MimeType};base64,{imageContent.Data}"));
+                        }
                     }
                     else
                     {

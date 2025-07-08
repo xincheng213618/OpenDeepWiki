@@ -14,6 +14,16 @@ public class ResponsesInput
     /// 仓库名称
     /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 应用ID
+    /// </summary>
+    public string? AppId { get; set; }
+
+    /// <summary>
+    /// 是否开启深度研究
+    /// </summary>
+    public bool DeepResearch { get; set; } = false;
 }
 
 public class ResponsesMessageInput
@@ -84,7 +94,7 @@ public static class ResponsesMessageContentType
     // Reasoning = 'reasoning',
 }
 
-public interface ResponsesMessageContentBase64Input
+public class ResponsesMessageContentBase64Input
 {
     public string Data { get; set; }
 

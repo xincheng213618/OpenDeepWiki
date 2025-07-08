@@ -32,7 +32,6 @@ export default async function RepositoryLayoutServer({
 }) {
   
   const { catalogData, lastUpdated } = await getRepositoryData(owner, name, branch);
-  console.log('Test',catalogData,owner,name,branch);
   
   const processTreeItems = (items: any[]): any[] => {
     return items.map((item: any) => ({
