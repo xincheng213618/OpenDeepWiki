@@ -192,4 +192,61 @@ public static class FileTreeBuilder
         
         return paths;
     }
-} 
+    
+    /// <summary>
+    /// 将文件树转换为Unix风格的树形结构
+    /// 类似于 Unix tree 命令的输出效果
+    /// 使用 ├── 和 └── 等字符来构建可视化的树形结构
+    /// </summary>
+    /// <param name="node">文件树节点</param>
+    /// <param name="prefix">当前行的前缀</param>
+    /// <param name="isLast">是否为父节点的最后一个子节点</param>
+    /// <returns>Unix风格的树形字符串</returns>
+    public static string ToUnixTree(FileTreeNode node, string prefix = "", bool isLast = true)
+    {
+        var sb = new StringBuilder();
+        
+        // 根节点特殊处理
+        if (string.IsNullOrEmpty(prefix))
+        {
+            sb.AppendLine(".");
+            foreach (var child in node.Children.OrderBy(x => x.Value.IsFile).ThenBy(x => x.Key))
+            {
+                var isLastChild = child.Equals(node.Children.OrderBy(x => x.Value.IsFile).ThenBy(x => x.Key).Last());
+                sb.Append(ToUnixTree(child.Value, "", isLastChild, child.Key));
+            }
+        }
+        
+        return sb.ToString();
+    }
+    
+    /// <summary>
+    /// Unix风格树形结构的递归实现
+    /// </summary>
+    private static string ToUnixTree(FileTreeNode node, string prefix, bool isLast, string nodeName)
+    {
+        var sb = new StringBuilder();
+        
+        // 当前节点的连接符
+        var connector = isLast ? "└── " : "├── ";
+        
+        // 输出当前节点
+        sb.AppendLine($"{prefix}{connector}{nodeName}{(node.IsDirectory ? "/" : "")}");
+        
+        // 如果是目录且有子节点，递归处理子节点
+        if (node.IsDirectory && node.Children.Count > 0)
+        {
+            var childPrefix = prefix + (isLast ? "    " : "│   ");
+            var sortedChildren = node.Children.OrderBy(x => x.Value.IsFile).ThenBy(x => x.Key).ToList();
+            
+            for (int i = 0; i < sortedChildren.Count; i++)
+            {
+                var child = sortedChildren[i];
+                var isLastChild = i == sortedChildren.Count - 1;
+                sb.Append(ToUnixTree(child.Value, childPrefix, isLastChild, child.Key));
+            }
+        }
+        
+        return sb.ToString();
+    }
+}
