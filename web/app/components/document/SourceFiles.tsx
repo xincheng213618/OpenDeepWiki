@@ -1,10 +1,9 @@
 'use client'
-import React, { useState } from 'react';
-import { Collapse, List, Typography, Space } from 'antd';
-import { FileOutlined, CaretRightOutlined, GithubFilled } from '@ant-design/icons';
-import Link from 'next/link';
 
-const { Text } = Typography;
+import React from 'react';
+import Link from 'next/link';
+import { Github } from 'lucide-react';
+import { CollapsibleCard } from '@/components/ui/collapsible';
 
 interface SourceFile {
   documentFileItemId: string;
@@ -17,77 +16,38 @@ interface SourceFile {
 
 interface SourceFilesProps {
   fileSource: SourceFile[];
-  owner: string;
-  name: string;
-  token: any;
-  git:string;
+  git: string;
   branch?: string;
 }
 
 const SourceFiles: React.FC<SourceFilesProps> = ({
   fileSource,
-  owner,
-  name,
-  token,
   git,
-  branch,
+  branch = 'main',
 }) => {
-  const [activeKey, setActiveKey] = useState<string | string[]>([]);
+  if (!fileSource?.length) return null;
 
   return (
-    <Collapse
-      ghost
-      expandIcon={({ isActive }) => (
-        <CaretRightOutlined 
-          rotate={isActive ? 90 : 0}
-          style={{ color: token.colorTextTertiary }}
-        />
-      )}
-      activeKey={activeKey}
-      onChange={(key) => setActiveKey(key)}
-      style={{ 
-        marginBottom: token.marginMD,
-        backgroundColor: 'transparent',
-        borderRadius: token.borderRadius,
-        border: `1px solid ${token.colorBorderSecondary}`
-      }}
+    <CollapsibleCard
+      title={<div className="text-sm font-medium">相关源文件</div>}
+      className="w-full mb-4"
     >
-      <Collapse.Panel 
-        header={
-          <Text strong style={{ color: token.colorText }}>相关源文件</Text>
-        } 
-        key="sourceFiles"
-        style={{ padding: token.paddingXS }}
-      >
-        <List
-          size="small"
-          dataSource={fileSource}
-          split={false}
-          renderItem={(item) => (
-            <List.Item style={{ padding: `${token.paddingXXS}px 0` }}>
-              <Link 
-                href={`${git}/blob/${branch}/${item.address}`}
-                target="_blank"
-                style={{ 
-                  color: token.colorPrimary,
-                  display: 'flex',
-                  alignItems: 'center',
-                  // 鼠标悬浮样式
-                  // @ts-ignore
-                  '&:hover': {
-                    textDecoration: 'underline',
-                    opacity: 0.85,
-                  },
-                }}
-              >
-                <GithubFilled style={{ fontSize: '14px', marginRight: token.marginXS }} />
-                <Text style={{ fontSize: token.fontSizeSM }}>{item.name}</Text>
-              </Link>
-            </List.Item>
-          )}
-        />
-      </Collapse.Panel>
-    </Collapse>
+      <ul className="space-y-1">
+        {fileSource.map((item) => (
+          <li key={item.documentFileItemId}>
+            <Link
+              href={`${git}/blob/${branch}/${item.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-primary hover:underline"
+            >
+              <Github className="h-4 w-4 shrink-0" />
+              <span className="text-sm">{item.name}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </CollapsibleCard>
   );
 };
 

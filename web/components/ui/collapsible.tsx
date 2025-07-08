@@ -66,7 +66,7 @@ const collapsibleCardVariants = cva(
 interface CollapsibleCardProps
   extends React.ComponentPropsWithoutRef<typeof Collapsible>,
     VariantProps<typeof collapsibleCardVariants> {
-  title: React.ReactNode
+  title: any
   defaultOpen?: boolean
   showIcon?: boolean
 }

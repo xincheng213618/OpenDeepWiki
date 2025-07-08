@@ -1,12 +1,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Card, Skeleton, Typography, Button, Space, Result, Avatar, Tag, Statistic } from 'antd';
-import { ArrowLeftOutlined, FileExclamationOutlined, ReloadOutlined, GithubOutlined, StarOutlined, ForkOutlined, CalendarOutlined, BranchesOutlined } from '@ant-design/icons';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ArrowLeft, FileX, RotateCcw, Github, Star, GitFork, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { getLastWarehouse } from '../../services/warehouseService';
-
-const { Title, Text, Paragraph } = Typography;
 
 interface LoadingErrorStateProps {
   loading: boolean;
@@ -71,92 +73,120 @@ const RepositoryInfoState = ({ owner, name, token }) => {
   }, [owner, name]);
 
   if (loading) {
-    return <Skeleton active avatar paragraph={{ rows: 4 }} />;
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-16 w-16 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </div>
+        </div>
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+      </div>
+    );
   }
 
   if (error || !repoInfo) {
     return (
-      <Space direction="vertical" size="middle" style={{ width: '100%', textAlign: 'center' }}>
-        <Text type="secondary" style={{ fontSize: 16 }}>仓库地址: https://github.com/{owner}/{name}</Text>
-        <Button 
-          type="primary" 
-          icon={<GithubOutlined />}
-          href={`https://github.com/${owner}/${name}`}
-          target="_blank"
-        >
-          访问GitHub仓库
-        </Button>
-        <Button 
-          onClick={() => window.location.reload()}
-          icon={<ReloadOutlined />}
-        >
-          重新加载
-        </Button>
-      </Space>
+      <div className="flex flex-col items-center space-y-4 text-center">
+        <p className="text-muted-foreground text-base">
+          仓库地址: https://github.com/{owner}/{name}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button asChild>
+            <a
+              href={`https://github.com/${owner}/${name}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2"
+            >
+              <Github className="h-4 w-4" />
+              访问GitHub仓库
+            </a>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className="h-4 w-4" />
+            重新加载
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <Space size="middle" align="start">
-        <Avatar 
-          size={64} 
-          src={repoInfo.owner.avatar_url || undefined}
-          icon={!repoInfo.owner.avatar_url && <GithubOutlined />}
-        />
-        <Space direction="vertical" size="small" style={{ maxWidth: '100%' }}>
-          <Title level={3} style={{ margin: 0, color: token.colorTextHeading }}>
-            <a 
-              href={repoInfo.html_url} 
-              target="_blank" 
+    <div className="space-y-6 w-full">
+      <div className="flex items-start space-x-4">
+        <Avatar className="h-16 w-16">
+          <AvatarImage src={repoInfo.owner.avatar_url} alt={repoInfo.owner.login} />
+          <AvatarFallback>
+            <Github className="h-8 w-8" />
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 space-y-2">
+          <h3 className="text-xl font-semibold text-foreground m-0">
+            <a
+              href={repoInfo.html_url}
+              target="_blank"
               rel="noopener noreferrer"
-              style={{ color: token.colorPrimary }}
+              className="text-primary hover:underline"
             >
               {repoInfo.owner.login}/{repoInfo.name}
             </a>
-          </Title>
-          <Paragraph style={{ margin: 0, color: token.colorTextSecondary }}>
+          </h3>
+          <p className="text-muted-foreground m-0">
             {repoInfo.description}
-          </Paragraph>
-          <Space size="middle" wrap>
+          </p>
+          <div className="flex flex-wrap items-center gap-4">
             {repoInfo.language && (
-              <Tag color={token.colorPrimary}>
+              <Badge variant="secondary">
                 {repoInfo.language}
-              </Tag>
+              </Badge>
             )}
-            <Space>
-              <StarOutlined style={{ color: token.colorWarning }} />
-              <Text>{repoInfo.stars}</Text>
-            </Space>
-            <Space>
-              <ForkOutlined />
-              <Text>{repoInfo.forks}</Text>
-            </Space>
-            <Space>
-              <CalendarOutlined />
-              <Text>{new Date(repoInfo.updated_at).toLocaleDateString()}</Text>
-            </Space>
-          </Space>
-        </Space>
-      </Space>
-      
-      <Space>
-        <Button 
-          type="primary" 
-          icon={<GithubOutlined />}
-          href={repoInfo.html_url}
-          target="_blank"
-        >
-          访问GitHub仓库
+            <div className="flex items-center gap-1">
+              <Star className="h-4 w-4 text-yellow-500" />
+              <span className="text-sm">{repoInfo.stars}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <GitFork className="h-4 w-4" />
+              <span className="text-sm">{repoInfo.forks}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm">{new Date(repoInfo.updated_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <Button asChild>
+          <a
+            href={repoInfo.html_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2"
+          >
+            <Github className="h-4 w-4" />
+            访问GitHub仓库
+          </a>
         </Button>
-        <Button 
+        <Button
+          variant="outline"
           onClick={() => window.location.reload()}
-          icon={<ReloadOutlined />}
+          className="flex items-center gap-2"
         >
+          <RotateCcw className="h-4 w-4" />
           重新加载
         </Button>
-      </Space>
-    </Space>
+      </div>
+    </div>
   );
 };
 
@@ -170,11 +200,24 @@ const LoadingErrorState: React.FC<LoadingErrorStateProps> = ({
   // 加载状态显示骨架屏
   if (loading) {
     return (
-      <Card style={{ 
-        borderRadius: token.borderRadiusLG,
-        boxShadow: token.boxShadowTertiary
-      }}>
-        <Skeleton active paragraph={{ rows: 10 }} />
+      <Card className="rounded-lg shadow-sm">
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </CardContent>
       </Card>
     );
   }
@@ -183,55 +226,43 @@ const LoadingErrorState: React.FC<LoadingErrorStateProps> = ({
   if (error) {
     if (error.includes('不存在') || error.includes('路径')) {
       return (
-        <Card 
-          style={{
-            borderRadius: token.borderRadiusLG,
-            overflow: 'hidden',
-            boxShadow: token.boxShadowTertiary,
-            padding: token.paddingLG
-          }}
-        >
-          <RepositoryInfoState 
-            owner={owner}
-            name={name}
-            token={token}
-          />
+        <Card className="rounded-lg overflow-hidden shadow-sm">
+          <CardContent className="p-6">
+            <RepositoryInfoState
+              owner={owner}
+              name={name}
+              token={token}
+            />
+          </CardContent>
         </Card>
       );
     }
 
     return (
-      <Card 
-        style={{ 
-          borderRadius: token.borderRadiusLG,
-          overflow: 'hidden',
-          boxShadow: token.boxShadowTertiary
-        }}
-      >
-        <Result
-          status="warning"
-          icon={<FileExclamationOutlined style={{ color: token.colorWarning }} />}
-          title={<Typography.Title level={3} style={{ color: token.colorTextHeading }}>无法加载文档内容</Typography.Title>}
-          subTitle={<Text type="secondary">{error}</Text>}
-          extra={[
-            <Link key="back" href={`/${owner}/${name}`}>
-              <Button 
-                type="primary" 
-                icon={<ArrowLeftOutlined />}
-                style={{ marginRight: token.marginSM }}
-              >
+      <Card className="rounded-lg overflow-hidden shadow-sm">
+        <CardContent className="flex flex-col items-center text-center space-y-4 p-8">
+          <div className="flex flex-col items-center space-y-2">
+            <FileX className="h-12 w-12 text-yellow-500" />
+            <h3 className="text-xl font-semibold text-foreground">无法加载文档内容</h3>
+            <p className="text-muted-foreground">{error}</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button asChild>
+              <Link href={`/${owner}/${name}`} className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
                 返回仓库概览
-              </Button>
-            </Link>,
-            <Button 
-              key="retry" 
-              icon={<ReloadOutlined />}
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => window.location.reload()}
+              className="flex items-center gap-2"
             >
+              <RotateCcw className="h-4 w-4" />
               重新加载
             </Button>
-          ]}
-        />
+          </div>
+        </CardContent>
       </Card>
     );
   }

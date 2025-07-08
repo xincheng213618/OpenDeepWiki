@@ -1,12 +1,15 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Card, message, Button, Tooltip } from 'antd';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/use-toast';
 import { useParams, useSearchParams } from 'next/navigation';
 import { getMiniMap } from '../../../services/warehouseService';
 import { useTranslation } from '../../../i18n/client';
-import { FullscreenOutlined, FullscreenExitOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
+import { Maximize, Minimize, RotateCcw, Download } from 'lucide-react';
 
 interface MiniMapResult {
     title: string;
@@ -23,6 +26,7 @@ interface MindElixirNode {
 
 const MindMapPage: React.FC = () => {
     const { t } = useTranslation();
+    const { toast } = useToast();
     const params = useParams();
     const searchParams = useSearchParams();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -87,16 +91,16 @@ const MindMapPage: React.FC = () => {
             primaryNodeHorizontalGap: 65, // 水平间距
             primaryNodeVerticalGap: 25, // 垂直间距
             theme: {
-                name: 'Blue',
+                name: 'Minimal',
                 palette: [
-                    '#1890ff', '#52c41a', '#fa541c', '#722ed1', 
-                    '#13c2c2', '#eb2f96', '#f5222d', '#fa8c16', 
-                    '#a0d911', '#1890ff'
+                    '#0f172a', '#475569', '#64748b', '#94a3b8',
+                    '#cbd5e1', '#e2e8f0', '#f1f5f9', '#f8fafc',
+                    '#0ea5e9', '#06b6d4'
                 ],
                 cssVar: {
-                    '--main-color': '#1890ff',
+                    '--main-color': '#0f172a',
                     '--main-bgcolor': '#ffffff',
-                    '--color': '#333333',
+                    '--color': '#1e293b',
                     '--bgcolor': '#f8fafc',
                     '--panel-color': '255, 255, 255',
                     '--panel-bgcolor': '248, 250, 252',
@@ -155,11 +159,19 @@ const MindMapPage: React.FC = () => {
                 const mindData = convertToMindElixirData(data.data);
                 setTimeout(() => initMindElixir(mindData), 100);
             } else {
-                message.error(data.message || '获取思维导图数据失败');
+                toast({
+                    variant: "destructive",
+                    title: "错误",
+                    description: data.message || '获取思维导图数据失败',
+                });
             }
         } catch (error) {
             console.error('Error fetching mind map data:', error);
-            message.error('获取思维导图数据失败');
+            toast({
+                variant: "destructive",
+                title: "错误",
+                description: '获取思维导图数据失败',
+            });
         } finally {
             setLoading(false);
         }
@@ -183,7 +195,11 @@ const MindMapPage: React.FC = () => {
     // 导出为图片
     const exportImage = async () => {
         if (!mindRef.current) {
-            message.error('思维导图未初始化');
+            toast({
+                variant: "destructive",
+                title: "错误",
+                description: '思维导图未初始化',
+            });
             return;
         }
 
@@ -198,13 +214,24 @@ const MindMapPage: React.FC = () => {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                message.success('导出成功');
+                toast({
+                    title: "成功",
+                    description: '导出成功',
+                });
             } else {
-                message.error('导出失败');
+                toast({
+                    variant: "destructive",
+                    title: "错误",
+                    description: '导出失败',
+                });
             }
         } catch (error) {
             console.error('Export error:', error);
-            message.error('导出失败');
+            toast({
+                variant: "destructive",
+                title: "错误",
+                description: '导出失败',
+            });
         }
     };
 
@@ -220,119 +247,113 @@ const MindMapPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '60vh'
-            }}>
+            <div className="flex justify-center items-center h-[60vh]">
                 <Skeleton className="w-32 h-32" />
             </div>
         );
     }
 
     return (
-        <div style={{ height: '100%' }}>
-            <Card
-                hoverable={false}
-                title={
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
+        <div className="h-full">
+            <Card className={`
+                ${isFullscreen ? 'h-screen fixed top-0 left-0 w-screen z-[9999]' : 'h-[85vh]'}
+                transition-all duration-300 border-border/50 shadow-sm
+            `}>
+                <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-foreground">
                             {data?.title || `${owner}/${name} 思维导图`}
-                        </span>
-                        <div>
-                            <Tooltip title="刷新">
-                                <Button
-                                    type="text"
-                                    icon={<ReloadOutlined />}
-                                    onClick={refreshData}
-                                    style={{ marginRight: 8 }}
-                                />
+                        </h2>
+                        <div className="flex items-center gap-2">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={refreshData}
+                                        className="h-8 w-8"
+                                    >
+                                        <RotateCcw className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>刷新</p>
+                                </TooltipContent>
                             </Tooltip>
-                            <Tooltip title="导出图片">
-                                <Button
-                                    type="text"
-                                    icon={<DownloadOutlined />}
-                                    onClick={exportImage}
-                                    style={{ marginRight: 8 }}
-                                />
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={exportImage}
+                                        className="h-8 w-8"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>导出图片</p>
+                                </TooltipContent>
                             </Tooltip>
-                            <Tooltip title={isFullscreen ? "退出全屏" : "全屏"}>
-                                <Button
-                                    type="text"
-                                    icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
-                                    onClick={toggleFullscreen}
-                                />
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={toggleFullscreen}
+                                        className="h-8 w-8"
+                                    >
+                                        {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{isFullscreen ? "退出全屏" : "全屏"}</p>
+                                </TooltipContent>
                             </Tooltip>
                         </div>
                     </div>
-                }
-                style={{
-                    height: isFullscreen ? '100vh' : '85vh',
-                    position: isFullscreen ? 'fixed' : 'relative',
-                    top: isFullscreen ? 0 : 'auto',
-                    left: isFullscreen ? 0 : 'auto',
-                    width: isFullscreen ? '100vw' : '100%',
-                    zIndex: isFullscreen ? 9999 : 'auto',
-                }}
-                bodyStyle={{
-                    height: isFullscreen ? 'calc(100vh - 57px)' : 'calc(85vh - 57px)',
-                    padding: 0,
-                    position: 'relative',
-                }}
-            >
-                <div
-                    ref={containerRef}
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                        borderRadius: isFullscreen ? 0 : '8px',
-                        position: 'relative',
-                        touchAction: 'none', // 禁用触摸手势
-                        userSelect: 'none', // 禁用文本选择
-                        WebkitUserSelect: 'none', // Safari兼容
-                    }}
-                    onContextMenu={(e) => {
-                        // 阻止默认右键菜单，让mind-elixir处理
-                        e.preventDefault();
-                    }}
-                    onMouseDown={(e) => {
-                        // 禁用浏览器的拖拽选择行为
-                        if (e.button === 2) { // 右键
+                </CardHeader>
+                <CardContent className={`
+                    ${isFullscreen ? 'h-[calc(100vh-80px)]' : 'h-[calc(85vh-80px)]'}
+                    p-0 relative
+                `}>
+                    <div
+                        ref={containerRef}
+                        className={`
+                            w-full h-full relative select-none
+                            bg-gradient-to-br from-slate-50 to-slate-200
+                            ${isFullscreen ? 'rounded-none' : 'rounded-lg'}
+                        `}
+                        style={{
+                            touchAction: 'none',
+                            WebkitUserSelect: 'none',
+                        }}
+                        onContextMenu={(e) => {
                             e.preventDefault();
-                        }
-                    }}
-                    onTouchStart={(e) => {
-                        // 禁用触摸手势
-                        if (e.touches.length > 1) {
+                        }}
+                        onMouseDown={(e) => {
+                            if (e.button === 2) {
+                                e.preventDefault();
+                            }
+                        }}
+                        onTouchStart={(e) => {
+                            if (e.touches.length > 1) {
+                                e.preventDefault();
+                            }
+                        }}
+                        onTouchMove={(e) => {
                             e.preventDefault();
-                        }
-                    }}
-                    onTouchMove={(e) => {
-                        // 禁用触摸滚动手势
-                        e.preventDefault();
-                    }}
-                    onDragStart={(e) => {
-                        // 禁用默认拖拽行为
-                        e.preventDefault();
-                    }}
-                />
+                        }}
+                        onDragStart={(e) => {
+                            e.preventDefault();
+                        }}
+                    />
 
-                {/* 操作提示 */}
-                <div style={{
-                    position: 'absolute',
-                    bottom: 16,
-                    right: 16,
-                    background: 'rgba(0, 0, 0, 0.7)',
-                    color: 'white',
-                    padding: '8px 12px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    zIndex: 1000,
-                }}>
-                    鼠标左键拖动 • 滚轮缩放 • 双击节点查看详情 • 右键菜单编辑
-                </div>
+                    {/* 操作提示 */}
+                    <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-2 rounded text-xs z-[1000]">
+                        鼠标左键拖动 • 滚轮缩放 • 双击节点查看详情 • 右键菜单编辑
+                    </div>
+                </CardContent>
             </Card>
 
             {/* Mind Elixir CSS */}
@@ -346,56 +367,61 @@ const MindMapPage: React.FC = () => {
                     MozUserSelect: none !important;
                     MsUserSelect: none !important;
                 }
-                
+
                 .mind-elixir .map-container {
                     background: transparent !important;
                     touch-action: none !important;
                     -ms-touch-action: none !important;
                     -webkit-touch-callout: none !important;
                 }
-                
+
                 .mind-elixir .node-container {
                     cursor: pointer;
                     touch-action: none !important;
                 }
-                
+
                 .mind-elixir .node-container:hover {
-                    opacity: 0.8;
-                    transform: scale(1.05);
-                    transition: all 0.2s ease;
+                    opacity: 0.9;
+                    transform: scale(1.02);
+                    transition: all 0.2s ease-in-out;
                 }
-                
+
                 .mind-elixir .line {
-                    stroke: #1890ff;
-                    stroke-width: 2;
+                    stroke: #475569;
+                    stroke-width: 1.5;
                 }
-                
+
                 .mind-elixir .node {
-                    border-radius: 6px;
-                    border: 2px solid #1890ff;
+                    border-radius: 8px;
+                    border: 1px solid #e2e8f0;
                     background: #ffffff;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
                     touch-action: none !important;
+                    font-family: inherit;
                 }
-                
+
                 .mind-elixir .root {
-                    background: linear-gradient(135deg, #1890ff, #096dd9) !important;
+                    background: linear-gradient(135deg, #0f172a, #1e293b) !important;
                     color: white !important;
-                    font-weight: bold;
+                    font-weight: 600;
                     font-size: 16px;
+                    border: none !important;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
                 }
-                
+
                 .mind-elixir .primary {
-                    background: #e6f7ff !important;
-                    border-color: #1890ff !important;
-                    color: #1890ff !important;
+                    background: #f8fafc !important;
+                    border-color: #cbd5e1 !important;
+                    color: #334155 !important;
+                    font-weight: 500;
                 }
-                
+
                 .mind-elixir .context-menu {
-                    border-radius: 6px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    border: 1px solid #e8e8e8;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                    border: 1px solid #e2e8f0;
                     z-index: 9999 !important;
+                    background: white;
                 }
 
                 /* 专门针对Edge浏览器的手势禁用 */
@@ -403,12 +429,12 @@ const MindMapPage: React.FC = () => {
                     -ms-touch-action: none !important;
                     touch-action: none !important;
                 }
-                
+
                 body {
                     -ms-touch-action: manipulation !important;
                     touch-action: manipulation !important;
                 }
-                
+
                 /* 禁用Edge的右键手势 */
                 * {
                     -webkit-touch-callout: none !important;
@@ -417,13 +443,33 @@ const MindMapPage: React.FC = () => {
                     -moz-user-select: none !important;
                     -ms-user-select: none !important;
                 }
-                
+
                 /* 允许输入框和文本区域的选择 */
                 input, textarea, [contenteditable] {
                     -webkit-user-select: text !important;
                     -moz-user-select: text !important;
                     -ms-user-select: text !important;
                     user-select: text !important;
+                }
+
+                /* 简约风格的滚动条 */
+                .mind-elixir ::-webkit-scrollbar {
+                    width: 6px;
+                    height: 6px;
+                }
+
+                .mind-elixir ::-webkit-scrollbar-track {
+                    background: #f1f5f9;
+                    border-radius: 3px;
+                }
+
+                .mind-elixir ::-webkit-scrollbar-thumb {
+                    background: #cbd5e1;
+                    border-radius: 3px;
+                }
+
+                .mind-elixir ::-webkit-scrollbar-thumb:hover {
+                    background: #94a3b8;
                 }
             `}</style>
         </div>
