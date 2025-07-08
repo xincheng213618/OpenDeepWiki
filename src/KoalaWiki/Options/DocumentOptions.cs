@@ -29,6 +29,12 @@ public class DocumentOptions
     public static bool EnableSmartFilter { get; set; } = true;
 
     /// <summary>
+    /// 目录结构格式 (compact, json, pathlist, unix)
+    /// </summary>
+    /// <returns></returns>
+    public static string CatalogueFormat { get; set; } = "compact";
+
+    /// <summary>
     /// 是否启用代码依赖分析
     /// </summary>
     /// <returns></returns>
@@ -119,6 +125,12 @@ public class DocumentOptions
             {
                 EnableWarehouseDescriptionTask = enable;
             }
+        }
+
+        var catalogueFormat = configuration.GetValue<string>($"CATALOGUE_FORMAT");
+        if (!string.IsNullOrEmpty(catalogueFormat))
+        {
+            CatalogueFormat = catalogueFormat.ToLower();
         }
     }
 }

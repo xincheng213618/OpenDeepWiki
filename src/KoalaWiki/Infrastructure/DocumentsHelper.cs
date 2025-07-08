@@ -179,7 +179,7 @@ public class DocumentsHelper
     /// 获取优化的树形目录结构，大幅节省tokens
     /// </summary>
     /// <param name="path">扫描路径</param>
-    /// <param name="format">输出格式：compact(紧凑文本)、json(JSON格式)、pathlist(优化路径列表)</param>
+    /// <param name="format">输出格式：compact(紧凑文本)、json(JSON格式)、pathlist(优化路径列表)、unix(Unix风格树形结构)</param>
     /// <returns>优化后的目录结构</returns>
     public static string GetCatalogueOptimized(string path, string format = "compact")
     {
@@ -196,6 +196,7 @@ public class DocumentsHelper
         {
             "json" => FileTreeBuilder.ToCompactJson(fileTree),
             "pathlist" => string.Join("\n", FileTreeBuilder.ToPathList(fileTree)),
+            "unix" => FileTreeBuilder.ToUnixTree(fileTree),
             "compact" or _ => FileTreeBuilder.ToCompactString(fileTree)
         };
     }
