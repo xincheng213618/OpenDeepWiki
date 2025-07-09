@@ -246,7 +246,6 @@ export default async function DocumentPage({
   // 在服务端获取文档数据
   let document: DocumentData | null = null;
   let error: string | null = null;
-  let headings: Heading[] = [];
   let structuredData: any = null;
 
   try {
@@ -269,25 +268,15 @@ export default async function DocumentPage({
     notFound();
   }
 
-  // 共同的props
-  const commonProps = {
-    document,
-    error,
-    headings,
-    owner,
-    name,
-    path,
-    branch
-  };
-
   const compiled = await RenderMarkdown({
     markdown: document.content,
-  });
-  const MdxContent = compiled!.body;
+  }) as any;
 
-  const { title, description } = compiled!.frontmatter as any;
+  const MdxContent = compiled.body;
+  const { title, description } = compiled.frontmatter as any;
+
   return (
-    <DocsPage toc={compiled!.toc}>
+    <DocsPage toc={compiled.toc}>
       <DocsTitle>{title ?? ""}</DocsTitle>
       <DocsDescription>{description ?? ""}</DocsDescription>
       <DocsBody>

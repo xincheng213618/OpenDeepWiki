@@ -48,7 +48,6 @@ const LanguageSwitcher = () => {
                    rounded-md shadow-none"
         aria-label="选择语言"
       >
-        <Globe className="h-4 w-4 text-muted-foreground" />
         <SelectValue 
           placeholder="语言" 
           className="text-sm font-medium"

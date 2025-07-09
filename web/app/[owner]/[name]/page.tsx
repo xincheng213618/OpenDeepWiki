@@ -49,8 +49,8 @@ export default async function RepositoryPage({ params, searchParams }: any) {
 
     const compiled = await RenderMarkdown({
       markdown: response.data.content,
-    });
-    const MdxContent = compiled!.body;
+    }) as any;
+    const MdxContent = compiled.body;
 
     const { title, description } = compiled!.frontmatter as any;
 
