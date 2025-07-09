@@ -22,10 +22,11 @@ Conduct a thorough analysis of the repository using the following steps. Wrap yo
    - Identify any deployment instructions or crucial setup information
 
 2. Project Type Identification:
-   - List all file extensions and their frequencies
-   - Analyze directory structure
-   - Determine primary programming language(s) and frameworks
-   - Provide reasoning for your conclusions
+   - Collect statistics for all file extensions and their frequency distribution
+   - Analyze directory structure patterns and organizational hierarchy
+   - Identify primary programming language(s), frameworks, and technologies based on extension analysis
+   - Map common file extensions to their corresponding technologies and development environments
+   - Provide evidence-based conclusions about the project type and technology stack
 
 3. Multi-stage Filtering:
    - List explicit documentation files (README, markdown, etc.)
