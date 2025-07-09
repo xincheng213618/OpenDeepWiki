@@ -205,3 +205,7 @@
   from { height: var(--radix-collapsible-content-height); }
   to { height: 0; }
 }
+
+button{
+  cursor: pointer !important;
+}

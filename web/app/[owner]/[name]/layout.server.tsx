@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { documentCatalog } from '../../services/warehouseService';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import FloatingChat from '@/app/chat';
+import { Button } from '@/components/ui/button';
+import MCPModal from './MCPModal';
 
 export async function getRepositoryData(owner: string, name: string, branch?: string) {
   try {
@@ -64,7 +66,10 @@ export default async function RepositoryLayoutServer({
   ];
 
   return (<DocsLayout
-    nav={{ title: `${owner}/${name}` }}
+    nav={{ 
+      title: `${owner}/${name}`,
+      children: <MCPModal owner={owner} name={name} />
+    }}
     searchToggle={{
       enabled: true,
     }}

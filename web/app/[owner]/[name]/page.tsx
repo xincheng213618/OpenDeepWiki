@@ -56,7 +56,8 @@ export default async function RepositoryPage({ params, searchParams }: any) {
 
     // 将数据传递给客户端组件进行渲染
     return (
-      <DocsPage toc={compiled!.toc}>
+      <DocsPage 
+        toc={compiled!.toc}>
         <DocsTitle>{title ?? ""}</DocsTitle>
         <DocsDescription>{description ?? ""}</DocsDescription>
         <>

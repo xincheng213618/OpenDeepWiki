@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '../i18n/client';
-import { 
-  User, 
-  LogOut, 
+import {
+  User,
+  LogOut,
   Settings,
   Mail,
   Calendar
@@ -60,7 +60,7 @@ export default function UserAvatar({ className }: UserAvatarProps) {
     const checkLoginStatus = () => {
       const token = localStorage.getItem('userToken');
       const userInfoStr = localStorage.getItem('userInfo');
-      
+
       if (token && userInfoStr) {
         try {
           const user = JSON.parse(userInfoStr);
@@ -153,7 +153,7 @@ export default function UserAvatar({ className }: UserAvatarProps) {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          
+
           <DropdownMenuContent align="end" className="w-56">
             <div className="flex items-center p-2">
               <Avatar className="h-10 w-10 mr-3">
@@ -170,37 +170,34 @@ export default function UserAvatar({ className }: UserAvatarProps) {
                 <p className="text-xs text-muted-foreground">{getRoleText(userInfo?.role || 'user')}</p>
               </div>
             </div>
-            
+
             {userInfo?.email && (
               <div className="px-2 py-1.5 flex items-center text-xs text-muted-foreground">
                 <Mail className="h-3.5 w-3.5 mr-2" />
                 <span>{userInfo.email}</span>
               </div>
             )}
-            
+
             {userInfo?.createdAt && (
               <div className="px-2 py-1.5 flex items-center text-xs text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5 mr-2" />
                 <span>{t('auth.joined', '加入于')} {formatDate(userInfo.createdAt)}</span>
               </div>
             )}
-            
+
             <DropdownMenuSeparator />
-            
+
             <DropdownMenuItem onClick={() => router.push('/settings')}>
               <Settings className="h-4 w-4 mr-2" />
               <span>{t('auth.settings', '设置')}</span>
             </DropdownMenuItem>
-            
-            {userInfo?.role === 'admin' && (
-              <DropdownMenuItem onClick={() => router.push('/admin')}>
-                <User className="h-4 w-4 mr-2" />
-                <span>{t('auth.admin_panel', '管理面板')}</span>
-              </DropdownMenuItem>
-            )}
-            
+
+            <DropdownMenuItem onClick={() => router.push('/admin')}>
+              <User className="h-4 w-4 mr-2" />
+              <span>{t('auth.admin_panel', '管理面板')}</span>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            
+
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               <span>{t('auth.logout', '退出登录')}</span>
@@ -208,8 +205,8 @@ export default function UserAvatar({ className }: UserAvatarProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           onClick={handleLogin}
           className="px-4"
