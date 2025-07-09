@@ -123,6 +123,13 @@ services:
       - DEEP_RESEARCH_MODEL= # Deep research model, if empty uses CHAT_MODEL
       - ENABLE_INCREMENTAL_UPDATE=true # Whether to enable incremental updates
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis, may affect code quality
+      - ENABLE_WAREHOUSE_COMMIT=true # Whether to enable warehouse commit
+      - ENABLE_FILE_COMMIT=true # Whether to enable file commit
+      - REFINE_AND_ENHANCE_QUALITY=true # Whether to refine and enhance quality
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=true # Whether to enable warehouse function prompt task
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=true # Whether to enable warehouse description task
+      - CATALOGUE_FORMAT=compact # Directory structure format (compact, json, pathlist, unix)
+      - ENABLE_CODE_COMPRESSION=false # Whether to enable code compression
 ```
 
 - AzureOpenAI and Anthropic configurations are similar, only need to adjust `ENDPOINT` and `MODEL_PROVIDER`.
@@ -249,6 +256,13 @@ graph TD
 - `DEEP_RESEARCH_MODEL`: Deep research model, if empty uses CHAT_MODEL
 - `ENABLE_INCREMENTAL_UPDATE`: Whether to enable incremental updates
 - `ENABLE_CODED_DEPENDENCY_ANALYSIS`: Whether to enable code dependency analysis, may affect code quality
+- `ENABLE_WAREHOUSE_COMMIT`: Whether to enable warehouse commit
+- `ENABLE_FILE_COMMIT`: Whether to enable file commit
+- `REFINE_AND_ENHANCE_QUALITY`: Whether to refine and enhance quality
+- `ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK`: Whether to enable warehouse function prompt task
+- `ENABLE_WAREHOUSE_DESCRIPTION_TASK`: Whether to enable warehouse description task
+- `CATALOGUE_FORMAT`: Directory structure format (compact, json, pathlist, unix)
+- `ENABLE_CODE_COMPRESSION`: Whether to enable code compression
 
 ## Build for Different Architectures
 

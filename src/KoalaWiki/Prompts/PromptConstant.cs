@@ -19,10 +19,6 @@ public class PromptConstant
 
     public enum Chat
     {
-        FirstChat = 10,
-
-        FirstDeepChat = 20,
-
         Responses = 30,
         
         ResponsesDeepResearch = 40

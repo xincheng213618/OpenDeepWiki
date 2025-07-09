@@ -24,9 +24,6 @@ public sealed class MiniMapBackgroundService(IServiceProvider service) : Backgro
         {
             try
             {
-                // 使用sql to linq 获取minid和warehouse的表不存在的数据,如果warehouse表状态=2，但是不存在minid的记录则获取
-
-                // 获取存在的id
                 var existingMiniMapIds = await context.MiniMaps
                     .Select(m => m.WarehouseId)
                     .ToListAsync(stoppingToken);
@@ -40,7 +37,6 @@ public sealed class MiniMapBackgroundService(IServiceProvider service) : Backgro
                 var item = await query.FirstOrDefaultAsync(stoppingToken);
                 if (item == null)
                 {
-                    Log.Logger.Information("没有需要生成知识图谱的仓库");
                     await Task.Delay(10000, stoppingToken); // 等待10秒后重试
                     continue;
                 }

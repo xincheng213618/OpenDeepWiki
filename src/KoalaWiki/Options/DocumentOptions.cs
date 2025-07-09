@@ -68,6 +68,14 @@ public class DocumentOptions
     /// <returns></returns>
     public static bool EnableWarehouseCommit { get; set; } = true;
 
+    /// <summary>
+    /// 是否启用代码压缩
+    /// 当启用时，FileFunction读取代码文件时会应用压缩算法
+    /// 压缩会保留注释、方法名等关键信息，但会移除多余的空白和格式
+    /// </summary>
+    /// <returns></returns>
+    public static bool EnableCodeCompression { get; set; } = false;
+
     public static void InitConfig(IConfiguration configuration)
     {
         configuration.GetSection(Name).Get<DocumentOptions>();
@@ -131,6 +139,15 @@ public class DocumentOptions
         if (!string.IsNullOrEmpty(catalogueFormat))
         {
             CatalogueFormat = catalogueFormat.ToLower();
+        }
+
+        var enableCodeCompression = configuration.GetValue<string>($"ENABLE_CODE_COMPRESSION");
+        if (!string.IsNullOrEmpty(enableCodeCompression))
+        {
+            if (bool.TryParse(enableCodeCompression, out var enable))
+            {
+                EnableCodeCompression = enable;
+            }
         }
     }
 }

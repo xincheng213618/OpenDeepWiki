@@ -123,6 +123,13 @@ services:
       - DEEP_RESEARCH_MODEL= # 深度研究模型，空则使用CHAT_MODEL
       - ENABLE_INCREMENTAL_UPDATE=true # 是否启用增量更新
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析，可能影响代码质量
+      - ENABLE_WAREHOUSE_COMMIT=true # 是否启用仓库提交
+      - ENABLE_FILE_COMMIT=true # 是否启用文件提交
+      - REFINE_AND_ENHANCE_QUALITY=true # 是否精炼并提高质量
+      - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=true # 是否启用仓库功能提示任务
+      - ENABLE_WAREHOUSE_DESCRIPTION_TASK=true # 是否启用仓库描述任务
+      - CATALOGUE_FORMAT=compact # 目录结构格式 (compact, json, pathlist, unix)
+      - ENABLE_CODE_COMPRESSION=false # 是否启用代码压缩
 ```
 
 - AzureOpenAI和Anthropic配置类似，仅需调整 `ENDPOINT` 和 `MODEL_PROVIDER`。
@@ -249,6 +256,13 @@ graph TD
 - `DEEP_RESEARCH_MODEL`：深度研究模型，空则使用CHAT_MODEL
 - `ENABLE_INCREMENTAL_UPDATE`：是否启用增量更新
 - `ENABLE_CODED_DEPENDENCY_ANALYSIS`：是否启用代码依赖分析，可能影响代码质量
+- `ENABLE_WAREHOUSE_COMMIT`：是否启用仓库提交
+- `ENABLE_FILE_COMMIT`：是否启用文件提交
+- `REFINE_AND_ENHANCE_QUALITY`：是否精炼并提高质量
+- `ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK`：是否启用仓库功能提示任务
+- `ENABLE_WAREHOUSE_DESCRIPTION_TASK`：是否启用仓库描述任务
+- `CATALOGUE_FORMAT`：目录结构格式 (compact, json, pathlist, unix)
+- `ENABLE_CODE_COMPRESSION`：是否启用代码压缩
 
 ## 构建不同架构 Build for Different Architectures
 

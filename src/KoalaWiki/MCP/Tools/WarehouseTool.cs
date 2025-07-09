@@ -72,11 +72,6 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
         var fileKernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, path, OpenAIOptions.DeepResearchModel, false);
 
-        // if (!string.IsNullOrWhiteSpace(OpenAIOptions.EmbeddingsModel))
-        // {
-        //     fileKernel.Plugins.AddFromObject(new RagFunction(warehouse.Id));
-        // }
-
         var history = new ChatHistory();
 
         var readme = await DocumentsService.GenerateReadMe(warehouse, document.GitPath, koala);
@@ -92,8 +87,7 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
             }
         }
 
-
-        history.AddUserMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.FirstDeepChat),
+        history.AddUserMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.Responses),
             new KernelArguments()
             {
                 ["catalogue"] = warehouse.OptimizedDirectoryStructure,

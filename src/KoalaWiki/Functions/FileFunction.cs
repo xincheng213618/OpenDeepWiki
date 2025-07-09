@@ -3,11 +3,15 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Microsoft.SemanticKernel;
+using KoalaWiki.Options;
+using KoalaWiki.Services;
+using KoalaWiki.Utils;
 
 namespace KoalaWiki.Functions;
 
 public class FileFunction(string gitPath)
 {
+    private readonly CodeCompressionService _codeCompressionService = new();
     /// <summary>
     /// 获取当前仓库压缩结构
     /// </summary>
@@ -122,9 +126,16 @@ public class FileFunction(string gitPath)
                 }
                 else
                 {
-                    await using var stream = new FileStream(item, FileMode.Open, FileAccess.Read);
-                    using var reader = new StreamReader(stream);
-                    dic[filePath] = await reader.ReadToEndAsync();
+                    // 读取整个文件内容
+                    string content = await File.ReadAllTextAsync(item);
+
+                    // 如果启用代码压缩且是代码文件，则应用压缩
+                    if (DocumentOptions.EnableCodeCompression && CodeFileDetector.IsCodeFile(filePath))
+                    {
+                        content = _codeCompressionService.CompressCode(content, filePath);
+                    }
+
+                    dic[filePath] = content;
                 }
             }
 
@@ -168,9 +179,16 @@ public class FileFunction(string gitPath)
                 return $"File too large: {filePath} ({info.Length / 1024 / 100}KB)";
             }
 
-            await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            using var reader = new StreamReader(stream);
-            return await reader.ReadToEndAsync();
+            // 读取整个文件内容
+            string content = await File.ReadAllTextAsync(filePath);
+
+            // 如果启用代码压缩且是代码文件，则应用压缩
+            if (DocumentOptions.EnableCodeCompression && CodeFileDetector.IsCodeFile(filePath))
+            {
+                content = _codeCompressionService.CompressCode(content, filePath);
+            }
+
+            return content;
         }
         catch (Exception ex)
         {
@@ -242,8 +260,19 @@ public class FileFunction(string gitPath)
                 endLine = int.MaxValue;
             }
 
-            var lines = await File.ReadAllLinesAsync(filePath);
+            // 先读取整个文件内容
+            string fileContent = await File.ReadAllTextAsync(filePath);
+            
+            // 如果启用代码压缩且是代码文件，先对整个文件内容进行压缩
+            if (DocumentOptions.EnableCodeCompression && CodeFileDetector.IsCodeFile(filePath))
+            {
+                fileContent = _codeCompressionService.CompressCode(fileContent, filePath);
+            }
+            
+            // 将压缩后的内容按行分割
+            var lines = fileContent.Split('\n');
 
+            // 验证行号范围
             if (startLine < 0 || startLine >= lines.Length)
             {
                 return $"Invalid start line: {startLine}";
@@ -251,13 +280,14 @@ public class FileFunction(string gitPath)
 
             if (endLine < startLine || endLine >= lines.Length)
             {
-                return $"Invalid end line: {endLine}";
+                endLine = lines.Length - 1;
             }
 
+            // 提取指定范围的行
             var result = new StringBuilder();
             for (var i = startLine; i <= endLine; i++)
             {
-                result.AppendLine(lines[i]);
+                result.AppendLine(lines[i].TrimEnd('\r'));
             }
 
             return result.ToString();

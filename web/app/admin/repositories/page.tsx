@@ -483,6 +483,67 @@ export default function RepositoriesPage() {
               ))}
             </TableBody>
           </Table>
+          
+          {/* 分页控件 */}
+          {total > 0 && (
+            <div className="mt-6 flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">
+                总共 {total} 条记录，每页 {pageSize} 条
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (currentPage > 1) {
+                      const newPage = currentPage - 1;
+                      setCurrentPage(newPage);
+                      loadRepositories(newPage);
+                    }
+                  }}
+                  disabled={currentPage === 1}
+                >
+                  上一页
+                </Button>
+                <div className="text-sm">
+                  第 {currentPage} 页，共 {Math.ceil(total / pageSize)} 页
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (currentPage < Math.ceil(total / pageSize)) {
+                      const newPage = currentPage + 1;
+                      setCurrentPage(newPage);
+                      loadRepositories(newPage);
+                    }
+                  }}
+                  disabled={currentPage >= Math.ceil(total / pageSize)}
+                >
+                  下一页
+                </Button>
+                <Select 
+                  value={pageSize.toString()} 
+                  onValueChange={(value) => {
+                    const newSize = parseInt(value);
+                    setPageSize(newSize);
+                    setCurrentPage(1);
+                    loadRepositories(1, newSize);
+                  }}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10条</SelectItem>
+                    <SelectItem value="20">20条</SelectItem>
+                    <SelectItem value="50">50条</SelectItem>
+                    <SelectItem value="100">100条</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
