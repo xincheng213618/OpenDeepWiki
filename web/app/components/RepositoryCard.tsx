@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTranslation } from '../i18n/client';
-import { 
-  Github, 
-  GitFork, 
+import {
+  Github,
+  GitFork,
   Calendar,
   ExternalLink,
   FileText
@@ -49,6 +49,8 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
       if (owner) {
         return `https://gitlab.com/${owner}.png`;
       }
+    } else {
+      return null;
     }
     return null;
   };
@@ -65,32 +67,32 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
     const statusNumber = getStatusNumber(status);
 
     switch (statusNumber) {
-      case 0: return { 
-        variant: 'secondary' as const, 
+      case 0: return {
+        variant: 'secondary' as const,
         text: t('repository.status.pending', '待处理')
       };
-      case 1: return { 
-        variant: 'default' as const, 
+      case 1: return {
+        variant: 'default' as const,
         text: t('repository.status.processing', '处理中')
       };
-      case 2: return { 
-        variant: 'secondary' as const, 
+      case 2: return {
+        variant: 'secondary' as const,
         text: t('repository.status.completed', '已完成')
       };
-      case 3: return { 
-        variant: 'outline' as const, 
+      case 3: return {
+        variant: 'outline' as const,
         text: t('repository.status.cancelled', '已取消')
       };
-      case 4: return { 
-        variant: 'secondary' as const, 
+      case 4: return {
+        variant: 'secondary' as const,
         text: t('repository.status.unauthorized', '未授权')
       };
-      case 99: return { 
-        variant: 'destructive' as const, 
+      case 99: return {
+        variant: 'destructive' as const,
         text: t('repository.status.failed', '已失败')
       };
-      default: return { 
-        variant: 'outline' as const, 
+      default: return {
+        variant: 'outline' as const,
         text: t('repository.status.unknown', '未知状态')
       };
     }
@@ -125,19 +127,19 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
   };
 
   return (
-    <Card 
+    <Card
       className="cursor-pointer transition-all hover:shadow-md border-border/50 hover:border-border"
       style={{
-        height:'230px',
-        minHeight:'230px',
-        maxHeight:'230px',
+        height: '230px',
+        minHeight: '230px',
+        maxHeight: '230px',
       }}
       onClick={handleCardClick}
     >
       <CardHeader style={{
-        height:'140px',
-        minHeight:'140px',
-        maxHeight:'140px',
+        height: '140px',
+        minHeight: '140px',
+        maxHeight: '140px',
       }} className="pb-4">
         <div className="flex items-start gap-3">
           <Avatar className="h-10 w-10 mt-1">
@@ -146,28 +148,43 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
               {repository.organizationName?.slice(0, 2)?.toUpperCase() || 'RE'}
             </AvatarFallback>
           </Avatar>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-foreground truncate">
+                <h3 style={{
+                  maxWidth: '60%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }} className="font-semibold text-foreground truncate">
                   {repository.name}
                 </h3>
                 <div className="flex items-center gap-1.5 mt-1">
                   {getRepoIcon()}
-                  <span className="text-sm text-muted-foreground truncate">
+                  <span style={{
+                    maxWidth: '60%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }} className="text-sm text-muted-foreground truncate">
                     {repository.organizationName}
                   </span>
                 </div>
               </div>
-              
+
               <Badge variant={statusConfig.variant} className="shrink-0">
                 {statusConfig.text}
               </Badge>
             </div>
-            
+
             {repository.description && (
-              <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
+              <p style={{
+                maxWidth: '60%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }} className="text-sm text-muted-foreground mt-3 line-clamp-2">
                 {repository.description}
               </p>
             )}
@@ -184,16 +201,16 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
                 <span>{repository.branch}</span>
               </div>
             )}
-            
+
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               <span>{formatDate(repository.createdAt)}</span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="h-7 w-7 p-0 hover:bg-muted"
               onClick={(e) => {
