@@ -11,6 +11,7 @@ using KoalaWiki.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace KoalaWiki.Services;
 
@@ -22,6 +23,8 @@ namespace KoalaWiki.Services;
 [Filter(typeof(ResultFilter))]
 public class RepositoryService(
     IKoalaWikiContext dbContext,
+    IServiceProvider serviceProvider,
+    IMemoryCache memoryCache,
     ILogger<RepositoryService> logger,
     IUserContext userContext,
     IHttpContextAccessor httpContextAccessor) : FastApi
@@ -696,75 +699,100 @@ public class RepositoryService(
     /// <returns></returns>
     public async Task<bool> GenerateFileContentAsync(GenerateFileContentInput input)
     {
-        var catalog = await dbContext.DocumentCatalogs
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == input.Id);
-
-        if (catalog == null)
+        // 使用memoryCache增加缓存，避免重复处理同一目录
+        if (memoryCache.TryGetValue(input.Id, out bool isProcessing) && isProcessing)
         {
-            throw new ArgumentException("目录不存在");
+            throw new Exception("该目录正在处理中，请稍后再试");
         }
 
-        // 检查管理权限
-        if (!await CheckWarehouseManageAccessAsync(catalog.WarehouseId))
+        memoryCache.Set(input.Id, true, TimeSpan.FromMinutes(5));
+
+        var scope = serviceProvider.CreateScope();
+
+        Task.Run(async () =>
         {
-            throw new UnauthorizedAccessException("您没有权限管理此仓库");
-        }
+            try
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<IKoalaWikiContext>();
 
-        if (!string.IsNullOrEmpty(input.Prompt))
-        {
-            await dbContext.DocumentCatalogs
-                .Where(x => x.Id == input.Id)
-                .ExecuteUpdateAsync(x => x.SetProperty(y => y.Prompt, input.Prompt));
-        }
+                var catalog = await dbContext.DocumentCatalogs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == input.Id);
 
-        var warehouse = await dbContext.Warehouses
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == catalog.WarehouseId);
+                if (catalog == null)
+                {
+                    throw new ArgumentException("目录不存在");
+                }
 
-        Log.Logger.Information("开始处理目录：{CatalogName}", JsonSerializer.Serialize(catalog, JsonSerializerOptions.Web));
-        Log.Logger.Information("仓库信息：{WarehouseInfo}", JsonSerializer.Serialize(warehouse, JsonSerializerOptions.Web));
+                // 检查管理权限
+                if (!await CheckWarehouseManageAccessAsync(catalog.WarehouseId))
+                {
+                    throw new UnauthorizedAccessException("您没有权限管理此仓库");
+                }
 
-        var document = await dbContext.Documents
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.WarehouseId == catalog.WarehouseId);
+                if (!string.IsNullOrEmpty(input.Prompt))
+                {
+                    await dbContext.DocumentCatalogs
+                        .Where(x => x.Id == input.Id)
+                        .ExecuteUpdateAsync(x => x.SetProperty(y => y.Prompt, input.Prompt));
+                }
 
-        if (document == null)
-        {
-            throw new Exception("文档不存在");
-        }
+                var warehouse = await dbContext.Warehouses
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == catalog.WarehouseId);
 
-        var fileKernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
-            OpenAIOptions.ChatApiKey, document.GitPath, OpenAIOptions.ChatModel, false);
+                Log.Logger.Information("开始处理目录：{CatalogName}",
+                    JsonSerializer.Serialize(catalog, JsonSerializerOptions.Web));
+                Log.Logger.Information("仓库信息：{WarehouseInfo}",
+                    JsonSerializer.Serialize(warehouse, JsonSerializerOptions.Web));
 
-        // 对当前单目录进行分析
-        var (catalogs, fileItem, files)
-            = await DocumentPendingService.ProcessDocumentAsync(catalog, fileKernel,
-                warehouse.OptimizedDirectoryStructure,
-                warehouse.Address, warehouse.Branch, document.GitPath, null, warehouse.Classify);
+                var document = await dbContext.Documents
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.WarehouseId == catalog.WarehouseId);
 
-        // 处理完成后，更新目录状态
+                if (document == null)
+                {
+                    throw new Exception("文档不存在");
+                }
 
-        // 更新文档状态
-        await dbContext.DocumentCatalogs.Where(x => x.Id == catalog.Id)
-            .ExecuteUpdateAsync(x => x.SetProperty(y => y.IsCompleted, true));
+                var fileKernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
+                    OpenAIOptions.ChatApiKey, document.GitPath, OpenAIOptions.ChatModel, false);
 
-        // 修复Mermaid语法错误
-        DocumentPendingService.RepairMermaid(fileItem);
+                // 对当前单目录进行分析
+                var (catalogs, fileItem, files)
+                    = await DocumentPendingService.ProcessDocumentAsync(catalog, fileKernel,
+                        warehouse.OptimizedDirectoryStructure,
+                        warehouse.Address, warehouse.Branch, document.GitPath, null, warehouse.Classify);
 
-        await dbContext.DocumentFileItems.Where(x => x.Id == fileItem.Id)
-            .ExecuteDeleteAsync();
+                // 处理完成后，更新目录状态
 
-        await dbContext.DocumentFileItems.AddAsync(fileItem);
-        await dbContext.DocumentFileItemSources.AddRangeAsync(files.Select(x => new DocumentFileItemSource()
-        {
-            Address = x,
-            DocumentFileItemId = fileItem.Id,
-            Name = x,
-            Id = Guid.NewGuid().ToString("N"),
-        }));
+                // 更新文档状态
+                await dbContext.DocumentCatalogs.Where(x => x.Id == catalog.Id)
+                    .ExecuteUpdateAsync(x => x.SetProperty(y => y.IsCompleted, true));
 
-        await dbContext.SaveChangesAsync();
+                // 修复Mermaid语法错误
+                DocumentPendingService.RepairMermaid(fileItem);
+
+                await dbContext.DocumentFileItems.Where(x => x.Id == fileItem.Id)
+                    .ExecuteDeleteAsync();
+
+                await dbContext.DocumentFileItems.AddAsync(fileItem);
+                await dbContext.DocumentFileItemSources.AddRangeAsync(files.Select(x => new DocumentFileItemSource()
+                {
+                    Address = x,
+                    DocumentFileItemId = fileItem.Id,
+                    Name = x,
+                    Id = Guid.NewGuid().ToString("N"),
+                }));
+
+                await dbContext.SaveChangesAsync();
+            }
+            finally
+            {
+                memoryCache.Remove(input.Id);
+                scope.Dispose();
+            }
+        });
 
         return true;
     }

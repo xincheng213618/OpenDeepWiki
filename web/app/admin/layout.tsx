@@ -263,7 +263,7 @@ export default function AdminLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full">
+      <div className="flex h-screen w-full overflow-hidden">
         <Sidebar className="border-r">
           <SidebarHeader className="border-b px-6 py-4">
             <div className="flex items-center gap-2">
@@ -328,7 +328,7 @@ export default function AdminLayout({
           </SidebarContent>
         </Sidebar>
 
-        <SidebarInset>
+        <SidebarInset className="overflow-hidden">
           {/* 头部 */}
           <header className="flex h-16 shrink-0 items-center justify-between border-b px-6">
             <div className="flex items-center gap-2">

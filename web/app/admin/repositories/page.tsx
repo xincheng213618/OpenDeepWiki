@@ -57,14 +57,15 @@ import Link from 'next/link';
 
 // 仓库状态映射
 const getStatusBadgeVariant = (status: number) => {
+  // 根据状态返回不同颜色
   switch (status) {
-    case 0: return 'secondary'; // 待处理
-    case 1: return 'default'; // 处理中
-    case 2: return 'default'; // 已完成
-    case 3: return 'secondary'; // 已取消
-    case 4: return 'destructive'; // 未授权
-    case 99: return 'destructive'; // 已失败
-    default: return 'secondary';
+    case 0: return '#CBD5E0'; // 待处理 - 灰色
+    case 1: return '#63B3ED'; // 处理中 - 蓝色
+    case 2: return '#68D391'; // 已完成 - 绿色
+    case 3: return '#A0AEC0'; // 已取消 - 深灰色
+    case 4: return '#F6AD55'; // 未授权 - 橙色
+    case 99: return '#FC8181'; // 已失败 - 红色
+    default: return '#CBD5E0'; // 默认灰色
   }
 };
 
@@ -398,6 +399,7 @@ export default function RepositoriesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>仓库名称</TableHead>
+                <TableHead>Git地址</TableHead>
                 <TableHead>描述</TableHead>
                 <TableHead>状态</TableHead>
                 <TableHead>文档数</TableHead>
@@ -426,10 +428,13 @@ export default function RepositoriesPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
+                    {repo.address || '暂无地址'}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
                     {repo.description || '暂无描述'}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(repo.status)}>
+                    <Badge color={getStatusBadgeVariant(repo.status)}>
                       {getStatusText(repo.status)}
                     </Badge>
                   </TableCell>

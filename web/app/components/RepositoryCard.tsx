@@ -65,34 +65,40 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
   // 获取状态配置
   const getStatusConfig = (status: string | number) => {
     const statusNumber = getStatusNumber(status);
-
     switch (statusNumber) {
       case 0: return {
         variant: 'secondary' as const,
+        color: '#6c757d',
         text: t('repository.status.pending', '待处理')
       };
       case 1: return {
         variant: 'default' as const,
+        color: '#007bff',
         text: t('repository.status.processing', '处理中')
       };
       case 2: return {
-        variant: 'secondary' as const,
+        variant: 'success' as const,
+        color: '#28a745',
         text: t('repository.status.completed', '已完成')
       };
       case 3: return {
         variant: 'outline' as const,
+        color: '#6c757d',
         text: t('repository.status.cancelled', '已取消')
       };
       case 4: return {
         variant: 'secondary' as const,
+        color: '#ffc107',
         text: t('repository.status.unauthorized', '未授权')
       };
       case 99: return {
         variant: 'destructive' as const,
+        color: '#dc3545',
         text: t('repository.status.failed', '已失败')
       };
       default: return {
         variant: 'outline' as const,
+        color: '#6c757d',
         text: t('repository.status.unknown', '未知状态')
       };
     }
@@ -173,17 +179,14 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
                 </div>
               </div>
 
-              <Badge variant={statusConfig.variant} className="shrink-0">
+              <Badge color={statusConfig.color} variant={statusConfig.variant} className="shrink-0">
                 {statusConfig.text}
               </Badge>
             </div>
 
             {repository.description && (
               <p style={{
-                maxWidth: '60%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                height: '40px',
               }} className="text-sm text-muted-foreground mt-3 line-clamp-2">
                 {repository.description}
               </p>

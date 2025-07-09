@@ -18,6 +18,17 @@ import {
   MoreHorizontal,
   Database
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
+
+// 导入上下文菜单组件
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+  ContextMenuSeparator,
+  ContextMenuLabel
+} from '@/components/ui/context-menu';
 
 // shadcn components
 import { Button } from '@/components/ui/button';
@@ -75,6 +86,8 @@ interface TreeItemProps {
   onRightClick: (node: TreeNode, event: React.MouseEvent) => void;
   selectedKey?: string;
   level?: number;
+  showModal: (type: 'newMenu' | 'rename' | 'delete') => void;
+  setRightClickNode: React.Dispatch<React.SetStateAction<TreeNode | null>>;
 }
 
 const TreeItem: React.FC<TreeItemProps> = ({
@@ -82,7 +95,9 @@ const TreeItem: React.FC<TreeItemProps> = ({
   onSelect,
   onRightClick,
   selectedKey,
-  level = 0
+  level = 0,
+  showModal,
+  setRightClickNode
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
@@ -95,39 +110,51 @@ const TreeItem: React.FC<TreeItemProps> = ({
     onSelect(node);
   };
 
-  const handleRightClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onRightClick(node, e);
+  // 处理上下文菜单点击
+  const handleContextMenuClick = (type: 'newMenu' | 'rename' | 'delete') => {
+    // 设置当前右键点击的节点为当前节点
+    setRightClickNode(node);
+    // 显示对应的模态框
+    showModal(type);
   };
 
   return (
     <div className="select-none">
-      <div
-        className={`flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover:bg-accent/50 transition-colors ${
-          isSelected ? 'bg-accent text-accent-foreground' : ''
-        }`}
-        style={{ paddingLeft: `${level * 16 + 8}px` }}
-        onClick={handleClick}
-        onContextMenu={handleRightClick}
-      >
-        {hasChildren ? (
-          isExpanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          )
-        ) : (
-          <div className="w-4" />
-        )}
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <div
+            className={`flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover:bg-accent/50 transition-colors ${isSelected ? 'bg-accent text-accent-foreground' : ''
+              }`}
+            style={{ paddingLeft: `${level * 16 + 8}px` }}
+            onClick={handleClick}
+          >
+            {hasChildren ? (
+              isExpanded ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )
+            ) : (
+              <div className="w-4" />
+            )}
+            <span className="text-sm truncate">{node.title}</span>
+          </div>
+        </ContextMenuTrigger>
 
-        {hasChildren ? (
-          <Folder className="h-4 w-4 text-blue-500" />
-        ) : (
-          <File className="h-4 w-4 text-gray-500" />
-        )}
-
-        <span className="text-sm truncate">{node.title}</span>
-      </div>
+        <ContextMenuContent>
+          <ContextMenuLabel>{node.title || '菜单操作'}</ContextMenuLabel>
+          <ContextMenuItem onClick={() => handleContextMenuClick('newMenu')}>
+            <FolderPlus className="h-4 w-4 mr-2" /> 新建菜单
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => handleContextMenuClick('rename')}>
+            <FileEdit className="h-4 w-4 mr-2" /> 重命名
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem variant="destructive" onClick={() => handleContextMenuClick('delete')}>
+            <Trash2 className="h-4 w-4 mr-2" /> 删除
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
 
       {hasChildren && isExpanded && (
         <div>
@@ -139,6 +166,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
               onRightClick={onRightClick}
               selectedKey={selectedKey}
               level={level + 1}
+              showModal={showModal}
+              setRightClickNode={setRightClickNode}
             />
           ))}
         </div>
@@ -160,6 +189,7 @@ export default function RepositoryDetailPage() {
   const params = useParams();
   const repositoryId = params.id as string;
   const { toast } = useToast();
+  const { resolvedTheme } = useTheme();
 
   // 状态管理
   const [repository, setRepository] = useState<any>(null);
@@ -173,9 +203,6 @@ export default function RepositoryDetailPage() {
   const [modalType, setModalType] = useState<'newMenu' | 'rename' | 'delete'>('newMenu');
   const [newFileName, setNewFileName] = useState('');
   const [editorId] = useState<string>('md-editor-rt-1');
-  // 添加右键菜单状态
-  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
-  const [showContextMenu, setShowContextMenu] = useState(false);
   // 添加AI生成相关状态
   const [isAiModalVisible, setIsAiModalVisible] = useState(false);
 
@@ -206,19 +233,7 @@ export default function RepositoryDetailPage() {
     }
   });
 
-  // 处理Escape键关闭右键菜单
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showContextMenu) {
-        setShowContextMenu(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [showContextMenu]);
+  // 使用Radix UI的Context Menu，不需要手动处理Escape键
 
   // 加载仓库详情
   useEffect(() => {
@@ -352,30 +367,6 @@ export default function RepositoryDetailPage() {
     event.preventDefault();
     event.stopPropagation();
     setRightClickNode(node);
-
-    // 计算菜单位置，确保不超出屏幕边界
-    const menuWidth = 200; // 菜单宽度
-    const menuHeight = 200; // 估计的菜单高度
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    // 计算坐标，确保菜单不会超出视口
-    let x = event.clientX;
-    let y = event.clientY;
-
-    // 检查右边界
-    if (x + menuWidth > viewportWidth) {
-      x = viewportWidth - menuWidth - 10;
-    }
-
-    // 检查下边界
-    if (y + menuHeight > viewportHeight) {
-      y = viewportHeight - menuHeight - 10;
-    }
-
-    // 记录鼠标位置以显示右键菜单
-    setContextMenuPosition({ x, y });
-    setShowContextMenu(true);
   };
 
   const handleAiGenerate = async () => {
@@ -419,15 +410,9 @@ export default function RepositoryDetailPage() {
 
       // 调用API生成内容
       await aiGenerateFileContent(selectedCatalog.catalog.id, prompt);
-
-      // 重新获取文件内容
-      const fileContentResponse = await getRepositoryFileContent(selectedCatalog.catalog.id);
-      if (fileContentResponse.code === 200) {
-        setFileContent(fileContentResponse.data);
-      }
       toast({
         title: "成功",
-        description: 'AI内容生成成功',
+        description: '生成提交成功，请等待大约5分钟，再刷新页面查看结果',
       });
       setIsAiModalVisible(false);
     } catch (error) {
@@ -720,16 +705,7 @@ export default function RepositoryDetailPage() {
     }
   };
 
-  // 关闭右键菜单
-  const closeContextMenu = () => {
-    setShowContextMenu(false);
-  };
 
-  // 处理右键菜单项点击
-  const handleContextMenuClick = (type: 'newMenu' | 'rename' | 'delete') => {
-    setShowContextMenu(false);
-    showModal(type);
-  };
 
   if (loading) {
     return (
@@ -741,53 +717,9 @@ export default function RepositoryDetailPage() {
   }
 
   return (
-    <div onClick={closeContextMenu} className="h-full space-y-6">
-      {/* 仓库信息表单 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            仓库信息
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="description">描述</Label>
-              <Textarea
-                id="description"
-                placeholder="请输入仓库描述"
-                value={repositoryForm.watch('description')}
-                onChange={(e) => repositoryForm.setValue('description', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="prompt">提示词</Label>
-              <Textarea
-                id="prompt"
-                placeholder="请输入仓库提示词"
-                value={repositoryForm.watch('prompt')}
-                onChange={(e) => repositoryForm.setValue('prompt', e.target.value)}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isRecommended"
-                checked={repositoryForm.watch('isRecommended')}
-                onCheckedChange={(checked) => repositoryForm.setValue('isRecommended', checked)}
-              />
-              <Label htmlFor="isRecommended">推荐仓库</Label>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={handleSaveRepository}>
-                保存仓库信息
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="h-full space-y-6">
 
-      <div className="flex gap-4 h-[calc(100vh-400px)]">
+      <div className="flex gap-4 h-[calc(100vh-100px)]">
         {/* 左侧文件目录 */}
         <Card className="w-80 h-full overflow-auto">
           <CardHeader className="pb-3">
@@ -805,6 +737,8 @@ export default function RepositoryDetailPage() {
                   onSelect={handleSelectFile}
                   onRightClick={handleRightClick}
                   selectedKey={selectedFile || undefined}
+                  showModal={showModal}
+                  setRightClickNode={setRightClickNode}
                 />
               ))}
             </div>
@@ -850,6 +784,7 @@ export default function RepositoryDetailPage() {
                 preview={false}
                 toolbarsExclude={['image']}
                 disabled={aiGenerating}
+                theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -860,95 +795,7 @@ export default function RepositoryDetailPage() {
         </Card>
       </div>
 
-      {/* 自定义右键菜单 */}
-      {showContextMenu && contextMenuPosition && (
-        <div
-          style={{
-            position: 'fixed',
-            top: contextMenuPosition.y,
-            left: contextMenuPosition.x,
-            backgroundColor: '#fff',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-            borderRadius: '8px',
-            padding: '8px 0',
-            zIndex: 1050,
-            minWidth: '180px',
-            border: '1px solid #f0f0f0',
-            overflow: 'hidden',
-            animation: 'fadeIn 0.15s ease-in-out',
-            transformOrigin: 'top left',
-          }}
-        >
-          <style jsx global>{`
-            @keyframes fadeIn {
-              from {
-                opacity: 0;
-                transform: scale(0.95);
-              }
-              to {
-                opacity: 1;
-                transform: scale(1);
-              }
-            }
-          `}</style>
-          <div className="menu-title" style={{
-            padding: '6px 16px',
-            fontSize: '12px',
-            color: '#8c8c8c',
-            borderBottom: '1px solid #f0f0f0',
-            marginBottom: '4px'
-          }}>
-            {rightClickNode?.title || '菜单操作'}
-          </div>
-          <div
-            style={{
-              padding: '10px 16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.3s',
-              fontSize: '14px',
-            }}
-            onClick={() => handleContextMenuClick('newMenu')}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          >
-            <FolderPlus size={16} style={{ marginRight: 10, strokeWidth: 2 }} /> 新建菜单
-          </div>
-          <div
-            style={{
-              padding: '10px 16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.3s',
-              fontSize: '14px',
-            }}
-            onClick={() => handleContextMenuClick('rename')}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          >
-            <FileEdit size={16} style={{ marginRight: 10, strokeWidth: 2 }} /> 重命名
-          </div>
-          <div style={{ height: '1px', background: '#f0f0f0', margin: '4px 0' }} />
-          <div
-            style={{
-              padding: '10px 16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.3s',
-              fontSize: '14px',
-              color: '#ff4d4f',
-            }}
-            onClick={() => handleContextMenuClick('delete')}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff1f0'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          >
-            <Trash2 size={16} style={{ marginRight: 10, strokeWidth: 2 }} /> 删除
-          </div>
-        </div>
-      )}
+      {/* 使用Radix UI的ContextMenu组件替代自定义右键菜单 */}
 
       <Dialog open={isModalVisible} onOpenChange={setIsModalVisible}>
         <DialogContent className={modalType === 'newMenu' ? 'max-w-lg' : 'max-w-md'}>
