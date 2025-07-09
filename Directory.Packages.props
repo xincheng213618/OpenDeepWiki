@@ -104,8 +104,4 @@
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
-  <!-- 预发行版本配置 -->
-  <PropertyGroup>
-    <NoWarn>$(NoWarn);NU1604</NoWarn>
-  </PropertyGroup>
 </Project>

@@ -12,8 +12,5 @@
     <WarningsNotAsErrors>NU1604;NU1903</WarningsNotAsErrors>
   </PropertyGroup>
   
-  <!-- 为预发行版本包配置 MSBuild 属性 -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);https://pkgs.dev.azure.com/semantic-kernel/semantic-kernel/_packaging/semantic-kernel-myget/nuget/v3/index.json</RestoreAdditionalProjectSources>
-  </PropertyGroup>
+
 </Project> 
