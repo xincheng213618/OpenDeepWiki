@@ -106,8 +106,4 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageVersion Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
-  <!-- 预发行版本配置 -->
-  <PropertyGroup>
-    <NoWarn>$(NoWarn);NU1604</NoWarn>
-  </PropertyGroup>
 </Project>
