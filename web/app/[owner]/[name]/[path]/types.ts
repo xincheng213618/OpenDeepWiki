@@ -9,6 +9,7 @@ export interface DocumentData {
   address: string;
   createdAt?: string;
   updatedAt?: string;
+  lastUpdate?: any;
 }
 
 // 文件源类型 - 匹配SourceFiles组件的接口

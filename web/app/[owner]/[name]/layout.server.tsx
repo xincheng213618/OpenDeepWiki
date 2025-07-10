@@ -66,6 +66,7 @@ export default async function RepositoryLayoutServer({
   ];
 
   return (<DocsLayout
+    
     nav={{ 
       title: `${owner}/${name}`,
       children: <MCPModal owner={owner} name={name} />

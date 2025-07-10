@@ -25,7 +25,7 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         var warehouse = await dbAccess.Warehouses
             .AsNoTracking()
             .Where(x => x.Name == name && x.OrganizationName == organizationName &&
-                        (string.IsNullOrEmpty(branch) || x.Branch == branch) && 
+                        (string.IsNullOrEmpty(branch) || x.Branch == branch) &&
                         (x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing))
             .FirstOrDefaultAsync();
 
@@ -46,22 +46,6 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
 
         string lastUpdate;
 
-        // 如果最近更新时间是今天那么只需要显示小时
-        if (document?.LastUpdate != null)
-        {
-            var time = DateTime.Now - document.LastUpdate;
-            lastUpdate = time.Days == 0 ? $"{time.Hours}小时前" : $"{time.Days}天前";
-
-            if (time.Days > 7)
-            {
-                lastUpdate = document.LastUpdate.ToString("yyyy-MM-dd");
-            }
-        }
-        else
-        {
-            lastUpdate = "刚刚";
-        }
-
         var branchs =
             (await dbAccess.Warehouses
                 .Where(x => x.Name == name && x.OrganizationName == organizationName && x.Type == "git" &&
@@ -73,7 +57,7 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         return new
         {
             items = BuildDocumentTree(documentCatalogs),
-            lastUpdate,
+            lastUpdate = document?.LastUpdate,
             document?.Description,
             progress = documentCatalogs.Count(x => x.IsCompleted) * 100 / documentCatalogs.Count,
             git = warehouse.Address,
@@ -96,7 +80,7 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         var query = await dbAccess.Warehouses
             .AsNoTracking()
             .Where(x => x.Name == name && x.OrganizationName == owner &&
-                        (string.IsNullOrEmpty(branch) || x.Branch == branch) && 
+                        (string.IsNullOrEmpty(branch) || x.Branch == branch) &&
                         (x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing))
             .FirstOrDefaultAsync();
 
@@ -134,6 +118,7 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
             fileSource,
             address = query?.Address.Replace(".git", string.Empty),
             query?.Branch,
+            lastUpdate = item.CreatedAt,
             documentCatalogId = id
         });
     }

@@ -11,6 +11,7 @@ import { documentById, getWarehouseOverview } from '../../../services/warehouseS
 
 import { DocumentData, Heading } from './types';
 import FloatingChatClient from '../FloatingChatClient';
+import HeadingAnchors from '@/app/components/HeadingAnchors';
 
 // 生成SEO友好的描述
 function generateSEODescription(document: DocumentData, owner: string, name: string, path: string): string {
@@ -246,14 +247,11 @@ export default async function DocumentPage({
   // 在服务端获取文档数据
   let document: DocumentData | null = null;
   let error: string | null = null;
-  let structuredData: any = null;
 
   try {
     const response = await documentById(owner, name, path, branch);
     if (response.isSuccess && response.data) {
       document = response.data as DocumentData;
-      // 生成结构化数据
-      structuredData = generateStructuredData(document, owner, name, path, branch);
     } else {
       error = response.message || '无法获取文档内容，请检查文档路径是否正确';
     }
@@ -268,22 +266,42 @@ export default async function DocumentPage({
     notFound();
   }
 
+  // 判断document.content可能是空字符串
+  if (!document?.content) {
+    return <DocsPage toc={[]}>
+      <DocsTitle>{document?.title ?? ""}</DocsTitle>
+      <DocsDescription>{document?.description ?? ""}</DocsDescription>
+      <DocsBody>
+        <div className="text-center text-gray-500">文档内容为空</div>
+      </DocsBody>
+      <FloatingChatClient
+        organizationName={owner}
+        repositoryName={name}
+        title={`${name} AI 助手`}
+        theme="light"
+        enableDomainValidation={false}
+        embedded={false}
+      />
+    </DocsPage>;
+  }
+
   const compiled = await RenderMarkdown({
     markdown: document.content,
   }) as any;
 
-  const MdxContent = compiled.body;
-  const { title, description } = compiled.frontmatter as any;
-
   return (
-    <DocsPage toc={compiled.toc}>
-      <DocsTitle>{title ?? ""}</DocsTitle>
-      <DocsDescription>{description ?? ""}</DocsDescription>
+    <DocsPage
+      lastUpdate={document?.lastUpdate}
+      toc={compiled.toc}>
+      <DocsTitle>
+        {document?.title ?? ""}
+      </DocsTitle>
+      <DocsDescription>
+        {document?.description}
+      </DocsDescription>
       <DocsBody>
-        <MdxContent
-          components={getMDXComponents({
-          })}
-        />
+        {compiled.body}
+        <HeadingAnchors />
       </DocsBody>
       <FloatingChatClient
         organizationName={owner}

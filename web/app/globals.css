@@ -209,3 +209,11 @@
 button{
   cursor: pointer !important;
 }
+
+
+
+
+.ant-highlighter-shiki code {
+  border: transparent;
+  background:transparent;
+}

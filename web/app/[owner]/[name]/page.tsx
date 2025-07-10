@@ -50,22 +50,14 @@ export default async function RepositoryPage({ params, searchParams }: any) {
     const compiled = await RenderMarkdown({
       markdown: response.data.content,
     }) as any;
-    const MdxContent = compiled.body;
 
-    const { title, description } = compiled!.frontmatter as any;
 
-    // 将数据传递给客户端组件进行渲染
     return (
-      <DocsPage 
+      <DocsPage
         toc={compiled!.toc}>
-        <DocsTitle>{title ?? ""}</DocsTitle>
-        <DocsDescription>{description ?? ""}</DocsDescription>
         <>
           <DocsBody>
-            <MdxContent
-              components={getMDXComponents({
-              })}
-            />
+            {compiled.body}
           </DocsBody>
           <FloatingChatClient
             organizationName={owner}

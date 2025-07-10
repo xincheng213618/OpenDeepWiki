@@ -212,7 +212,7 @@ public partial class WarehouseProcessingTask
                 Title = x.title,
                 LastUpdate = x.date,
             }));
-
+            
             await dbContext.SaveChangesAsync();
 
 
