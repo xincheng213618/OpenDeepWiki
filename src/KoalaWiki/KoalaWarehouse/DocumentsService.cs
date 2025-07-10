@@ -524,7 +524,6 @@ public partial class DocumentsService
                 new OpenAIPromptExecutionSettings()
                 {
                     ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-                    Temperature = 0.5,
                 })
             {
                 ["catalogue"] = catalogue,
