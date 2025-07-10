@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-namespace KoalaWiki.Utils;
+namespace OpenDeepWiki.CodeFoundation.Utils;
 
 /// <summary>
 /// 代码文件类型检测器

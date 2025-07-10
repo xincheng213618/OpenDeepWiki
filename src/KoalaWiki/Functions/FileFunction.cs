@@ -3,9 +3,8 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Microsoft.SemanticKernel;
-using KoalaWiki.Options;
-using KoalaWiki.Services;
-using KoalaWiki.Utils;
+using OpenDeepWiki.CodeFoundation;
+using OpenDeepWiki.CodeFoundation.Utils;
 
 namespace KoalaWiki.Functions;
 

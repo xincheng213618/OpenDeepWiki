@@ -1,5 +1,6 @@
 using KoalaWiki.BackendService;
 using KoalaWiki.Mem0;
+using OpenDeepWiki.CodeFoundation;
 
 AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
 
