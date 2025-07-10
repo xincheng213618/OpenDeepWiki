@@ -56,6 +56,12 @@ public class DocumentsHelper
             return await File.ReadAllTextAsync(readmePath);
         }
 
+        readmePath = Path.Combine(path, "README.rst");
+        if (File.Exists(readmePath))
+        {
+            return await File.ReadAllTextAsync(readmePath);
+        }
+
         readmePath = Path.Combine(path, "README.txt");
         if (File.Exists(readmePath))
         {
