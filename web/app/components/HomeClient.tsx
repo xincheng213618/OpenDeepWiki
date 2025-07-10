@@ -189,39 +189,36 @@ export default function HomeClient({
             </p>
           </div>
 
-          {/* 搜索和操作区域 */}
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-4 items-center justify-center">
-                <div className="flex-1 min-w-0 max-w-lg">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder={t('home.repo_list.search_placeholder')}
-                      value={searchValue}
-                      onChange={(e) => setSearchValue(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchValue)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => setFormVisible(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t('home.add_repo_button')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleLastRepoQuery}
-                  >
-                    {t('home.query_last_repo_button')}
-                  </Button>
-                </div>
+          <div style={{
+            marginBottom: '20px'
+          }} className="flex flex-col lg:flex-row gap-4 items-center justify-center">
+            <div className="flex-1 min-w-0 max-w-lg">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('home.repo_list.search_placeholder')}
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchValue)}
+                  className="pl-10"
+                />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setFormVisible(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t('home.add_repo_button')}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleLastRepoQuery}
+              >
+                {t('home.query_last_repo_button')}
+              </Button>
+            </div>
+          </div>
 
           {/* 仓库列表 */}
           {repositories.length === 0 ? (
@@ -259,12 +256,12 @@ export default function HomeClient({
                     <PaginationContent>
                       {currentPage > 1 && (
                         <PaginationItem>
-                          <PaginationPrevious 
-                            onClick={() => handlePageChange(currentPage - 1)} 
+                          <PaginationPrevious
+                            onClick={() => handlePageChange(currentPage - 1)}
                           />
                         </PaginationItem>
                       )}
-                      
+
                       {Array.from({ length: Math.ceil(initialTotal / pageSize) }).map((_, index) => {
                         const page = index + 1;
                         if (
@@ -285,11 +282,11 @@ export default function HomeClient({
                         }
                         return null;
                       })}
-                      
+
                       {currentPage < Math.ceil(initialTotal / pageSize) && (
                         <PaginationItem>
-                          <PaginationNext 
-                            onClick={() => handlePageChange(currentPage + 1)} 
+                          <PaginationNext
+                            onClick={() => handlePageChange(currentPage + 1)}
                           />
                         </PaginationItem>
                       )}
@@ -462,7 +459,7 @@ export default function HomeClient({
           </div>
         </footer>
       </div>
-      
+
       <Toaster />
     </>
   );

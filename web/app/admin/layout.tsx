@@ -11,11 +11,9 @@ import {
   LogOut,
   UserCheck,
   Key,
-  Menu,
   User
 } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -28,10 +26,8 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -42,10 +38,9 @@ import {
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar';
 
-import { menuService, MenuItem, UserMenu } from '../services/menuService';
+import { UserMenu } from '../services/menuService';
 
 // 菜单项类型定义
 interface MenuItemType {
