@@ -101,10 +101,7 @@ function generateStructuredData(document: DocumentData, owner: string, name: str
 export async function generateMetadata({
   params,
   searchParams
-}: {
-  params: Promise<{ owner: string; name: string; path: string }>;
-  searchParams: Promise<{ branch?: string }>;
-}): Promise<Metadata> {
+}:any): Promise<Metadata> {
   const { owner, name, path } = await params;
   const { branch } = await searchParams;
 
@@ -237,10 +234,7 @@ export async function generateMetadata({
 export default async function DocumentPage({
   params,
   searchParams
-}: {
-  params: Promise<{ owner: string; name: string; path: string }>;
-  searchParams: Promise<{ branch?: string }>;
-}) {
+}: any) {
   const { owner, name, path } = await params;
   const { branch } = await searchParams;
 

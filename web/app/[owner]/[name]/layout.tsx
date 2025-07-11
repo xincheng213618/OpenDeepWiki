@@ -1,4 +1,4 @@
-import { Metadata, ResolvingMetadata } from 'next';
+import { Metadata, } from 'next';
 import RepositoryLayoutServer from './layout.server';
 import { NextProvider } from 'fumadocs-core/framework/next';
 
@@ -9,8 +9,7 @@ type Props = {
 
 // 为页面生成动态元数据
 export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata
+  { params }: any
 ): Promise<Metadata> {
   const { owner, name } = await params;
 
@@ -45,7 +44,7 @@ export async function generateMetadata(
 export default async function RepositoryLayout({
   params,
   children,
-}: Props) {
+}: any) {
   const { owner, name, branch } = await params;
   
   return (

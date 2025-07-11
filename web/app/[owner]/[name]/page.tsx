@@ -3,7 +3,6 @@ import RepositoryInfo from './RepositoryInfo';
 import { checkGitHubRepoExists } from '../../services/githubService';
 import { DocsBody,  DocsPage, DocsTitle } from 'fumadocs-ui/page';
 import RenderMarkdown from '@/app/components/renderMarkdown';
-import { getMDXComponents } from '@/components/mdx-components';
 import FloatingChatClient from './FloatingChatClient';
 import ReloadButtonClient from './ReloadButtonClient';
 
