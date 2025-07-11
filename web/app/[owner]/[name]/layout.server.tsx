@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { documentCatalog } from '../../services/warehouseService';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
-import FloatingChat from '@/app/chat';
+
+import { Flexbox } from 'react-layout-kit';
 import { Button } from '@/components/ui/button';
 import MCPModal from './MCPModal';
+import ExportMarkdownButton from '@/app/components/ExportMarkdownButton';
+import TimeDisplay from '@/app/components/TimeDisplay';
 
 export async function getRepositoryData(owner: string, name: string, branch?: string) {
   try {
@@ -32,9 +35,9 @@ export default async function RepositoryLayoutServer({
   children: React.ReactNode;
   branch: string;
 }) {
-  
+
   const { catalogData, lastUpdated } = await getRepositoryData(owner, name, branch);
-  
+
   const processTreeItems = (items: any[]): any[] => {
     return items.map((item: any) => ({
       name: <Link href={`/${owner}/${name}/${item.url}`}>{item.label}</Link>,
@@ -66,18 +69,42 @@ export default async function RepositoryLayoutServer({
   ];
 
   return (<DocsLayout
-    
-    nav={{ 
+
+    nav={{
       title: `${owner}/${name}`,
-      children: <MCPModal owner={owner} name={name} />
     }}
     searchToggle={{
       enabled: true,
     }}
-    githubUrl={`https://github.com/${owner}/${name}`}
+    githubUrl={catalogData?.git}
+    links={[
+      {
+        type: 'custom',
+        secondary: true,
+        children: <Flexbox
+          gap={8}
+          >
+          <div className="text-center">
+            <TimeDisplay
+              dateString={lastUpdated}
+              className="text-sm text-gray-500"
+              showPrefix={true}
+            />
+          </div>
+          <Flexbox
+            align={'center'}
+            gap={8}
+            horizontal
+          >
+            <ExportMarkdownButton warehouseId={catalogData.warehouseId} />
+            <MCPModal owner={owner} name={name} />
+          </Flexbox>
+        </Flexbox>
+      }
+    ]}
     tree={
       {
-        name: `${owner}/${name}`,
+        name: 'docs',
         children: tree,
       }
     }

@@ -26,7 +26,6 @@ export default async function ChangelogPage({ params, searchParams }: any) {
       );
     }
 
-    // 直接在服务器端渲染更新日志
     return (
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px' }}>
         <h2 style={{ marginBottom: '24px' }}>更新日志</h2>
@@ -38,7 +37,6 @@ export default async function ChangelogPage({ params, searchParams }: any) {
     const owner = params?.owner || "";
     const name = params?.name || "";
 
-    // 出现错误时也展示GitHub仓库信息（如果有）
     return (
       <RepositoryInfo
         owner={owner}

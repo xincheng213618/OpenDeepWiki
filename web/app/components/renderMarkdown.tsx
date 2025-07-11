@@ -40,29 +40,26 @@ export default async function RenderMarkdown(props: { markdown: string }): Promi
     if (!props.markdown) return null;
 
     try {
-        // 先处理mermaid图表
-        let processedMarkdown = props.markdown.replace(/```mermaid\s*(\n?)([\s\S]*?)```/g, (match, p1, p2) => {
-            return `<Mermaid chart={\`${p2}\`}/>`;
-        });
 
         try {
             const compiled = await compileMDX({
-                source: processedMarkdown,
+                source: props.markdown.replace(/```mermaid\s*(\n?)([\s\S]*?)```/g, (match, p1, p2) => {
+                    return `<Mermaid chart={\`${p2}\`}/>`;
+                }),
                 mdxOptions: {
                     remarkPlugins: [
                         remarkGfm,
                         remarkImage,
                     ],
                     rehypePlugins: [rehypeCode],
-                    rehypeCodeOptions:{
-                        onError:(error)=>{
+                    rehypeCodeOptions: {
+                        onError: (error) => {
 
                         },
-                        themes:{
-                            
+                        themes: {
+
                         }
                     },
-                    format:'md',
                     development: true,
                 },
             });

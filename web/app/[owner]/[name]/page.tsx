@@ -1,7 +1,7 @@
 import { getWarehouseOverview } from '../../services';
 import RepositoryInfo from './RepositoryInfo';
 import { checkGitHubRepoExists } from '../../services/githubService';
-import { DocsBody, DocsDescription, DocsPage, DocsTitle } from 'fumadocs-ui/page';
+import { DocsBody,  DocsPage, DocsTitle } from 'fumadocs-ui/page';
 import RenderMarkdown from '@/app/components/renderMarkdown';
 import { getMDXComponents } from '@/components/mdx-components';
 import FloatingChatClient from './FloatingChatClient';
@@ -10,10 +10,9 @@ import ReloadButtonClient from './ReloadButtonClient';
 // 服务器组件，处理数据获取
 export default async function RepositoryPage({ params, searchParams }: any) {
   try {
-    const owner = params.owner;
-    const name = params.name;
-    // 从查询参数中获取分支信息
-    const branch = searchParams.branch as string | undefined;
+    const { owner, name } = await params;
+
+    const { branch } = await searchParams;
 
     if (!owner || !name) {
       throw new Error('Missing owner or repository name');

@@ -26,7 +26,7 @@ const MCPModal = (
 ) => {
   const { t } = useTranslation('common');
   const [copied, setCopied] = useState(false);
-  
+
   const mcpConfigJson = {
     mcpServers: {
       [name.toLowerCase()]: {
@@ -34,7 +34,7 @@ const MCPModal = (
       }
     }
   };
-  
+
   const mcpJsonString = JSON.stringify(mcpConfigJson, null, 2);
 
   const copyToClipboard = () => {
@@ -69,7 +69,9 @@ const MCPModal = (
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-sm">
+        <Button
+          variant="outline"
+          size="sm" >
           MCP
         </Button>
       </DialogTrigger>
@@ -112,8 +114,8 @@ const MCPModal = (
                   onClick={copyToClipboard}
                   title={copied ? t('repository_layout.mcp.config.copied_tooltip') : t('repository_layout.mcp.config.copy_tooltip')}
                 >
-                  {copied ? 
-                    <CheckIcon className="h-3 w-3 text-green-500" /> : 
+                  {copied ?
+                    <CheckIcon className="h-3 w-3 text-green-500" /> :
                     <CopyIcon className="h-3 w-3" />
                   }
                 </Button>

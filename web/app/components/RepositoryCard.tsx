@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '../i18n/client';
+import { formatRelativeTime } from '../utils/timeFormat';
 import {
   Github,
   GitFork,
@@ -106,13 +107,7 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const locale = currentLocale === 'zh-CN' ? 'zh-CN' : 'en-US';
-    return date.toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatRelativeTime(dateString, currentLocale);
   };
 
   const getRepoIcon = () => {

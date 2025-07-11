@@ -290,7 +290,7 @@
     },
     "header": {
       "add_mcp": "Add MCP",
-      "last_updated": "Last Updated: {{time}}"
+      "last_updated": "Last Updated: "
     },
     "mcp": {
       "modal_title": "MCP Integration Tutorial",
@@ -319,18 +319,28 @@
     },
     "sidebar": {
       "export": {
-        "button": "Export Docs",
+        "button": "Export Markdown",
         "modal_title": "Export Markdown",
         "modal_content": "Export current documentation as Markdown format?",
         "ok_text": "Export",
         "cancel_text": "Cancel",
-        "failed_message": "Export failed, please try again later."
+        "failed_message": "Export failed, please try again later.",
+        "success_message": "Documentation exported successfully!",
+        "downloading": "Downloading..."
       },
       "overview": "Overview",
       "mindmap": "Mind Map",
       "changelog": "Changelog"
     },
-    "update_tooltip": "Last Updated: {{time}}"
+    "update_tooltip": "Last Updated: ",
+    "time": {
+      "just_updated": "Just updated",
+      "hour_ago": "{{count}} hour ago",
+      "hours_ago": "{{count}} hours ago",
+      "day_ago": "{{count}} day ago",
+      "days_ago": "{{count}} days ago",
+      "unknown": "Unknown"
+    }
   },
   "auth": {
     "login": "Login",

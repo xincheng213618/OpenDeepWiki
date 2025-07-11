@@ -290,7 +290,7 @@
     },
     "header": {
       "add_mcp": "添加MCP",
-      "last_updated": "最近更新: {{time}}"
+      "last_updated": "最近更新: "
     },
     "mcp": {
       "modal_title": "MCP接入教程",
@@ -319,18 +319,28 @@
     },
     "sidebar": {
       "export": {
-        "button": "导出文档",
+        "button": "导出Markdown",
         "modal_title": "导出Markdown",
         "modal_content": "是否将当前文档导出为Markdown格式？",
         "ok_text": "导出",
         "cancel_text": "取消",
-        "failed_message": "导出失败，请稍后再试。"
+        "failed_message": "导出失败，请稍后再试。",
+        "success_message": "文档导出成功！",
+        "downloading": "正在下载..."
       },
       "overview": "概览",
       "mindmap": "思维导图",
       "changelog": "更新日志"
     },
-    "update_tooltip": "最近更新: {{time}}"
+    "update_tooltip": "最近更新: ",
+    "time": {
+      "just_updated": "刚刚更新",
+      "hour_ago": "{{count}}小时前",
+      "hours_ago": "{{count}}小时前",
+      "day_ago": "{{count}}天前",
+      "days_ago": "{{count}}天前",
+      "unknown": "未知"
+    }
   },
   "auth": {
     "login": "登录",

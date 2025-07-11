@@ -24,7 +24,7 @@ export async function generateMetadata(
   { params }: any,
   parent: any
 ): Promise<Metadata> {
-  const { owner, name, path } = params;
+  const { owner, name, path } = await params;
   const pathString = Array.isArray(path) ? path.join('/') : path;
 
   // 尝试获取文档内容以提取更好的描述
@@ -91,7 +91,7 @@ export default async function DocumentLayout({
   children,
   params
 }: any) {
-  const { owner, name, path } = params;
+  const { owner, name, path } = await params;
   const pathString = Array.isArray(path) ? path.join('/') : path;
 
   // 构建结构化数据
