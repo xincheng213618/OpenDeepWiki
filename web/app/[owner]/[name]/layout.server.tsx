@@ -29,12 +29,7 @@ export default async function RepositoryLayoutServer({
   name,
   children,
   branch
-}: {
-  owner: string;
-  name: string;
-  children: React.ReactNode;
-  branch: string;
-}) {
+}: any) {
 
   const { catalogData, lastUpdated } = await getRepositoryData(owner, name, branch);
 
