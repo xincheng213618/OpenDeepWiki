@@ -355,5 +355,18 @@
       "editor": "Editor",
       "user": "User"
     }
+  },
+  "page": {
+    "error": {
+      "title": "Page Load Failed",
+      "unable_to_load": "Unable to load repository page",
+      "repo_not_exist": "may not exist or is temporarily inaccessible",
+      "error_detail": "Error details: {{error}}",
+      "unknown_error": "Unknown error",
+      "back_to_owner": "Back to {{owner}}",
+      "back_to_home": "Back to Home",
+      "reload": "Reload"
+    },
+    "ai_assistant": "{{name}} AI Assistant"
   }
 } 

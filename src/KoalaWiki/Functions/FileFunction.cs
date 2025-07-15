@@ -11,6 +11,7 @@ namespace KoalaWiki.Functions;
 public class FileFunction(string gitPath)
 {
     private readonly CodeCompressionService _codeCompressionService = new();
+
     /// <summary>
     /// 获取当前仓库压缩结构
     /// </summary>
@@ -21,11 +22,11 @@ public class FileFunction(string gitPath)
 
         // 递归扫描目录所有文件和目录
         DocumentsHelper.ScanDirectory(gitPath, pathInfos, ignoreFiles);
-        
+
         var fileTree = FileTreeBuilder.BuildTree(pathInfos, gitPath);
         return FileTreeBuilder.ToCompactString(fileTree);
     }
-    
+
     /// <summary>
     /// 获取文件基本信息
     /// </summary>
@@ -208,22 +209,17 @@ public class FileFunction(string gitPath)
     /// 从指定行数开始读取文件内容
     /// </summary>
     /// <returns></returns>
-    [KernelFunction(name: "FileFromLine"),
+    [KernelFunction(name: "File"),
      Description(
-         "Asynchronously reads the specified file and only returns the text content from the starting line to the ending line (inclusive). Suitable for efficiently handling large files, ensuring performance and data security.")]
-    [return:
-        Description(
-            "Returns the file content from the specified starting line to the ending line (inclusive). If the total output length exceeds 10,000 characters, only the first 10,000 characters are returned, the content order is consistent with the original file, and the original line breaks are retained.")]
+         "Reads a file from the local filesystem. You can access any file directly by using this tool.\nAssume this tool is able to read all files on the machine. If the User provides a path to a file assume that path is valid. It is okay to read a file that does not exist; an error will be returned.\n\nUsage:\n- The file_path parameter must be an absolute path, not a relative path\n- By default, it reads up to 2000 lines starting from the beginning of the file\n- You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters\n- Any lines longer than 2000 characters will be truncated\n- Results are returned using cat -n format, with line numbers starting at 1\n- This tool allows Claude Code to read images (eg PNG, JPG, etc). When reading an image file the contents are presented visually as Claude Code is a multimodal LLM.\n- For Jupyter notebooks (.ipynb files), use the NotebookRead instead\n- You have the capability to call multiple tools in a single response. It is always better to speculatively read multiple files as a batch that are potentially useful. \n- You will regularly be asked to read screenshots. If the user provides a path to a screenshot ALWAYS use this tool to view the file at the path. This tool will work with all temporary file paths like /var/folders/123/abc/T/TemporaryItems/NSIRD_screencaptureui_ZfB1tD/Screenshot.png\n- If you read a file that exists but has empty contents you will receive a system reminder warning in place of file contents.")]
     public async Task<string> ReadFileFromLineAsync(
-        [Description(
-            "An array of file items to read. Each item contains the file path and the start and end line numbers for reading. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
         ReadFileItemInput[] items)
     {
         var dic = new Dictionary<string, string>();
         foreach (var item in items)
         {
-            dic.Add($"fileName:{item.FilePath}\nstartLine:{item.StartLine}\nendLine:{item.EndLine}",
-                await ReadItem(item.FilePath, item.StartLine, item.EndLine));
+            dic.Add($"fileName:{item.FilePath}\nstartLine:{item.Offset}\nendLine:{item.Limit}",
+                await ReadItem(item.FilePath, item.Offset, item.Limit));
         }
 
         return JsonSerializer.Serialize(dic, JsonSerializerOptions.Web);
@@ -232,64 +228,72 @@ public class FileFunction(string gitPath)
 
     public async Task<string> ReadItem(
         [Description(
-            "The absolute or relative path of the target file. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
+            "The absolute or relative path of the target file to read")]
         string filePath,
         [Description(
-            "The starting line number for reading (starting from 0), must be less than or equal to the ending line number, and must be within the actual number of lines in the file.")]
-        int startLine = 0,
+            "The line number to start reading from. Only provide if the file is too large to read at once")]
+        int offset = 0,
         [Description(
-            "The ending line number for reading (including this line), must be greater than or equal to the starting line number, and must not exceed the total number of lines in the file.")]
-        int endLine = 200)
+            "The number of lines to read. Only provide if the file is too large to read at once.")]
+        int limit = 200)
     {
         try
         {
             filePath = Path.Combine(gitPath, filePath.TrimStart('/'));
             Console.WriteLine(
-                $"Reading file from line {startLine}: {filePath} startLine={startLine}, endLine={endLine}");
+                $"Reading file from line {offset}: {filePath} startLine={offset}, endLine={limit}");
 
             // 如果<0则读取全部
-            if (startLine < 0 && endLine < 0)
+            if (offset < 0 && limit < 0)
             {
                 return await ReadFileAsync(filePath);
             }
 
             // 如果endLine<0则读取到最后一行
-            if (endLine < 0)
+            if (limit < 0)
             {
-                endLine = int.MaxValue;
+                limit = int.MaxValue;
             }
 
             // 先读取整个文件内容
             string fileContent = await File.ReadAllTextAsync(filePath);
-            
+
             // 如果启用代码压缩且是代码文件，先对整个文件内容进行压缩
             if (DocumentOptions.EnableCodeCompression && CodeFileDetector.IsCodeFile(filePath))
             {
                 fileContent = _codeCompressionService.CompressCode(fileContent, filePath);
             }
-            
+
             // 将压缩后的内容按行分割
             var lines = fileContent.Split('\n');
 
-            // 验证行号范围
-            if (startLine < 0 || startLine >= lines.Length)
+            // 如果offset大于文件总行数，则返回空
+            if (offset >= lines.Length)
             {
-                return $"Invalid start line: {startLine}";
+                return $"No content to read from line {offset} in file: {filePath}";
             }
 
-            if (endLine < startLine || endLine >= lines.Length)
+            // 计算实际读取的行数
+            int actualLimit = Math.Min(limit, lines.Length - offset);
+            // 读取指定行数的内容
+            var resultLines = new List<string>();
+            for (int i = offset; i < offset + actualLimit && i < lines.Length; i++)
             {
-                endLine = lines.Length - 1;
+                // 如果行内容超过2000字符，则截断
+                if (lines[i].Length > 2000)
+                {
+                    resultLines.Add(lines[i][..2000]);
+                }
+                else
+                {
+                    resultLines.Add(lines[i]);
+                }
             }
 
-            // 提取指定范围的行
-            var result = new StringBuilder();
-            for (var i = startLine; i <= endLine; i++)
-            {
-                result.AppendLine(lines[i].TrimEnd('\r'));
-            }
+            // 将结果行号从1开始
+            var numberedLines = resultLines.Select((line, index) => $"{index + 1}: {line}").ToList();
 
-            return result.ToString();
+            return string.Join("\n", numberedLines);
         }
         catch (Exception ex)
         {
@@ -303,14 +307,14 @@ public class FileFunction(string gitPath)
 public class ReadFileItemInput
 {
     [Description(
-        "The absolute or relative path of the target file. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
+        "The absolute or relative path of the target file to read")]
     public string FilePath { get; set; }
 
     [Description(
-        "The starting line number for reading (starting from 0), must be less than or equal to the ending line number, and must be within the actual number of lines in the file.")]
-    public int StartLine { get; set; } = 0;
+        "The line number to start reading from. Only provide if the file is too large to read at once")]
+    public int Offset { get; set; } = 0;
 
     [Description(
-        "The ending line number for reading (including this line), must be greater than or equal to the starting line number, and must not exceed the total number of lines in the file.")]
-    public int EndLine { get; set; } = 200;
+        "The number of lines to read. Only provide if the file is too large to read at once.")]
+    public int Limit { get; set; } = 200;
 }

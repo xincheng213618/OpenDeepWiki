@@ -355,5 +355,18 @@
       "editor": "编辑者",
       "user": "用户"
     }
+  },
+  "page": {
+    "error": {
+      "title": "页面加载失败",
+      "unable_to_load": "无法加载仓库页面",
+      "repo_not_exist": "可能不存在或暂时无法访问",
+      "error_detail": "错误详情: {{error}}",
+      "unknown_error": "未知错误",
+      "back_to_owner": "返回 {{owner}}",
+      "back_to_home": "返回首页",
+      "reload": "重新加载"
+    },
+    "ai_assistant": "{{name}} AI 助手"
   }
 } 

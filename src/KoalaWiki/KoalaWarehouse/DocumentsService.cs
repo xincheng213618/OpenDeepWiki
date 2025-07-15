@@ -292,7 +292,7 @@ public partial class DocumentsService
         }
 
         activity?.SetTag("processing_type", "ai_smart_filter");
-        Log.Logger.Information("开始优化目录结构（使用树形格式）");
+        Log.Logger.Information($"开始优化目录结构（使用{DocumentOptions.CatalogueFormat}格式）");
 
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel);
