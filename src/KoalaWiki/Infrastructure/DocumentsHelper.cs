@@ -85,6 +85,11 @@ public class DocumentsHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int? GetMaxTokens(string model)
     {
+        if(model.StartsWith("kimi-k2", StringComparison.OrdinalIgnoreCase))
+        {
+            return 65535;
+        }
+        
         if (model.StartsWith("deepseek-r1", StringComparison.OrdinalIgnoreCase))
         {
             return 32768;

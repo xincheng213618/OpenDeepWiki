@@ -29,7 +29,6 @@ public partial class DocumentsService
     /// <param name="warehouse">The warehouse associated with the document.</param>
     /// <param name="dbContext">The database context used for data operations.</param>
     /// <param name="gitRepository">The Git repository address related to the document.</param>
-    /// <param name="activity1"></param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task HandleAsync(Document document, Warehouse warehouse, IKoalaWikiContext dbContext,
         string gitRepository)
