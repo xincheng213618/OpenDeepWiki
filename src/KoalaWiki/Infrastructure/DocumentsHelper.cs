@@ -18,7 +18,7 @@ public class DocumentsHelper
     /// <param name="documents"></param>
     public static void ProcessCatalogueItems(List<DocumentResultCatalogueItem> items, string? parentId,
         Warehouse warehouse,
-        Document document, List<DocumentCatalog>? documents)
+        Document document, List<DocumentCatalog> documents)
     {
         int order = 0; // 创建排序计数器
         foreach (var item in items)
@@ -39,11 +39,12 @@ public class DocumentsHelper
 
             documents.Add(documentItem);
 
-            ProcessCatalogueItems(item.children.ToList(), documentItem.Id, warehouse, document,
-                documents);
+            if (item.children != null)
+                ProcessCatalogueItems(item.children.ToList(), documentItem.Id, warehouse, document,
+                    documents);
         }
     }
-    
+
     /// <summary>
     /// 读取仓库的ReadMe文件
     /// </summary>
@@ -76,7 +77,7 @@ public class DocumentsHelper
 
         return string.Empty;
     }
-    
+
     /// <summary>
     /// 获取模型的最大tokens数量
     /// </summary>
@@ -85,11 +86,11 @@ public class DocumentsHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int? GetMaxTokens(string model)
     {
-        if(model.StartsWith("kimi-k2", StringComparison.OrdinalIgnoreCase))
+        if (model.StartsWith("kimi-k2", StringComparison.OrdinalIgnoreCase))
         {
             return 65535;
         }
-        
+
         if (model.StartsWith("deepseek-r1", StringComparison.OrdinalIgnoreCase))
         {
             return 32768;

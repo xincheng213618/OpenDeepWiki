@@ -162,7 +162,7 @@ public partial class DocumentsService
         }
 
         // 步骤6: 生成目录结构
-        List<DocumentCatalog> documentCatalogs;
+        List<DocumentCatalog> documentCatalogs = [];
         using (var catalogueStructureActivity = s_activitySource.StartActivity("生成目录结构"))
         {
             catalogueStructureActivity?.SetTag("warehouse.id", warehouse.Id);
@@ -170,7 +170,6 @@ public partial class DocumentsService
                 warehouse,
                 classify);
 
-            documentCatalogs = new List<DocumentCatalog>();
             // 递归处理目录层次结构
             DocumentsHelper.ProcessCatalogueItems(result.items, null, warehouse, document, documentCatalogs);
 

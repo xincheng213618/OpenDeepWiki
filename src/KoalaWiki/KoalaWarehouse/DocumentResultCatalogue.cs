@@ -10,10 +10,10 @@ public class DocumentResultCatalogue
 public class DocumentResultCatalogueItem
 {
     public string name { get; set; }
-    
+
     public string title { get; set; }
-    
-    public string prompt {get; set;}
-    
-    public List<DocumentResultCatalogueItem> children { get; set; } = new();
+
+    public string prompt { get; set; }
+
+    public List<DocumentResultCatalogueItem>? children { get; set; }
 }
