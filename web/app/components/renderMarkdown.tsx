@@ -59,8 +59,7 @@ export default async function RenderMarkdown(props: { markdown: string }): Promi
                         themes: {
 
                         }
-                    },
-                    development: true,
+                    }
                 },
             });
             const MdxContent = compiled.body;
