@@ -491,3 +491,4 @@ $RECYCLE.BIN/
 /postgres_db
 /history
 /repositories/aidotnet/Thor
+*lock.json
