@@ -363,24 +363,29 @@ const RolePermissionsPage: React.FC = () => {
     }
   };
 
+  // 组件初始化时加载数据
   useEffect(() => {
     loadRoles();
     loadPermissionTree();
-    // 默认展开所有组织节点
-    const expandAllOrganizations = (nodes: PermissionNode[]): string[] => {
-      const keys: string[] = [];
-      nodes.forEach(node => {
-        if (node.type === 'organization') {
-          keys.push(node.key);
-        }
-        if (node.children) {
-          keys.push(...expandAllOrganizations(node.children));
-        }
-      });
-      return keys;
-    };
+  }, []);
 
+  // 当权限树数据加载完成后，设置默认展开的节点
+  useEffect(() => {
     if (permissionTree.length > 0) {
+      // 默认展开所有组织节点
+      const expandAllOrganizations = (nodes: PermissionNode[]): string[] => {
+        const keys: string[] = [];
+        nodes.forEach(node => {
+          if (node.type === 'organization') {
+            keys.push(node.key);
+          }
+          if (node.children) {
+            keys.push(...expandAllOrganizations(node.children));
+          }
+        });
+        return keys;
+      };
+
       setExpandedKeys(expandAllOrganizations(permissionTree));
     }
   }, [permissionTree]);
