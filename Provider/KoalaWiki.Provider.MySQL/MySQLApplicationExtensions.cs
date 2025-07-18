@@ -13,8 +13,7 @@ public static class MySQLApplicationExtensions
     {
         services.AddDataAccess<MySQLContext>((_, builder) =>
         {
-            builder.UseMySql(configuration.GetConnectionString("Default"), 
-                ServerVersion.AutoDetect(configuration.GetConnectionString("Default")));
+            builder.UseMySQL(configuration.GetConnectionString("Default"));
 
             // sql日志不输出控制台
             builder.UseLoggerFactory(LoggerFactory.Create(_ => { }));
@@ -28,7 +27,7 @@ public static class MySQLApplicationExtensions
     {
         services.AddDataAccess<MySQLContext>((_, builder) =>
         {
-            builder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+            builder.UseMySQL(connectionString);
 
             // sql日志不输出控制台
             builder.UseLoggerFactory(LoggerFactory.Create(_ => { }));

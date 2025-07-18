@@ -22,7 +22,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.AppConfig", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<string>("AllowedDomainsJson")
@@ -33,7 +33,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                     b.Property<string>("AppId")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("varchar(255)")
+                        .HasColumnType("varchar(64)")
                         .HasComment("应用ID");
 
                     b.Property<DateTime>("CreatedAt")
@@ -43,7 +43,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("varchar(255)")
+                        .HasColumnType("varchar(500)")
                         .HasComment("应用描述");
 
                     b.Property<bool>("EnableDomainValidation")
@@ -51,7 +51,8 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         .HasComment("是否启用域名验证");
 
                     b.Property<string>("Introduction")
-                        .HasColumnType("longtext");
+                        .HasColumnType("longtext")
+                        .HasComment("开场白");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("tinyint(1)")
@@ -66,22 +67,24 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Model")
-                        .HasColumnType("longtext");
+                        .HasColumnType("longtext")
+                        .HasComment("选择模型");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("varchar(255)")
+                        .HasColumnType("varchar(100)")
                         .HasComment("应用名称");
 
                     b.Property<string>("OrganizationName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("varchar(255)")
+                        .HasColumnType("varchar(100)")
                         .HasComment("组织名称");
 
                     b.Property<string>("Prompt")
-                        .HasColumnType("longtext");
+                        .HasColumnType("longtext")
+                        .HasComment("默认提示词");
 
                     b.Property<string>("RecommendedQuestions")
                         .HasColumnType("longtext");
@@ -89,12 +92,12 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                     b.Property<string>("RepositoryName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("varchar(255)")
+                        .HasColumnType("varchar(100)")
                         .HasComment("仓库名称");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("创建用户ID");
 
                     b.HasKey("Id");
@@ -125,7 +128,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.Document", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<long>("CommentCount")
@@ -151,11 +154,11 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<byte>("Status")
-                        .HasColumnType("smallint");
+                        .HasColumnType("tinyint unsigned");
 
                     b.Property<string>("WarehouseId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("所属仓库Id");
 
                     b.HasKey("Id");
@@ -173,7 +176,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.DocumentCatalog", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<DateTime>("CreatedAt")
@@ -190,7 +193,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("DucumentId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("文档Id");
 
                     b.Property<bool>("IsCompleted")
@@ -202,14 +205,14 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("目录名称");
 
                     b.Property<int>("Order")
                         .HasColumnType("int");
 
                     b.Property<string>("ParentId")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("父级目录Id");
 
                     b.Property<string>("Prompt")
@@ -222,7 +225,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("WarehouseId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("所属仓库Id");
 
                     b.HasKey("Id");
@@ -248,7 +251,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.DocumentCommitRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<string>("Author")
@@ -258,7 +261,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("CommitId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("提交Id");
 
                     b.Property<string>("CommitMessage")
@@ -278,7 +281,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("WarehouseId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("仓库Id");
 
                     b.HasKey("Id");
@@ -296,7 +299,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentFileItem", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<long>("CommentCount")
@@ -317,7 +320,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("DocumentCatalogId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("目录Id");
 
                     b.Property<string>("Extra")
@@ -344,7 +347,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("文件标题");
 
                     b.HasKey("Id");
@@ -364,7 +367,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentFileItemSource", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<string>("Address")
@@ -377,12 +380,12 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("DocumentFileItemId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("文件项Id");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("来源名称");
 
                     b.HasKey("Id");
@@ -402,7 +405,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.FineTuning.FineTuningTask", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<DateTime?>("CompletedAt")
@@ -422,7 +425,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("DocumentCatalogId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("目录Id");
 
                     b.Property<string>("Error")
@@ -430,7 +433,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("微调任务名称");
 
                     b.Property<string>("OriginalDataset")
@@ -445,17 +448,17 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("TrainingDatasetId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("训练数据集Id");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("用户Id");
 
                     b.Property<string>("WarehouseId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("仓库Id");
 
                     b.HasKey("Id");
@@ -483,7 +486,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.FineTuning.TrainingDataset", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<string>("ApiKey")
@@ -504,7 +507,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("数据集名称");
 
                     b.Property<string>("Prompt")
@@ -523,7 +526,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("WarehouseId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("仓库Id");
 
                     b.HasKey("Id");
@@ -543,7 +546,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.MCP.MCPHistory", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<string>("Answer")
@@ -570,11 +573,11 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("UserId")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("用户Id");
 
                     b.Property<string>("WarehouseId")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("仓库Id");
 
                     b.HasKey("Id");
@@ -594,7 +597,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.MiniMap", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<DateTime>("CreatedAt")
@@ -607,7 +610,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("WarehouseId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("仓库Id");
 
                     b.HasKey("Id");
@@ -623,7 +626,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.Statistics.AccessRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<DateTime>("CreatedAt")
@@ -632,7 +635,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("IP地址");
 
                     b.Property<string>("Method")
@@ -647,12 +650,12 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("ResourceId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("资源Id");
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("资源类型");
 
                     b.Property<long>("ResponseTime")
@@ -669,7 +672,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         .HasComment("用户代理");
 
                     b.Property<string>("UserId")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("用户Id");
 
                     b.HasKey("Id");
@@ -695,7 +698,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.Statistics.DailyStatistics", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<int>("ActiveUsers")
@@ -750,7 +753,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.Users.Role", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<DateTime>("CreatedAt")
@@ -770,7 +773,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("角色名称");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -791,7 +794,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.Users.User", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<string>("Avatar")
@@ -804,7 +807,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("邮箱");
 
                     b.Property<DateTime?>("LastLoginAt")
@@ -816,7 +819,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("用户名");
 
                     b.Property<string>("Password")
@@ -846,12 +849,12 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.Users.UserInAuth", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<string>("AuthId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("认证Id");
 
                     b.Property<DateTime>("CreatedAt")
@@ -859,12 +862,12 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("Provider")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("认证提供方");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("用户Id");
 
                     b.HasKey("Id");
@@ -884,11 +887,11 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.Users.UserInRole", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("用户Id");
 
                     b.Property<string>("RoleId")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("角色Id");
 
                     b.HasKey("UserId", "RoleId");
@@ -902,16 +905,16 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.Warehouse.Warehouse", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("仓库地址");
 
                     b.Property<string>("Branch")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("分支");
 
                     b.Property<int?>("Classify")
@@ -946,7 +949,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("仓库名称");
 
                     b.Property<string>("OptimizedDirectoryStructure")
@@ -954,7 +957,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("OrganizationName")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("组织名称");
 
                     b.Property<string>("Prompt")
@@ -964,11 +967,11 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<byte>("Status")
-                        .HasColumnType("smallint")
+                        .HasColumnType("tinyint unsigned")
                         .HasComment("仓库状态");
 
                     b.Property<string>("Type")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("仓库类型");
 
                     b.Property<string>("Version")
@@ -999,11 +1002,11 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Domains.Warehouse.WarehouseInRole", b =>
                 {
                     b.Property<string>("WarehouseId")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("仓库Id");
 
                     b.Property<string>("RoleId")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("角色Id");
 
                     b.Property<bool>("IsDelete")
@@ -1030,7 +1033,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
             modelBuilder.Entity("KoalaWiki.Entities.DocumentOverview", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
                     b.Property<string>("Content")
@@ -1042,12 +1045,12 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<string>("DocumentId")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("文档Id");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasComment("文档标题");
 
                     b.HasKey("Id");
