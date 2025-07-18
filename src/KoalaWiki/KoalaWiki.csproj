@@ -136,6 +136,7 @@
       <ProjectReference Include="..\..\Provider\KoalaWiki.Provider.PostgreSQL\KoalaWiki.Provider.PostgreSQL.csproj" />
       <ProjectReference Include="..\..\Provider\KoalaWiki.Provider.Sqlite\KoalaWiki.Provider.Sqlite.csproj" />
       <ProjectReference Include="..\..\Provider\KoalaWiki.Provider.SqlServer\KoalaWiki.Provider.SqlServer.csproj" />
+      <ProjectReference Include="..\..\Provider\KoalaWiki.Provider.MySQL\KoalaWiki.Provider.MySQL.csproj" />
       <ProjectReference Include="..\KoalaWiki.ServiceDefaults\KoalaWiki.ServiceDefaults.csproj" />
     </ItemGroup>
 
