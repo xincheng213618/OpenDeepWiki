@@ -2,6 +2,7 @@ using KoalaWiki.Core.Extensions;
 using KoalaWiki.Provider.PostgreSQL;
 using KoalaWiki.Provider.Sqlite;
 using KoalaWiki.Provider.SqlServer;
+using KoalaWiki.Provider.MySQL;
 
 namespace KoalaWiki.Extensions;
 
@@ -26,6 +27,10 @@ public static class DbContextExtensions
             {
                 services.AddSqlServerDbContext(configuration);
             }
+            else if (dbTypeFromConfig == "mysql")
+            {
+                services.AddMySQLDbContext(configuration);
+            }
             else
             {
                 services.AddSqliteDbContext(configuration);
@@ -43,6 +48,10 @@ public static class DbContextExtensions
         else if (dbType.Equals("sqlserver", StringComparison.OrdinalIgnoreCase))
         {
             services.AddSqlServerDbContext(dbConnectionString);
+        }
+        else if (dbType.Equals("mysql", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddMySQLDbContext(dbConnectionString);
         }
         else
         {

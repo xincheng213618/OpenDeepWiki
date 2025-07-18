@@ -35,7 +35,7 @@
 - [x] 支持多编程语言（Python、Java、C#、JavaScript等）
 - [x] 支持仓库管理（增删改查仓库）
 - [x] 支持多AI提供商（OpenAI、AzureOpenAI、Anthropic等）
-- [x] 支持多数据库（SQLite、PostgreSQL、SqlServer等）
+- [x] 支持多数据库（SQLite、PostgreSQL、SqlServer、MySQL等）
 - [x] 支持多语言（中文、英文、法文等）
 - [x] 支持上传ZIP文件和本地文件
 - [x] 提供数据微调平台，生成微调数据集
@@ -133,6 +133,32 @@ services:
 ```
 
 - AzureOpenAI和Anthropic配置类似，仅需调整 `ENDPOINT` 和 `MODEL_PROVIDER`。
+
+## 数据库配置
+
+### SQLite (默认)
+```yaml
+- DB_TYPE=sqlite
+- DB_CONNECTION_STRING=Data Source=/data/KoalaWiki.db
+```
+
+### PostgreSQL
+```yaml
+- DB_TYPE=postgres
+- DB_CONNECTION_STRING=Host=localhost;Database=KoalaWiki;Username=postgres;Password=password
+```
+
+### SQL Server
+```yaml
+- DB_TYPE=sqlserver
+- DB_CONNECTION_STRING=Server=localhost;Database=KoalaWiki;Trusted_Connection=true;
+```
+
+### MySQL
+```yaml
+- DB_TYPE=mysql
+- DB_CONNECTION_STRING=Server=localhost;Database=KoalaWiki;Uid=root;Pwd=password;
+```
 
 3. 启动服务
 
@@ -247,7 +273,7 @@ graph TD
 - `ANALYSIS_MODEL`：用于生成仓库目录结构的分析模型
 - `CHAT_API_KEY`：API密钥
 - `LANGUAGE`：生成文档语言
-- `DB_TYPE`：数据库类型，默认sqlite
+- `DB_TYPE`：数据库类型，支持sqlite、postgres、sqlserver、mysql（默认：sqlite）
 - `MODEL_PROVIDER`：模型提供商，默认OpenAI，支持AzureOpenAI、Anthropic
 - `DB_CONNECTION_STRING`：数据库连接字符串
 - `EnableSmartFilter`：是否启用智能过滤，影响AI获取仓库目录能力

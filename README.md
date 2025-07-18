@@ -35,7 +35,7 @@
 - [x] Support multiple programming languages (Python, Java, C#, JavaScript, etc.)
 - [x] Support repository management (CRUD operations on repositories)
 - [x] Support multiple AI providers (OpenAI, AzureOpenAI, Anthropic, etc.)
-- [x] Support multiple databases (SQLite, PostgreSQL, SqlServer, etc.)
+- [x] Support multiple databases (SQLite, PostgreSQL, SqlServer, MySQL, etc.)
 - [x] Support multiple languages (Chinese, English, French, etc.)
 - [x] Support uploading ZIP files and local files
 - [x] Provide data fine-tuning platform to generate fine-tuning datasets
@@ -133,6 +133,32 @@ services:
 ```
 
 - AzureOpenAI and Anthropic configurations are similar, only need to adjust `ENDPOINT` and `MODEL_PROVIDER`.
+
+## Database Configuration
+
+### SQLite (Default)
+```yaml
+- DB_TYPE=sqlite
+- DB_CONNECTION_STRING=Data Source=/data/KoalaWiki.db
+```
+
+### PostgreSQL
+```yaml
+- DB_TYPE=postgres
+- DB_CONNECTION_STRING=Host=localhost;Database=KoalaWiki;Username=postgres;Password=password
+```
+
+### SQL Server
+```yaml
+- DB_TYPE=sqlserver
+- DB_CONNECTION_STRING=Server=localhost;Database=KoalaWiki;Trusted_Connection=true;
+```
+
+### MySQL
+```yaml
+- DB_TYPE=mysql
+- DB_CONNECTION_STRING=Server=localhost;Database=KoalaWiki;Uid=root;Pwd=password;
+```
 
 3. Start services
 
@@ -247,7 +273,7 @@ graph TD
 - `ANALYSIS_MODEL`: Analysis model for generating repository directory structure
 - `CHAT_API_KEY`: API key
 - `LANGUAGE`: Document generation language
-- `DB_TYPE`: Database type, default sqlite
+- `DB_TYPE`: Database type, supports sqlite, postgres, sqlserver, mysql (default: sqlite)
 - `MODEL_PROVIDER`: Model provider, default OpenAI, supports AzureOpenAI, Anthropic
 - `DB_CONNECTION_STRING`: Database connection string
 - `EnableSmartFilter`: Whether to enable smart filtering, affects AI's ability to get repository directories
