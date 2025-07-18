@@ -34,20 +34,17 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
         if (model.StartsWith("qwen3", StringComparison.CurrentCultureIgnoreCase)
             || model.IndexOf("/qwen3", StringComparison.CurrentCultureIgnoreCase) >= 0)
         {
-            json.extra_body ??= new Newtonsoft.Json.Linq.JObject();
-
             if (request.RequestUri.ToString().StartsWith("https://dashscope.aliyuncs.com", StringComparison.CurrentCultureIgnoreCase))
             {
-                json.extra_body.enable_thinking = false;
+                json.enable_thinking = false;
             }
             else
             {
                 // 开源部署最佳实践
                 json.temperature ??= 0.7;
                 json.top_p ??= 0.8;
-                json.extra_body.top_k ??= 20;
-                json.extra_body.chat_template_kwargs ??= new Newtonsoft.Json.Linq.JObject();
-                json.extra_body.chat_template_kwargs.enable_thinking = false;
+                json.chat_template_kwargs ??= new Newtonsoft.Json.Linq.JObject();
+                json.chat_template_kwargs.enable_thinking = false;
             }
         }
 
