@@ -1,19 +1,7 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using KoalaWiki.Domains;
-using KoalaWiki.Domains.Warehouse;
-using KoalaWiki.Entities;
-using KoalaWiki.Functions;
-using KoalaWiki.KoalaWarehouse.DocumentPending;
-using KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
-using KoalaWiki.KoalaWarehouse.Overview;
-using KoalaWiki.Options;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
+using KoalaWiki.KoalaWarehouse.Pipeline;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace KoalaWiki.KoalaWarehouse;
@@ -21,6 +9,12 @@ namespace KoalaWiki.KoalaWarehouse;
 public partial class DocumentsService
 {
     private static readonly ActivitySource s_activitySource = new("KoalaWiki.Warehouse");
+    private readonly IDocumentProcessingOrchestrator _orchestrator;
+
+    public DocumentsService(IDocumentProcessingOrchestrator orchestrator)
+    {
+        _orchestrator = orchestrator;
+    }
 
     /// <summary>
     /// Handles the asynchronous processing of a document within a specified warehouse, including parsing directory structures, generating update logs, and saving results to the database.
@@ -33,211 +27,29 @@ public partial class DocumentsService
     public async Task HandleAsync(Document document, Warehouse warehouse, IKoalaWikiContext dbContext,
         string gitRepository)
     {
-        // 在WarehouseTask的Activity上下文中创建子Activity，形成完整的调用链
         using var activity = s_activitySource.StartActivity(ActivityKind.Server);
         activity?.SetTag("warehouse.id", warehouse.Id);
         activity?.SetTag("warehouse.name", warehouse.Name);
         activity?.SetTag("document.id", document.Id);
         activity?.SetTag("git.repository", gitRepository);
 
-        using var handle = Activity.Current?.Source.StartActivity("处理文档完整流程",
-            ActivityKind.Internal);
+        var result = await _orchestrator.ProcessDocumentAsync(
+            document, 
+            warehouse, 
+            dbContext, 
+            gitRepository);
 
-        // 解析仓库的目录结构
-        var path = document.GitPath;
-
-        var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
-            OpenAIOptions.ChatApiKey,
-            path, OpenAIOptions.ChatModel);
-
-        var fileKernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
-            OpenAIOptions.ChatApiKey, path, OpenAIOptions.ChatModel, false);
-
-        // 步骤1: 读取生成README
-        string readme;
-        using (var readmeActivity = s_activitySource.StartActivity("读取生成README"))
+        if (!result.Success)
         {
-            readmeActivity?.SetTag("warehouse.id", warehouse.Id);
-            readmeActivity?.SetTag("path", path);
-            readme = await GenerateReadMe(warehouse, path, dbContext);
-            readmeActivity?.SetTag("readme.length", readme?.Length ?? 0);
-        }
-
-        // 步骤2: 读取并且生成目录
-        string catalogue;
-        using (var catalogueActivity = s_activitySource.StartActivity("读取并生成目录结构"))
-        {
-            catalogueActivity?.SetTag("warehouse.id", warehouse.Id);
-            catalogue = warehouse.OptimizedDirectoryStructure;
-
-            if (string.IsNullOrWhiteSpace(catalogue))
+            activity?.SetTag("processing.failed", true);
+            activity?.SetTag("error", result.ErrorMessage);
+            
+            if (result.Exception != null)
             {
-                catalogueActivity?.SetTag("action", "generate_new_catalogue");
-                catalogue = await GetCatalogueSmartFilterOptimizedAsync(path, readme);
-                if (!string.IsNullOrWhiteSpace(catalogue))
-                {
-                    await dbContext.Warehouses.Where(x => x.Id == warehouse.Id)
-                        .ExecuteUpdateAsync(x => x.SetProperty(y => y.OptimizedDirectoryStructure, catalogue));
-                }
+                throw result.Exception;
             }
-            else
-            {
-                catalogueActivity?.SetTag("action", "use_existing_catalogue");
-            }
-
-            catalogueActivity?.SetTag("catalogue.length", catalogue?.Length ?? 0);
-        }
-
-        // 步骤3: 读取或生成项目类别
-        ClassifyType? classify;
-        using (var classifyActivity = s_activitySource.StartActivity("读取或生成项目类别"))
-        {
-            classifyActivity?.SetTag("warehouse.id", warehouse.Id);
-            classify = warehouse.Classify ?? await WarehouseClassify.ClassifyAsync(fileKernel, catalogue, readme);
-            classifyActivity?.SetTag("classify", classify?.ToString());
-        }
-
-        await dbContext.Warehouses.Where(x => x.Id == warehouse.Id)
-            .ExecuteUpdateAsync(x => x.SetProperty(y => y.Classify, classify));
-
-        // 步骤4: 生成知识图谱
-        using (var miniMapActivity = s_activitySource.StartActivity("生成知识图谱"))
-        {
-            miniMapActivity?.SetTag("warehouse.id", warehouse.Id);
-            miniMapActivity?.SetTag("path", path);
-            var miniMap = await MiniMapService.GenerateMiniMap(catalogue, warehouse, path);
-            await dbContext.MiniMaps.Where(x => x.WarehouseId == warehouse.Id)
-                .ExecuteDeleteAsync();
-            await dbContext.MiniMaps.AddAsync(new MiniMap()
-            {
-                Id = Guid.NewGuid().ToString("N"),
-                WarehouseId = warehouse.Id,
-                Value = JsonSerializer.Serialize(miniMap, JsonSerializerOptions.Web)
-            });
-            miniMapActivity?.SetTag("minimap.generated", true);
-        }
-
-        // 步骤5: 生成概述
-        string overview;
-        using (var overviewActivity = s_activitySource.StartActivity("生成项目概述"))
-        {
-            overviewActivity?.SetTag("warehouse.id", warehouse.Id);
-            overviewActivity?.SetTag("git.repository", gitRepository);
-            overviewActivity?.SetTag("branch", warehouse.Branch);
-            overview = await OverviewService.GenerateProjectOverview(fileKernel, catalogue, gitRepository,
-                warehouse.Branch, readme, classify);
-
-            // 先删除<project_analysis>标签内容
-            var project_analysis = new Regex(@"<project_analysis>(.*?)</project_analysis>",
-                RegexOptions.Singleline);
-            var project_analysis_match = project_analysis.Match(overview);
-            if (project_analysis_match.Success)
-            {
-                // 删除到的内容包括标签
-                overview = overview.Replace(project_analysis_match.Value, "");
-            }
-
-            // 可能需要先处理一下documentation_structure 有些模型不支持json
-            var overviewmatch = new Regex(@"<blog>(.*?)</blog>",
-                RegexOptions.Singleline).Match(overview);
-
-            if (overviewmatch.Success)
-            {
-                // 提取到的内容
-                overview = overviewmatch.Groups[1].Value;
-            }
-
-            await dbContext.DocumentOverviews.Where(x => x.DocumentId == document.Id)
-                .ExecuteDeleteAsync();
-
-            await dbContext.DocumentOverviews.AddAsync(new DocumentOverview()
-            {
-                Content = overview,
-                Title = "",
-                DocumentId = document.Id,
-                Id = Guid.NewGuid().ToString("N")
-            });
-
-            overviewActivity?.SetTag("overview.length", overview?.Length ?? 0);
-        }
-
-        // 步骤6: 生成目录结构
-        List<DocumentCatalog> documentCatalogs = [];
-        using (var catalogueStructureActivity = s_activitySource.StartActivity("生成目录结构"))
-        {
-            catalogueStructureActivity?.SetTag("warehouse.id", warehouse.Id);
-            var result = await GenerateThinkCatalogueService.GenerateCatalogue(path, gitRepository, catalogue,
-                warehouse,
-                classify);
-
-            // 递归处理目录层次结构
-            DocumentsHelper.ProcessCatalogueItems(result.items, null, warehouse, document, documentCatalogs);
-
-            documentCatalogs.ForEach(x =>
-            {
-                x.IsCompleted = false;
-                if (string.IsNullOrWhiteSpace(x.Prompt))
-                {
-                    x.Prompt = " ";
-                }
-            });
-
-            // 删除遗留数据
-            await dbContext.DocumentCatalogs.Where(x => x.WarehouseId == warehouse.Id)
-                .ExecuteDeleteAsync();
-
-            // 将解析的目录结构保存到数据库
-            await dbContext.DocumentCatalogs.AddRangeAsync(documentCatalogs);
-
-            await dbContext.SaveChangesAsync();
-            catalogueStructureActivity?.SetTag("documents.count", documentCatalogs.Count);
-        }
-
-        // 步骤7: 生成目录结构中的文档
-        using (var documentsGenerationActivity = s_activitySource.StartActivity("生成目录结构中的文档"))
-        {
-            documentsGenerationActivity?.SetTag("warehouse.id", warehouse.Id);
-            documentsGenerationActivity?.SetTag("documents.count", documentCatalogs.Count);
-            await DocumentPendingService.HandlePendingDocumentsAsync(documentCatalogs, fileKernel, catalogue,
-                gitRepository,
-                warehouse, path, dbContext, warehouse.Classify);
-        }
-
-        // 步骤8: 生成更新日志 (仅Git仓库)
-        if (warehouse.Type.Equals("git", StringComparison.CurrentCultureIgnoreCase))
-        {
-            using var updateLogActivity = s_activitySource.StartActivity("生成更新日志");
-            updateLogActivity?.SetTag("warehouse.id", warehouse.Id);
-            updateLogActivity?.SetTag("warehouse.type", "git");
-            updateLogActivity?.SetTag("git.address", warehouse.Address);
-            updateLogActivity?.SetTag("git.branch", warehouse.Branch);
-
-            await dbContext.DocumentCommitRecords.Where(x => x.WarehouseId == warehouse.Id)
-                .ExecuteDeleteAsync();
-
-            // 开始生成
-            var committer = await GenerateUpdateLogAsync(document.GitPath, readme,
-                warehouse.Address,
-                warehouse.Branch,
-                kernel);
-
-            var record = committer.Select(x => new DocumentCommitRecord()
-            {
-                WarehouseId = warehouse.Id,
-                CreatedAt = DateTime.Now,
-                Author = string.Empty,
-                Id = Guid.NewGuid().ToString("N"),
-                CommitMessage = x.description,
-                Title = x.title,
-                LastUpdate = x.date,
-            });
-
-            // 如果重新生成则需要清空之前记录
-            await dbContext.DocumentCommitRecords.Where(x => x.WarehouseId == warehouse.Id)
-                .ExecuteDeleteAsync();
-
-            await dbContext.DocumentCommitRecords.AddRangeAsync(record);
-            updateLogActivity?.SetTag("commit_records.count", record.Count());
+            
+            throw new InvalidOperationException($"文档处理失败: {result.ErrorMessage}");
         }
 
         activity?.SetTag("processing.completed", true);
