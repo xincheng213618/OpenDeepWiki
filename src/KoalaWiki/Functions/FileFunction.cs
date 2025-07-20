@@ -241,7 +241,7 @@ public class FileFunction(string gitPath)
         {
             filePath = Path.Combine(gitPath, filePath.TrimStart('/'));
             Console.WriteLine(
-                $"Reading file from line {offset}: {filePath} startLine={offset}, endLine={limit}");
+                $"Reading file from line {offset}: {filePath} offset={offset}, limit={limit}");
 
             // 如果<0则读取全部
             if (offset < 0 && limit < 0)
