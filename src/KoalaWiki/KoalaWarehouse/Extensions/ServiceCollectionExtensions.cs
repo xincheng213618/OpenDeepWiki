@@ -24,7 +24,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, UpdateLogGenerationStep>();
 
         // 注册管道和协调器
-        services.AddScoped<IDocumentProcessingPipeline, DocumentProcessingPipeline>();
+        services.AddScoped<IDocumentProcessingPipeline, ResilientDocumentProcessingPipeline>();
         services.AddScoped<IDocumentProcessingOrchestrator, DocumentProcessingOrchestrator>();
 
         // 注册重构后的DocumentsService
