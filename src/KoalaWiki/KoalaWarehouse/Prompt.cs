@@ -20,84 +20,118 @@ public static class Prompt
 
     public static string AnalyzeNewCatalogue =
         """
-        You are an AI assistant tasked with updating a document structure based on changes in a code repository. Your goal is to analyze the provided information and generate an updated document structure that reflects the current state of the project.
+        You are an expert AI assistant specialized in incremental document structure analysis for code repositories. Your task is to perform precise, conservative updates to existing documentation based on code changes while preserving valuable content.
 
-        First, carefully review the following information:
+        ## Input Data Analysis
 
-        1. Current repository directory structure:
+        Analyze the following information systematically:
+
+        1. **Repository Structure**:
         <repository_structure>
         {{catalogue}}
         </repository_structure>
 
-        2. Current repository information:
+        2. **Repository Information**:
         <repository_info>
         {{git_repository}}
         </repository_info>
 
-        3. Recent Git update content:
+        3. **Git Changes**:
         <git_update>
         {{git_commit}}
         </git_update>
 
-        4. Existing document structure:
+        4. **Current Document Structure**:
         <existing_document_structure>
         {{document_catalogue}}
         </existing_document_structure>
 
-        Your task is to update the document structure based on the changes in the repository. Before providing the final output, conduct a thorough analysis using the following steps:
+        ## Analysis Framework
 
-        1. Analyze the current repository structure, Git update content, existing document structure, and README file.
-        2. Identify new content that needs to be added to the document structure.
-        3. Identify existing content that needs to be updated.
-        4. Identify content that should be removed from the document structure.
+        Perform your analysis using this systematic approach:
 
-        Wrap your analysis inside <repository_change_analysis> tags. In this analysis:
+        <repository_change_analysis>
 
-        1. List all new files added to the repository.
-        2. List all modified files in the repository.
-        3. List all deleted files from the repository.
-        4. For each change:
-           a. Specify the file change (addition, modification, or deletion).
-           b. Identify which parts of the document structure this change affects.
-           c. Explain how it impacts the document structure (e.g., new section needed, section update required, section deletion required).
-           d. Provide reasoning for the proposed change to the document structure.
-           e. Categorize the impact of this change as minor, moderate, or major, and explain why.
-           f. Consider the implications of this change on the overall document structure.
-        5. Pay special attention to the git update content, thoroughly analyzing how the file changes affect the directory content and document structure
-        6. Summarize the overall impact on the document structure, noting major themes or areas of change.
-        7. Consider how the README file content relates to the document structure and any necessary updates based on recent changes.
-        8. Brainstorm potential new sections or subsections that might be needed based on the changes.
+        ### 1. Change Classification
+        For each file change, categorize by:
+        - **Scope**: Core functionality, configuration, tests, documentation, dependencies
+        - **Impact Level**: Critical (API changes, architecture), Moderate (new features, refactoring), Minor (bug fixes, formatting)
+        - **Documentation Relevance**: High (user-facing changes), Medium (internal changes affecting understanding), Low (implementation details)
 
-        After completing your analysis, generate an updated document structure in JSON format. Follow these guidelines:
+        ### 2. File Change Impact Assessment
+        For each modified file:
+        - **File**: [path/filename]
+        - **Change Type**: Added/Modified/Deleted/Renamed
+        - **Scope**: [Core/Config/Test/Docs/Dependencies]
+        - **Impact Level**: [Critical/Moderate/Minor]
+        - **Documentation Relevance**: [High/Medium/Low]
+        - **Existing Section Mapping**: [List affected document sections by ID]
+        - **Change Justification**: [Specific reason why documentation needs updating]
+        - **Content Delta**: [What specific information needs to be added/modified]
 
-        - Each section should have a title, name, type (add or update), dependent files, and a prompt for content creation.
-        - The structure can be hierarchical, with sections having subsections (children).
-        - For updated sections, include the ID of the section being updated.
-        - Provide a list of IDs for sections that should be deleted.
+        ### 3. Documentation Impact Analysis
+        - **New Sections Required**: Only for significant new functionality or architectural changes
+        - **Updates Required**: For existing sections with changed functionality
+        - **Content Preservation**: Identify valuable existing content that should be retained
+        - **Cross-Section Dependencies**: Analyze how changes affect related documentation sections
 
-        Your final output should be in the following JSON format:
+        ### 4. Deletion Safety Assessment
+        Apply these strict criteria before marking any section for deletion:
+        - **Obsolescence Verification**: Confirm the documented functionality no longer exists in codebase
+        - **Reference Analysis**: Check for references to this section from other documentation
+        - **User Impact**: Assess potential impact on documentation users
+        - **Recovery Difficulty**: Consider if the information would be difficult to recreate
+        
+        **CRITICAL**: Only recommend deletion if ALL criteria are met:
+        1. Corresponding code/functionality completely removed
+        2. No references from other documentation sections
+        3. No ongoing user value
+        4. Information is trivially recoverable if needed
+
+        </repository_change_analysis>
+
+        ## Output Requirements
+
+        Generate a JSON structure following these strict guidelines:
+
+        ### Deletion Policy
+        - **Conservative Approach**: Prefer marking sections as needing updates over deletion
+        - **Evidence Required**: Include specific evidence for why deletion is necessary
+        - **Empty by Default**: `delete_id` should be empty unless absolutely certain
+
+        ### Update Policy
+        - **Granular Updates**: Update only affected sections, preserve unchanged content
+        - **Version-Safe**: Ensure updates don't break existing documentation structure
+        - **Context Preservation**: Maintain relationships between documentation sections
+
+        ### Addition Policy
+        - **Threshold-Based**: Only add new sections for substantial new functionality
+        - **Integration-Focused**: Ensure new sections integrate well with existing structure
+        - **Future-Proof**: Design sections to accommodate future related changes
+
         <document_structure>
         {
           "delete_id": [],
           "items": [
             {
-              "title": "section-identifier",
-              "name": "Section Name",
+              "title": "component-specific-identifier",
+              "name": "Descriptive Section Name",
               "type": "add",
-              "prompt": "Create comprehensive content for this section focused on [SPECIFIC PROJECT COMPONENT/FEATURE]. Explain its purpose, architecture, and relationship to other components. Document the implementation details, configuration options, and usage patterns. Include both conceptual overviews for beginners and technical details for experienced developers. Use terminology consistent with the codebase. Provide practical examples demonstrating common use cases. Document public interfaces, parameters, and return values. Include diagrams where appropriate to illustrate key concepts.",
+              "prompt": "Generate comprehensive documentation for [SPECIFIC COMPONENT/FEATURE] based on recent codebase changes. Focus on practical implementation details, configuration options, and integration patterns. Structure content to be immediately actionable for developers. Include code examples from the actual implementation. Document public APIs, configuration parameters, and common usage scenarios. Maintain consistency with existing documentation style and terminology. Address any breaking changes or migration requirements explicitly.",
               "children": [
                 {
-                  "title": "subsection-identifier",
-                  "name": "Subsection Name",
+                  "title": "specific-subsection-identifier", 
+                  "name": "Focused Subsection Name",
                   "type": "update",
-                  "id": "existing-section-id",
-                  "prompt": "Develop detailed content for this subsection covering [SPECIFIC ASPECT OF PARENT COMPONENT]. Thoroughly explain implementation details, interfaces, and usage patterns. Include concrete examples from the actual codebase. Document configuration options, parameters, and return values. Explain relationships with other components. Address common issues and their solutions. Make content accessible to beginners while providing sufficient technical depth for experienced developers."
+                  "id": "existing-section-id-from-input",
+                  "prompt": "Update existing documentation for [SPECIFIC FUNCTIONALITY] to reflect recent changes in commit {{git_commit}}. Preserve existing valuable content while incorporating new implementation details. Focus on changed APIs, updated configuration options, or modified behavior patterns. Maintain backward compatibility information where relevant. Ensure all code examples and references are current with the latest implementation."
                 }
               ]
             }
           ]
         }
         </document_structure>
-        Please proceed with your analysis and provide the updated document structure.
+
+        Proceed with systematic analysis and conservative documentation updates.
         """;
 }

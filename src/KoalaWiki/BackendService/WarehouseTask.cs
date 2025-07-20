@@ -7,7 +7,6 @@ namespace KoalaWiki.BackendService;
 
 public class WarehouseTask(
     ILogger<WarehouseTask> logger,
-    DocumentsService documentsService,
     IServiceProvider service)
     : BackgroundService
 {
@@ -20,6 +19,7 @@ public class WarehouseTask(
 
         await using var scope = service.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetService<IKoalaWikiContext>();
+        var documentsService = scope.ServiceProvider.GetService<DocumentsService>();
         while (!stoppingToken.IsCancellationRequested)
         {
             var value = await dbContext!.Warehouses

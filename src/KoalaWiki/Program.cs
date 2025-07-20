@@ -1,4 +1,5 @@
 using KoalaWiki.BackendService;
+using KoalaWiki.KoalaWarehouse.Extensions;
 using KoalaWiki.Mem0;
 using OpenDeepWiki.CodeFoundation;
 
@@ -47,7 +48,10 @@ builder.Services.AddSerilog(Log.Logger);
 builder.Services.AddOpenApi();
 builder.Services.AddFastApis();
 builder.Services.AddSingleton<GitService>();
-builder.Services.AddSingleton<DocumentsService>();
+
+// 添加文档处理管道架构
+builder.Services.AddDocumentProcessingPipeline();
+
 builder.Services.AddTransient<GlobalMiddleware>();
 builder.Services.AddScoped<IUserContext, UserContext>();
 builder.Services.AddMemoryCache();

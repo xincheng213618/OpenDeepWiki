@@ -14,3 +14,7 @@ global using Microsoft.AspNetCore.Http.Features;
 global using Microsoft.IdentityModel.Tokens;
 global using Scalar.AspNetCore;
 global using Serilog;
+global using KoalaWiki.Domains;
+global using KoalaWiki.Domains.Warehouse;
+global using Microsoft.SemanticKernel;
+global using Microsoft.EntityFrameworkCore;
