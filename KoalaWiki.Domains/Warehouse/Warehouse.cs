@@ -97,4 +97,14 @@ public class Warehouse : Entity<string>
     /// 仓库类别
     /// </summary>
     public ClassifyType? Classify { get; set; }
+    
+    /// <summary>
+    /// Star数量
+    /// </summary>
+    public int Stars { get; set; }
+    
+    /// <summary>
+    /// Fork数量
+    /// </summary>
+    public int Forks { get; set; }
 }

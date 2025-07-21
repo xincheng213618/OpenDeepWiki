@@ -21,7 +21,7 @@ public class GitRepositoryService(
         foreach (var repoUrl in repoUrls)
         {
             string cacheKey = $"repo_info:{repoUrl}";
-            if (memoryCache.TryGetValue(cacheKey, out RepoExtendedInfo? cached) && cached != null)
+            if (memoryCache.TryGetValue(cacheKey, out RepoExtendedInfo? cached) && cached != null && cached.Success)
             {
                 infoList.Add(cached);
 

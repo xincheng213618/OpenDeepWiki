@@ -49,7 +49,8 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .HasComment("是否启用域名验证");
 
                     b.Property<string>("Introduction")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasComment("开场白");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("INTEGER")
@@ -64,7 +65,8 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Model")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasComment("选择模型");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -79,7 +81,8 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .HasComment("组织名称");
 
                     b.Property<string>("Prompt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasComment("默认提示词");
 
                     b.Property<string>("RecommendedQuestions")
                         .HasColumnType("TEXT");
@@ -930,6 +933,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                     b.Property<string>("Error")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Forks")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("GitPassword")
                         .HasColumnType("TEXT");
 
@@ -960,6 +966,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
 
                     b.Property<string>("Readme")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Stars")
+                        .HasColumnType("INTEGER");
 
                     b.Property<byte>("Status")
                         .HasColumnType("INTEGER")

@@ -54,7 +54,8 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         .HasComment("是否启用域名验证");
 
                     b.Property<string>("Introduction")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("开场白");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit")
@@ -69,7 +70,8 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Model")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("选择模型");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -84,7 +86,8 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         .HasComment("组织名称");
 
                     b.Property<string>("Prompt")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("默认提示词");
 
                     b.Property<string>("RecommendedQuestions")
                         .HasColumnType("nvarchar(max)");
@@ -935,6 +938,9 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                     b.Property<string>("Error")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Forks")
+                        .HasColumnType("int");
+
                     b.Property<string>("GitPassword")
                         .HasColumnType("nvarchar(max)");
 
@@ -965,6 +971,9 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
 
                     b.Property<string>("Readme")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Stars")
+                        .HasColumnType("int");
 
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint")

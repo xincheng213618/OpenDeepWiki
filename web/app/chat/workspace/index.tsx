@@ -386,9 +386,11 @@ export default function Workspace({ organizationName, name, appId }: WorkspacePr
 
     return (
         <ThemeProvider
+            style={{
+                height: '100%',
+            }}
             themeMode={theme === "system" ? "auto" : theme as any}
         >
-
             <div className="workspace-container">
                 <div className="flex flex-col gap-6 h-full">
                     <div className="messages-container flex-1 overflow-y-auto min-h-0 overflow-x-hidden px-1">

@@ -14,7 +14,9 @@ import {
   GitFork,
   Calendar,
   ExternalLink,
-  FileText
+  FileText,
+  Star,
+  GitBranch
 } from 'lucide-react';
 
 interface RepositoryCardProps {
@@ -22,6 +24,7 @@ interface RepositoryCardProps {
 }
 
 const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
+
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.language;
 
@@ -130,74 +133,56 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
 
   return (
     <Card
-      className="cursor-pointer transition-all hover:shadow-md border-border/50 hover:border-border w-full"
-      style={{
-        height: '240px',
-        minHeight: '240px',
-        maxHeight: '240px',
-      }}
+      className="cursor-pointer transition-all duration-200 hover:shadow-lg border-border/40 hover:border-border/80 bg-card/50 hover:bg-card/80 backdrop-blur-sm w-full group"
       onClick={handleCardClick}
     >
-      <CardHeader style={{
-        height: '150px',
-        minHeight: '150px',
-        maxHeight: '150px',
-      }} className="pb-3">
-        <div className="flex items-start gap-3 h-full">
-          <Avatar className="h-10 w-10 shrink-0">
+      <CardHeader className="pb-4 pt-5 px-5">
+        <div className="flex items-start gap-3">
+          <Avatar className="h-11 w-11 shrink-0 ring-2 ring-border/20 group-hover:ring-border/40 transition-all">
             <AvatarImage src={avatarUrl || ''} alt={repository.organizationName} />
-            <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+            <AvatarFallback className="bg-muted/80 text-muted-foreground text-sm font-medium">
               {repository.organizationName?.slice(0, 2)?.toUpperCase() || 'RE'}
             </AvatarFallback>
           </Avatar>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col gap-2 mb-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <h3 className="font-semibold text-foreground text-base leading-tight cursor-pointer" style={{
-                          overflow: 'hidden',
-                          whiteSpace: 'nowrap',   
-                          textOverflow: 'ellipsis'
-                        }}>
-                          {repository.name.slice(0, 10) || t('repository.unknown_name', '未知仓库名称')}
-                        </h3>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{repository.name}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Badge color={statusConfig.color} variant={statusConfig.variant} className="shrink-0 text-xs px-2 py-0.5">
-                  {statusConfig.text}
-                </Badge>
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <h3 className="font-semibold text-foreground text-lg leading-tight cursor-pointer truncate group-hover:text-primary transition-colors">
+                        {repository.name || t('repository.unknown_name', '未知仓库名称')}
+                      </h3>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{repository.name}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
-              
-              <div className="flex items-center gap-1.5">
-                {getRepoIcon()}
-                <span className="text-sm text-muted-foreground truncate">
-                  {repository.organizationName}
-                </span>
-              </div>
+              <Badge
+                color={statusConfig.color}
+                variant={statusConfig.variant}
+                className="shrink-0 text-xs px-2.5 py-1 font-medium"
+              >
+                {statusConfig.text}
+              </Badge>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {getRepoIcon()}
+              <span className="text-sm text-muted-foreground/80 truncate font-medium">
+                {repository.organizationName}
+              </span>
             </div>
 
             {repository.description && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <p className="text-sm text-muted-foreground overflow-hidden cursor-pointer" style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      lineHeight: '1.4',
-                      maxHeight: '2.8em',
-                      wordBreak: 'break-word'
-                    }}>
-                      {repository.description.slice(0, 100) || t('repository.no_description', '暂无描述')}
+                    <p className="text-sm text-muted-foreground/90 line-clamp-2 cursor-pointer leading-relaxed">
+                      {repository.description || t('repository.no_description', '暂无描述')}
                     </p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -210,33 +195,44 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0 px-6 pb-4">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+      <CardContent className="pt-0 px-5 pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-1 min-w-0 text-sm text-muted-foreground/80">
             {repository.branch && (
-              <div className="flex items-center gap-1 min-w-0">
-                <GitFork className="h-3 w-3 shrink-0" />
-                <span className="truncate max-w-16">{repository.branch}</span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <GitBranch className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate max-w-20 font-mono text-xs">{repository.branch}</span>
               </div>
             )}
 
-            <div className="flex items-center gap-1 min-w-0">
-              <Calendar className="h-3 w-3 shrink-0" />
-              <span className="truncate">{formatDate(repository.createdAt)}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Calendar className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate text-xs">{formatDate(repository.createdAt)}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                <Star className="h-3.5 w-3.5" fill="currentColor" />
+                <span className="font-medium">{repository.stars}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                <GitFork className="h-3.5 w-3.5" />
+                <span className="font-medium">{repository.forks}</span>
+              </div>
+            </div>
+
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 hover:bg-muted"
+              className="h-8 w-8 p-0 hover:bg-muted/80 transition-all opacity-60 group-hover:opacity-100"
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(repository.address, '_blank');
               }}
             >
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>

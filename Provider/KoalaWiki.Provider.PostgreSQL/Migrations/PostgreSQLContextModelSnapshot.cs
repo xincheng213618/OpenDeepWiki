@@ -54,7 +54,8 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         .HasComment("是否启用域名验证");
 
                     b.Property<string>("Introduction")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasComment("开场白");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean")
@@ -69,7 +70,8 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Model")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasComment("选择模型");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -84,7 +86,8 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         .HasComment("组织名称");
 
                     b.Property<string>("Prompt")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasComment("默认提示词");
 
                     b.Property<string>("RecommendedQuestions")
                         .HasColumnType("text");
@@ -935,6 +938,9 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                     b.Property<string>("Error")
                         .HasColumnType("text");
 
+                    b.Property<int>("Forks")
+                        .HasColumnType("integer");
+
                     b.Property<string>("GitPassword")
                         .HasColumnType("text");
 
@@ -965,6 +971,9 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
 
                     b.Property<string>("Readme")
                         .HasColumnType("text");
+
+                    b.Property<int>("Stars")
+                        .HasColumnType("integer");
 
                     b.Property<byte>("Status")
                         .HasColumnType("smallint")

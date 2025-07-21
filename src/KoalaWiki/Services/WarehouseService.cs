@@ -489,7 +489,9 @@ public class WarehouseService(
             Type = "file",
             CreatedAt = DateTime.UtcNow,
             OptimizedDirectoryStructure = string.Empty,
-            Id = Guid.NewGuid().ToString()
+            Id = Guid.NewGuid().ToString(),
+            Stars = 0,
+            Forks = 0
         };
 
         await koala.Warehouses.AddAsync(entity);
@@ -586,6 +588,8 @@ public class WarehouseService(
             entity.CreatedAt = DateTime.UtcNow;
             entity.OptimizedDirectoryStructure = string.Empty;
             entity.Id = Guid.NewGuid().ToString();
+            entity.Stars = 0;
+            entity.Forks = 0;
             await koala.Warehouses.AddAsync(entity);
 
             await koala.SaveChangesAsync();
@@ -675,6 +679,8 @@ public class WarehouseService(
             entity.CreatedAt = DateTime.UtcNow;
             entity.OptimizedDirectoryStructure = string.Empty;
             entity.Id = Guid.NewGuid().ToString();
+            entity.Stars = 0;
+            entity.Forks = 0;
             await koala.Warehouses.AddAsync(entity);
 
             await koala.SaveChangesAsync();
@@ -940,34 +946,76 @@ public class WarehouseService(
             .ToList();
 
         var address = list.Select(x => x.Address).ToArray();
-
-        var repositoryInfo = await gitRepositoryService.GetRepoInfoAsync(address);
-
         var dto = mapper.Map<List<WarehouseDto>>(list);
 
+        // Collect repositories that need fresh data from Git API
+        var reposNeedingUpdate = new List<string>();
+        var warehouseIdMap = new Dictionary<string, Warehouse>();
+
+        foreach (var warehouseEntity in list)
+        {
+            var repository = dto.First(x => x.Id == warehouseEntity.Id);
+            
+            // Check if we have stored fork/star counts (non-zero values indicate we have data)
+            if (warehouseEntity.Stars > 0 || warehouseEntity.Forks > 0)
+            {
+                // Use stored values from database
+                repository.Stars = warehouseEntity.Stars;
+                repository.Forks = warehouseEntity.Forks;
+                repository.Success = true; // Assume success if we have stored data
+            }
+            else
+            {
+                // Need to fetch fresh data from Git API
+                reposNeedingUpdate.Add(warehouseEntity.Address);
+                warehouseIdMap[warehouseEntity.Address] = warehouseEntity;
+            }
+        }
+
+        // Fetch fresh data only for repositories that need it
+        if (reposNeedingUpdate.Any())
+        {
+            var repositoryInfo = await gitRepositoryService.GetRepoInfoAsync(reposNeedingUpdate.ToArray());
+
+            foreach (var info in repositoryInfo)
+            {
+                var matchingDto = dto.FirstOrDefault(x => 
+                    x.Address.Replace(".git", "").Equals(info.RepoUrl.Replace(".git", ""), 
+                        StringComparison.InvariantCultureIgnoreCase));
+                
+                if (matchingDto != null)
+                {
+                    matchingDto.Stars = info.Stars;
+                    matchingDto.Forks = info.Forks;
+                    matchingDto.AvatarUrl = info.AvatarUrl;
+                    matchingDto.OwnerUrl = info.OwnerUrl;
+                    matchingDto.Language = info.Language;
+                    matchingDto.License = info.License;
+                    matchingDto.Error = info.Error;
+                    matchingDto.Success = info.Success;
+
+                    if (!string.IsNullOrEmpty(info.Description))
+                    {
+                        matchingDto.Description = info.Description;
+                    }
+
+                    // Update database with fresh data if API call was successful
+                    var warehouseEntity = list.FirstOrDefault(x => x.Id == matchingDto.Id);
+                    if (warehouseEntity != null && info.Success)
+                    {
+                        await koala.Warehouses
+                            .Where(w => w.Id == warehouseEntity.Id)
+                            .ExecuteUpdateAsync(w => w
+                                .SetProperty(p => p.Stars, info.Stars)
+                                .SetProperty(p => p.Forks, info.Forks));
+                    }
+                }
+            }
+        }
+
+        // Clean up sensitive fields for DTO
         foreach (var repository in dto)
         {
-            var info = repositoryInfo.FirstOrDefault(x =>
-                x.RepoUrl.Replace(".git", "").Equals(repository.Address.Replace(".git", ""),
-                    StringComparison.InvariantCultureIgnoreCase));
-
-            if (info != null)
-            {
-                repository.Stars = info.Stars;
-                repository.Forks = info.Forks;
-                repository.AvatarUrl = info.AvatarUrl;
-                if (!string.IsNullOrEmpty(info.Description))
-                {
-                    repository.Description = info.Description;
-                }
-
-                repository.OwnerUrl = info.OwnerUrl;
-                repository.Language = info.Language;
-                repository.License = info.License;
-                repository.Error = info.Error;
-                repository.Success = info.Success;
-            }
-
             repository.OptimizedDirectoryStructure = string.Empty;
             repository.Prompt = string.Empty;
             repository.Readme = string.Empty;
