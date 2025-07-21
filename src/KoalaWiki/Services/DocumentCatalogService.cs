@@ -37,11 +37,11 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
 
         var document = await dbAccess.Documents
             .AsNoTracking()
-            .Where(x => x.WarehouseId == warehouse.Id)
+            .Where(x => x.WarehouseId.ToLower() == warehouse.Id.ToLower())
             .FirstOrDefaultAsync();
 
         var documentCatalogs = await dbAccess.DocumentCatalogs
-            .Where(x => x.WarehouseId == warehouse.Id && x.IsDeleted == false)
+            .Where(x => x.WarehouseId.ToLower() == warehouse.Id.ToLower() && x.IsDeleted == false)
             .ToListAsync();
 
         string lastUpdate;
@@ -54,12 +54,22 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
                 .Select(x => x.Branch)
                 .ToArrayAsync());
 
+        int progress;
+        if(documentCatalogs.Count == 0)
+        {
+            progress = 0;
+        }
+        else
+        {
+            progress = documentCatalogs.Count(x => x.IsCompleted) * 100 / documentCatalogs.Count;
+        }
+
         return new
         {
             items = BuildDocumentTree(documentCatalogs),
             lastUpdate = document?.LastUpdate,
             document?.Description,
-            progress = documentCatalogs.Count(x => x.IsCompleted) * 100 / documentCatalogs.Count,
+            progress = progress,
             git = warehouse.Address,
             branchs = branchs,
             document?.WarehouseId,

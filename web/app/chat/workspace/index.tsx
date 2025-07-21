@@ -8,6 +8,8 @@ import Message from "./message";
 import { chatService } from "../services/chatService";
 import { chatDB, ChatMessage, Conversation } from "../utils/indexedDB";
 import { MessageContentType, MessageItem, MessageContentReasoningItem, MessageContentTextItem, MessageContentToolItem, MessageContentGitIssuesItem, Base64Content, MessageContentImageItem } from "../../types/chat";
+import { ThemeProvider } from "@lobehub/ui";
+import { useTheme } from "next-themes";
 
 interface WorkspaceProps {
     organizationName: string;
@@ -17,6 +19,7 @@ interface WorkspaceProps {
 
 
 export default function Workspace({ organizationName, name, appId }: WorkspaceProps) {
+    const { theme } = useTheme();
     const [messages, setMessages] = useState<MessageItem[]>([]);
     const [conversationId, setConversationId] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -382,90 +385,94 @@ export default function Workspace({ organizationName, name, appId }: WorkspacePr
     }
 
     return (
-        <div className="workspace-container">
-            <div className="flex flex-col gap-6 h-full">
-                <div className="messages-container flex-1 overflow-y-auto min-h-0 overflow-x-hidden px-1">
+        <ThemeProvider
+            themeMode={theme === "system" ? "auto" : theme as any}
+        >
 
-                    {
-                        messages.length === 0 && (
-                            <div className="empty-state">
-                                <div className="empty-state-content">
-                                    <div className="empty-state-icon">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor" fillOpacity="0.1" />
-                                            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            <circle cx="18" cy="6" r="2" fill="currentColor" fillOpacity="0.2" />
-                                            <circle cx="6" cy="18" r="2" fill="currentColor" fillOpacity="0.2" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="empty-state-title">欢迎使用 AI 智能助手</h3>
-                                    <p className="empty-state-description">
-                                        OpenDeepWiki 基于先进的 AI 技术，为您的项目提供智能代码分析和问答服务。
-                                        <br />
-                                        开始对话，探索更多可能性！
-                                    </p>
-                                    <div className="empty-state-actions">
-                                        <a
-                                            href="https://github.com/AIDotNet/OpenDeepWiki"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="learn-more-link"
-                                        >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M12 2C6.48 2 2 6.48 2 12C2 16.42 4.87 20.17 8.84 21.5C9.34 21.58 9.5 21.27 9.5 21C9.5 20.77 9.5 20.14 9.5 19.31C6.73 19.91 6.14 17.97 6.14 17.97C5.68 16.81 5.03 16.5 5.03 16.5C4.12 15.88 5.1 15.9 5.1 15.9C6.1 15.97 6.63 16.93 6.63 16.93C7.5 18.45 8.97 18 9.54 17.76C9.63 17.11 9.89 16.67 10.17 16.42C7.95 16.17 5.62 15.31 5.62 11.5C5.62 10.39 6 9.5 6.65 8.79C6.55 8.54 6.2 7.5 6.75 6.15C6.75 6.15 7.59 5.88 9.5 7.17C10.29 6.95 11.15 6.84 12 6.84C12.85 6.84 13.71 6.95 14.5 7.17C16.41 5.88 17.25 6.15 17.25 6.15C17.8 7.5 17.45 8.54 17.35 8.79C18 9.5 18.38 10.39 18.38 11.5C18.38 15.32 16.04 16.16 13.81 16.41C14.17 16.72 14.5 17.33 14.5 18.26C14.5 19.6 14.5 20.68 14.5 21C14.5 21.27 14.66 21.59 15.17 21.5C19.14 20.16 22 16.42 22 12C22 6.48 17.52 2 12 2Z" fill="currentColor" />
+            <div className="workspace-container">
+                <div className="flex flex-col gap-6 h-full">
+                    <div className="messages-container flex-1 overflow-y-auto min-h-0 overflow-x-hidden px-1">
+
+                        {
+                            messages.length === 0 && (
+                                <div className="empty-state">
+                                    <div className="empty-state-content">
+                                        <div className="empty-state-icon">
+                                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor" fillOpacity="0.1" />
+                                                <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <circle cx="18" cy="6" r="2" fill="currentColor" fillOpacity="0.2" />
+                                                <circle cx="6" cy="18" r="2" fill="currentColor" fillOpacity="0.2" />
                                             </svg>
-                                            了解更多
-                                        </a>
+                                        </div>
+                                        <h3 className="empty-state-title">欢迎使用 AI 智能助手</h3>
+                                        <p className="empty-state-description">
+                                            OpenDeepWiki 基于先进的 AI 技术，为您的项目提供智能代码分析和问答服务。
+                                            <br />
+                                            开始对话，探索更多可能性！
+                                        </p>
+                                        <div className="empty-state-actions">
+                                            <a
+                                                href="https://github.com/AIDotNet/OpenDeepWiki"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="learn-more-link"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12C2 16.42 4.87 20.17 8.84 21.5C9.34 21.58 9.5 21.27 9.5 21C9.5 20.77 9.5 20.14 9.5 19.31C6.73 19.91 6.14 17.97 6.14 17.97C5.68 16.81 5.03 16.5 5.03 16.5C4.12 15.88 5.1 15.9 5.1 15.9C6.1 15.97 6.63 16.93 6.63 16.93C7.5 18.45 8.97 18 9.54 17.76C9.63 17.11 9.89 16.67 10.17 16.42C7.95 16.17 5.62 15.31 5.62 11.5C5.62 10.39 6 9.5 6.65 8.79C6.55 8.54 6.2 7.5 6.75 6.15C6.75 6.15 7.59 5.88 9.5 7.17C10.29 6.95 11.15 6.84 12 6.84C12.85 6.84 13.71 6.95 14.5 7.17C16.41 5.88 17.25 6.15 17.25 6.15C17.8 7.5 17.45 8.54 17.35 8.79C18 9.5 18.38 10.39 18.38 11.5C18.38 15.32 16.04 16.16 13.81 16.41C14.17 16.72 14.5 17.33 14.5 18.26C14.5 19.6 14.5 20.68 14.5 21C14.5 21.27 14.66 21.59 15.17 21.5C19.14 20.16 22 16.42 22 12C22 6.48 17.52 2 12 2Z" fill="currentColor" />
+                                                </svg>
+                                                了解更多
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )
-                    }
-                    {messages.map((message) => (
-                        <Message
-                            organizationName={organizationName}
-                            repositoryName={name}
-                            key={message.id}
-                            messageItem={message}
-                            handleDelete={handleDelete}
+                            )
+                        }
+                        {messages.map((message) => (
+                            <Message
+                                organizationName={organizationName}
+                                repositoryName={name}
+                                key={message.id}
+                                messageItem={message}
+                                handleDelete={handleDelete}
+                            />
+                        ))}
+                        <div ref={messagesEndRef} />
+                    </div>
+                    <div className="chat-input-container">
+                        <ChatInput
+                            loading={isLoading}
+                            onClear={handleClear}
+                            onSend={handleSendMessage}
+                            onStop={handleStopGeneration}
+                            onDeepResearch={() => setDeepResearch(!deepResearch)}
+                            deepResearch={deepResearch}
                         />
-                    ))}
-                    <div ref={messagesEndRef} />
+                    </div>
                 </div>
-                <div className="chat-input-container">
-                    <ChatInput
-                        loading={isLoading}
-                        onClear={handleClear}
-                        onSend={handleSendMessage}
-                        onStop={handleStopGeneration}
-                        onDeepResearch={() => setDeepResearch(!deepResearch)}
-                        deepResearch={deepResearch}
-                    />
-                </div>
-            </div>
 
-            <style jsx>{`
+                <style jsx global>{`
                 .workspace-container {
-                    height: 100%;
-                    display: flex;
-                    flex-direction: column;
+                    height: 100% !important;
+                    display: flex !important;
+                    flex-direction: column !important;
                 }
 
                 .messages-container::-webkit-scrollbar {
-                    width: 6px;
+                    width: 6px !important;
                 }
 
                 .messages-container::-webkit-scrollbar-track {
-                    background: transparent;
+                    background: transparent !important;
                 }
 
                 .messages-container::-webkit-scrollbar-thumb {
-                    background: hsl(var(--border));
-                    border-radius: 3px;
+                    background: hsl(var(--border)) !important;
+                    border-radius: 3px !important;
                 }
 
                 .messages-container::-webkit-scrollbar-thumb:hover {
-                    background: hsl(var(--border) / 0.8);
+                    background: hsl(var(--border) / 0.8) !important;
                 }
 
                 .empty-state {
@@ -533,6 +540,7 @@ export default function Workspace({ organizationName, name, appId }: WorkspacePr
                     background: hsl(var(--background));
                 }
             `}</style>
-        </div>
+            </div>
+        </ThemeProvider>
     )
 }
