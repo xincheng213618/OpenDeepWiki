@@ -800,6 +800,10 @@ public class WarehouseService(
         {
             address += "/tree/" + warehouse.Branch + "/";
         }
+        else if (address.Contains("gitlab.com") || System.Text.RegularExpressions.Regex.IsMatch(address, @"^gitlab\.[\w-]+\.(com|cn|net|org)", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        {
+            address += "/-/tree/" + warehouse.Branch + "/";
+        }
 
         // TODO: 需要根据仓库类型判断跳转地址
 
