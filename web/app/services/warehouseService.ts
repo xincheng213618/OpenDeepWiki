@@ -156,6 +156,41 @@ export async function getBranchList(
         branchesData = data.map(branch => branch.name);
       }
     }
+    // GitLab仓库
+    else if (url.hostname === 'gitlab.com' || /^gitlab\.[\w-]+\.(com|cn|net|org)$/i.test(url.hostname)) {
+      // 1. 先获取仓库信息以获取默认分支
+      const apiBaseUrl = `${url.protocol}//${url.hostname}/api/v4`;
+      const repoInfoUrl = `${apiBaseUrl}/projects/${encodeURIComponent(`${owner}/${repo}`)}`;
+      const headers: HeadersInit = {};
+      
+      // 如果提供了凭据，尝试添加授权头
+      if (password) {
+        headers['Authorization'] = `Bearer ${password}`;
+      }
+      
+      const repoInfoResponse = await fetch(repoInfoUrl, { headers });
+      
+      if (!repoInfoResponse.ok) {
+        throw new Error(`GitLab API请求失败: ${repoInfoResponse.status} ${repoInfoResponse.statusText}`);
+      }
+      
+      const repoInfo = await repoInfoResponse.json();
+      defaultBranch = repoInfo.default_branch;
+      
+      // 2. 获取分支列表
+      const branchesUrl = `${apiBaseUrl}/projects/${encodeURIComponent(`${owner}/${repo}`)}/repository/branches`;
+      const branchesResponse = await fetch(branchesUrl, { headers });
+      
+      if (!branchesResponse.ok) {
+        throw new Error(`GitLab API请求失败: ${branchesResponse.status} ${branchesResponse.statusText}`);
+      }
+      
+      const data = await branchesResponse.json();
+      
+      if (Array.isArray(data)) {
+        branchesData = data.map(branch => branch.name);
+      }
+    }
     // 其他Git提供商，尝试使用通用办法处理
     else {
       try {
