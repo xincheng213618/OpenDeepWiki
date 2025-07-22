@@ -202,7 +202,13 @@ public class DocumentPendingService
         var history = new ChatHistory();
 
         history.AddSystemEnhance();
-        history.AddUserMessage(prompt);
+
+        var contents = new ChatMessageContentItemCollection
+        {
+            new TextContent(prompt)
+        };
+        contents.AddSystemReminder();
+        history.AddUserMessage(contents);
 
         var sr = new StringBuilder();
 

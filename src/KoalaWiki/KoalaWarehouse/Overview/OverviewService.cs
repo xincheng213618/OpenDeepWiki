@@ -43,7 +43,15 @@ public class OverviewService
                 ["readme"] = readme
             }, OpenAIOptions.ChatModel);
 
-        history.AddUserMessage(prompt);
+        history.AddSystemEnhance();
+        var contents = new ChatMessageContentItemCollection
+        {
+            new TextContent(prompt),
+        };
+
+        contents.AddSystemReminder();
+
+        history.AddUserMessage(contents);
 
         await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
         {
