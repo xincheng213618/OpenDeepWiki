@@ -157,7 +157,7 @@ export async function getBranchList(
       }
     }
     // GitLab仓库
-    else if (url.hostname === 'gitlab.com' || GITLAB_HOSTNAME_REGEX.test(url.hostname)) {
+    else if (url.hostname === 'gitlab.com' || /^gitlab\.[\w-]+\.(com|cn|net|org)$/i.test(url.hostname)) {
       // 1. 先获取仓库信息以获取默认分支
       const apiBaseUrl = `${url.protocol}//${url.hostname}/api/v4`;
       const repoInfoUrl = `${apiBaseUrl}/projects/${encodeURIComponent(`${owner}/${repo}`)}`;
