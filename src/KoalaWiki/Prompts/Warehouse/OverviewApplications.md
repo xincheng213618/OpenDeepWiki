@@ -217,11 +217,6 @@ Generate your documentation using this exact structure, wrapped in <blog></blog>
 ### Compliance & Standards
 [Compliance requirements identified from documentation]
 
-## 📞 Support & Maintenance
-
-### Support Channels
-[Support information from documentation]
-
 ### Maintenance Schedule
 [Maintenance procedures from operational docs]
 

@@ -36,7 +36,7 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
         {
             if (request.RequestUri.ToString().StartsWith("https://dashscope.aliyuncs.com", StringComparison.CurrentCultureIgnoreCase))
             {
-                json.enable_thinking = true;
+                json.enable_thinking = false;
             }
             else
             {

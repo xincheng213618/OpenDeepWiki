@@ -38,7 +38,7 @@ public class KnowledgeGraphGenerationStep : DocumentProcessingStepBase<DocumentP
                 Value = JsonSerializer.Serialize(miniMap, JsonSerializerOptions.Web)
             }, cancellationToken);
             
-            activity?.SetTag("minimap.generated", true);
+            activity?.SetTag("minimap.generated", true);                                                               
             context.SetStepResult(StepName, miniMap);
             
             Logger.LogInformation("完成 {StepName} 步骤，已生成知识图谱", StepName);

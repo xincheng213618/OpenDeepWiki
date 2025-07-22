@@ -76,6 +76,15 @@ public class DocumentOptions
     /// <returns></returns>
     public static bool EnableCodeCompression { get; set; } = false;
 
+    /// <summary>
+    /// 最大文件读取数量限制
+    /// 当AI读取文件数量超过此限制时，将阻止进一步的文件读取并发送强制提醒消息
+    /// 这有助于防止AI无限制地读取文件，提高处理效率
+    /// 默认值为10，设置为0表示不限制
+    /// </summary>
+    /// <returns></returns>
+    public static int MaxFileReadCount { get; set; } = 10;
+
     public static void InitConfig(IConfiguration configuration)
     {
         configuration.GetSection(Name).Get<DocumentOptions>();
@@ -147,6 +156,15 @@ public class DocumentOptions
             if (bool.TryParse(enableCodeCompression, out var enable))
             {
                 EnableCodeCompression = enable;
+            }
+        }
+
+        var maxFileReadCount = configuration.GetValue<string>($"MAX_FILE_READ_COUNT");
+        if (!string.IsNullOrEmpty(maxFileReadCount))
+        {
+            if (int.TryParse(maxFileReadCount, out var count) && count >= 0)
+            {
+                MaxFileReadCount = count;
             }
         }
     }
