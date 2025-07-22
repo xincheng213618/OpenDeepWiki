@@ -178,7 +178,7 @@ export async function getBranchList(
       defaultBranch = repoInfo.default_branch;
       
       // 2. 获取分支列表
-      const branchesUrl = `${apiBaseUrl}/projects/${encodeURIComponent(`${owner}/${repo}`)}/repository/branches`;
+      const branchesUrl = `${repoInfoUrl}/repository/branches`;
       const branchesResponse = await fetch(branchesUrl, { headers });
       
       if (!branchesResponse.ok) {
