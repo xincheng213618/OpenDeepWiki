@@ -7,6 +7,7 @@ using KoalaWiki.Domains.DocumentFile;
 using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Entities;
 using KoalaWiki.Functions;
+using KoalaWiki.Options;
 using KoalaWiki.Prompts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
@@ -181,7 +182,16 @@ public class DocumentPendingService
         string catalogue,
         string gitRepository, string branch, string path, ClassifyType? classify)
     {
-        var chat = kernel.Services.GetService<IChatCompletionService>();
+        // 为每个文档处理创建独立的Kernel实例，避免状态管理冲突
+        var documentKernel = KernelFactory.GetKernel(
+            OpenAIOptions.Endpoint,
+            OpenAIOptions.ChatApiKey,
+            path,
+            OpenAIOptions.ChatModel,
+            false // 文档生成不需要代码分析功能
+        );
+
+        var chat = documentKernel.Services.GetService<IChatCompletionService>();
 
         string promptName = nameof(PromptConstant.Warehouse.GenerateDocs);
         if (classify.HasValue)
@@ -202,7 +212,13 @@ public class DocumentPendingService
         var history = new ChatHistory();
 
         history.AddSystemEnhance();
-        history.AddUserMessage(prompt);
+
+        var contents = new ChatMessageContentItemCollection
+        {
+            new TextContent(prompt)
+        };
+        contents.AddSystemReminder();
+        history.AddUserMessage(contents);
 
         var sr = new StringBuilder();
 
@@ -213,7 +229,7 @@ public class DocumentPendingService
             Temperature = 0.5,
         };
 
-        await foreach (var i in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
+        await foreach (var i in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
         {
             if (!string.IsNullOrEmpty(i.Content))
             {
@@ -236,7 +252,7 @@ public class DocumentPendingService
                 """);
 
             sr.Clear();
-            await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
+            await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
             {
                 if (!string.IsNullOrEmpty(item.Content))
                 {

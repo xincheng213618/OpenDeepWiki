@@ -16,7 +16,6 @@ public class KnowledgeGraphGenerationStep : DocumentProcessingStepBase<DocumentP
     {
         using var activity = ActivitySource.StartActivity(StepName);
         SetActivityTags(activity, context);
-
         Logger.LogInformation("开始执行 {StepName} 步骤", StepName);
 
         try
@@ -28,7 +27,7 @@ public class KnowledgeGraphGenerationStep : DocumentProcessingStepBase<DocumentP
             
             // 删除现有的知识图谱
             await context.DbContext.MiniMaps.Where(x => x.WarehouseId == context.Warehouse.Id)
-                .ExecuteDeleteAsync();
+                .ExecuteDeleteAsync(cancellationToken: cancellationToken);
             
             // 添加新的知识图谱
             await context.DbContext.MiniMaps.AddAsync(new MiniMap()
@@ -36,9 +35,9 @@ public class KnowledgeGraphGenerationStep : DocumentProcessingStepBase<DocumentP
                 Id = Guid.NewGuid().ToString("N"),
                 WarehouseId = context.Warehouse.Id,
                 Value = JsonSerializer.Serialize(miniMap, JsonSerializerOptions.Web)
-            });
+            }, cancellationToken);
             
-            activity?.SetTag("minimap.generated", true);
+            activity?.SetTag("minimap.generated", true);                                                               
             context.SetStepResult(StepName, miniMap);
             
             Logger.LogInformation("完成 {StepName} 步骤，已生成知识图谱", StepName);

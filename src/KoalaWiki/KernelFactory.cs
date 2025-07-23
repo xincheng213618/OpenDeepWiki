@@ -25,7 +25,7 @@ public static class KernelFactory
     public static Kernel GetKernel(string chatEndpoint,
         string apiKey,
         string gitPath,
-        string model = "gpt-4.1", bool isCodeAnalysis = true)
+        string model, bool isCodeAnalysis = true)
     {
         using var activity = Activity.Current?.Source.StartActivity();
         activity?.SetTag("model", model);
@@ -101,6 +101,11 @@ public static class KernelFactory
         var fileFunction = new FileFunction(gitPath);
         kernelBuilder.Plugins.AddFromObject(fileFunction);
         activity?.SetTag("plugins.file_function", "loaded");
+
+        // 为每个内核实例添加独立的AgentFunction
+        var agentFunction = new AgentFunction();
+        kernelBuilder.Plugins.AddFromObject(agentFunction);
+        activity?.SetTag("plugins.agent_function", "loaded");
 
         if (DocumentOptions.EnableCodeDependencyAnalysis)
         {

@@ -2,13 +2,15 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using KoalaWiki.Entities;
 using KoalaWiki.KoalaWarehouse.Overview;
-using KoalaWiki.Options;
 
 namespace KoalaWiki.KoalaWarehouse.Pipeline.Steps;
 
 public class OverviewGenerationStep : DocumentProcessingStepBase<DocumentProcessingContext, DocumentProcessingContext>
 {
-    public OverviewGenerationStep(ILogger<OverviewGenerationStep> logger) : base(logger) { }
+    public OverviewGenerationStep(ILogger<OverviewGenerationStep> logger) : base(logger) 
+    {
+        OverviewService.SetLogger(logger);
+    }
 
     public override string StepName => "生成项目概述";
 
@@ -60,7 +62,7 @@ public class OverviewGenerationStep : DocumentProcessingStepBase<DocumentProcess
 
             // 删除现有的概述
             await context.DbContext.DocumentOverviews.Where(x => x.DocumentId == context.Document.Id)
-                .ExecuteDeleteAsync();
+                .ExecuteDeleteAsync(cancellationToken: cancellationToken);
 
             // 添加新的概述
             await context.DbContext.DocumentOverviews.AddAsync(new DocumentOverview()
@@ -69,7 +71,7 @@ public class OverviewGenerationStep : DocumentProcessingStepBase<DocumentProcess
                 Title = "",
                 DocumentId = context.Document.Id,
                 Id = Guid.NewGuid().ToString("N")
-            });
+            }, cancellationToken);
 
             context.Overview = overview;
             activity?.SetTag("overview.length", overview?.Length ?? 0);

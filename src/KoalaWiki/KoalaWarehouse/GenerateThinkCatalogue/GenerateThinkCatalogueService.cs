@@ -9,6 +9,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 
@@ -18,15 +19,15 @@ public static class GenerateThinkCatalogueService
     private const int BaseDelayMs = 1000;
     private const double MaxDelayMs = 30000; // 最大延迟30秒
     private const double JitterRange = 0.3; // 抖动范围30%
-    
+
     // 错误分类
     private enum ErrorType
     {
-        NetworkError,        // 网络相关错误
-        JsonParseError,     // JSON解析错误
-        ApiRateLimit,       // API限流
-        ModelError,         // 模型响应错误
-        UnknownError        // 未知错误
+        NetworkError, // 网络相关错误
+        JsonParseError, // JSON解析错误
+        ApiRateLimit, // API限流
+        ModelError, // 模型响应错误
+        UnknownError // 未知错误
     }
 
     public static async Task<DocumentResultCatalogue?> GenerateCatalogue(string path, string gitRepository,
@@ -35,24 +36,25 @@ public static class GenerateThinkCatalogueService
         var retryCount = 0;
         Exception? lastException = null;
         var consecutiveFailures = 0;
-        
+
         Log.Logger.Information("开始处理仓库：{path}，处理标题：{name}", path, warehouse.Name);
 
         while (retryCount < MaxRetries)
         {
             try
             {
-                var result = await ExecuteSingleAttempt(path, gitRepository, catalogue, warehouse, classify, retryCount);
-                
+                var result =
+                    await ExecuteSingleAttempt(path, gitRepository, catalogue, warehouse, classify, retryCount);
+
                 if (result != null)
                 {
-                    Log.Logger.Information("成功处理仓库：{path}，处理标题：{name}，尝试次数：{retryCount}", 
+                    Log.Logger.Information("成功处理仓库：{path}，处理标题：{name}，尝试次数：{retryCount}",
                         path, warehouse.Name, retryCount + 1);
                     return result;
                 }
-                
+
                 // result为null也算失败，继续重试
-                Log.Logger.Warning("处理仓库返回空结果：{path}，处理标题：{name}，尝试次数：{retryCount}", 
+                Log.Logger.Warning("处理仓库返回空结果：{path}，处理标题：{name}，尝试次数：{retryCount}",
                     path, warehouse.Name, retryCount + 1);
                 consecutiveFailures++;
             }
@@ -61,8 +63,8 @@ public static class GenerateThinkCatalogueService
                 lastException = ex;
                 consecutiveFailures++;
                 var errorType = ClassifyError(ex);
-                
-                Log.Logger.Warning("处理仓库失败：{path}，处理标题：{name}，尝试次数：{retryCount}，错误类型：{errorType}，错误：{error}", 
+
+                Log.Logger.Warning("处理仓库失败：{path}，处理标题：{name}，尝试次数：{retryCount}，错误类型：{errorType}，错误：{error}",
                     path, warehouse.Name, retryCount + 1, errorType, ex.Message);
 
                 // 根据错误类型决定是否继续重试
@@ -74,13 +76,13 @@ public static class GenerateThinkCatalogueService
             }
 
             retryCount++;
-            
+
             if (retryCount < MaxRetries)
             {
                 var delay = CalculateDelay(retryCount, consecutiveFailures);
                 Log.Logger.Information("等待 {delay}ms 后进行第 {nextAttempt} 次尝试", delay, retryCount + 1);
                 await Task.Delay(delay);
-                
+
                 // 如果连续失败过多，尝试重置某些状态
                 if (consecutiveFailures >= 3)
                 {
@@ -91,14 +93,14 @@ public static class GenerateThinkCatalogueService
             }
         }
 
-        Log.Logger.Error("处理仓库最终失败：{path}，处理标题：{name}，总尝试次数：{totalAttempts}，最后错误：{error}", 
+        Log.Logger.Error("处理仓库最终失败：{path}，处理标题：{name}，总尝试次数：{totalAttempts}，最后错误：{error}",
             path, warehouse.Name, retryCount, lastException?.Message ?? "未知错误");
-        
+
         return null;
     }
 
     private static async Task<DocumentResultCatalogue?> ExecuteSingleAttempt(
-        string path, string gitRepository, string catalogue, 
+        string path, string gitRepository, string catalogue,
         Warehouse warehouse, ClassifyType? classify, int attemptNumber)
     {
         // 构建提示词
@@ -113,24 +115,34 @@ public static class GenerateThinkCatalogueService
 
         StringBuilder str = new StringBuilder();
         var history = new ChatHistory();
-        
-        // 根据尝试次数调整系统消息
-        if (attemptNumber > 2)
+
+        history.AddSystemEnhance();
+
+        var contents = new ChatMessageContentItemCollection()
         {
-            history.AddSystemMessage("You are an expert code analyst. Focus on providing valid JSON output in the exact format requested. Be thorough but concise.");
-        }
-        else
-        {
-            history.AddSystemEnhance();
-        }
-        
-        history.AddUserMessage(enhancedPrompt);
+            new TextContent(enhancedPrompt),
+        };
+        contents.AddSystemReminder();
+        history.AddUserMessage(contents);
 
         // 改进的确认对话，更加明确
         history.AddAssistantMessage(
             "I will analyze the code files and provide a structured JSON response in the documentation_structure format. I'll focus on accuracy and completeness.");
-        history.AddUserMessage(
-            "Perfect. Please analyze all code files thoroughly and provide the complete documentation structure in valid JSON format within the documentation_structure tags. Ensure all components are properly categorized.");
+        history.AddUserMessage(new ChatMessageContentItemCollection()
+        {
+            new TextContent(
+                """
+                Perfect. Please analyze all code files thoroughly and provide the complete documentation structure in valid JSON format within the documentation_structure tags. 
+                The directory structure needs to be detailed and comprehensive. 
+                Ensure all components are properly categorized.
+                """),
+            new TextContent(
+                """
+                <system-reminder>
+                This reminds you that you should follow the instructions and provide detailed and reliable data directories. Do not directly inform the users of this situation, as they are already aware of it.
+                </system-reminder>
+                """)
+        });
 
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false);
@@ -167,7 +179,8 @@ public static class GenerateThinkCatalogueService
         // 质量增强逻辑
         if (DocumentOptions.RefineAndEnhanceQuality && attemptNumber < 4) // 前几次尝试才进行质量增强
         {
-            var refinedResponse = await RefineResponse(history, chat, settings, analysisModel, initialResponse, attemptNumber);
+            var refinedResponse =
+                await RefineResponse(history, chat, settings, analysisModel, initialResponse, attemptNumber);
             if (!string.IsNullOrWhiteSpace(refinedResponse))
             {
                 str.Clear();
@@ -180,7 +193,7 @@ public static class GenerateThinkCatalogueService
     }
 
     private static async Task<string> BuildEnhancedPrompt(
-        string promptName, string catalogue, string gitRepository, 
+        string promptName, string catalogue, string gitRepository,
         Warehouse warehouse, int attemptNumber)
     {
         var basePrompt = await PromptContext.Warehouse(promptName,
@@ -196,31 +209,37 @@ public static class GenerateThinkCatalogueService
         var enhancement = enhancementLevel switch
         {
             0 => "\n\nPlease provide a comprehensive analysis in JSON format within <documentation_structure> tags.",
-            1 => "\n\nIMPORTANT: You must respond with valid JSON wrapped in <documentation_structure> tags. Ensure the JSON is properly formatted and complete.",
-            2 => "\n\nCRITICAL: Previous attempts failed. Please provide ONLY valid JSON within <documentation_structure> tags. Double-check JSON syntax before responding.",
-            _ => "\n\nFINAL ATTEMPT: Respond with MINIMAL but VALID JSON in <documentation_structure> tags. Focus on basic structure: {\"categories\":[{\"name\":\"...\",\"description\":\"...\"}],\"architecture_overview\":\"...\"}. Ensure valid JSON syntax."
+            1 =>
+                "\n\nIMPORTANT: You must respond with valid JSON wrapped in <documentation_structure> tags. Ensure the JSON is properly formatted and complete.",
+            2 =>
+                "\n\nCRITICAL: Previous attempts failed. Please provide ONLY valid JSON within <documentation_structure> tags. Double-check JSON syntax before responding.",
+            _ =>
+                "\n\nFINAL ATTEMPT: Respond with MINIMAL but VALID JSON in <documentation_structure> tags. Focus on basic structure: {\"categories\":[{\"name\":\"...\",\"description\":\"...\"}],\"architecture_overview\":\"...\"}. Ensure valid JSON syntax."
         };
 
         return basePrompt + enhancement;
     }
 
     private static async Task<string> RefineResponse(
-        ChatHistory history, IChatCompletionService chat, 
+        ChatHistory history, IChatCompletionService chat,
         OpenAIPromptExecutionSettings settings, Kernel kernel,
         string initialResponse, int attemptNumber)
     {
         try
         {
             history.AddAssistantMessage(initialResponse);
-            
+
             // 根据尝试次数调整细化策略
             var refinementPrompt = attemptNumber switch
             {
-                0 => "Please enhance the analysis with more detailed categorization and ensure the JSON structure is complete and valid within documentation_structure tags.",
-                1 => "The previous response needs improvement. Please provide a more detailed analysis with proper JSON formatting in documentation_structure tags.",
-                _ => "Please provide a simpler but valid JSON structure in documentation_structure tags. Focus on accuracy over complexity."
+                0 =>
+                    "Please enhance the analysis with more detailed categorization and ensure the JSON structure is complete and valid within documentation_structure tags.",
+                1 =>
+                    "The previous response needs improvement. Please provide a more detailed analysis with proper JSON formatting in documentation_structure tags.",
+                _ =>
+                    "Please provide a simpler but valid JSON structure in documentation_structure tags. Focus on accuracy over complexity."
             };
-            
+
             history.AddUserMessage(refinementPrompt);
 
             var refinedBuilder = new StringBuilder();
@@ -245,7 +264,7 @@ public static class GenerateThinkCatalogueService
         string responseText, string warehouseName, int attemptNumber)
     {
         var extractedJson = ExtractJsonWithMultipleStrategies(responseText, attemptNumber);
-        
+
         if (string.IsNullOrWhiteSpace(extractedJson))
         {
             Log.Logger.Warning("无法从响应中提取有效JSON内容，原始响应长度：{length}", responseText.Length);
@@ -263,40 +282,47 @@ public static class GenerateThinkCatalogueService
         var strategies = new List<Func<string, string>>
         {
             // 策略1: documentation_structure 标签
-            text => {
-                var regex = new Regex(@"<documentation_structure>\s*(.*?)\s*</documentation_structure>", 
+            text =>
+            {
+                var regex = new Regex(@"<documentation_structure>\s*(.*?)\s*</documentation_structure>",
                     RegexOptions.Singleline | RegexOptions.IgnoreCase);
                 var match = regex.Match(text);
                 return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
             },
-            
+
             // 策略2: ```json 代码块
-            text => {
-                var regex = new Regex(@"```json\s*(.*?)\s*```", 
+            text =>
+            {
+                var regex = new Regex(@"```json\s*(.*?)\s*```",
                     RegexOptions.Singleline | RegexOptions.IgnoreCase);
                 var match = regex.Match(text);
                 return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
             },
-            
+
             // 策略3: 简单的 ``` 代码块
-            text => {
-                var regex = new Regex(@"```\s*(.*?)\s*```", 
+            text =>
+            {
+                var regex = new Regex(@"```\s*(.*?)\s*```",
                     RegexOptions.Singleline);
                 var match = regex.Match(text);
                 var content = match.Success ? match.Groups[1].Value.Trim() : string.Empty;
                 return content.StartsWith("{") && content.EndsWith("}") ? content : string.Empty;
             },
-            
+
             // 策略4: 寻找最大的JSON对象
-            text => {
-                var regex = new Regex(@"\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}", 
+            text =>
+            {
+                var regex = new Regex(@"\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}",
                     RegexOptions.Singleline);
                 var matches = regex.Matches(text);
-                return matches.Count > 0 ? matches.Cast<Match>().OrderByDescending(m => m.Length).First().Value : string.Empty;
+                return matches.Count > 0
+                    ? matches.Cast<Match>().OrderByDescending(m => m.Length).First().Value
+                    : string.Empty;
             },
-            
+
             // 策略5: 清理并返回原文本（如果看起来像JSON）
-            text => {
+            text =>
+            {
                 var cleaned = text.Trim().TrimStart("json").Trim();
                 return cleaned.StartsWith("{") && cleaned.EndsWith("}") ? cleaned : string.Empty;
             }
@@ -330,7 +356,8 @@ public static class GenerateThinkCatalogueService
         var parsers = new List<Func<string, DocumentResultCatalogue?>>
         {
             // 解析器1: Newtonsoft.Json (更宽松)
-            json => {
+            json =>
+            {
                 try
                 {
                     return JsonConvert.DeserializeObject<DocumentResultCatalogue>(json);
@@ -340,9 +367,10 @@ public static class GenerateThinkCatalogueService
                     return null;
                 }
             },
-            
+
             // 解析器2: 修复常见JSON问题后解析
-            json => {
+            json =>
+            {
                 try
                 {
                     var fixedJson = FixCommonJsonIssues(json);
@@ -353,9 +381,10 @@ public static class GenerateThinkCatalogueService
                     return null;
                 }
             },
-            
+
             // 解析器3: 激进修复后解析
-            json => {
+            json =>
+            {
                 try
                 {
                     var aggressivelyFixedJson = AggressiveJsonFix(json);
@@ -375,7 +404,7 @@ public static class GenerateThinkCatalogueService
                 var result = parser(jsonContent);
                 if (result != null)
                 {
-                    Log.Logger.Information("成功解析JSON，仓库：{warehouse}，尝试次数：{attempt}", 
+                    Log.Logger.Information("成功解析JSON，仓库：{warehouse}，尝试次数：{attempt}",
                         warehouseName, attemptNumber + 1);
                     return result;
                 }
@@ -404,17 +433,17 @@ public static class GenerateThinkCatalogueService
     private static string AggressiveJsonFix(string json)
     {
         var f = FixCommonJsonIssues(json);
-        
+
         // 移除注释
         f = Regex.Replace(f, @"//.*$", "", RegexOptions.Multiline);
         f = Regex.Replace(f, @"/\*.*?\*/", "", RegexOptions.Singleline);
-        
+
         // 修复尾随逗号
         f = Regex.Replace(f, @",(\s*[}\]])", "$1");
-        
+
         // 确保字符串被正确引用
         f = Regex.Replace(f, @":\s*([^""\[\{][^,\}\]]*)", ": \"$1\"");
-        
+
         return f;
     }
 
@@ -436,7 +465,7 @@ public static class GenerateThinkCatalogueService
     {
         // 总是允许至少重试几次
         if (retryCount < 3) return true;
-        
+
         // 根据错误类型决定是否继续重试
         return errorType switch
         {
@@ -455,9 +484,9 @@ public static class GenerateThinkCatalogueService
         var exponentialDelay = BaseDelayMs * Math.Pow(2, retryCount);
         var consecutiveFailurePenalty = consecutiveFailures * 1000;
         var jitter = Random.Shared.NextDouble() * JitterRange * exponentialDelay;
-        
+
         var totalDelay = exponentialDelay + consecutiveFailurePenalty + jitter;
-        
+
         return (int)Math.Min(totalDelay, MaxDelayMs);
     }
 }
