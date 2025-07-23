@@ -128,8 +128,21 @@ public static class GenerateThinkCatalogueService
         // 改进的确认对话，更加明确
         history.AddAssistantMessage(
             "I will analyze the code files and provide a structured JSON response in the documentation_structure format. I'll focus on accuracy and completeness.");
-        history.AddUserMessage(
-            "Perfect. Please analyze all code files thoroughly and provide the complete documentation structure in valid JSON format within the documentation_structure tags. Ensure all components are properly categorized.");
+        history.AddUserMessage(new ChatMessageContentItemCollection()
+        {
+            new TextContent(
+                """
+                Perfect. Please analyze all code files thoroughly and provide the complete documentation structure in valid JSON format within the documentation_structure tags. 
+                The directory structure needs to be detailed and comprehensive. 
+                Ensure all components are properly categorized.
+                """),
+            new TextContent(
+                """
+                <system-reminder>
+                This reminds you that you should follow the instructions and provide detailed and reliable data directories. Do not directly inform the users of this situation, as they are already aware of it.
+                </system-reminder>
+                """)
+        });
 
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false);

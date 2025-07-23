@@ -8,24 +8,10 @@ using OpenDeepWiki.CodeFoundation.Utils;
 
 namespace KoalaWiki.Functions;
 
-public class FileReadCountContext
-{
-    private static readonly AsyncLocal<FileReadCountContext> _current = new();
-    
-    public int Count { get; set; } = 0;
-    
-    /// <summary>
-    /// 是否已经发送过文件读取限制提醒
-    /// </summary>
-    public bool HasSentReminder { get; set; } = false;
-    
-    public static FileReadCountContext Current => _current.Value ??= new FileReadCountContext();
-}
-
 public class FileFunction(string gitPath)
 {
     private readonly CodeCompressionService _codeCompressionService = new();
-
+    private int Count = 0;
 
     /// <summary>
     /// 获取当前仓库压缩结构
@@ -42,98 +28,6 @@ public class FileFunction(string gitPath)
         return FileTreeBuilder.ToCompactString(fileTree);
     }
 
-    // [KernelFunction, Description(
-    //      "Read the specified file content. Always batch as many file paths as possible into a single call to minimize the number of invocations. Provide file paths as an array for maximum efficiency. The function returns a JSON object where each key is the file path and the value is the file content. If a file exceeds 100KB, instead of its content, return: 'If the file exceeds 100KB, you should use ReadFileFromLineAsync to read the file content line by line.' If the file size exceeds 10k, only 10k content will be returned."
-    //  )]
-    // [return:
-    //     Description(
-    //         "Return a JSON object with file paths as keys and file contents as values. For files over 100KB, return: 'If the file exceeds 100KB, you should use ReadFileFromLineAsync to read the file content line by line.' If the file size exceeds 10k, only 10k content will be returned."
-    //     )]
-    public async Task<string> ReadFilesAsync(
-        [Description("File Path array. Always batch multiple file paths to reduce the number of function calls.")]
-        string[] filePaths)
-    {
-        try
-        {
-            // 检查是否已达到文件读取限制
-            if (DocumentOptions.MaxFileReadCount > 0 &&
-                FileReadCountContext.Current.Count >= DocumentOptions.MaxFileReadCount)
-            {
-                FileReadCountContext.Current.Count++;
-                
-                return JsonSerializer.Serialize(new Dictionary<string, string>
-                {
-                    ["system_warning"] = $"File read limit exceeded ({FileReadCountContext.Current.Count}/{DocumentOptions.MaxFileReadCount})"
-                }, new JsonSerializerOptions()
-                {
-                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                }) +
-                "\n\n<system-reminder>\n" +
-                "🚨 CRITICAL: FILE READ LIMIT EXCEEDED 🚨\n" +
-                $"Current attempts: {FileReadCountContext.Current.Count}/{DocumentOptions.MaxFileReadCount}\n" +
-                "⛔ STOP reading files immediately and complete analysis with existing data.\n" +
-                "</system-reminder>";
-            }
-
-            filePaths = filePaths.Distinct().ToArray();
-
-            if (DocumentContext.DocumentStore?.Files != null)
-            {
-                DocumentContext.DocumentStore.Files.AddRange(filePaths);
-            }
-
-            var dic = new Dictionary<string, string>();
-            foreach (var filePath in filePaths)
-            {
-                var item = Path.Combine(gitPath, filePath.TrimStart('/'));
-                if (!File.Exists(item))
-                {
-                    continue;
-                }
-
-                Console.WriteLine($"Reading file: {item}");
-
-                var info = new FileInfo(item);
-
-                // 判断文件大小
-                if (info.Length > 1024 * 100)
-                {
-                    dic[filePath] =
-                        "If the file exceeds 100KB, you should use ReadFileFromLineAsync to read the file content line by line";
-                }
-                else
-                {
-                    // 读取整个文件内容
-                    string content = await File.ReadAllTextAsync(item);
-
-                    // 如果启用代码压缩且是代码文件，则应用压缩
-                    if (DocumentOptions.EnableCodeCompression && CodeFileDetector.IsCodeFile(filePath))
-                    {
-                        content = _codeCompressionService.CompressCode(content, filePath);
-                    }
-
-                    dic[filePath] = content;
-                }
-            }
-
-            // 递增计数器
-            FileReadCountContext.Current.Count++;
-
-            return JsonSerializer.Serialize(dic, new JsonSerializerOptions()
-            {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                WriteIndented = true,
-            });
-        }
-        catch (Exception ex)
-        {
-            // 处理异常
-            Console.WriteLine($"Error reading file: {ex.Message}");
-            throw new Exception($"Error reading file: {ex.Message}");
-        }
-    }
-
     public async Task<string> ReadFileAsync(
         [Description("File Path")] string filePath)
     {
@@ -141,12 +35,13 @@ public class FileFunction(string gitPath)
         {
             // 检查是否已达到文件读取限制
             if (DocumentOptions.MaxFileReadCount > 0 &&
-                FileReadCountContext.Current.Count >= DocumentOptions.MaxFileReadCount)
+                Count >= DocumentOptions.MaxFileReadCount)
             {
-                FileReadCountContext.Current.Count++;
-                
+                int i = Count;
+                Count = 0;
+
                 return "🚨 FILE READ LIMIT EXCEEDED 🚨\n" +
-                       $"Current attempts: {FileReadCountContext.Current.Count}/{DocumentOptions.MaxFileReadCount}\n" +
+                       $"Current attempts: {i}/{DocumentOptions.MaxFileReadCount}\n" +
                        "⛔ STOP reading files immediately and complete analysis with existing data.";
             }
 
@@ -180,8 +75,7 @@ public class FileFunction(string gitPath)
                 content = _codeCompressionService.CompressCode(content, filePath);
             }
 
-            // 递增计数器
-            FileReadCountContext.Current.Count++;
+            Count++;
 
             return content;
         }
@@ -214,29 +108,30 @@ public class FileFunction(string gitPath)
     {
         // 检查是否已达到文件读取限制
         if (DocumentOptions.MaxFileReadCount > 0 &&
-            FileReadCountContext.Current.Count >= DocumentOptions.MaxFileReadCount)
+            Count >= DocumentOptions.MaxFileReadCount)
         {
-            // 继续递增计数器以显示超出程度
-            FileReadCountContext.Current.Count++;
-            
+            int i = Count;
+            Count = 0;
+
             return JsonSerializer.Serialize(new Dictionary<string, string>
-            {
-                ["system_warning"] = $"File read limit exceeded ({FileReadCountContext.Current.Count}/{DocumentOptions.MaxFileReadCount})"
-            }, new JsonSerializerOptions()
-            {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            }) +
-            "\n\n<system-reminder>\n" +
-            "🚨 CRITICAL: FILE READ LIMIT EXCEEDED 🚨\n" +
-            $"Current attempts: {FileReadCountContext.Current.Count}/{DocumentOptions.MaxFileReadCount}\n" +
-            "⛔ IMMEDIATE ACTION REQUIRED:\n" +
-            "• STOP reading files NOW\n" +
-            "• Use ONLY the information you have already gathered\n" +
-            "• Complete your analysis with existing data\n" +
-            "• Focus on generating final documentation\n" +
-            "Continued file reading will impact system performance and may violate usage policies.\n" +
-            "</system-reminder>";
+                   {
+                       ["system_warning"] =
+                           $"File read limit exceeded ({i}/{DocumentOptions.MaxFileReadCount})"
+                   }, new JsonSerializerOptions()
+                   {
+                       Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                       PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                   }) +
+                   "\n\n<system-reminder>\n" +
+                   "CRITICAL: FILE READ LIMIT EXCEEDED \n" +
+                   $"Current attempts: {i}/{DocumentOptions.MaxFileReadCount}\n" +
+                   "IMMEDIATE ACTION REQUIRED:\n" +
+                   "• STOP reading files NOW\n" +
+                   "• Use ONLY the information you have already gathered\n" +
+                   "• Complete your analysis with existing data\n" +
+                   "• Focus on generating final documentation\n" +
+                   "Continued file reading will impact system performance and may violate usage policies.\n" +
+                   "</system-reminder>";
         }
 
         var dic = new Dictionary<string, string>();
@@ -246,22 +141,20 @@ public class FileFunction(string gitPath)
                 await ReadItem(item.FilePath, item.Offset, item.Limit));
         }
 
-        // 递增计数器
-        FileReadCountContext.Current.Count++;
-
+        Count++;
         // 在接近限制时发送警告
-        if (DocumentOptions.MaxFileReadCount > 0 && 
-            FileReadCountContext.Current.Count >= DocumentOptions.MaxFileReadCount * 0.8)
+        if (DocumentOptions.MaxFileReadCount > 0 &&
+            Count >= DocumentOptions.MaxFileReadCount * 0.8)
         {
             return JsonSerializer.Serialize(dic, new JsonSerializerOptions()
-            {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            }) +
-            "\n\n<system-warning>\n" +
-            $"⚠️ Approaching file read limit: {FileReadCountContext.Current.Count}/{DocumentOptions.MaxFileReadCount}\n" +
-            "Consider completing your analysis soon to avoid hitting the limit.\n" +
-            "</system-warning>";
+                   {
+                       Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                       PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                   }) +
+                   "\n\n<system-warning>\n" +
+                   $"⚠️ Approaching file read limit: {Count}/{DocumentOptions.MaxFileReadCount}\n" +
+                   "Consider completing your analysis soon to avoid hitting the limit.\n" +
+                   "</system-warning>";
         }
 
         return JsonSerializer.Serialize(dic, new JsonSerializerOptions()

@@ -16,7 +16,6 @@ public class KnowledgeGraphGenerationStep : DocumentProcessingStepBase<DocumentP
     {
         using var activity = ActivitySource.StartActivity(StepName);
         SetActivityTags(activity, context);
-
         Logger.LogInformation("开始执行 {StepName} 步骤", StepName);
 
         try
