@@ -291,7 +291,9 @@ Structure must provide comprehensive coverage while maintaining enterprise-grade
 - **Language Localization**: All content must be written in Chinese, maintaining technical precision and professional tone
 - **Professional Standards**: Match the documentation quality of major open source projects (React, Vue, TypeScript standards)
 - **Citation Integration**: Every technical claim must include footnote references `[^n]` linking to actual code
-- **Complete Examples**: All code examples must be complete, executable, and production-ready - NO placeholder snippets
+- **Code Understanding Priority**: Focus on explaining what code does, why it exists, and how it works rather than providing complete implementations. Code snippets should serve as illustrations for concepts, not standalone solutions
+- **Description-Driven Approach**: Every code block must be surrounded by substantial explanatory text that describes the purpose, design decisions, and implementation rationale
+- **Conceptual Focus**: Prioritize helping readers understand architectural patterns, design principles, and code logic over providing copy-paste ready examples
 - **Section Completeness**: Every section requires substantial content (minimum 300-500 words for major sections)
 
 ## Content Structure Guidelines
@@ -306,6 +308,14 @@ Generate documentation structure and content organically based on the specific p
 - **Context-Rich Examples**: Every example should feel authentic and address real-world scenarios developers encounter
 - **Decision Tree Navigation**: Help readers understand not just how to do something, but when and why they should
 - **Failure Mode Anticipation**: Proactively address common mistakes, edge cases, and troubleshooting scenarios
+
+**DESCRIPTIVE CONTENT REQUIREMENTS:**
+- **Explanation-First Approach**: Each technical concept must be thoroughly explained in prose before any code is shown
+- **Architecture Reasoning**: Dedicate substantial sections to explaining why design decisions were made, not just what they are
+- **Implementation Analysis**: Focus on describing how systems work internally, their interaction patterns, and data flows
+- **Conceptual Depth**: Provide detailed explanations of underlying principles, patterns, and architectural philosophies
+- **Code Context**: When code is presented, spend more words explaining it than showing it (3:1 explanation-to-code ratio minimum)
+- **Narrative Flow**: Structure content as a story that guides readers through understanding, not as a reference manual
 
 **OUTPUT FORMAT REQUIREMENTS:**
 - Wrap all content in `<blog></blog>` tags
@@ -358,11 +368,18 @@ Establish clear quantitative and qualitative standards that ensure documentation
 </thinking>
 
 **CONTENT DEPTH REQUIREMENTS:**
-- **Major Sections**: Minimum 400-600 words with comprehensive technical analysis
-- **Code Examples**: Complete, executable implementations with detailed explanations
-- **Architecture Analysis**: In-depth technical examination of design decisions and implementation patterns
-- **Practical Guidance**: Actionable recommendations for implementation, optimization, and troubleshooting
-- **Professional Presentation**: Enterprise-grade formatting and technical communication standards
+- **Major Sections**: Minimum 400-600 words with comprehensive technical analysis, prioritizing conceptual understanding over code volume
+- **Code Analysis**: Detailed explanations of code purpose, architecture, and design rationale with minimal but illustrative code snippets
+- **Architecture Analysis**: In-depth technical examination of design decisions and implementation patterns through descriptive analysis
+- **Practical Guidance**: Actionable recommendations for implementation, optimization, and troubleshooting with emphasis on understanding principles
+- **Professional Presentation**: Enterprise-grade formatting and technical communication standards with content-rich explanations
+
+**CONTENT BALANCE MANDATES:**
+- **Description-to-Code Ratio**: Minimum 75% descriptive content, maximum 25% code blocks per section
+- **Explanation Priority**: For every line of code shown, provide at least 3 lines of explanatory text describing its purpose and context
+- **Conceptual Foundation**: Each technical section must begin with conceptual explanation before any code is introduced
+- **Understanding Depth**: Focus on explaining the 'why' and 'how' behind implementations rather than showing complete code solutions
+- **Narrative Structure**: Structure content as educational narrative that builds understanding progressively through explanation
 
 **TECHNICAL PRECISION MANDATES:**
 - **Zero Speculation**: Only document verifiable functionality present in the codebase
