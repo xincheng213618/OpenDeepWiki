@@ -241,7 +241,7 @@ public partial class DocumentPendingService
                 - Includes practical code examples and usage patterns  
                 - Ensures completeness without gaps or omissions
                 - Maintains clarity and professional quality throughout
-                Please do your best and spare no effort.
+                Don't hold back. Give it your all.
                 """);
 
             sr.Clear();

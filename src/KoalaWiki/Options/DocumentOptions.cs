@@ -83,7 +83,7 @@ public class DocumentOptions
     /// 默认值为10，设置为0表示不限制
     /// </summary>
     /// <returns></returns>
-    public static int MaxFileReadCount { get; set; } = 20;
+    public static int MaxFileReadCount { get; set; } = 15;
 
     public static void InitConfig(IConfiguration configuration)
     {
