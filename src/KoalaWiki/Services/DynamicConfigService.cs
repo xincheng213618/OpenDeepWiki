@@ -264,6 +264,28 @@ public class DynamicConfigService
     /// </summary>
     private string? GetEnvironmentValue(string key, string? group = null)
     {
+        // 为特定键提供环境变量映射
+        var envMappings = GetEnvironmentVariableMappings();
+        
+        // 首先检查特定的环境变量映射
+        if (envMappings.TryGetValue(key, out var specificEnvKeys))
+        {
+            foreach (var envKey in specificEnvKeys)
+            {
+                var envValue = Environment.GetEnvironmentVariable(envKey);
+                if (!string.IsNullOrEmpty(envValue))
+                {
+                    return envValue;
+                }
+                
+                var configValue = _configuration[envKey];
+                if (!string.IsNullOrEmpty(configValue))
+                {
+                    return configValue;
+                }
+            }
+        }
+
         // 尝试多种环境变量命名方式
         var envVariations = new List<string> { key };
         
@@ -310,6 +332,62 @@ public class DynamicConfigService
     }
 
     /// <summary>
+    /// 获取环境变量映射表
+    /// </summary>
+    private Dictionary<string, string[]> GetEnvironmentVariableMappings()
+    {
+        return new Dictionary<string, string[]>
+        {
+            // OpenAI 配置映射
+            { "ChatModel", new[] { "CHAT_MODEL", "ChatModel" } },
+            { "AnalysisModel", new[] { "ANALYSIS_MODEL", "AnalysisModel" } },
+            { "ChatApiKey", new[] { "CHAT_API_KEY", "ChatApiKey" } },
+            { "Endpoint", new[] { "ENDPOINT", "Endpoint" } },
+            { "ModelProvider", new[] { "MODEL_PROVIDER", "ModelProvider" } },
+            { "MaxFileLimit", new[] { "MAX_FILE_LIMIT", "MaxFileLimit" } },
+            { "DeepResearchModel", new[] { "DEEP_RESEARCH_MODEL", "DeepResearchModel" } },
+            { "EnableMem0", new[] { "ENABLE_MEM0", "EnableMem0" } },
+            { "Mem0ApiKey", new[] { "MEM0_API_KEY", "Mem0ApiKey" } },
+            { "Mem0Endpoint", new[] { "MEM0_ENDPOINT", "Mem0Endpoint" } },
+            { "Temperature", new[] { "TEMPERATURE", "Temperature" } },
+            { "MaxTokens", new[] { "MAX_TOKENS", "MaxTokens" } },
+            { "TopP", new[] { "TOP_P", "TopP" } },
+            { "FrequencyPenalty", new[] { "FREQUENCY_PENALTY", "FrequencyPenalty" } },
+            { "PresencePenalty", new[] { "PRESENCE_PENALTY", "PresencePenalty" } },
+            
+            // Document 配置映射
+            { "EnableIncrementalUpdate", new[] { "ENABLE_INCREMENTAL_UPDATE", "EnableIncrementalUpdate" } },
+            { "EnableSmartFilter", new[] { "ENABLE_SMART_FILTER", "EnableSmartFilter" } },
+            { "CatalogueFormat", new[] { "CATALOGUE_FORMAT", "CatalogueFormat" } },
+            { "EnableCodeDependencyAnalysis", new[] { "ENABLE_CODED_DEPENDENCY_ANALYSIS", "EnableCodeDependencyAnalysis" } },
+            { "EnableWarehouseFunctionPromptTask", new[] { "ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK", "EnableWarehouseFunctionPromptTask" } },
+            { "EnableWarehouseDescriptionTask", new[] { "ENABLE_WAREHOUSE_DESCRIPTION_TASK", "EnableWarehouseDescriptionTask" } },
+            { "EnableFileCommit", new[] { "ENABLE_FILE_COMMIT", "EnableFileCommit" } },
+            { "RefineAndEnhanceQuality", new[] { "REFINE_AND_ENHANCE_QUALITY", "RefineAndEnhanceQuality" } },
+            { "EnableWarehouseCommit", new[] { "ENABLE_WAREHOUSE_COMMIT", "EnableWarehouseCommit" } },
+            { "EnableCodeCompression", new[] { "ENABLE_CODE_COMPRESSION", "EnableCodeCompression" } },
+            { "MaxFileReadCount", new[] { "MAX_FILE_READ_COUNT", "MaxFileReadCount" } },
+            
+            // GitHub 配置映射
+            { "GitHub.ClientId", new[] { "GITHUB_CLIENT_ID", "Github:ClientId" } },
+            { "GitHub.ClientSecret", new[] { "GITHUB_CLIENT_SECRET", "Github:ClientSecret" } },
+            { "GitHub.Token", new[] { "GITHUB_TOKEN", "Github:Token" } },
+            
+            // Gitee 配置映射
+            { "Gitee.ClientId", new[] { "GITEE_CLIENT_ID", "Gitee:ClientId" } },
+            { "Gitee.ClientSecret", new[] { "GITEE_CLIENT_SECRET", "Gitee:ClientSecret" } },
+            { "Gitee.Token", new[] { "GITEE_TOKEN", "Gitee:Token" } },
+            
+            // JWT 配置映射
+            { "Secret", new[] { "JWT_SECRET", "Jwt:Secret" } },
+            { "Issuer", new[] { "JWT_ISSUER", "Jwt:Issuer" } },
+            { "Audience", new[] { "JWT_AUDIENCE", "Jwt:Audience" } },
+            { "ExpireMinutes", new[] { "JWT_EXPIRE_MINUTES", "Jwt:ExpireMinutes" } },
+            { "RefreshExpireMinutes", new[] { "JWT_REFRESH_EXPIRE_MINUTES", "Jwt:RefreshExpireMinutes" } }
+        };
+    }
+
+    /// <summary>
     /// 获取默认设置定义
     /// </summary>
     private List<SystemSetting> GetDefaultSettings()
@@ -327,38 +405,199 @@ public class DynamicConfigService
             new() { Key = "EnableMem0", Group = "OpenAI", ValueType = "bool", Description = "启用Mem0", IsSensitive = false, RequiresRestart = true, DefaultValue = "false", Order = 8 },
             new() { Key = "Mem0ApiKey", Group = "OpenAI", ValueType = "string", Description = "Mem0 API密钥", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 9 },
             new() { Key = "Mem0Endpoint", Group = "OpenAI", ValueType = "string", Description = "Mem0端点", IsSensitive = false, RequiresRestart = true, DefaultValue = "", Order = 10 },
+            new() { Key = "Temperature", Group = "OpenAI", ValueType = "string", Description = "模型温度 (0.0-2.0)", IsSensitive = false, RequiresRestart = false, DefaultValue = "0.7", Order = 11 },
+            new() { Key = "MaxTokens", Group = "OpenAI", ValueType = "int", Description = "最大令牌数", IsSensitive = false, RequiresRestart = false, DefaultValue = "4000", Order = 12 },
+            new() { Key = "TopP", Group = "OpenAI", ValueType = "string", Description = "Top P 采样 (0.0-1.0)", IsSensitive = false, RequiresRestart = false, DefaultValue = "1.0", Order = 13 },
+            new() { Key = "FrequencyPenalty", Group = "OpenAI", ValueType = "string", Description = "频率惩罚 (-2.0-2.0)", IsSensitive = false, RequiresRestart = false, DefaultValue = "0.0", Order = 14 },
+            new() { Key = "PresencePenalty", Group = "OpenAI", ValueType = "string", Description = "存在惩罚 (-2.0-2.0)", IsSensitive = false, RequiresRestart = false, DefaultValue = "0.0", Order = 15 },
 
             // Document配置
-            new() { Key = "EnableIncrementalUpdate", Group = "Document", ValueType = "bool", Description = "启用增量更新", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 11 },
-            new() { Key = "ExcludedFiles", Group = "Document", ValueType = "array", Description = "排除的文件", IsSensitive = false, RequiresRestart = false, DefaultValue = "[]", Order = 12 },
-            new() { Key = "ExcludedFolders", Group = "Document", ValueType = "array", Description = "排除的文件夹", IsSensitive = false, RequiresRestart = false, DefaultValue = "[]", Order = 13 },
-            new() { Key = "EnableSmartFilter", Group = "Document", ValueType = "bool", Description = "启用智能过滤", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 14 },
-            new() { Key = "CatalogueFormat", Group = "Document", ValueType = "string", Description = "目录结构格式", IsSensitive = false, RequiresRestart = false, DefaultValue = "compact", Order = 15 },
-            new() { Key = "EnableCodeDependencyAnalysis", Group = "Document", ValueType = "bool", Description = "启用代码依赖分析", IsSensitive = false, RequiresRestart = false, DefaultValue = "false", Order = 16 },
-            new() { Key = "EnableWarehouseFunctionPromptTask", Group = "Document", ValueType = "bool", Description = "启用仓库功能提示任务", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 17 },
-            new() { Key = "EnableWarehouseDescriptionTask", Group = "Document", ValueType = "bool", Description = "启用仓库描述任务", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 18 },
-            new() { Key = "EnableFileCommit", Group = "Document", ValueType = "bool", Description = "启用文件提交", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 19 },
-            new() { Key = "RefineAndEnhanceQuality", Group = "Document", ValueType = "bool", Description = "精炼并提高质量", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 20 },
-            new() { Key = "EnableWarehouseCommit", Group = "Document", ValueType = "bool", Description = "启用仓库提交", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 21 },
-            new() { Key = "EnableCodeCompression", Group = "Document", ValueType = "bool", Description = "启用代码压缩", IsSensitive = false, RequiresRestart = false, DefaultValue = "false", Order = 22 },
-            new() { Key = "MaxFileReadCount", Group = "Document", ValueType = "int", Description = "最大文件读取数量", IsSensitive = false, RequiresRestart = false, DefaultValue = "15", Order = 23 },
+            new() { Key = "EnableIncrementalUpdate", Group = "Document", ValueType = "bool", Description = "启用增量更新", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 16 },
+            new() { Key = "ExcludedFiles", Group = "Document", ValueType = "array", Description = "排除的文件", IsSensitive = false, RequiresRestart = false, DefaultValue = GetDefaultExcludedFilesJson(), Order = 17 },
+            new() { Key = "ExcludedFolders", Group = "Document", ValueType = "array", Description = "排除的文件夹", IsSensitive = false, RequiresRestart = false, DefaultValue = GetDefaultExcludedFoldersJson(), Order = 18 },
+            new() { Key = "EnableSmartFilter", Group = "Document", ValueType = "bool", Description = "启用智能过滤", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 19 },
+            new() { Key = "CatalogueFormat", Group = "Document", ValueType = "string", Description = "目录结构格式", IsSensitive = false, RequiresRestart = false, DefaultValue = "compact", Order = 20 },
+            new() { Key = "EnableCodeDependencyAnalysis", Group = "Document", ValueType = "bool", Description = "启用代码依赖分析", IsSensitive = false, RequiresRestart = false, DefaultValue = "false", Order = 21 },
+            new() { Key = "EnableWarehouseFunctionPromptTask", Group = "Document", ValueType = "bool", Description = "启用仓库功能提示任务", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 22 },
+            new() { Key = "EnableWarehouseDescriptionTask", Group = "Document", ValueType = "bool", Description = "启用仓库描述任务", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 23 },
+            new() { Key = "EnableFileCommit", Group = "Document", ValueType = "bool", Description = "启用文件提交", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 24 },
+            new() { Key = "RefineAndEnhanceQuality", Group = "Document", ValueType = "bool", Description = "精炼并提高质量", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 25 },
+            new() { Key = "EnableWarehouseCommit", Group = "Document", ValueType = "bool", Description = "启用仓库提交", IsSensitive = false, RequiresRestart = false, DefaultValue = "true", Order = 26 },
+            new() { Key = "EnableCodeCompression", Group = "Document", ValueType = "bool", Description = "启用代码压缩", IsSensitive = false, RequiresRestart = false, DefaultValue = "false", Order = 27 },
+            new() { Key = "MaxFileReadCount", Group = "Document", ValueType = "int", Description = "最大文件读取数量", IsSensitive = false, RequiresRestart = false, DefaultValue = "15", Order = 28 },
 
             // JWT配置
-            new() { Key = "Secret", Group = "JWT", ValueType = "string", Description = "JWT密钥", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 24 },
-            new() { Key = "Issuer", Group = "JWT", ValueType = "string", Description = "颁发者", IsSensitive = false, RequiresRestart = true, DefaultValue = "KoalaWiki", Order = 25 },
-            new() { Key = "Audience", Group = "JWT", ValueType = "string", Description = "接收者", IsSensitive = false, RequiresRestart = true, DefaultValue = "KoalaWiki", Order = 26 },
-            new() { Key = "ExpireMinutes", Group = "JWT", ValueType = "int", Description = "过期时间（分钟）", IsSensitive = false, RequiresRestart = false, DefaultValue = "1440", Order = 27 },
-            new() { Key = "RefreshExpireMinutes", Group = "JWT", ValueType = "int", Description = "刷新令牌过期时间（分钟）", IsSensitive = false, RequiresRestart = false, DefaultValue = "10080", Order = 28 },
+            new() { Key = "Secret", Group = "JWT", ValueType = "string", Description = "JWT密钥", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 29 },
+            new() { Key = "Issuer", Group = "JWT", ValueType = "string", Description = "颁发者", IsSensitive = false, RequiresRestart = true, DefaultValue = "KoalaWiki", Order = 30 },
+            new() { Key = "Audience", Group = "JWT", ValueType = "string", Description = "接收者", IsSensitive = false, RequiresRestart = true, DefaultValue = "KoalaWiki", Order = 31 },
+            new() { Key = "ExpireMinutes", Group = "JWT", ValueType = "int", Description = "过期时间（分钟）", IsSensitive = false, RequiresRestart = false, DefaultValue = "1440", Order = 32 },
+            new() { Key = "RefreshExpireMinutes", Group = "JWT", ValueType = "int", Description = "刷新令牌过期时间（分钟）", IsSensitive = false, RequiresRestart = false, DefaultValue = "10080", Order = 33 },
 
             // GitHub配置
-            new() { Key = "GitHub.ClientId", Group = "GitHub", ValueType = "string", Description = "GitHub客户端ID", IsSensitive = false, RequiresRestart = true, DefaultValue = "", Order = 29 },
-            new() { Key = "GitHub.ClientSecret", Group = "GitHub", ValueType = "string", Description = "GitHub客户端密钥", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 30 },
-            new() { Key = "GitHub.Token", Group = "GitHub", ValueType = "string", Description = "GitHub访问令牌", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 31 },
+            new() { Key = "GitHub.ClientId", Group = "GitHub", ValueType = "string", Description = "GitHub客户端ID", IsSensitive = false, RequiresRestart = true, DefaultValue = "", Order = 34 },
+            new() { Key = "GitHub.ClientSecret", Group = "GitHub", ValueType = "string", Description = "GitHub客户端密钥", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 35 },
+            new() { Key = "GitHub.Token", Group = "GitHub", ValueType = "string", Description = "GitHub访问令牌", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 36 },
 
             // Gitee配置
-            new() { Key = "Gitee.ClientId", Group = "Gitee", ValueType = "string", Description = "Gitee客户端ID", IsSensitive = false, RequiresRestart = true, DefaultValue = "", Order = 32 },
-            new() { Key = "Gitee.ClientSecret", Group = "Gitee", ValueType = "string", Description = "Gitee客户端密钥", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 33 },
-            new() { Key = "Gitee.Token", Group = "Gitee", ValueType = "string", Description = "Gitee访问令牌", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 34 }
+            new() { Key = "Gitee.ClientId", Group = "Gitee", ValueType = "string", Description = "Gitee客户端ID", IsSensitive = false, RequiresRestart = true, DefaultValue = "", Order = 37 },
+            new() { Key = "Gitee.ClientSecret", Group = "Gitee", ValueType = "string", Description = "Gitee客户端密钥", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 38 },
+            new() { Key = "Gitee.Token", Group = "Gitee", ValueType = "string", Description = "Gitee访问令牌", IsSensitive = true, RequiresRestart = true, DefaultValue = "", Order = 39 }
         };
+    }
+
+    /// <summary>
+    /// 获取默认排除文件的JSON字符串
+    /// </summary>
+    private static string GetDefaultExcludedFilesJson()
+    {
+        var excludedFiles = new[]
+        {
+            "package-lock.json",
+            "yarn.lock",
+            "pnpm-lock.yaml",
+            "npm-shrinkwrap.json",
+            "poetry.lock",
+            "Pipfile.lock",
+            "requirements.txt.lock",
+            "Cargo.lock",
+            "composer.lock",
+            ".lock",
+            ".DS_Store",
+            "Thumbs.db",
+            "desktop.ini",
+            "*.lnk",
+            ".env",
+            ".env.*",
+            "*.env",
+            "*.cfg",
+            "*.ini",
+            ".flaskenv",
+            ".gitignore",
+            ".gitattributes",
+            ".gitmodules",
+            ".github",
+            ".gitlab-ci.yml",
+            ".prettierrc",
+            ".eslintrc",
+            ".eslintignore",
+            ".stylelintrc",
+            ".editorconfig",
+            ".jshintrc",
+            ".pylintrc",
+            ".flake8",
+            "mypy.ini",
+            "pyproject.toml",
+            "tsconfig.json",
+            "webpack.config.js",
+            "babel.config.js",
+            "rollup.config.js",
+            "jest.config.js",
+            "karma.conf.js",
+            "vite.config.js",
+            "next.config.js",
+            "*.min.js",
+            "*.min.css",
+            "*.bundle.js",
+            "*.bundle.css",
+            "*.map",
+            "*.gz",
+            "*.zip",
+            "*.tar",
+            "*.tgz",
+            "*.rar",
+            "*.pyc",
+            "*.pyo",
+            "*.pyd",
+            "*.so",
+            "*.dll",
+            "*.class",
+            "*.exe",
+            "*.o",
+            "*.a",
+            "*.jpg",
+            "*.jpeg",
+            "*.png",
+            "*.gif",
+            "*.ico",
+            "*.svg",
+            "*.webp",
+            "*.mp3",
+            "*.mp4",
+            "*.wav",
+            "*.avi",
+            "*.mov",
+            "*.webm",
+            "*.csv",
+            "*.tsv",
+            "*.xls",
+            "*.xlsx",
+            "*.db",
+            "*.sqlite",
+            "*.sqlite3",
+            "*.pdf",
+            "*.docx",
+            "*.pptx",
+            ".doc",
+            "*.ppt",
+            "*.xls",
+            "*.resw",
+            "*.nupkg",
+            "*.jar",
+            "*.plist",
+            "*.pyc",
+            "*.log"
+        };
+
+        return JsonSerializer.Serialize(excludedFiles);
+    }
+
+    /// <summary>
+    /// 获取默认排除文件夹的JSON字符串
+    /// </summary>
+    private static string GetDefaultExcludedFoldersJson()
+    {
+        var excludedFolders = new[]
+        {
+            "./.venv/",
+            "./venv/",
+            "./env/",
+            "./virtualenv/",
+            "./node_modules/",
+            "./bower_components/",
+            "./jspm_packages/",
+            "./.git/",
+            "./.svn/",
+            "./.hg/",
+            "./.bzr/",
+            "./__pycache__/",
+            "./.pytest_cache/",
+            "./.mypy_cache/",
+            "./.ruff_cache/",
+            "./.coverage/",
+            "./dist/",
+            "./build/",
+            "./out/",
+            "./target/",
+            "./bin/",
+            "./obj/",
+            "./docs/",
+            "./_docs/",
+            "./site-docs/",
+            "./_site/",
+            "./.idea/",
+            "./.vscode/",
+            "./.vs/",
+            "./.eclipse/",
+            "./.settings/",
+            "./logs/",
+            "./log/",
+            "./tmp/",
+            "./temp/",
+            "./.eng",
+            "./.idea/",
+            "./.vscode/"
+        };
+
+        return JsonSerializer.Serialize(excludedFolders);
     }
 } 

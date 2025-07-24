@@ -228,6 +228,84 @@ export default function SettingsPage() {
     return changedSettings[setting.key] ?? setting.value ?? setting.defaultValue ?? '';
   };
 
+  // 检查是否为数值字段
+  const isNumberField = (key: string) => {
+    return ['Temperature', 'TopP', 'FrequencyPenalty', 'PresencePenalty'].includes(key);
+  };
+
+  // 获取输入框的最小值
+  const getInputMin = (key: string) => {
+    switch (key) {
+      case 'Temperature':
+      case 'TopP':
+        return '0';
+      case 'FrequencyPenalty':
+      case 'PresencePenalty':
+        return '-2';
+      case 'MaxTokens':
+        return '1';
+      case 'ExpireMinutes':
+      case 'RefreshExpireMinutes':
+      case 'MaxFileReadCount':
+      case 'MaxFileLimit':
+        return '0';
+      default:
+        return undefined;
+    }
+  };
+
+  // 获取输入框的最大值
+  const getInputMax = (key: string) => {
+    switch (key) {
+      case 'Temperature':
+        return '2';
+      case 'TopP':
+        return '1';
+      case 'FrequencyPenalty':
+      case 'PresencePenalty':
+        return '2';
+      case 'MaxTokens':
+        return '32000';
+      default:
+        return undefined;
+    }
+  };
+
+  // 获取输入框的步长
+  const getInputStep = (key: string) => {
+    switch (key) {
+      case 'Temperature':
+      case 'TopP':
+      case 'FrequencyPenalty':
+      case 'PresencePenalty':
+        return '0.1';
+      default:
+        return '1';
+    }
+  };
+
+  // 获取占位符文本
+  const getPlaceholder = (key: string) => {
+    switch (key) {
+      case 'Temperature':
+        return '0.0-2.0，控制输出的随机性';
+      case 'TopP':
+        return '0.0-1.0，核采样参数';
+      case 'FrequencyPenalty':
+        return '-2.0-2.0，频率惩罚';
+      case 'PresencePenalty':
+        return '-2.0-2.0，存在惩罚';
+      case 'MaxTokens':
+        return '最大生成令牌数';
+      case 'ChatModel':
+        return '如：gpt-4, gpt-3.5-turbo';
+      case 'CatalogueFormat':
+        return 'compact, json, pathlist, unix';
+      default:
+        return undefined;
+    }
+  };
+
   // 渲染设置输入控件
   const renderSettingInput = (setting: SystemSettingOutput) => {
     const currentValue = getCurrentValue(setting);
@@ -255,6 +333,9 @@ export default function SettingsPage() {
             value={currentValue}
             onChange={(e) => handleSettingChange(setting.key, e.target.value)}
             className={isChanged ? 'border-orange-500' : ''}
+            min={getInputMin(setting.key)}
+            max={getInputMax(setting.key)}
+            step={getInputStep(setting.key)}
           />
         );
 
@@ -273,11 +354,15 @@ export default function SettingsPage() {
         return (
           <div className="relative">
             <Input
-              type={isSensitive ? 'password' : 'text'}
+              type={isSensitive ? 'password' : isNumberField(setting.key) ? 'number' : 'text'}
               value={isSensitive ? '••••••••' : currentValue}
               onChange={(e) => handleSettingChange(setting.key, e.target.value)}
               className={isChanged ? 'border-orange-500' : ''}
               disabled={isSensitive}
+              min={isNumberField(setting.key) ? getInputMin(setting.key) : undefined}
+              max={isNumberField(setting.key) ? getInputMax(setting.key) : undefined}
+              step={isNumberField(setting.key) ? getInputStep(setting.key) : undefined}
+              placeholder={getPlaceholder(setting.key)}
             />
             {setting.isSensitive && (
               <Button
@@ -345,7 +430,7 @@ export default function SettingsPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-auto gap-2">
+        <TabsList className="flex flex-wrap gap-2">
           {settingGroups.map((group) => (
             <TabsTrigger key={group.group} value={group.group} className="px-6">
               {group.group}
