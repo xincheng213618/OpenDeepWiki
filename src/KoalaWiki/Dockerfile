@@ -17,6 +17,7 @@ COPY ["Provider/KoalaWiki.Provider.PostgreSQL/KoalaWiki.Provider.PostgreSQL.cspr
 COPY ["KoalaWiki.Core/KoalaWiki.Core.csproj", "KoalaWiki.Core/"]
 COPY ["Provider/KoalaWiki.Provider.Sqlite/KoalaWiki.Provider.Sqlite.csproj", "Provider/KoalaWiki.Provider.Sqlite/"]
 COPY ["Provider/KoalaWiki.Provider.SqlServer/KoalaWiki.Provider.SqlServer.csproj", "Provider/KoalaWiki.Provider.SqlServer/"]
+COPY ["Provider/KoalaWiki.Provider.MySQL/KoalaWiki.Provider.MySQL.csproj", "Provider/KoalaWiki.Provider.MySQL/"]
 COPY ["src/KoalaWiki.ServiceDefaults/KoalaWiki.ServiceDefaults.csproj", "src/KoalaWiki.ServiceDefaults/"]
 RUN dotnet restore "src/KoalaWiki/KoalaWiki.csproj"
 COPY . .
