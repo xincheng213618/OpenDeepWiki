@@ -54,6 +54,7 @@ public static class MiniMapService
         }
 
         // 删除thinking标签包括中间的内容使用正则表达式
+        
         var thinkingPattern = new Regex(@"<thinking>.*?</thinking>", RegexOptions.Singleline);
         miniMap = new StringBuilder(thinkingPattern.Replace(miniMap.ToString(), string.Empty).Trim());
 

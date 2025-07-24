@@ -1,19 +1,14 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 using KoalaWiki.Core.Extensions;
-using KoalaWiki.Domains;
-using KoalaWiki.Domains.Warehouse;
-using KoalaWiki.Entities;
 using KoalaWiki.Prompts;
-using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Newtonsoft.Json;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 
-public static class GenerateThinkCatalogueService
+public static partial class GenerateThinkCatalogueService
 {
     private const int MaxRetries = 8; // 增加重试次数
     private const int BaseDelayMs = 1000;
@@ -111,7 +106,7 @@ public static class GenerateThinkCatalogueService
         }
 
         // 根据尝试次数调整提示词策略
-        var enhancedPrompt = await BuildEnhancedPrompt(promptName, catalogue, gitRepository, warehouse, attemptNumber);
+        var enhancedPrompt = await GenerateThinkCataloguePromptAsync(classify, catalogue, attemptNumber);
 
         StringBuilder str = new StringBuilder();
         var history = new ChatHistory();
@@ -201,7 +196,7 @@ public static class GenerateThinkCatalogueService
             {
                 ["code_files"] = catalogue,
                 ["git_repository_url"] = gitRepository.Replace(".git", ""),
-                ["repository_name"] = warehouse.Name
+                ["repository_name"] = warehouse.Name,
             }, OpenAIOptions.AnalysisModel);
 
         // 根据尝试次数增强提示词

@@ -18,8 +18,8 @@ public class GiteeFunction(
     /// <param name="query">搜索关键词</param>
     /// <param name="maxResults">最大返回数量</param>
     /// <returns>搜索结果字符串</returns>
-    [Description("搜索 Issue 内容")]
     [KernelFunction("SearchIssues")]
+    [Description("搜索 Issue 内容")]
     public async Task<string> SearchIssuesAsync(
         [Description("搜索关键词")] string query,
         int maxResults = 5)

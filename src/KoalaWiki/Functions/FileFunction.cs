@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.SemanticKernel;
 using OpenDeepWiki.CodeFoundation;
 using OpenDeepWiki.CodeFoundation.Utils;
@@ -11,7 +12,7 @@ namespace KoalaWiki.Functions;
 public class FileFunction(string gitPath)
 {
     private readonly CodeCompressionService _codeCompressionService = new();
-    private int Count = 0;
+    private int _count;
 
     /// <summary>
     /// 获取当前仓库压缩结构
@@ -35,14 +36,14 @@ public class FileFunction(string gitPath)
         {
             // 检查是否已达到文件读取限制
             if (DocumentOptions.MaxFileReadCount > 0 &&
-                Count >= DocumentOptions.MaxFileReadCount)
+                _count >= DocumentOptions.MaxFileReadCount)
             {
-                int i = Count;
-                Count = 0;
+                int i = _count;
+                _count = 0;
 
                 return "🚨 FILE READ LIMIT EXCEEDED 🚨\n" +
                        $"Current attempts: {i}/{DocumentOptions.MaxFileReadCount}\n" +
-                       "⛔ STOP reading files immediately and complete analysis with existing data.";
+                       "⛔ STOP reading files immediately and complete analysis with existing da2000ta.";
             }
 
             if (DocumentContext.DocumentStore?.Files != null)
@@ -75,7 +76,7 @@ public class FileFunction(string gitPath)
                 content = _codeCompressionService.CompressCode(content, filePath);
             }
 
-            Count++;
+            _count++;
 
             return content;
         }
@@ -87,20 +88,23 @@ public class FileFunction(string gitPath)
         }
     }
 
-    public class ReadFileInput
-    {
-        [Description(
-            "An array of file items to read. Each item contains the file path and the start and end line numbers for reading. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown.")]
-        public ReadFileItemInput[] Items { get; set; } = [];
-    }
-
     /// <summary>
     /// 从指定行数开始读取文件内容
     /// </summary>
     /// <returns></returns>
     [KernelFunction(name: "Read"),
      Description(
-         "Reads a file from the local filesystem. You can access any file directly by using this tool.\nAssume this tool is able to read all files on the machine. If the User provides a path to a file assume that path is valid. It is okay to read a file that does not exist; an error will be returned.\n\nUsage:\n- The file_path parameter must be an absolute path, not a relative path\n- By default, it reads up to 2000 lines starting from the beginning of the file\n- You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters\n- Any lines longer than 2000 characters will be truncated\n- Results are returned using cat -n format, with line numbers starting at 1\n- This tool allows Claude Code to read images (eg PNG, JPG, etc). When reading an image file the contents are presented visually as Claude Code is a multimodal LLM.\n- For Jupyter notebooks (.ipynb files), use the NotebookRead instead\n- You have the capability to call multiple tools in a single response. It is always better to speculatively read multiple files as a batch that are potentially useful. \n- You will regularly be asked to read screenshots. If the user provides a path to a screenshot ALWAYS use this tool to view the file at the path. This tool will work with all temporary file paths like /var/folders/123/abc/T/TemporaryItems/NSIRD_screencaptureui_ZfB1tD/Screenshot.png\n- If you read a file that exists but has empty contents you will receive a system reminder warning in place of file contents.")]
+         """
+         To read the code files under the repository, note that the current method can only read text files and the path format provided by the user is relative rather than absolute.
+         Usage:
+         - The filePath must be a relative directory provided by the user
+         - By default, it reads up to 200 lines from the beginning of the file
+         - You can choose to specify the line offset and limit (particularly useful for long files), but it is recommended not to provide these parameters to read the entire file
+         - Any lines exceeding 2000 characters will be truncated
+         - You can call multiple tools in a single response. It is best to batch read multiple potentially useful files. It is best to batch read multiple potentially useful files.
+         - If the file you read exists but is empty, you will receive a system alert warning instead of the file content.
+         - Reading an non-existent file is also fine, and it will return an error.
+         """)]
     public async Task<string> ReadFileFromLineAsync(
         [Description(
             "The Read File List.")]
@@ -108,10 +112,10 @@ public class FileFunction(string gitPath)
     {
         // 检查是否已达到文件读取限制
         if (DocumentOptions.MaxFileReadCount > 0 &&
-            Count >= DocumentOptions.MaxFileReadCount)
+            _count >= DocumentOptions.MaxFileReadCount)
         {
-            int i = Count;
-            Count = 0;
+            int i = _count;
+            _count = 0;
 
             return JsonSerializer.Serialize(new Dictionary<string, string>
                    {
@@ -141,10 +145,10 @@ public class FileFunction(string gitPath)
                 await ReadItem(item.FilePath, item.Offset, item.Limit));
         }
 
-        Count++;
+        _count++;
         // 在接近限制时发送警告
         if (DocumentOptions.MaxFileReadCount > 0 &&
-            Count >= DocumentOptions.MaxFileReadCount * 0.8)
+            _count >= DocumentOptions.MaxFileReadCount * 0.8)
         {
             return JsonSerializer.Serialize(dic, new JsonSerializerOptions()
                    {
@@ -152,7 +156,7 @@ public class FileFunction(string gitPath)
                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                    }) +
                    "\n\n<system-warning>\n" +
-                   $"⚠️ Approaching file read limit: {Count}/{DocumentOptions.MaxFileReadCount}\n" +
+                   $"⚠️ Approaching file read limit: {_count}/{DocumentOptions.MaxFileReadCount}\n" +
                    "Consider completing your analysis soon to avoid hitting the limit.\n" +
                    "</system-warning>";
         }
@@ -166,14 +170,8 @@ public class FileFunction(string gitPath)
 
 
     public async Task<string> ReadItem(
-        [Description(
-            "The absolute or relative path of the target file to read")]
         string filePath,
-        [Description(
-            "The line number to start reading from. Only provide if the file is too large to read at once")]
         int offset = 0,
-        [Description(
-            "The number of lines to read. Only provide if the file is too large to read at once.")]
         int limit = 200)
     {
         try
@@ -185,7 +183,12 @@ public class FileFunction(string gitPath)
             // 如果<0则读取全部
             if (offset < 0 && limit < 0)
             {
-                return await ReadFileAsync(filePath);
+                limit = 2000;
+            }
+
+            if (limit > 2000)
+            {
+                limit = 2000;
             }
 
             // 如果endLine<0则读取到最后一行
@@ -196,6 +199,16 @@ public class FileFunction(string gitPath)
 
             // 先读取整个文件内容
             string fileContent = await File.ReadAllTextAsync(filePath);
+
+            if (string.IsNullOrEmpty(fileContent))
+            {
+                // 返回警告
+                return """
+                       <system-warning>
+                       The current file contains empty text content.
+                       </system-warning>
+                       """;
+            }
 
             // 如果启用代码压缩且是代码文件，先对整个文件内容进行压缩
             if (DocumentOptions.EnableCodeCompression && CodeFileDetector.IsCodeFile(filePath))
@@ -246,14 +259,17 @@ public class FileFunction(string gitPath)
 public class ReadFileItemInput
 {
     [Description(
-        "The absolute or relative path of the target file to read")]
+        "The relative address to be read")]
+    [JsonPropertyName("filePath")]
     public string FilePath { get; set; }
 
     [Description(
         "The line number to start reading from. Only provide if the file is too large to read at once")]
+    [JsonPropertyName("offset")]
     public int Offset { get; set; } = 0;
 
     [Description(
         "The number of lines to read. Only provide if the file is too large to read at once.")]
-    public int Limit { get; set; } = 200;
+    [JsonPropertyName("limit")]
+    public int Limit { get; set; } = 2000;
 }

@@ -130,6 +130,7 @@ services:
       - ENABLE_WAREHOUSE_DESCRIPTION_TASK=true # 是否启用仓库描述任务
       - CATALOGUE_FORMAT=compact # 目录结构格式 (compact, json, pathlist, unix)
       - ENABLE_CODE_COMPRESSION=false # 是否启用代码压缩
+      - MAX_FILE_READ_COUNT=10 # AI最大文件读取数量限制，防止无限制读取文件（默认：10，0表示不限制）
 ```
 
 - AzureOpenAI和Anthropic配置类似，仅需调整 `ENDPOINT` 和 `MODEL_PROVIDER`。
@@ -289,6 +290,7 @@ graph TD
 - `ENABLE_WAREHOUSE_DESCRIPTION_TASK`：是否启用仓库描述任务
 - `CATALOGUE_FORMAT`：目录结构格式 (compact, json, pathlist, unix)
 - `ENABLE_CODE_COMPRESSION`：是否启用代码压缩
+- `MAX_FILE_READ_COUNT`：AI最大文件读取数量限制，防止无限制读取文件，提高处理效率（默认：10，0表示不限制）
 
 ## 构建不同架构 Build for Different Architectures
 

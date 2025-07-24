@@ -86,9 +86,6 @@
       <None Update="Prompts\Warehouse\*.md">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Prompts\Warehouse\AnalyzeCatalogueFrameworks.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <None Update="Prompts\Chat\*.md">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
@@ -98,37 +95,7 @@
       <None Update="Prompts\Mem0\CodeSystem.md">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsApplications.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsCLITools.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocs.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsLibraries.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsFrameworks.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_GenerateDocsDevelopmentTools.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_AnalyzeCatalogueApplications.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_AnalyzeCatalogueLibraries.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Prompts\Warehouse\claude-sonnet-4-20250514_AnalyzeCatalogueFrameworks.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <None Update="KoalaWiki.db">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Prompts\Warehouse\qwen3-235b-a22b_AnalyzeCatalogueApplications.md">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
@@ -146,6 +113,15 @@
     <ItemGroup>
       <Compile Update="KoalaWarehouse\DocumentsService.Commit.cs">
         <DependentUpon>DocumentsService.cs</DependentUpon>
+      </Compile>
+      <Compile Update="KoalaWarehouse\Overview\OverviewService.Prompt.cs">
+        <DependentUpon>OverviewService.cs</DependentUpon>
+      </Compile>
+      <Compile Update="KoalaWarehouse\GenerateThinkCatalogue\GenerateThinkCatalogueService.Prompt.cs">
+        <DependentUpon>GenerateThinkCatalogueService.cs</DependentUpon>
+      </Compile>
+      <Compile Update="KoalaWarehouse\DocumentPending\DocumentPendingService.Prompt.cs">
+        <DependentUpon>DocumentPendingService.cs</DependentUpon>
       </Compile>
     </ItemGroup>
 

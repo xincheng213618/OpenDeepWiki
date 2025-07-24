@@ -130,6 +130,7 @@ services:
       - ENABLE_WAREHOUSE_DESCRIPTION_TASK=true # Whether to enable warehouse description task
       - CATALOGUE_FORMAT=compact # Directory structure format (compact, json, pathlist, unix)
       - ENABLE_CODE_COMPRESSION=false # Whether to enable code compression
+      - MAX_FILE_READ_COUNT=10 # Maximum file read count limit for AI, prevents unlimited file reading (default: 10, 0 = no limit)
 ```
 
 - AzureOpenAI and Anthropic configurations are similar, only need to adjust `ENDPOINT` and `MODEL_PROVIDER`.
@@ -289,6 +290,7 @@ graph TD
 - `ENABLE_WAREHOUSE_DESCRIPTION_TASK`: Whether to enable warehouse description task
 - `CATALOGUE_FORMAT`: Directory structure format (compact, json, pathlist, unix)
 - `ENABLE_CODE_COMPRESSION`: Whether to enable code compression
+- `MAX_FILE_READ_COUNT`: Maximum file read count limit for AI, prevents unlimited file reading and improves processing efficiency (default: 10, 0 = no limit)
 
 ## Build for Different Architectures
 

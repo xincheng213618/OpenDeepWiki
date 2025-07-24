@@ -5,12 +5,16 @@ namespace KoalaWiki.Functions.Model;
 
 public sealed class TodoInputItem
 {
+    [JsonPropertyName("content")]
     public required string Content { get; set; }
 
+    [JsonPropertyName("status")]
     public required TodoInputItemStatus Status { get; set; }
 
+    [JsonPropertyName("priority")]
     public required Priority Priority { get; set; }
 
+    [JsonPropertyName("id")]
     public required string Id { get; set; }
 }
 

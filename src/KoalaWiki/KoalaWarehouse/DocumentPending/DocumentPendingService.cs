@@ -16,7 +16,7 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace KoalaWiki.KoalaWarehouse.DocumentPending;
 
-public class DocumentPendingService
+public partial class DocumentPendingService
 {
     private static readonly int TaskMaxSizePerUser = 5;
 
@@ -179,7 +179,7 @@ public class DocumentPendingService
     /// 处理每一个标题产生文件内容
     /// </summary>
     private static async Task<DocumentFileItem> ProcessCatalogueItems(DocumentCatalog catalog, Kernel kernel,
-        string catalogue,
+        string codeFiles,
         string gitRepository, string branch, string path, ClassifyType? classify)
     {
         // 为每个文档处理创建独立的Kernel实例，避免状态管理冲突
@@ -199,15 +199,8 @@ public class DocumentPendingService
             promptName += classify;
         }
 
-        string prompt = await PromptContext.Warehouse(promptName,
-            new KernelArguments()
-            {
-                ["catalogue"] = catalogue,
-                ["prompt"] = catalog.Prompt,
-                ["git_repository"] = gitRepository.Replace(".git", ""),
-                ["branch"] = branch,
-                ["title"] = catalog.Name
-            }, OpenAIOptions.ChatModel);
+        string prompt = await 
+            GetDocumentPendingPrompt(classify, codeFiles, gitRepository, branch, catalog.Name, catalog.Prompt);
 
         var history = new ChatHistory();
 

@@ -10,13 +10,13 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace KoalaWiki.KoalaWarehouse.Overview;
 
-public class OverviewService
+public partial class OverviewService
 {
     /// <summary>
     /// 默认最大重试次数
     /// </summary>
     private const int DefaultMaxRetries = 3;
-    
+
     /// <summary>
     /// 默认基础延迟时间
     /// </summary>
@@ -39,7 +39,7 @@ public class OverviewService
     public static async Task<string> GenerateProjectOverview(Kernel kernel, string catalog, string gitRepository,
         string branch, string readme, ClassifyType? classify)
     {
-        return await GenerateProjectOverview(kernel, catalog, gitRepository, branch, readme, classify, 
+        return await GenerateProjectOverview(kernel, catalog, gitRepository, branch, readme, classify,
             DefaultMaxRetries, DefaultBaseDelay);
     }
 
@@ -59,7 +59,7 @@ public class OverviewService
         string branch, string readme, ClassifyType? classify, int maxRetries, TimeSpan baseDelay)
     {
         var lastException = (Exception?)null;
-        
+
         for (int attempt = 1; attempt <= maxRetries + 1; attempt++)
         {
             try
@@ -70,15 +70,16 @@ public class OverviewService
             {
                 lastException = ex;
                 var delay = CalculateDelay(attempt, baseDelay);
-                
-                _logger?.LogWarning(ex, "项目概述生成失败，{Delay}s后重试({Attempt}/{MaxRetries})", 
+
+                _logger?.LogWarning(ex, "项目概述生成失败，{Delay}s后重试({Attempt}/{MaxRetries})",
                     delay.TotalSeconds, attempt, maxRetries);
-                
+
                 await Task.Delay(delay);
             }
         }
 
-        throw new InvalidOperationException($"项目概述生成失败，已重试{maxRetries}次。最后一次错误: {lastException?.Message}", lastException);
+        throw new InvalidOperationException($"项目概述生成失败，已重试{maxRetries}次。最后一次错误: {lastException?.Message}",
+            lastException);
     }
 
     /// <summary>
@@ -98,20 +99,7 @@ public class OverviewService
         var chat = kernel.GetRequiredService<IChatCompletionService>();
         var history = new ChatHistory();
 
-        string promptName = nameof(PromptConstant.Warehouse.Overview);
-        if (classify.HasValue)
-        {
-            promptName += classify;
-        }
-
-        string prompt = await PromptContext.Warehouse(promptName,
-            new KernelArguments(settings)
-            {
-                ["catalogue"] = catalog,
-                ["git_repository"] = gitRepository.Replace(".git", ""),
-                ["branch"] = branch,
-                ["readme"] = readme
-            }, OpenAIOptions.ChatModel);
+        var prompt = await GetOverviewPrompt(classify, catalog, gitRepository, branch, readme);
 
         history.AddSystemEnhance();
         var contents = new ChatMessageContentItemCollection
@@ -121,7 +109,7 @@ public class OverviewService
 
         contents.AddSystemReminder();
 
-         history.AddUserMessage(contents);
+        history.AddUserMessage(contents);
 
         await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
         {
