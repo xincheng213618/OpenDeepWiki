@@ -12,7 +12,8 @@ import {
   Clock,
   User,
   RotateCcw,
-  GitBranch
+  GitBranch,
+  AlertTriangle
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +52,17 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 import { getRepositoryList, createGitRepository, updateRepository, deleteRepository, resetRepository, RepositoryInfo, CreateGitRepositoryRequest, UpdateRepositoryRequest } from '../../services/repositoryService';
 import Link from 'next/link';
@@ -405,6 +417,7 @@ export default function RepositoriesPage() {
                 <TableHead>文档数</TableHead>
                 <TableHead>分支</TableHead>
                 <TableHead>更新时间</TableHead>
+                <TableHead>错误信息</TableHead>
                 <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -434,9 +447,23 @@ export default function RepositoriesPage() {
                     {repo.description || '暂无描述'}
                   </TableCell>
                   <TableCell>
-                    <Badge color={getStatusBadgeVariant(repo.status)}>
-                      {getStatusText(repo.status)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge color={getStatusBadgeVariant(repo.status)}>
+                        {getStatusText(repo.status)}
+                      </Badge>
+                      {repo.status === 99 && repo.error && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertTriangle className="h-4 w-4 text-destructive cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-sm max-w-xs">{repo.error.substring(0, 100)}...</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="font-medium">
                     {repo.documentCount || 0}
@@ -448,6 +475,50 @@ export default function RepositoriesPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(repo.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {repo.error && repo.status === 99 ? (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                            <AlertTriangle className="h-4 w-4 mr-1" />
+                            查看错误
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="max-w-2xl max-h-[80vh]">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2">
+                              <AlertTriangle className="h-5 w-5 text-destructive" />
+                              仓库处理错误详情
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="mt-4">
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-semibold text-sm mb-2">仓库信息：</h4>
+                                  <p className="text-sm">
+                                    <span className="font-medium">{repo.organizationName}/{repo.name}</span>
+                                    {repo.branch && <span className="ml-2 text-muted-foreground">({repo.branch})</span>}
+                                  </p>
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-sm mb-2">错误详情：</h4>
+                                  <div className="bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
+                                    <pre className="text-sm whitespace-pre-wrap break-words font-mono">
+                                      {repo.error}
+                                    </pre>
+                                  </div>
+                                </div>
+                              </div>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogAction>关闭</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

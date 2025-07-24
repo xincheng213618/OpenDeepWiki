@@ -750,6 +750,84 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.SystemSetting", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)")
+                        .HasComment("主键Id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasComment("创建时间");
+
+                    b.Property<string>("DefaultValue")
+                        .HasColumnType("longtext")
+                        .HasComment("默认值");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasComment("设置描述");
+
+                    b.Property<string>("Group")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasComment("设置分组");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("tinyint(1)")
+                        .HasComment("是否启用");
+
+                    b.Property<bool>("IsSensitive")
+                        .HasColumnType("tinyint(1)")
+                        .HasComment("是否敏感信息");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasComment("设置键名");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int")
+                        .HasComment("排序顺序");
+
+                    b.Property<bool>("RequiresRestart")
+                        .HasColumnType("tinyint(1)")
+                        .HasComment("是否需要重启生效");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasComment("更新时间");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("longtext")
+                        .HasComment("设置值");
+
+                    b.Property<string>("ValueType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasComment("设置类型");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Group");
+
+                    b.HasIndex("IsEnabled");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.HasIndex("Order");
+
+                    b.ToTable("SystemSettings", t =>
+                        {
+                            t.HasComment("系统设置表");
+                        });
+                });
+
             modelBuilder.Entity("KoalaWiki.Domains.Users.Role", b =>
                 {
                     b.Property<string>("Id")

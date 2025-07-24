@@ -147,7 +147,7 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 max-w-[calc(100%-80px)]">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -164,7 +164,7 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
               <Badge
                 color={statusConfig.color}
                 variant={statusConfig.variant}
-                className="shrink-0 text-xs px-2.5 py-1 font-medium"
+                className="shrink-0 text-xs px-2.5 py-1 font-medium whitespace-nowrap"
               >
                 {statusConfig.text}
               </Badge>

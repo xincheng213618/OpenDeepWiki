@@ -1,6 +1,8 @@
 using KoalaWiki.BackendService;
 using KoalaWiki.KoalaWarehouse.Extensions;
 using KoalaWiki.Mem0;
+using KoalaWiki.Options;
+using KoalaWiki.Services;
 using OpenDeepWiki.CodeFoundation;
 
 AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
@@ -14,18 +16,21 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateLogger();
 
-#region Options
+#region Dynamic Configuration
 
-// 初始化JWT配置
+// 注册动态配置服务
+builder.Services.AddScoped<DynamicConfigService>();
+builder.Services.AddScoped<DynamicOptionsManager>();
+
+// 临时初始化JWT配置（保持向后兼容）
 var jwtOptions = JwtOptions.InitConfig(builder.Configuration);
 builder.Services.AddSingleton(jwtOptions);
 
+// 为了向后兼容，仍然保留静态初始化作为回退
+// 这些值会在应用启动后被动态配置覆盖
 OpenAIOptions.InitConfig(builder.Configuration);
-
 GithubOptions.InitConfig(builder.Configuration);
-
 GiteeOptions.InitConfig(builder.Configuration);
-
 DocumentOptions.InitConfig(builder.Configuration);
 
 #endregion
@@ -151,6 +156,19 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<IKoalaWikiContext>();
     await dbContext.RunMigrateAsync();
+
+    // 初始化动态配置系统
+    try
+    {
+        var dynamicOptionsManager = scope.ServiceProvider.GetRequiredService<DynamicOptionsManager>();
+        await dynamicOptionsManager.InitializeAsync();
+        Log.Information("动态配置系统初始化成功");
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "动态配置系统初始化失败，使用静态配置作为回退");
+        // 如果动态配置初始化失败，继续使用静态配置
+    }
 }
 
 // 添加中间件

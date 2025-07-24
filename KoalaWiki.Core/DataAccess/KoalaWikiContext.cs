@@ -50,6 +50,8 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
 
     public DbSet<AppConfig> AppConfigs { get; set; }
 
+    public DbSet<SystemSetting> SystemSettings { get; set; }
+
     public DbSet<MiniMap> MiniMaps { get; set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
@@ -392,6 +394,29 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
                            new List<string>())));
 
             options.HasComment("应用配置表");
+        });
+
+        modelBuilder.Entity<SystemSetting>(options =>
+        {
+            options.HasKey(x => x.Id);
+            options.Property(x => x.Id).HasComment("主键Id");
+            options.Property(x => x.Key).IsRequired().HasComment("设置键名");
+            options.Property(x => x.Value).HasComment("设置值");
+            options.Property(x => x.Group).IsRequired().HasComment("设置分组");
+            options.Property(x => x.ValueType).IsRequired().HasComment("设置类型");
+            options.Property(x => x.Description).HasComment("设置描述");
+            options.Property(x => x.IsSensitive).HasComment("是否敏感信息");
+            options.Property(x => x.RequiresRestart).HasComment("是否需要重启生效");
+            options.Property(x => x.DefaultValue).HasComment("默认值");
+            options.Property(x => x.Order).HasComment("排序顺序");
+            options.Property(x => x.IsEnabled).HasComment("是否启用");
+            options.Property(x => x.CreatedAt).IsRequired().HasComment("创建时间");
+            options.Property(x => x.UpdatedAt).IsRequired().HasComment("更新时间");
+            options.HasIndex(x => x.Key).IsUnique();
+            options.HasIndex(x => x.Group);
+            options.HasIndex(x => x.Order);
+            options.HasIndex(x => x.IsEnabled);
+            options.HasComment("系统设置表");
         });
 
         modelBuilder.Entity<MiniMap>(options =>

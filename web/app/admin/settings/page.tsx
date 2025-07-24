@@ -1,13 +1,13 @@
 'use client'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Save,
-  Globe,
-  Mail,
-  Shield,
-  Cloud,
-  Upload,
-  Settings as SettingsIcon
+  RefreshCw,
+  AlertTriangle,
+  Settings as SettingsIcon,
+  Eye,
+  EyeOff,
+  RotateCcw
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,358 +15,403 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  getSettingGroups,
+  batchUpdateSettings,
+  resetSetting,
+  clearCache,
+  getRestartRequiredSettings,
+  SystemSettingGroupOutput,
+  SystemSettingOutput
+} from '@/app/services/systemSettingService';
 
 export default function SettingsPage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('general');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [settingGroups, setSettingGroups] = useState<SystemSettingGroupOutput[]>([]);
+  const [activeTab, setActiveTab] = useState('');
+  const [changedSettings, setChangedSettings] = useState<Record<string, string>>({});
+  const [showSensitive, setShowSensitive] = useState<Record<string, boolean>>({});
+  const [restartRequired, setRestartRequired] = useState<string[]>([]);
 
-  // 表单数据状态
-  const [generalSettings, setGeneralSettings] = useState({
-    siteName: 'OpenDeepWiki',
-    siteDescription: '开源的知识库平台',
-    language: 'zh-CN',
-    timezone: 'Asia/Shanghai',
-    homePage: 'dashboard',
-    enableRegistration: true,
-    requireEmailVerification: true
-  });
+  // 加载设置数据
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const [groupsResponse, restartResponse] = await Promise.all([
+        getSettingGroups(),
+        getRestartRequiredSettings()
+      ]);
 
-  const [emailSettings, setEmailSettings] = useState({
-    smtpHost: '',
-    smtpPort: 587,
-    smtpUser: '',
-    smtpPassword: '',
-    smtpSecure: true,
-    fromEmail: '',
-    fromName: ''
-  });
+      if (groupsResponse.code === 200) {
+        setSettingGroups(groupsResponse.data);
+        if (groupsResponse.data.length > 0 && !activeTab) {
+          setActiveTab(groupsResponse.data[0].group);
+        }
+      } else {
+        toast({
+          title: "加载失败",
+          description: groupsResponse.message || '获取系统设置失败',
+          variant: "destructive",
+        });
+      }
 
-  const [securitySettings, setSecuritySettings] = useState({
-    sessionTimeout: 30,
-    maxLoginAttempts: 5,
-    passwordMinLength: 8,
-    requireStrongPassword: true,
-    enableTwoFactor: false,
-    allowedDomains: ''
-  });
-
-  const [storageSettings, setStorageSettings] = useState({
-    storageType: 'local',
-    maxFileSize: 10,
-    allowedFileTypes: 'pdf,doc,docx,txt,md',
-    s3Bucket: '',
-    s3Region: '',
-    s3AccessKey: '',
-    s3SecretKey: ''
-  });
-
-  // 处理表单提交
-  const handleFormSubmit = (formType: string) => {
-    toast({
-      title: "成功",
-      description: "设置已保存",
-    });
+      if (restartResponse.code === 200) {
+        setRestartRequired(restartResponse.data);
+      }
+    } catch (error) {
+      console.error('加载设置失败:', error);
+      toast({
+        title: "加载失败",
+        description: '获取系统设置失败',
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  // 处理设置值变更
+  const handleSettingChange = (key: string, value: string) => {
+    setChangedSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // 保存设置
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      
+      const settings = Object.entries(changedSettings).map(([key, value]) => ({
+        key,
+        value
+      }));
+
+      if (settings.length === 0) {
+        toast({
+          title: "提示",
+          description: "没有需要保存的更改",
+        });
+        return;
+      }
+
+      const response = await batchUpdateSettings({ settings });
+      
+      if (response.code === 200) {
+        toast({
+          title: "保存成功",
+          description: `已更新 ${settings.length} 个设置项`,
+        });
+        setChangedSettings({});
+        
+        // 检查是否有需要重启的设置项
+        const hasRestartRequired = settings.some(s => 
+          settingGroups.some(g => 
+            g.settings.some(setting => 
+              setting.key === s.key && setting.requiresRestart
+            )
+          )
+        );
+
+        if (hasRestartRequired) {
+          toast({
+            title: "需要重启",
+            description: "某些设置需要重启应用才能生效",
+            variant: "destructive",
+          });
+        }
+
+        // 重新加载设置
+        await loadSettings();
+      } else {
+        toast({
+          title: "保存失败",
+          description: response.message || '保存设置失败',
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('保存设置失败:', error);
+      toast({
+        title: "保存失败",
+        description: '保存设置失败',
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 重置单个设置
+  const handleReset = async (key: string) => {
+    try {
+      const response = await resetSetting(key);
+      if (response.code === 200) {
+        toast({
+          title: "重置成功",
+          description: `设置 ${key} 已重置为默认值`,
+        });
+        
+        // 从已更改的设置中移除
+        setChangedSettings(prev => {
+          const newChangedSettings = { ...prev };
+          delete newChangedSettings[key];
+          return newChangedSettings;
+        });
+
+        await loadSettings();
+      } else {
+        toast({
+          title: "重置失败",
+          description: response.message || '重置设置失败',
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('重置设置失败:', error);
+      toast({
+        title: "重置失败",
+        description: '重置设置失败',
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 清空缓存
+  const handleClearCache = async () => {
+    try {
+      const response = await clearCache();
+      if (response.code === 200) {
+        toast({
+          title: "清空成功",
+          description: "配置缓存已清空",
+        });
+      } else {
+        toast({
+          title: "清空失败",
+          description: response.message || '清空缓存失败',
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('清空缓存失败:', error);
+      toast({
+        title: "清空失败",
+        description: '清空缓存失败',
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 切换敏感信息显示
+  const toggleSensitive = (key: string) => {
+    setShowSensitive(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  // 获取设置的当前值
+  const getCurrentValue = (setting: SystemSettingOutput) => {
+    return changedSettings[setting.key] ?? setting.value ?? setting.defaultValue ?? '';
+  };
+
+  // 渲染设置输入控件
+  const renderSettingInput = (setting: SystemSettingOutput) => {
+    const currentValue = getCurrentValue(setting);
+    const isChanged = setting.key in changedSettings;
+    const isSensitive = setting.isSensitive && !showSensitive[setting.key];
+
+    switch (setting.valueType.toLowerCase()) {
+      case 'bool':
+        return (
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={currentValue === 'true'}
+              onCheckedChange={(checked) => 
+                handleSettingChange(setting.key, checked.toString())
+              }
+            />
+            <Label>{currentValue === 'true' ? '启用' : '禁用'}</Label>
+          </div>
+        );
+
+      case 'int':
+        return (
+          <Input
+            type="number"
+            value={currentValue}
+            onChange={(e) => handleSettingChange(setting.key, e.target.value)}
+            className={isChanged ? 'border-orange-500' : ''}
+          />
+        );
+
+      case 'array':
+      case 'json':
+        return (
+          <Textarea
+            value={currentValue}
+            onChange={(e) => handleSettingChange(setting.key, e.target.value)}
+            className={isChanged ? 'border-orange-500' : ''}
+            rows={3}
+          />
+        );
+
+      default:
+        return (
+          <div className="relative">
+            <Input
+              type={isSensitive ? 'password' : 'text'}
+              value={isSensitive ? '••••••••' : currentValue}
+              onChange={(e) => handleSettingChange(setting.key, e.target.value)}
+              className={isChanged ? 'border-orange-500' : ''}
+              disabled={isSensitive}
+            />
+            {setting.isSensitive && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 -translate-y-1/2"
+                onClick={() => toggleSensitive(setting.key)}
+              >
+                {showSensitive[setting.key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            )}
+          </div>
+        );
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <RefreshCw className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold flex items-center gap-3">
-          <SettingsIcon className="h-6 w-6" />
-          系统设置
-        </h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          配置系统的基本设置和参数
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold flex items-center gap-3">
+            <SettingsIcon className="h-6 w-6" />
+            系统设置
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            管理系统的全局配置设置
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleClearCache}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            清空缓存
+          </Button>
+          
+          <Button
+            onClick={handleSave}
+            disabled={saving || Object.keys(changedSettings).length === 0}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? '保存中...' : `保存更改 (${Object.keys(changedSettings).length})`}
+          </Button>
+        </div>
       </div>
 
+      {restartRequired.length > 0 && (
+        <Alert className="border-orange-500">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            以下设置项需要重启应用才能生效：{restartRequired.join(', ')}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            常规设置
-          </TabsTrigger>
-          <TabsTrigger value="email" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            邮件设置
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            安全设置
-          </TabsTrigger>
-          <TabsTrigger value="storage" className="flex items-center gap-2">
-            <Cloud className="h-4 w-4" />
-            存储设置
-          </TabsTrigger>
+        <TabsList className="grid grid-cols-auto gap-2">
+          {settingGroups.map((group) => (
+            <TabsTrigger key={group.group} value={group.group} className="px-6">
+              {group.group}
+              {group.settings.some(s => s.key in changedSettings) && (
+                <Badge variant="secondary" className="ml-2 h-2 w-2 p-0" />
+              )}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle>常规设置</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Alert>
-                <AlertDescription>
-                  这些设置将影响整个系统的基本行为
-                </AlertDescription>
-              </Alert>
+        {settingGroups.map((group) => (
+          <TabsContent key={group.group} value={group.group}>
+            <Card>
+              <CardHeader>
+                <CardTitle>{group.group} 配置</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {group.settings.map((setting) => (
+                  <div key={setting.key} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm font-medium">
+                          {setting.description || setting.key}
+                        </Label>
+                        {setting.requiresRestart && (
+                          <Badge variant="destructive" className="text-xs">
+                            需要重启
+                          </Badge>
+                        )}
+                        {setting.isSensitive && (
+                          <Badge variant="secondary" className="text-xs">
+                            敏感信息
+                          </Badge>
+                        )}
+                        {setting.key in changedSettings && (
+                          <Badge variant="outline" className="text-xs">
+                            已修改
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleReset(setting.key)}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                      </Button>
+                    </div>
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="siteName">网站名称</Label>
-                  <Input
-                    id="siteName"
-                    value={generalSettings.siteName}
-                    onChange={(e) => setGeneralSettings({...generalSettings, siteName: e.target.value})}
-                    placeholder="网站名称"
-                  />
-                </div>
+                    {renderSettingInput(setting)}
 
-                <div>
-                  <Label htmlFor="siteDescription">网站描述</Label>
-                  <Input
-                    id="siteDescription"
-                    value={generalSettings.siteDescription}
-                    onChange={(e) => setGeneralSettings({...generalSettings, siteDescription: e.target.value})}
-                    placeholder="网站描述"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="language">默认语言</Label>
-                  <Select value={generalSettings.language} onValueChange={(value) => setGeneralSettings({...generalSettings, language: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择默认语言" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="zh-CN">简体中文</SelectItem>
-                      <SelectItem value="en-US">英文</SelectItem>
-                      <SelectItem value="zh-TW">繁体中文</SelectItem>
-                      <SelectItem value="ja">日文</SelectItem>
-                      <SelectItem value="ko">韩文</SelectItem>
-                      <SelectItem value="fr">法文</SelectItem>
-                      <SelectItem value="de">德文</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="timezone">时区</Label>
-                  <Select value={generalSettings.timezone} onValueChange={(value) => setGeneralSettings({...generalSettings, timezone: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择时区" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
-                      <SelectItem value="UTC">UTC</SelectItem>
-                      <SelectItem value="America/New_York">America/New_York</SelectItem>
-                      <SelectItem value="Europe/London">Europe/London</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="enableRegistration"
-                    checked={generalSettings.enableRegistration}
-                    onCheckedChange={(checked) => setGeneralSettings({...generalSettings, enableRegistration: checked})}
-                  />
-                  <Label htmlFor="enableRegistration">允许用户注册</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="requireEmailVerification"
-                    checked={generalSettings.requireEmailVerification}
-                    onCheckedChange={(checked) => setGeneralSettings({...generalSettings, requireEmailVerification: checked})}
-                  />
-                  <Label htmlFor="requireEmailVerification">需要邮箱验证</Label>
-                </div>
-              </div>
-
-              <Button onClick={() => handleFormSubmit('general')} className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                保存设置
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="email">
-          <Card>
-            <CardHeader>
-              <CardTitle>邮件设置</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Alert>
-                <AlertDescription>
-                  配置SMTP服务器以发送系统邮件
-                </AlertDescription>
-              </Alert>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="smtpHost">SMTP服务器</Label>
-                  <Input
-                    id="smtpHost"
-                    value={emailSettings.smtpHost}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpHost: e.target.value})}
-                    placeholder="smtp.example.com"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="smtpPort">端口</Label>
-                  <Input
-                    id="smtpPort"
-                    type="number"
-                    value={emailSettings.smtpPort}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpPort: parseInt(e.target.value)})}
-                    placeholder="587"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="smtpUser">用户名</Label>
-                  <Input
-                    id="smtpUser"
-                    value={emailSettings.smtpUser}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpUser: e.target.value})}
-                    placeholder="用户名"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="smtpPassword">密码</Label>
-                  <Input
-                    id="smtpPassword"
-                    type="password"
-                    value={emailSettings.smtpPassword}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpPassword: e.target.value})}
-                    placeholder="密码"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="smtpSecure"
-                  checked={emailSettings.smtpSecure}
-                  onCheckedChange={(checked) => setEmailSettings({...emailSettings, smtpSecure: checked})}
-                />
-                <Label htmlFor="smtpSecure">启用SSL/TLS</Label>
-              </div>
-
-              <Button onClick={() => handleFormSubmit('email')} className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                保存设置
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>安全设置</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Alert>
-                <AlertDescription>
-                  配置系统安全策略和访问控制
-                </AlertDescription>
-              </Alert>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="sessionTimeout">会话超时（分钟）</Label>
-                  <Input
-                    id="sessionTimeout"
-                    type="number"
-                    value={securitySettings.sessionTimeout}
-                    onChange={(e) => setSecuritySettings({...securitySettings, sessionTimeout: parseInt(e.target.value)})}
-                    placeholder="30"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="maxLoginAttempts">最大登录尝试次数</Label>
-                  <Input
-                    id="maxLoginAttempts"
-                    type="number"
-                    value={securitySettings.maxLoginAttempts}
-                    onChange={(e) => setSecuritySettings({...securitySettings, maxLoginAttempts: parseInt(e.target.value)})}
-                    placeholder="5"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="requireStrongPassword"
-                  checked={securitySettings.requireStrongPassword}
-                  onCheckedChange={(checked) => setSecuritySettings({...securitySettings, requireStrongPassword: checked})}
-                />
-                <Label htmlFor="requireStrongPassword">要求强密码</Label>
-              </div>
-
-              <Button onClick={() => handleFormSubmit('security')} className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                保存设置
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="storage">
-          <Card>
-            <CardHeader>
-              <CardTitle>存储设置</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Alert>
-                <AlertDescription>
-                  配置文件存储和上传设置
-                </AlertDescription>
-              </Alert>
-
-              <div>
-                <Label htmlFor="storageType">存储类型</Label>
-                <Select value={storageSettings.storageType} onValueChange={(value) => setStorageSettings({...storageSettings, storageType: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择存储类型" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="local">本地存储</SelectItem>
-                    <SelectItem value="s3">Amazon S3</SelectItem>
-                    <SelectItem value="oss">阿里云OSS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="maxFileSize">最大文件大小（MB）</Label>
-                <Input
-                  id="maxFileSize"
-                  type="number"
-                  value={storageSettings.maxFileSize}
-                  onChange={(e) => setStorageSettings({...storageSettings, maxFileSize: parseInt(e.target.value)})}
-                  placeholder="10"
-                />
-              </div>
-
-              <Button onClick={() => handleFormSubmit('storage')} className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                保存设置
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    <p className="text-xs text-muted-foreground">
+                      键名: {setting.key}
+                      {setting.defaultValue && (
+                        <span className="ml-2">
+                          默认值: {setting.isSensitive ? '***' : setting.defaultValue}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
