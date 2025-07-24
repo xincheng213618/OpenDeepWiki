@@ -242,8 +242,6 @@ export default function SettingsPage() {
       case 'FrequencyPenalty':
       case 'PresencePenalty':
         return '-2';
-      case 'MaxTokens':
-        return '1';
       case 'ExpireMinutes':
       case 'RefreshExpireMinutes':
       case 'MaxFileReadCount':
@@ -264,8 +262,6 @@ export default function SettingsPage() {
       case 'FrequencyPenalty':
       case 'PresencePenalty':
         return '2';
-      case 'MaxTokens':
-        return '32000';
       default:
         return undefined;
     }
@@ -295,8 +291,6 @@ export default function SettingsPage() {
         return '-2.0-2.0，频率惩罚';
       case 'PresencePenalty':
         return '-2.0-2.0，存在惩罚';
-      case 'MaxTokens':
-        return '最大生成令牌数';
       case 'ChatModel':
         return '如：gpt-4, gpt-3.5-turbo';
       case 'CatalogueFormat':

@@ -14,6 +14,7 @@ namespace KoalaWiki.Services;
 public class SystemSettingService(
     IKoalaWikiContext context,
     DynamicConfigService configService,
+    DynamicOptionsManager dynamicOptionsManager,
     ILogger<SystemSettingService> logger) : FastApi
 {
     /// <summary>
@@ -84,6 +85,8 @@ public class SystemSettingService(
             logger.LogInformation("系统设置已更新：{Key}", key);
         }
 
+        await dynamicOptionsManager.InitializeAsync();
+
         return result;
     }
 
@@ -102,6 +105,7 @@ public class SystemSettingService(
         {
             logger.LogInformation("批量更新系统设置完成");
         }
+        await dynamicOptionsManager.InitializeAsync();
 
         return result;
     }
@@ -145,6 +149,7 @@ public class SystemSettingService(
         configService.ClearCache();
 
         logger.LogInformation("创建系统设置：{Key}", input.Key);
+        await dynamicOptionsManager.InitializeAsync();
 
         return MapToOutput(setting);
     }
@@ -170,6 +175,7 @@ public class SystemSettingService(
         configService.ClearCache();
 
         logger.LogInformation("删除系统设置：{Key}", key);
+        await dynamicOptionsManager.InitializeAsync();
 
         return true;
     }
@@ -197,6 +203,7 @@ public class SystemSettingService(
         configService.ClearCache();
 
         logger.LogInformation("重置系统设置为默认值：{Key}", key);
+        await dynamicOptionsManager.InitializeAsync();
 
         return true;
     }
