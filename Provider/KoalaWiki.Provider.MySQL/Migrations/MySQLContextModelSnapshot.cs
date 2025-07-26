@@ -173,7 +173,55 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("KoalaWiki.Domains.DocumentCatalog", b =>
+            modelBuilder.Entity("KoalaWiki.Domains.DocumentCommitRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)")
+                        .HasComment("主键Id");
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasComment("作者");
+
+                    b.Property<string>("CommitId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasComment("提交Id");
+
+                    b.Property<string>("CommitMessage")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasComment("提交信息");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("LastUpdate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("WarehouseId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasComment("仓库Id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommitId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("DocumentCommitRecords", t =>
+                        {
+                            t.HasComment("文档提交记录表");
+                        });
+                });
+
+            modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentCatalog", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)")
@@ -248,51 +296,53 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("KoalaWiki.Domains.DocumentCommitRecord", b =>
+            modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentCatalogI18n", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)")
                         .HasComment("主键Id");
 
-                    b.Property<string>("Author")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasComment("作者");
-
-                    b.Property<string>("CommitId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)")
-                        .HasComment("提交Id");
-
-                    b.Property<string>("CommitMessage")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasComment("提交信息");
-
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime(6)")
+                        .HasComment("创建时间");
 
-                    b.Property<DateTime>("LastUpdate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Title")
+                    b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("longtext")
+                        .HasComment("多语言目录描述");
 
-                    b.Property<string>("WarehouseId")
+                    b.Property<string>("DocumentCatalogId")
                         .IsRequired()
                         .HasColumnType("varchar(255)")
-                        .HasComment("仓库Id");
+                        .HasComment("文档目录Id");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasComment("语言代码");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasComment("多语言目录名称");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasComment("更新时间");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CommitId");
+                    b.HasIndex("DocumentCatalogId");
 
-                    b.HasIndex("WarehouseId");
+                    b.HasIndex("LanguageCode");
 
-                    b.ToTable("DocumentCommitRecords", t =>
+                    b.HasIndex("DocumentCatalogId", "LanguageCode")
+                        .IsUnique();
+
+                    b.ToTable("DocumentCatalogI18ns", t =>
                         {
-                            t.HasComment("文档提交记录表");
+                            t.HasComment("文档目录多语言表");
                         });
                 });
 
@@ -364,6 +414,61 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentFileItemI18n", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)")
+                        .HasComment("主键Id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasComment("多语言内容");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasComment("创建时间");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasComment("多语言描述");
+
+                    b.Property<string>("DocumentFileItemId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasComment("文档文件Id");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasComment("语言代码");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasComment("多语言标题");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasComment("更新时间");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentFileItemId");
+
+                    b.HasIndex("LanguageCode");
+
+                    b.HasIndex("DocumentFileItemId", "LanguageCode")
+                        .IsUnique();
+
+                    b.ToTable("DocumentFileItemI18ns", t =>
+                        {
+                            t.HasComment("文档文件多语言表");
+                        });
+                });
+
             modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentFileItemSource", b =>
                 {
                     b.Property<string>("Id")
@@ -400,6 +505,65 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         {
                             t.HasComment("文档文件项来源表");
                         });
+                });
+
+            modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.TranslationTask", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("CatalogsTranslated")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("FilesTranslated")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceLanguage")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TargetId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("TargetLanguage")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("TaskType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalCatalogs")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalFiles")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("WarehouseId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TranslationTasks");
                 });
 
             modelBuilder.Entity("KoalaWiki.Domains.FineTuning.FineTuningTask", b =>
@@ -1149,6 +1313,28 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentCatalogI18n", b =>
+                {
+                    b.HasOne("KoalaWiki.Domains.DocumentFile.DocumentCatalog", "DocumentCatalog")
+                        .WithMany("I18nTranslations")
+                        .HasForeignKey("DocumentCatalogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DocumentCatalog");
+                });
+
+            modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentFileItemI18n", b =>
+                {
+                    b.HasOne("KoalaWiki.Domains.DocumentFile.DocumentFileItem", "DocumentFileItem")
+                        .WithMany("I18nTranslations")
+                        .HasForeignKey("DocumentFileItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DocumentFileItem");
+                });
+
             modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentFileItemSource", b =>
                 {
                     b.HasOne("KoalaWiki.Domains.DocumentFile.DocumentFileItem", "DocumentFileItem")
@@ -1162,13 +1348,23 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
             modelBuilder.Entity("KoalaWiki.Domains.FineTuning.FineTuningTask", b =>
                 {
-                    b.HasOne("KoalaWiki.Domains.DocumentCatalog", "DocumentCatalog")
+                    b.HasOne("KoalaWiki.Domains.DocumentFile.DocumentCatalog", "DocumentCatalog")
                         .WithMany()
                         .HasForeignKey("DocumentCatalogId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("DocumentCatalog");
+                });
+
+            modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentCatalog", b =>
+                {
+                    b.Navigation("I18nTranslations");
+                });
+
+            modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentFileItem", b =>
+                {
+                    b.Navigation("I18nTranslations");
                 });
 #pragma warning restore 612, 618
         }

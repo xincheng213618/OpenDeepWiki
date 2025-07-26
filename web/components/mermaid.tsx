@@ -36,7 +36,14 @@ export function Mermaid({ chart }: { chart: string }) {
         bindFunctions?.(container);
         setSvg(svg);
       } catch (error) {
-        console.error('Error while rendering mermaid', error);
+        // 显示源内容而不是svg
+        console.error('Mermaid 渲染错误:', error);
+        const pre = document.createElement('pre');
+        pre.textContent = chart;
+        container.innerHTML = '';
+        container.appendChild(pre);
+        setSvg('');
+
       }
     }
 

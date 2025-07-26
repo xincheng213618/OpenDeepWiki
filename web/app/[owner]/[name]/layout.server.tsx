@@ -7,19 +7,26 @@ import { Button } from '@/components/ui/button';
 import MCPModal from './MCPModal';
 import ExportMarkdownButton from '@/app/components/ExportMarkdownButton';
 import TimeDisplay from '@/app/components/TimeDisplay';
+import RepositoryLanguageSwitcher from './RepositoryLanguageSwitcher';
 
-export async function getRepositoryData(owner: string, name: string, branch?: string) {
+export async function getRepositoryData(owner: string, name: string, branch?: string, languageCode?: string) {
   try {
-    const { data } = await documentCatalog(owner, name, branch);
+    const { data } = await documentCatalog(owner, name, branch, languageCode);
     return {
       catalogData: data || null,
-      lastUpdated: data?.lastUpdate ?? ""
+      lastUpdated: data?.lastUpdate ?? "",
+      supportedLanguages: data?.supportedLanguages || [],
+      hasI18nSupport: data?.hasI18nSupport || false,
+      currentLanguage: data?.currentLanguage || 'zh-CN'
     };
   } catch (error) {
     console.error('Failed to fetch document catalog:', error);
     return {
       catalogData: null,
-      lastUpdated: ''
+      lastUpdated: '',
+      supportedLanguages: [],
+      hasI18nSupport: false,
+      currentLanguage: 'zh-CN'
     };
   }
 }
@@ -28,10 +35,12 @@ export default async function RepositoryLayoutServer({
   owner,
   name,
   children,
-  branch
+  branch,
+  searchParams
 }: any) {
 
-  const { catalogData, lastUpdated } = await getRepositoryData(owner, name, branch);
+  const languageCode = searchParams?.lang || 'zh-CN';
+  const { catalogData, lastUpdated, supportedLanguages, hasI18nSupport, currentLanguage } = await getRepositoryData(owner, name, branch, languageCode);
 
   const processTreeItems = (items: any[]): any[] => {
     return items.map((item: any) => ({
@@ -91,6 +100,12 @@ export default async function RepositoryLayoutServer({
             gap={8}
             horizontal
           >
+            {hasI18nSupport && (
+              <RepositoryLanguageSwitcher 
+                supportedLanguages={supportedLanguages}
+                currentLanguage={currentLanguage}
+              />
+            )}
             <ExportMarkdownButton warehouseId={catalogData.warehouseId} />
             <MCPModal owner={owner} name={name} />
           </Flexbox>

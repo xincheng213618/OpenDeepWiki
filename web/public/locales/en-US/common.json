@@ -6,7 +6,6 @@
   },
   "home": {
     "title": "AI-Powered Code Knowledge Base",
-    "subtitle": "OpenDeepWiki is an open-source project inspired by DeepWiki, built on .NET 9 and Semantic Kernel. It helps developers better understand and use code repositories, providing code analysis, documentation generation, and more.",
     "add_repo_button": "Add",
     "query_last_repo_button": "Query",
     "badge": {

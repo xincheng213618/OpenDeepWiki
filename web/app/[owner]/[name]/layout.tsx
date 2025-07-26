@@ -4,6 +4,7 @@ import { NextProvider } from 'fumadocs-core/framework/next';
 
 type Props = {
   params: Promise<{ owner: string; name: string; branch: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
   children: React.ReactNode
 }
 
@@ -43,9 +44,11 @@ export async function generateMetadata(
 
 export default async function RepositoryLayout({
   params,
+  searchParams,
   children,
 }: any) {
   const { owner, name, branch } = await params;
+  const resolvedSearchParams = await searchParams;
   
   return (
     <NextProvider>
@@ -53,6 +56,7 @@ export default async function RepositoryLayout({
         owner={owner}
         name={name}
         branch={branch}
+        searchParams={resolvedSearchParams}
       >
         {children}
       </RepositoryLayoutServer>

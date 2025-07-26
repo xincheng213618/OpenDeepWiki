@@ -6,9 +6,6 @@ import { generateSlug, ensureUniqueSlug } from '@/app/utils/slug';
 export default function HeadingAnchors() {
   useEffect(() => {
     function initHeadingAnchors() {
-      console.log('Initializing heading anchors...');
-      
-      // 查找包含markdown内容的元素，尝试多种可能的选择器
       const markdownBody = document.getElementById('markdown-body') || 
                           document.querySelector('.markdown-body') ||
                           document.querySelector('[data-content]') ||
@@ -37,6 +34,13 @@ export default function HeadingAnchors() {
         // 设置标题的ID
         heading.id = slug;
         heading.setAttribute('class', 'flex scroll-m-28 flex-row items-center gap-2');
+        
+        // 检查标题是否已经包含链接
+        const existingLinks = heading.querySelectorAll('a');
+        if (existingLinks.length > 0) {
+          // 如果已经有链接，不要创建包装链接，避免嵌套
+          return;
+        }
         
         // 创建锚点链接
         const anchor = document.createElement('a');

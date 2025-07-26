@@ -29,6 +29,10 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
         {
             json.Remove("temperature");
         }
+        else
+        {
+            json.temperature = 0.3;
+        }
 
         // 关闭推理模式: qwen3系列
         if (model.StartsWith("qwen3", StringComparison.CurrentCultureIgnoreCase)

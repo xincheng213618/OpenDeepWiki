@@ -32,16 +32,21 @@ export interface UpdateCatalogRequest {
  * @param organizationName 组织名称
  * @param name 仓库名称
  * @param branch 分支名称
+ * @param languageCode 语言代码
  * @returns 文档目录
  */
 export async function getDocumentCatalog(
   organizationName: string,
   name: string,
-  branch?: string
-): Promise<ApiResponse<{ items: DirectoryItem[], lastUpdate: string, warehouseId: string }>> {
+  branch?: string,
+  languageCode?: string
+): Promise<ApiResponse<{ items: DirectoryItem[], lastUpdate: string, warehouseId: string, supportedLanguages: string[], hasI18nSupport: boolean, currentLanguage: string }>> {
   let url = `${API_URL}/api/DocumentCatalog/DocumentCatalogs?organizationName=${encodeURIComponent(organizationName)}&name=${encodeURIComponent(name)}`;
   if (branch) {
     url += `&branch=${encodeURIComponent(branch)}`;
+  }
+  if (languageCode) {
+    url += `&languageCode=${encodeURIComponent(languageCode)}`;
   }
   return fetchApi(url);
 }
@@ -52,17 +57,22 @@ export async function getDocumentCatalog(
  * @param name 仓库名称
  * @param path 文档路径
  * @param branch 分支名称
+ * @param languageCode 语言代码
  * @returns 文档内容
  */
 export async function getDocumentById(
   owner: string,
   name: string,
   path: string,
-  branch?: string
+  branch?: string,
+  languageCode?: string
 ): Promise<ApiResponse<DocumentContent>> {
   let url = `${API_URL}/api/DocumentCatalog/DocumentById?owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(name)}&path=${encodeURIComponent(path)}`;
   if (branch) {
     url += `&branch=${encodeURIComponent(branch)}`;
+  }
+  if (languageCode) {
+    url += `&languageCode=${encodeURIComponent(languageCode)}`;
   }
   return fetchApi(url);
 }

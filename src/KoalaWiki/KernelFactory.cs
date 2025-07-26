@@ -102,11 +102,6 @@ public static class KernelFactory
         kernelBuilder.Plugins.AddFromObject(fileFunction);
         activity?.SetTag("plugins.file_function", "loaded");
 
-        // 为每个内核实例添加独立的AgentFunction
-        var agentFunction = new AgentFunction();
-        kernelBuilder.Plugins.AddFromObject(agentFunction);
-        activity?.SetTag("plugins.agent_function", "loaded");
-
         if (DocumentOptions.EnableCodeDependencyAnalysis)
         {
             var codeAnalyzeFunction = new CodeAnalyzeFunction(gitPath);

@@ -38,7 +38,7 @@ public static class MiniMapService
         history.AddUserMessage(prompt);
 
         var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint, OpenAIOptions.ChatApiKey, path,
-            OpenAIOptions.ChatModel);
+            OpenAIOptions.ChatModel, false);
 
         await foreach (var item in kernel.GetRequiredService<IChatCompletionService>()
                            .GetStreamingChatMessageContentsAsync(history, new OpenAIPromptExecutionSettings()
@@ -54,7 +54,7 @@ public static class MiniMapService
         }
 
         // 删除thinking标签包括中间的内容使用正则表达式
-        
+
         var thinkingPattern = new Regex(@"<thinking>.*?</thinking>", RegexOptions.Singleline);
         miniMap = new StringBuilder(thinkingPattern.Replace(miniMap.ToString(), string.Empty).Trim());
 

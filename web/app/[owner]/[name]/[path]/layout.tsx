@@ -6,9 +6,9 @@ import { documentById } from '../../../services/warehouseService';
 import Script from 'next/script';;
 
 // 获取文档内容以生成更精确的SEO元数据
-async function getDocument(owner: string, name: string, path: string) {
+async function getDocument(owner: string, name: string, path: string, languageCode?: string) {
   try {
-    const response = await documentById(owner, name, path);
+    const response = await documentById(owner, name, path, undefined, languageCode);
     if (response?.data) {
       return response.data;
     }
@@ -21,14 +21,16 @@ async function getDocument(owner: string, name: string, path: string) {
 
 // 为页面生成动态元数据
 export async function generateMetadata(
-  { params }: any,
+  { params, searchParams }: any,
   parent: any
 ): Promise<Metadata> {
   const { owner, name, path } = await params;
+  const resolvedSearchParams = await searchParams || {};
+  const { lang } = resolvedSearchParams;
   const pathString = Array.isArray(path) ? path.join('/') : path;
 
   // 尝试获取文档内容以提取更好的描述
-  const document = await getDocument(owner, name, pathString);
+  const document = await getDocument(owner, name, pathString, lang);
   const title = document?.title || pathString;
 
   // 从文档内容中提取前200个字符作为描述

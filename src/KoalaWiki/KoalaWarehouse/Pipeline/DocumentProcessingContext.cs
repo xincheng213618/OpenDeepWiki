@@ -1,4 +1,6 @@
 
+using KoalaWiki.Domains.DocumentFile;
+
 namespace KoalaWiki.KoalaWarehouse.Pipeline;
 
 public class DocumentProcessingContext

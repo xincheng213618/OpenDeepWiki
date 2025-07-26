@@ -23,6 +23,12 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
     public DbSet<DocumentFileItem> DocumentFileItems { get; set; }
 
     public DbSet<DocumentFileItemSource> DocumentFileItemSources { get; set; }
+    
+    public DbSet<DocumentCatalogI18n> DocumentCatalogI18ns { get; set; }
+    
+    public DbSet<DocumentFileItemI18n> DocumentFileItemI18ns { get; set; }
+
+    public DbSet<TranslationTask> TranslationTasks { get; set; }
 
     public DbSet<DocumentOverview> DocumentOverviews { get; set; }
 
@@ -175,6 +181,47 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             builder.HasIndex(x => x.CreatedAt);
             builder.HasIndex(x => x.DocumentFileItemId);
             builder.HasComment("文档文件项来源表");
+        }));
+        
+        modelBuilder.Entity<DocumentCatalogI18n>((builder =>
+        {
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).HasComment("主键Id");
+            builder.Property(x => x.DocumentCatalogId).IsRequired().HasComment("文档目录Id");
+            builder.Property(x => x.LanguageCode).IsRequired().HasMaxLength(10).HasComment("语言代码");
+            builder.Property(x => x.Name).IsRequired().HasComment("多语言目录名称");
+            builder.Property(x => x.Description).IsRequired().HasComment("多语言目录描述");
+            builder.Property(x => x.CreatedAt).IsRequired().HasComment("创建时间");
+            builder.Property(x => x.UpdatedAt).IsRequired().HasComment("更新时间");
+            builder.HasIndex(x => x.DocumentCatalogId);
+            builder.HasIndex(x => x.LanguageCode);
+            builder.HasIndex(x => new { x.DocumentCatalogId, x.LanguageCode }).IsUnique();
+            builder.HasOne(x => x.DocumentCatalog)
+                .WithMany(x => x.I18nTranslations)
+                .HasForeignKey(x => x.DocumentCatalogId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.HasComment("文档目录多语言表");
+        }));
+        
+        modelBuilder.Entity<DocumentFileItemI18n>((builder =>
+        {
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).HasComment("主键Id");
+            builder.Property(x => x.DocumentFileItemId).IsRequired().HasComment("文档文件Id");
+            builder.Property(x => x.LanguageCode).IsRequired().HasMaxLength(10).HasComment("语言代码");
+            builder.Property(x => x.Title).IsRequired().HasComment("多语言标题");
+            builder.Property(x => x.Description).IsRequired().HasComment("多语言描述");
+            builder.Property(x => x.Content).IsRequired().HasComment("多语言内容");
+            builder.Property(x => x.CreatedAt).IsRequired().HasComment("创建时间");
+            builder.Property(x => x.UpdatedAt).IsRequired().HasComment("更新时间");
+            builder.HasIndex(x => x.DocumentFileItemId);
+            builder.HasIndex(x => x.LanguageCode);
+            builder.HasIndex(x => new { x.DocumentFileItemId, x.LanguageCode }).IsUnique();
+            builder.HasOne(x => x.DocumentFileItem)
+                .WithMany(x => x.I18nTranslations)
+                .HasForeignKey(x => x.DocumentFileItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.HasComment("文档文件多语言表");
         }));
 
         modelBuilder.Entity<DocumentOverview>(options =>

@@ -470,12 +470,18 @@ export default function RepositoryDetailPage() {
       // 获取表单值
       const formValues = catalogForm.getValues();
 
+      // 确定父级ID：如果是根级创建（rightClickNode.key === 'root'），则parentId为空字符串
+      let parentId = '';
+      if (rightClickNode.key !== 'root') {
+        parentId = rightClickNode.catalog?.id || rightClickNode.key;
+      }
+
       // 构建目录数据
       const catalogInput = {
         name: formValues.name,
         url: formValues.url || '',
         description: formValues.description || '',
-        parentId: rightClickNode.catalog?.id || rightClickNode.key, // 使用catalog.id如果存在
+        parentId: parentId,
         order: formValues.order || 0,
         ducumentId: '',
         warehouseId: repositoryId,
@@ -723,25 +729,93 @@ export default function RepositoryDetailPage() {
         {/* 左侧文件目录 */}
         <Card className="w-80 h-full overflow-auto">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Folder className="h-4 w-4" />
-              文件目录
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Folder className="h-4 w-4" />
+                文件目录
+              </CardTitle>
+              <Button
+                onClick={() => {
+                  // 设置为根级菜单创建，不需要父节点
+                  setRightClickNode({ 
+                    title: 'root', 
+                    key: 'root', 
+                    catalog: { 
+                      id: '', 
+                      name: 'root',
+                      description: '',
+                      createdAt: '',
+                      deletedTime: '',
+                      dependentFile: [],
+                      ducumentId: '',
+                      isCompleted: false,
+                      isDeleted: false,
+                      order: 0,
+                      parentId: '',
+                      prompt: '',
+                      url: '',
+                      warehouseId: repositoryId
+                    }
+                  });
+                  showModal('newMenu');
+                }}
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-1">
-              {treeData.map((node) => (
-                <TreeItem
-                  key={node.key}
-                  node={node}
-                  onSelect={handleSelectFile}
-                  onRightClick={handleRightClick}
-                  selectedKey={selectedFile || undefined}
-                  showModal={showModal}
-                  setRightClickNode={setRightClickNode}
-                />
-              ))}
-            </div>
+            <ContextMenu>
+              <ContextMenuTrigger asChild>
+                <div className="space-y-1 min-h-[200px]">
+                  {treeData.map((node) => (
+                    <TreeItem
+                      key={node.key}
+                      node={node}
+                      onSelect={handleSelectFile}
+                      onRightClick={handleRightClick}
+                      selectedKey={selectedFile || undefined}
+                      showModal={showModal}
+                      setRightClickNode={setRightClickNode}
+                    />
+                  ))}
+                </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuLabel>文件目录操作</ContextMenuLabel>
+                <ContextMenuItem 
+                  onClick={() => {
+                    // 设置为根级菜单创建
+                    setRightClickNode({ 
+                      title: 'root', 
+                      key: 'root', 
+                      catalog: { 
+                        id: '', 
+                        name: 'root',
+                        description: '',
+                        createdAt: '',
+                        deletedTime: '',
+                        dependentFile: [],
+                        ducumentId: '',
+                        isCompleted: false,
+                        isDeleted: false,
+                        order: 0,
+                        parentId: '',
+                        prompt: '',
+                        url: '',
+                        warehouseId: repositoryId
+                      }
+                    });
+                    showModal('newMenu');
+                  }}
+                >
+                  <FolderPlus className="h-4 w-4 mr-2" /> 新建一级菜单
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
           </CardContent>
         </Card>
 
