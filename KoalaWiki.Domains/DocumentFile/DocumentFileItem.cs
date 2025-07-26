@@ -68,4 +68,9 @@ public class DocumentFileItem : Entity<string>
     /// 扩展数据
     /// </summary>
     public Dictionary<string,string> Extra { get; set; } = new();
+    
+    /// <summary>
+    /// i18n多语言支持导航属性
+    /// </summary>
+    public virtual ICollection<DocumentFileItemI18n>? I18nTranslations { get; set; }
 }

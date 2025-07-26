@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using KoalaWiki.Domains;
+using KoalaWiki.Domains.DocumentFile;
 using KoalaWiki.Domains.Warehouse;
 
 namespace KoalaWiki.Infrastructure;

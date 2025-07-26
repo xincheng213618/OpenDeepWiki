@@ -332,11 +332,14 @@ export async function getWarehouse(page: number, pageSize: number, keyword?: str
  * 获取文档目录
  * 此函数可在服务器组件中使用
  */
-export async function documentCatalog(organizationName: string, name: string, branch?: string): Promise<any> {
+export async function documentCatalog(organizationName: string, name: string, branch?: string, languageCode?: string): Promise<any> {
   // 构建URL，如果branch存在则添加到查询参数中
   let url = API_URL + '/api/DocumentCatalog/DocumentCatalogs?organizationName=' + organizationName + '&name=' + name;
   if (branch) {
     url += '&branch=' + branch;
+  }
+  if (languageCode) {
+    url += '&languageCode=' + languageCode;
   }
   
   // @ts-ignore
@@ -351,11 +354,14 @@ export async function documentCatalog(organizationName: string, name: string, br
  * 根据ID获取文档
  * 此函数可在服务器组件中使用
  */
-export async function documentById(owner: string, name: string, path: string, branch?: string): Promise<any> {
+export async function documentById(owner: string, name: string, path: string, branch?: string, languageCode?: string): Promise<any> {
   // 构建URL，如果branch存在则添加到查询参数中
   let url = API_URL + '/api/DocumentCatalog/DocumentById?owner=' + owner + '&name=' + name + '&path=' + path;
   if (branch) {
     url += '&branch=' + branch;
+  }
+  if (languageCode) {
+    url += '&languageCode=' + languageCode;
   }
 
   // @ts-ignore

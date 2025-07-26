@@ -1,10 +1,5 @@
-import { compileMDX } from "@fumadocs/mdx-remote";
-import remarkGfm from "remark-gfm";
-import { rehypeCode } from 'fumadocs-core/mdx-plugins';
-import { remarkImage } from 'fumadocs-core/mdx-plugins';
-import { getMDXComponents } from '@/components/mdx-components';
 import { TOCItemType } from "fumadocs-core/server";
-import { Markdown, ThemeProvider } from "@lobehub/ui";
+import ThemedMarkdown from './ThemedMarkdown';
 
 
 interface RenderMarkdownResult {
@@ -36,59 +31,17 @@ function extractTOC(markdown: string): TOCItemType[] {
     return toc;
 }
 
-export default async function RenderMarkdown(props: { markdown: string }): Promise<RenderMarkdownResult> {
-    if (!props.markdown) return null;
+export default function RenderMarkdown(props: { markdown: string }): RenderMarkdownResult {
+    if (!props.markdown) return { body: <></>, toc: [] };
 
     try {
-
-        try {
-            const compiled = await compileMDX({
-                source: props.markdown.replace(/```mermaid\s*(\n?)([\s\S]*?)```/g, (match, p1, p2) => {
-                    return `<Mermaid chart={\`${p2}\`}/>`;
-                }),
-                mdxOptions: {
-                    remarkPlugins: [
-                        remarkGfm,
-                        remarkImage,
-                    ],
-                    rehypePlugins: [rehypeCode],
-                    rehypeCodeOptions: {
-                        onError: (error) => {
-
-                        },
-                        themes: {
-
-                        }
-                    }
-                },
-            });
-            const MdxContent = compiled.body;
-            return {
-                body: <>
-                    <MdxContent
-                        components={getMDXComponents({
-                        })}
-                    />
-                </>,
-                toc: compiled.toc,
-            };
-        } catch (mdxError) {
-            // 手动解析props.markdown，得到toc
-            console.warn("MDX编译失败，使用备选解析方法:", mdxError);
-            const toc = extractTOC(props.markdown);
-            return {
-                body: <ThemeProvider
-                    themeMode='auto'
-                >
-                    <Markdown
-                        enableCustomFootnotes={true}
-                    >
-                        {props.markdown}
-                    </Markdown>
-                </ThemeProvider>,
-                toc: toc
-            };
-        }
+        const toc = extractTOC(props.markdown);
+        return {
+            body: <ThemedMarkdown>
+                {props.markdown}
+            </ThemedMarkdown>,
+            toc: toc
+        };
     } catch (error) {
         console.error("Markdown处理错误:", error);
         // 如果整个处理过程出错，至少显示原始文本

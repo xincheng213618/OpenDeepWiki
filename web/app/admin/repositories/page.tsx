@@ -13,7 +13,12 @@ import {
   User,
   RotateCcw,
   GitBranch,
-  AlertTriangle
+  AlertTriangle,
+  Languages,
+  FileText,
+  CheckCircle,
+  Clock3,
+  AlertCircle
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +53,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
@@ -65,6 +76,13 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import { getRepositoryList, createGitRepository, updateRepository, deleteRepository, resetRepository, RepositoryInfo, CreateGitRepositoryRequest, UpdateRepositoryRequest } from '../../services/repositoryService';
+import { 
+  startRepositoryTranslation, 
+  getRepositoryLanguageStatus, 
+  getSupportedLanguages,
+  LanguageStatusInfo,
+  SupportedLanguage 
+} from '../../services/translationService';
 import Link from 'next/link';
 
 // 仓库状态映射
@@ -115,6 +133,40 @@ export default function RepositoriesPage() {
     description: '',
     isPrivate: false,
   });
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+  const [currentLanguageRepo, setCurrentLanguageRepo] = useState<RepositoryInfo | null>(null);
+  const [activeLanguageTab, setActiveLanguageTab] = useState('zh-CN');
+  const [supportedLanguages, setSupportedLanguages] = useState<SupportedLanguage[]>([]);
+  const [languageStatuses, setLanguageStatuses] = useState<LanguageStatusInfo[]>([]);
+  const [loadingLanguages, setLoadingLanguages] = useState(false);
+  
+  // 语言代码到国旗的映射
+  const languageFlags: Record<string, string> = {
+    'zh-CN': '🇨🇳',
+    'en-US': '🇺🇸', 
+    'ja-JP': '🇯🇵',
+    'ko-KR': '🇰🇷',
+    'de-DE': '🇩🇪',
+    'fr-FR': '🇫🇷',
+    'es-ES': '🇪🇸',
+    'ru-RU': '🇷🇺',
+    'pt-BR': '🇧🇷',
+    'it-IT': '🇮🇹',
+    'ar-SA': '🇸🇦',
+    'hi-IN': '🇮🇳',
+    'zh-TW': '🇹🇼'
+  };
+
+  // 获取语言状态
+  const getLanguageStatus = (languageCode: string) => {
+    return languageStatuses.find(s => s.code === languageCode) || {
+      code: languageCode,
+      name: languageCode,
+      status: 'none' as const,
+      exists: false,
+      progress: 0
+    };
+  };
 
   // 加载仓库数据
   const loadRepositories = async (page = currentPage, size = pageSize, keyword = searchText) => {
@@ -152,6 +204,109 @@ export default function RepositoriesPage() {
   const handleSearch = () => {
     setCurrentPage(1); // 重置到第一页
     loadRepositories(1, pageSize, searchText);
+  };
+
+  // 加载支持的语言列表
+  const loadSupportedLanguages = async () => {
+    try {
+      const response = await getSupportedLanguages();
+      setSupportedLanguages(response);
+    } catch (error) {
+      console.error('加载支持的语言列表失败:', error);
+      toast({
+        title: "错误",
+        description: "加载语言列表失败",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 加载仓库语言状态
+  const loadRepositoryLanguageStatus = async (warehouseId: string) => {
+    try {
+      setLoadingLanguages(true);
+      const response = await getRepositoryLanguageStatus(warehouseId);
+      setLanguageStatuses(response);
+    } catch (error) {
+      console.error('加载仓库语言状态失败:', error);
+      toast({
+        title: "错误",
+        description: "加载语言状态失败",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingLanguages(false);
+    }
+  };
+
+  // 处理多语言管理
+  const handleLanguageManagement = async (repository: RepositoryInfo) => {
+    setCurrentLanguageRepo(repository);
+    setIsLanguageModalOpen(true);
+    
+    // 加载语言状态
+    await loadRepositoryLanguageStatus(repository.id);
+  };
+
+  // 初始化时加载支持的语言
+  useEffect(() => {
+    loadSupportedLanguages();
+  }, []);
+
+  // 生成特定语言的文档
+  const handleGenerateLanguage = async (languageCode: string) => {
+    if (!currentLanguageRepo) return;
+
+    try {
+      const response = await startRepositoryTranslation({
+        warehouseId: currentLanguageRepo.id,
+        targetLanguage: languageCode,
+        sourceLanguage: 'en-US'
+      });
+
+      toast({
+        title: "成功",
+        description: `翻译任务已启动，任务ID: ${response.taskId}`,
+      });
+
+      // 重新加载语言状态
+      await loadRepositoryLanguageStatus(currentLanguageRepo.id);
+    } catch (error: any) {
+      console.error('生成语言文档失败:', error);
+      toast({
+        title: "错误",
+        description: error.message || "生成文档失败，请重试",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 重新生成特定语言的文档
+  const handleRegenerateLanguage = async (languageCode: string) => {
+    if (!currentLanguageRepo) return;
+
+    try {
+      const response = await startRepositoryTranslation({
+        warehouseId: currentLanguageRepo.id,
+        targetLanguage: languageCode,
+        sourceLanguage: 'en-US'
+      });
+
+      toast({
+        title: "成功",
+        description: `重新翻译任务已启动，任务ID: ${response.taskId}`,
+      });
+
+      // 重新加载语言状态
+      await loadRepositoryLanguageStatus(currentLanguageRepo.id);
+    } catch (error: any) {
+      console.error('重新生成语言文档失败:', error);
+      toast({
+        title: "错误",
+        description: error.message || "重新生成文档失败，请重试",
+        variant: "destructive",
+      });
+    }
   };
 
   // 处理仓库操作（编辑、删除等）
@@ -540,6 +695,10 @@ export default function RepositoriesPage() {
                           <RotateCcw className="h-4 w-4 mr-2" />
                           重新处理
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleLanguageManagement(repo)}>
+                          <Languages className="h-4 w-4 mr-2" />
+                          多语言管理
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleRepositoryAction('delete', repo)}
                           className="text-destructive"
@@ -660,6 +819,195 @@ export default function RepositoriesPage() {
                 更新
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 多语言管理对话框 */}
+      <Dialog open={isLanguageModalOpen} onOpenChange={setIsLanguageModalOpen}>
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Languages className="h-5 w-5" />
+              多语言管理 - {currentLanguageRepo?.organizationName}/{currentLanguageRepo?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto">
+            {loadingLanguages ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-2">
+                  <Clock3 className="h-5 w-5 animate-spin" />
+                  <span>加载语言状态中...</span>
+                </div>
+              </div>
+            ) : (
+            <Tabs value={activeLanguageTab} onValueChange={setActiveLanguageTab} className="w-full">
+              {/* 改进的Tab导航设计 */}
+              <div className="border-b border-border mb-6">
+                <TabsList className="h-auto p-1 bg-transparent w-full justify-start">
+                  <div className="flex flex-wrap gap-1 w-full">
+                    {supportedLanguages.map((language) => (
+                      <TabsTrigger
+                        key={language.code}
+                        value={language.code}
+                        className="flex items-center gap-2 px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md"
+                      >
+                        <span className="text-base">{languageFlags[language.code] || '🌐'}</span>
+                        <span className="font-medium">{language.name}</span>
+                      </TabsTrigger>
+                    ))}
+                  </div>
+                </TabsList>
+              </div>
+
+              {supportedLanguages.map((language) => {
+                const status = getLanguageStatus(language.code);
+                return (
+                  <TabsContent key={language.code} value={language.code} className="mt-0">
+                    <Card className="border-0 shadow-sm">
+                      <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="flex items-center gap-3">
+                            <span className="text-3xl">{languageFlags[language.code] || '🌐'}</span>
+                            <div>
+                              <h3 className="text-lg font-semibold">{language.name}</h3>
+                              <p className="text-sm text-muted-foreground">{language.code}</p>
+                            </div>
+                          </CardTitle>
+                          {/* 状态指示器 */}
+                          <div className="flex items-center gap-2">
+                            {status.status === 'completed' && (
+                              <Badge className="bg-green-100 text-green-800 border-green-300 hover:bg-green-100">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                已完成
+                              </Badge>
+                            )}
+                            {status.status === 'generating' && (
+                              <Badge className="bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-100">
+                                <Clock3 className="h-3 w-3 mr-1 animate-spin" />
+                                生成中
+                              </Badge>
+                            )}
+                            {status.status === 'failed' && (
+                              <Badge className="bg-red-100 text-red-800 border-red-300 hover:bg-red-100">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                生成失败
+                              </Badge>
+                            )}
+                            {status.status === 'none' && (
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-600 border-gray-300">
+                                未生成
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {/* 状态概览卡片 */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="p-4 bg-muted/50 rounded-lg">
+                            <Label className="text-sm font-medium text-muted-foreground">文档状态</Label>
+                            <div className="mt-1 text-sm font-medium">
+                              {status.exists ? '✅ 已生成文档' : '📝 暂未生成文档'}
+                            </div>
+                          </div>
+                          <div className="p-4 bg-muted/50 rounded-lg">
+                            <Label className="text-sm font-medium text-muted-foreground">最后生成时间</Label>
+                            <div className="mt-1 text-sm font-medium">
+                              {status.lastGenerated ? new Date(status.lastGenerated).toLocaleDateString('zh-CN') : '暂无'}
+                            </div>
+                          </div>
+                          <div className="p-4 bg-muted/50 rounded-lg">
+                            <Label className="text-sm font-medium text-muted-foreground">处理状态</Label>
+                            <div className="mt-1 text-sm font-medium">
+                              {status.status === 'completed' && '✅ 完成'}
+                              {status.status === 'generating' && '🔄 处理中'}
+                              {status.status === 'failed' && '❌ 失败'}
+                              {status.status === 'none' && '⏳ 待处理'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 操作按钮区域 */}
+                        <div className="flex flex-wrap gap-3 pt-2">
+                          {status.exists ? (
+                            <>
+                              <Button
+                                onClick={() => {
+                                  // TODO: 打开查看文档页面
+                                  window.open(`/docs/${currentLanguageRepo?.id}?lang=${language.code}`, '_blank');
+                                }}
+                                variant="outline"
+                                className="flex items-center gap-2"
+                              >
+                                <Eye className="h-4 w-4" />
+                                查看文档
+                              </Button>
+                              <Button
+                                onClick={() => handleRegenerateLanguage(language.code)}
+                                disabled={status.status === 'generating' || loadingLanguages}
+                                className="flex items-center gap-2"
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                                重新生成
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              onClick={() => handleGenerateLanguage(language.code)}
+                              disabled={status.status === 'generating' || loadingLanguages}
+                              className="flex items-center gap-2"
+                            >
+                              <FileText className="h-4 w-4" />
+                              生成文档
+                            </Button>
+                          )}
+                          
+                          {status.status === 'generating' && (
+                            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md text-sm">
+                              <Clock3 className="h-4 w-4 animate-spin" />
+                              正在生成中，预计需要3-5分钟...
+                              {status.progress > 0 && ` (${status.progress}%)`}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 功能说明 */}
+                        <div className="pt-4 border-t">
+                          <Label className="text-sm font-medium text-muted-foreground mb-3 block">支持功能</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span>README文档翻译</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span>API文档生成</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              <span>代码注释翻译</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                              <span>项目结构说明</span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+            )}
+          </div>
+          
+          <div className="flex justify-end pt-4 border-t">
+            <Button variant="outline" onClick={() => setIsLanguageModalOpen(false)}>
+              关闭
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

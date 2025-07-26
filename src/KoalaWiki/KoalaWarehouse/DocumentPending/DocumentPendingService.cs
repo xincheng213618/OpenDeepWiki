@@ -193,12 +193,6 @@ public partial class DocumentPendingService
 
         var chat = documentKernel.Services.GetService<IChatCompletionService>();
 
-        string promptName = nameof(PromptConstant.Warehouse.GenerateDocs);
-        if (classify.HasValue)
-        {
-            promptName += classify;
-        }
-
         string prompt = await 
             GetDocumentPendingPrompt(classify, codeFiles, gitRepository, branch, catalog.Name, catalog.Prompt);
 
@@ -219,7 +213,6 @@ public partial class DocumentPendingService
         {
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
             MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel),
-            Temperature = 0.5,
         };
 
         await foreach (var i in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
@@ -230,27 +223,89 @@ public partial class DocumentPendingService
             }
         }
 
+        // 保存原始内容，防止精炼失败时丢失
+        var originalContent = sr.ToString();
+        
         if (DocumentOptions.RefineAndEnhanceQuality)
         {
-            history.AddAssistantMessage(sr.ToString());
-            history.AddUserMessage(
-                """
-                You need to further refine the previous content and provide more detailed information. All the content comes from the code repository and the style of the documentation should be more standardized.
-                Create thorough documentation that:
-                - Covers all key functionality with precise technical details
-                - Includes practical code examples and usage patterns  
-                - Ensures completeness without gaps or omissions
-                - Maintains clarity and professional quality throughout
-                Don't hold back. Give it your all.
-                """);
-
-            sr.Clear();
-            await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
+            try
             {
-                if (!string.IsNullOrEmpty(item.Content))
+                history.AddAssistantMessage(originalContent);
+                
+                var refineContents = new ChatMessageContentItemCollection
                 {
-                    sr.Append(item.Content);
+                    new TextContent(
+                        """
+                        Please refine and enhance the previous documentation content while maintaining its structure and approach. Focus on:
+
+                        **Enhancement Areas:**
+                        - Deepen existing architectural explanations with more technical detail
+                        - Expand code analysis with additional insights from the repository
+                        - Strengthen existing Mermaid diagrams with more comprehensive representations
+                        - Improve clarity and readability of existing explanations
+                        - Add more specific code references and examples where appropriate
+                        - Enhance existing sections with additional technical depth
+
+                        **Quality Standards:**
+                        - Maintain the 90-10 description-to-code ratio established in the original
+                        - Ensure all additions are evidence-based from the actual code files
+                        - Preserve the Microsoft documentation style approach
+                        - Enhance conceptual understanding through improved explanations
+                        - Strengthen the progressive learning structure
+
+                        Build upon the solid foundation that exists to create even more comprehensive and valuable documentation.
+                        """),
+                    new TextContent(
+                        """
+                        <system-reminder>
+                        CRITICAL: You are now in document refinement phase. Your task is to ENHANCE and IMPROVE the EXISTING documentation content that was just generated, NOT to create completely new content.
+                        
+                        MANDATORY REQUIREMENTS:
+                        1. PRESERVE the original document structure and organization
+                        2. ENHANCE existing explanations with more depth and clarity
+                        3. IMPROVE technical accuracy and completeness based on actual code analysis
+                        4. EXPAND existing sections with more detailed architectural analysis
+                        5. REFINE language for better readability while maintaining technical precision
+                        6. STRENGTHEN existing Mermaid diagrams or add complementary ones
+                        7. ENSURE all enhancements are based on the code files analyzed in the original generation
+                        
+                        FORBIDDEN ACTIONS:
+                        - Do NOT restructure or reorganize the document completely
+                        - Do NOT remove existing sections or content
+                        - Do NOT add content not based on the analyzed code files
+                        - Do NOT change the fundamental approach or style established in the original
+                        
+                        Your goal is to take the good foundation that exists and make it BETTER, MORE DETAILED, and MORE COMPREHENSIVE while preserving its core structure and insights.
+                        </system-reminder>
+                        """)
+                };
+                history.AddUserMessage(refineContents);
+
+                var refinedContent = new StringBuilder();
+                await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
+                {
+                    if (!string.IsNullOrEmpty(item.Content))
+                    {
+                        refinedContent.Append(item.Content);
+                    }
                 }
+
+                // 检查精炼后的内容是否有效
+                if (!string.IsNullOrWhiteSpace(refinedContent.ToString()))
+                {
+                    sr.Clear();
+                    sr.Append(refinedContent.ToString());
+                    Log.Logger.Information("文档精炼成功，文档：{name}", catalog.Name);
+                }
+                else
+                {
+                    Log.Logger.Warning("文档精炼后内容为空，使用原始内容，文档：{name}", catalog.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error("文档精炼失败，使用原始内容，文档：{name}，错误：{error}", catalog.Name, ex.Message);
+                // sr已经包含原始内容，无需额外操作
             }
         }
 

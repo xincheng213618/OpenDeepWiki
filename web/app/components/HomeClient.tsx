@@ -184,9 +184,6 @@ export default function HomeClient({
             <h2 className="text-hero mb-6 gradient-text">
               {t('home.title')}
             </h2>
-            <p className="text-subtitle mb-8 max-w-3xl mx-auto">
-              {t('home.subtitle')}
-            </p>
           </div>
 
           <div style={{

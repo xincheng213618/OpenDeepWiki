@@ -35,31 +35,31 @@ public partial class DocumentPendingService
                    </thinking>
                    
                    **DOCUMENTATION GENERATION METHODOLOGY:**
-                   Create exhaustive application documentation through structured documentation protocols:
+                   Create exhaustive application documentation through structured understanding-focused protocols:
                    
-                   **Phase 1: User-Centric Documentation**
-                   - **Getting Started Guide**: Complete installation procedures, environment setup, and initial configuration workflows
-                   - **User Workflow Documentation**: Step-by-step guides for core business processes, feature usage, and common tasks
-                   - **Configuration Management**: Comprehensive configuration options, environment variables, and customization capabilities
-                   - **Authentication & Authorization**: User management, permission systems, and security configuration procedures
+                   **Phase 1: Conceptual Foundation Documentation**
+                   - **Application Philosophy & Purpose**: Think step by step about the application's core mission, design philosophy, and value proposition
+                   - **Architectural Concepts**: Comprehensive explanation of system design principles, patterns, and architectural decisions
+                   - **User Experience Design**: Detailed analysis of user workflow concepts, interaction patterns, and usability considerations
+                   - **Technology Stack Rationale**: In-depth explanation of technology choices, trade-offs, and architectural implications
                    
-                   **Phase 2: Technical Architecture Documentation**
-                   - **System Architecture Overview**: Complete architectural diagrams, component relationships, and data flow documentation
-                   - **API Reference Documentation**: Full endpoint specifications, request/response examples, authentication methods, and integration guides
-                   - **Database Schema & Data Models**: Complete data structure documentation, relationship mappings, and migration procedures
-                   - **Integration Patterns**: External service integrations, webhook configurations, and third-party system connections
+                   **Phase 2: Implementation Understanding Documentation**
+                   - **System Architecture Analysis**: Detailed examination of component relationships, data flow patterns, and integration strategies
+                   - **Business Logic Exploration**: Comprehensive explanation of core business processes, rules, and decision-making workflows
+                   - **Data Management Philosophy**: Analysis of data modeling approaches, persistence strategies, and information architecture
+                   - **Security Architecture**: Thorough explanation of security concepts, authentication flows, and protection mechanisms
                    
-                   **Phase 3: Operational Excellence Documentation**
-                   - **Deployment & Scaling Guide**: Production deployment procedures, environment configuration, and scaling strategies
-                   - **Monitoring & Observability**: Logging configuration, metrics collection, alerting setup, and performance monitoring
-                   - **Troubleshooting & Maintenance**: Comprehensive problem diagnosis, common issue resolution, and maintenance procedures
-                   - **Security & Compliance**: Security best practices, compliance requirements, and vulnerability management procedures
+                   **Phase 3: Operational Understanding Documentation**
+                   - **Deployment Strategy Analysis**: Conceptual explanation of deployment approaches, environment management, and scalability considerations
+                   - **Monitoring Philosophy**: Understanding of observability concepts, logging strategies, and performance measurement approaches
+                   - **Maintenance Methodology**: Analysis of operational procedures, troubleshooting approaches, and maintenance strategies
+                   - **Integration Ecosystem**: Comprehensive explanation of external dependencies, API design philosophy, and integration patterns
                    
                    **DOCUMENTATION QUALITY STANDARDS:**
-                   - **Complete Code Examples**: All documentation must include complete, executable code examples and configuration samples
-                   - **Step-by-Step Procedures**: Every process must be documented with detailed, sequential instructions
-                   - **Evidence-Based Content**: All technical claims must be supported by actual code references and implementation examples
-                   - **Production-Ready Guidance**: Focus on real-world deployment scenarios and enterprise-grade operational procedures
+                   - **Concept-First Approach**: Begin every section with comprehensive conceptual explanation before any implementation details
+                   - **Understanding-Focused Content**: Prioritize explaining 'why' and 'how' systems work over showing what they do
+                   - **Architectural Reasoning**: Extensive analysis of design decisions, trade-offs, and implementation rationale
+                   - **Minimal Code Policy**: Use code snippets sparingly and only to illustrate critical concepts or configurations
                    """;
         }
 
@@ -93,10 +93,10 @@ public partial class DocumentPendingService
                    - **Community & Ecosystem**: Third-party integration guides, community resources, and contribution procedures
                    
                    **FRAMEWORK DOCUMENTATION STANDARDS:**
-                   - **Executable Examples**: All code examples must be complete, runnable, and demonstrate real-world usage patterns
-                   - **Progressive Learning**: Content must be organized to support developers from beginner to advanced skill levels
-                   - **Framework Fidelity**: All documentation must accurately reflect actual framework capabilities and limitations
-                   - **Developer Experience Focus**: Prioritize practical implementation guidance and common developer workflow scenarios
+                   - **Conceptual Mastery**: Focus on explaining framework philosophy, design patterns, and architectural principles
+                   - **Progressive Understanding**: Content must build conceptual understanding from basic principles to advanced patterns
+                   - **Framework Philosophy**: Comprehensively explain the framework's design philosophy, trade-offs, and intended usage patterns
+                   - **Developer Mental Models**: Help developers build correct mental models of framework behavior and capabilities
                    """;
         }
 
@@ -130,10 +130,10 @@ public partial class DocumentPendingService
                    - **Integration Examples**: Real-world integration scenarios, framework compatibility, and ecosystem usage
                    
                    **LIBRARY DOCUMENTATION STANDARDS:**
-                   - **Complete Implementation Examples**: All examples must be fully functional and demonstrate real library usage
-                   - **API Completeness**: Document every public method, property, and configuration option with examples
-                   - **Integration Focus**: Prioritize practical integration scenarios and common developer implementation patterns
-                   - **Performance Evidence**: Include measurable performance data and optimization recommendations where applicable
+                   - **Conceptual API Understanding**: Explain the library's design philosophy, patterns, and intended usage concepts
+                   - **API Design Rationale**: Comprehensive explanation of API design decisions, parameter choices, and method organization
+                   - **Integration Philosophy**: Focus on understanding integration patterns, architectural considerations, and design implications
+                   - **Performance Concepts**: Explain performance characteristics, optimization principles, and resource management approaches
                    """;
         }
 

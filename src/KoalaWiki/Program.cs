@@ -1,4 +1,5 @@
 using KoalaWiki.BackendService;
+using KoalaWiki.Generate;
 using KoalaWiki.KoalaWarehouse.Extensions;
 using KoalaWiki.Mem0;
 using KoalaWiki.Options;
@@ -67,6 +68,8 @@ builder.Services.AddHostedService<MiniMapBackgroundService>();
 // 添加访问日志队列和后台处理服务
 builder.Services.AddSingleton<AccessLogQueue>();
 builder.Services.AddHostedService<AccessLogBackgroundService>();
+
+builder.Services.AddScoped<TranslateService>();
 
 // 添加JWT认证
 builder.Services.AddAuthentication(options =>

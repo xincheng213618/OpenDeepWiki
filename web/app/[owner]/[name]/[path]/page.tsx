@@ -103,12 +103,13 @@ export async function generateMetadata({
   searchParams
 }:any): Promise<Metadata> {
   const { owner, name, path } = await params;
-  const { branch } = await searchParams;
+  const resolvedSearchParams = await searchParams || {};
+  const { branch, lang } = resolvedSearchParams;
 
   try {
     // 并行获取文档数据和仓库概览
     const [documentResponse, overviewResponse] = await Promise.all([
-      documentById(owner, name, path, branch),
+      documentById(owner, name, path, branch, lang),
       getWarehouseOverview(owner, name, branch).catch(() => null)
     ]);
 
@@ -236,14 +237,15 @@ export default async function DocumentPage({
   searchParams
 }: any) {
   const { owner, name, path } = await params;
-  const { branch } = await searchParams;
+  const resolvedSearchParams = await searchParams || {};
+  const { branch, lang } = resolvedSearchParams;
 
   // 在服务端获取文档数据
   let document: DocumentData | null = null;
   let error: string | null = null;
 
   try {
-    const response = await documentById(owner, name, path, branch);
+    const response = await documentById(owner, name, path, branch, lang);
     if (response.isSuccess && response.data) {
       document = response.data as DocumentData;
     } else {
@@ -279,7 +281,7 @@ export default async function DocumentPage({
     </DocsPage>;
   }
 
-  const compiled = await RenderMarkdown({
+  const compiled = RenderMarkdown({
     markdown: document.content,
   }) as any;
 

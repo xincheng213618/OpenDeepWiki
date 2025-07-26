@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace KoalaWiki.Domains;
+namespace KoalaWiki.Domains.DocumentFile;
 
 public class DocumentCatalog : Entity<string>
 {
@@ -48,4 +48,9 @@ public class DocumentCatalog : Entity<string>
     public bool IsDeleted { get; set; } = false;
     
     public DateTime? DeletedTime { get; set; } = null;
+    
+    /// <summary>
+    /// i18n多语言支持导航属性
+    /// </summary>
+    public virtual ICollection<DocumentCatalogI18n>? I18nTranslations { get; set; }
 }

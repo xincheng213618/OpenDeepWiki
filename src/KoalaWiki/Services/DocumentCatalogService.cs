@@ -5,6 +5,7 @@ using KoalaWiki.Entities;
 using LibGit2Sharp;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using KoalaWiki.Domains.DocumentFile;
 using KoalaWiki.Domains.Warehouse;
 
 namespace KoalaWiki.Services;
@@ -18,9 +19,12 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
     /// </summary>
     /// <param name="organizationName"></param>
     /// <param name="name"></param>
+    /// <param name="branch"></param>
+    /// <param name="languageCode">语言代码，可选</param>
     /// <returns></returns>
     /// <exception cref="NotFoundException"></exception>
-    public async Task<object> GetDocumentCatalogsAsync(string organizationName, string name, string? branch)
+    public async Task<object> GetDocumentCatalogsAsync(string organizationName, string name, string? branch,
+        string? languageCode = null)
     {
         var warehouse = await dbAccess.Warehouses
             .AsNoTracking()
@@ -42,9 +46,8 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
 
         var documentCatalogs = await dbAccess.DocumentCatalogs
             .Where(x => x.WarehouseId.ToLower() == warehouse.Id.ToLower() && x.IsDeleted == false)
+            .Include(x => x.I18nTranslations)
             .ToListAsync();
-
-        string lastUpdate;
 
         var branchs =
             (await dbAccess.Warehouses
@@ -55,7 +58,7 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
                 .ToArrayAsync());
 
         int progress;
-        if(documentCatalogs.Count == 0)
+        if (documentCatalogs.Count == 0)
         {
             progress = 0;
         }
@@ -64,9 +67,13 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
             progress = documentCatalogs.Count(x => x.IsCompleted) * 100 / documentCatalogs.Count;
         }
 
+        // 检查仓库是否支持i18n
+        var supportedLanguages = await GetWarehouseSupportedLanguagesAsync(warehouse.Id);
+        var hasI18nSupport = supportedLanguages.Count > 0;
+
         return new
         {
-            items = BuildDocumentTree(documentCatalogs),
+            items = BuildDocumentTree(documentCatalogs, languageCode),
             lastUpdate = document?.LastUpdate,
             document?.Description,
             progress = progress,
@@ -76,6 +83,9 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
             document?.LikeCount,
             document?.Status,
             document?.CommentCount,
+            supportedLanguages = supportedLanguages,
+            hasI18nSupport = hasI18nSupport,
+            currentLanguage = languageCode ?? "zh-CN"
         };
     }
 
@@ -84,7 +94,7 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
     /// </summary>
     /// <returns></returns>
     public async Task GetDocumentByIdAsync(string owner, string name, string? branch,
-        string path, HttpContext httpContext)
+        string path, string? languageCode, HttpContext httpContext)
     {
         // 先根据仓库名称和组织名称找到仓库
         var query = await dbAccess.Warehouses
@@ -109,6 +119,7 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         var item = await dbAccess.DocumentFileItems
             .AsNoTracking()
             .Where(x => x.DocumentCatalogId == id)
+            .Include(x => x.I18nTranslations)
             .FirstOrDefaultAsync();
 
         if (item == null)
@@ -120,16 +131,23 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         var fileSource = await dbAccess.DocumentFileItemSources.Where(x => x.DocumentFileItemId == item.Id)
             .ToListAsync();
 
+        // 获取多语言内容
+        var localizedTitle = GetLocalizedTitle(item, languageCode);
+        var localizedContent = GetLocalizedContent(item, languageCode);
+        var localizedDescription = GetLocalizedFileDescription(item, languageCode);
+
         //md
         await httpContext.Response.WriteAsJsonAsync(new
         {
-            content = item.Content,
-            title = item.Title,
+            content = localizedContent,
+            title = localizedTitle,
+            description = localizedDescription,
             fileSource,
             address = query?.Address.Replace(".git", string.Empty),
             query?.Branch,
             lastUpdate = item.CreatedAt,
-            documentCatalogId = id
+            documentCatalogId = id,
+            currentLanguage = languageCode ?? "zh-CN"
         });
     }
 
@@ -189,11 +207,31 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
     }
 
     /// <summary>
+    /// 获取仓库支持的所有语言
+    /// </summary>
+    /// <param name="warehouseId">仓库ID</param>
+    /// <returns>支持的语言代码列表</returns>
+    private async Task<List<string>> GetWarehouseSupportedLanguagesAsync(string warehouseId)
+    {
+        return await dbAccess.DocumentCatalogI18ns
+            .AsNoTracking()
+            .Join(dbAccess.DocumentCatalogs.AsNoTracking(),
+                i18n => i18n.DocumentCatalogId,
+                catalog => catalog.Id,
+                (i18n, catalog) => new { i18n.LanguageCode, catalog.WarehouseId })
+            .Where(x => x.WarehouseId == warehouseId)
+            .Select(x => x.LanguageCode)
+            .Distinct()
+            .ToListAsync();
+    }
+
+    /// <summary>
     /// 递归构建文档目录树形结构
     /// </summary>
     /// <param name="documents">所有文档目录列表</param>
+    /// <param name="languageCode">语言代码</param>
     /// <returns>树形结构文档目录</returns>
-    private List<object> BuildDocumentTree(List<DocumentCatalog> documents)
+    private List<object> BuildDocumentTree(List<DocumentCatalog> documents, string? languageCode = null)
     {
         var result = new List<object>();
 
@@ -202,14 +240,19 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
 
         foreach (var item in topLevel)
         {
-            var children = GetChildren(item.Id, documents);
+            var children = GetChildren(item.Id, documents, languageCode);
+
+            // 获取多语言名称和描述
+            var displayName = GetLocalizedName(item, languageCode);
+            var displayDescription = GetLocalizedDescription(item, languageCode);
+
             if (children == null || children.Count == 0)
             {
                 result.Add(new
                 {
-                    label = item.Name,
+                    label = displayName,
                     Url = item.Url,
-                    item.Description,
+                    Description = displayDescription,
                     key = item.Id,
                     lastUpdate = item.CreatedAt,
                     // 是否启用
@@ -220,8 +263,8 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
             {
                 result.Add(new
                 {
-                    label = item.Name,
-                    item.Description,
+                    label = displayName,
+                    Description = displayDescription,
                     Url = item.Url,
                     key = item.Id,
                     lastUpdate = item.CreatedAt,
@@ -236,12 +279,98 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
     }
 
     /// <summary>
+    /// 获取本地化名称
+    /// </summary>
+    /// <param name="catalog">文档目录</param>
+    /// <param name="languageCode">语言代码</param>
+    /// <returns>本地化名称</returns>
+    private string GetLocalizedName(DocumentCatalog catalog, string? languageCode)
+    {
+        if (string.IsNullOrEmpty(languageCode) || catalog.I18nTranslations == null)
+        {
+            return catalog.Name;
+        }
+
+        var translation = catalog.I18nTranslations.FirstOrDefault(x => x.LanguageCode == languageCode);
+        return translation?.Name ?? catalog.Name;
+    }
+
+    /// <summary>
+    /// 获取本地化描述
+    /// </summary>
+    /// <param name="catalog">文档目录</param>
+    /// <param name="languageCode">语言代码</param>
+    /// <returns>本地化描述</returns>
+    private string GetLocalizedDescription(DocumentCatalog catalog, string? languageCode)
+    {
+        if (string.IsNullOrEmpty(languageCode) || catalog.I18nTranslations == null)
+        {
+            return catalog.Description;
+        }
+
+        var translation = catalog.I18nTranslations.FirstOrDefault(x => x.LanguageCode == languageCode);
+        return translation?.Description ?? catalog.Description;
+    }
+
+    /// <summary>
+    /// 获取本地化文件标题
+    /// </summary>
+    /// <param name="fileItem">文档文件</param>
+    /// <param name="languageCode">语言代码</param>
+    /// <returns>本地化标题</returns>
+    private string GetLocalizedTitle(DocumentFileItem fileItem, string? languageCode)
+    {
+        if (string.IsNullOrEmpty(languageCode) || fileItem.I18nTranslations == null)
+        {
+            return fileItem.Title;
+        }
+
+        var translation = fileItem.I18nTranslations.FirstOrDefault(x => x.LanguageCode == languageCode);
+        return translation?.Title ?? fileItem.Title;
+    }
+
+    /// <summary>
+    /// 获取本地化文件内容
+    /// </summary>
+    /// <param name="fileItem">文档文件</param>
+    /// <param name="languageCode">语言代码</param>
+    /// <returns>本地化内容</returns>
+    private string GetLocalizedContent(DocumentFileItem fileItem, string? languageCode)
+    {
+        if (string.IsNullOrEmpty(languageCode) || fileItem.I18nTranslations == null)
+        {
+            return fileItem.Content;
+        }
+
+        var translation = fileItem.I18nTranslations.FirstOrDefault(x => x.LanguageCode == languageCode);
+        return translation?.Content ?? fileItem.Content;
+    }
+
+    /// <summary>
+    /// 获取本地化文件描述
+    /// </summary>
+    /// <param name="fileItem">文档文件</param>
+    /// <param name="languageCode">语言代码</param>
+    /// <returns>本地化描述</returns>
+    private string GetLocalizedFileDescription(DocumentFileItem fileItem, string? languageCode)
+    {
+        if (string.IsNullOrEmpty(languageCode) || fileItem.I18nTranslations == null)
+        {
+            return fileItem.Description;
+        }
+
+        var translation = fileItem.I18nTranslations.FirstOrDefault(x => x.LanguageCode == languageCode);
+        return translation?.Description ?? fileItem.Description;
+    }
+
+    /// <summary>
     /// 递归获取子目录
     /// </summary>
     /// <param name="parentId">父目录ID</param>
     /// <param name="documents">所有文档目录列表</param>
+    /// <param name="languageCode">语言代码</param>
     /// <returns>子目录列表</returns>
-    private List<object> GetChildren(string parentId, List<DocumentCatalog> documents)
+    private List<object> GetChildren(string parentId, List<DocumentCatalog> documents, string? languageCode = null)
     {
         var children = new List<object>();
         var directChildren = documents.Where(x => x.ParentId == parentId).OrderBy(x => x.Order).ToList();
@@ -249,17 +378,21 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         foreach (var child in directChildren)
         {
             // 递归获取子目录的子目录
-            var subChildren = GetChildren(child.Id, documents);
+            var subChildren = GetChildren(child.Id, documents, languageCode);
+
+            // 获取多语言名称和描述
+            var displayName = GetLocalizedName(child, languageCode);
+            var displayDescription = GetLocalizedDescription(child, languageCode);
 
             if (subChildren == null || subChildren.Count == 0)
             {
                 children.Add(new
                 {
-                    label = child.Name,
+                    label = displayName,
                     lastUpdate = child.CreatedAt,
                     Url = child.Url,
                     key = child.Id,
-                    child.Description,
+                    Description = displayDescription,
                     // 是否启用
                     disabled = child.IsCompleted == false
                 });
@@ -268,10 +401,10 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
             {
                 children.Add(new
                 {
-                    label = child.Name,
+                    label = displayName,
                     key = child.Id,
                     Url = child.Url,
-                    child.Description,
+                    Description = displayDescription,
                     lastUpdate = child.CreatedAt,
                     children = subChildren,
                     // 是否启用

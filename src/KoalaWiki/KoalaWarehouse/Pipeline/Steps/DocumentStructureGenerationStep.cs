@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using KoalaWiki.Domains.DocumentFile;
 using KoalaWiki.Entities;
 using KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 

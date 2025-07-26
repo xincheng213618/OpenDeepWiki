@@ -23,6 +23,12 @@ public interface IKoalaWikiContext
     public DbSet<DocumentFileItem> DocumentFileItems { get; set; }
 
     public DbSet<DocumentFileItemSource> DocumentFileItemSources { get; set; }
+    
+    public DbSet<DocumentCatalogI18n> DocumentCatalogI18ns { get; set; }
+    
+    public DbSet<DocumentFileItemI18n> DocumentFileItemI18ns { get; set; }
+    
+    public DbSet<TranslationTask> TranslationTasks { get; set; }
 
     public DbSet<DocumentOverview> DocumentOverviews { get; set; }
 
