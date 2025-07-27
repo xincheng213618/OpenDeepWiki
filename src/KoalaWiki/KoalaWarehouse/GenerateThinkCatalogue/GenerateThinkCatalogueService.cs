@@ -98,13 +98,6 @@ public static partial class GenerateThinkCatalogueService
         string path, string gitRepository, string catalogue,
         Warehouse warehouse, ClassifyType? classify, int attemptNumber)
     {
-        // 构建提示词
-        string promptName = nameof(PromptConstant.Warehouse.AnalyzeCatalogue);
-        if (classify.HasValue)
-        {
-            promptName += classify;
-        }
-
         // 根据尝试次数调整提示词策略
         var enhancedPrompt = await GenerateThinkCataloguePromptAsync(classify, catalogue, attemptNumber);
 
@@ -152,7 +145,6 @@ public static partial class GenerateThinkCatalogueService
         var settings = new OpenAIPromptExecutionSettings()
         {
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-            Temperature = Math.Max(0.1, 0.7 - (attemptNumber * 0.1)), // 随着重试次数增加降低温度
             MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.AnalysisModel)
         };
 

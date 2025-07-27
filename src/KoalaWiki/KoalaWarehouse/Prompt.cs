@@ -16,9 +16,9 @@ public static class Prompt
         }
     }
 
-    public static string Language => $"\nPlease communicate with me in {_language}\n";
+    public static string Language => $"\nYou must communicate with me in {_language}.\n";
 
-    public static string AnalyzeNewCatalogue =
+    public static readonly string AnalyzeNewCatalogue =
         """
         You are an expert AI assistant specialized in incremental document structure analysis for code repositories. Your task is to perform precise, conservative updates to existing documentation based on code changes while preserving valuable content.
 

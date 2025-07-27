@@ -13,7 +13,8 @@ public partial class GenerateThinkCatalogueService
             new KernelArguments()
             {
                 ["code_files"] = catalogue,
-                ["projectType"] = projectType
+                ["projectType"] = projectType,
+                ["language"] = Prompt.Language
             }, OpenAIOptions.AnalysisModel);
 
 
