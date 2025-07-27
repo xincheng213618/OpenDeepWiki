@@ -1,5 +1,3 @@
-import { ApiResponse } from './types';
-
 // 翻译任务状态
 export type TranslationTaskStatus = 'Pending' | 'Running' | 'Completed' | 'Failed' | 'Cancelled';
 
@@ -55,7 +53,7 @@ export interface SupportedLanguage {
 /**
  * 启动仓库翻译任务
  */
-export async function startRepositoryTranslation(request: StartTranslationRequest): Promise<ApiResponse<{ taskId: string; message: string }>> {
+export async function startRepositoryTranslation(request: StartTranslationRequest): Promise<any> {
   const response = await fetch('/api/translation/repository', {
     method: 'POST',
     headers: {
@@ -75,7 +73,7 @@ export async function startRepositoryTranslation(request: StartTranslationReques
 /**
  * 启动目录翻译任务
  */
-export async function startCatalogTranslation(request: StartCatalogTranslationRequest): Promise<ApiResponse<{ taskId: string; message: string }>> {
+export async function startCatalogTranslation(request: StartCatalogTranslationRequest): Promise<any> {
   const response = await fetch('/api/translation/catalog', {
     method: 'POST',
     headers: {
@@ -95,7 +93,7 @@ export async function startCatalogTranslation(request: StartCatalogTranslationRe
 /**
  * 获取翻译任务状态
  */
-export async function getTranslationTaskStatus(taskId: string): Promise<ApiResponse<TranslationTask>> {
+export async function getTranslationTaskStatus(taskId: string): Promise<any> {
   const response = await fetch(`/api/translation/task/${taskId}`);
 
   if (!response.ok) {
@@ -112,7 +110,7 @@ export async function getTranslationTaskStatus(taskId: string): Promise<ApiRespo
 export async function getRepositoryTranslationTasks(
   warehouseId: string, 
   targetLanguage?: string
-): Promise<ApiResponse<TranslationTask[]>> {
+): Promise<any> {
   const params = new URLSearchParams();
   if (targetLanguage) {
     params.append('targetLanguage', targetLanguage);
@@ -132,7 +130,7 @@ export async function getRepositoryTranslationTasks(
 /**
  * 获取仓库语言状态
  */
-export async function getRepositoryLanguageStatus(warehouseId: string): Promise<ApiResponse<LanguageStatusInfo[]>> {
+export async function getRepositoryLanguageStatus(warehouseId: string): Promise<any> {
   const response = await fetch(`/api/translation/repository/${warehouseId}/languages`);
 
   if (!response.ok) {
@@ -146,7 +144,7 @@ export async function getRepositoryLanguageStatus(warehouseId: string): Promise<
 /**
  * 获取支持的语言列表
  */
-export async function getSupportedLanguages(): Promise<ApiResponse<SupportedLanguage[]>> {
+export async function getSupportedLanguages(): Promise<any> {
   const response = await fetch('/api/translation/languages');
 
   if (!response.ok) {
