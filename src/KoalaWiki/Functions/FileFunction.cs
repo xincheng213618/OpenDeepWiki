@@ -138,10 +138,12 @@ public class FileFunction(string gitPath)
                    "</system-reminder>";
         }
 
+        items = items.Distinct().ToArray();
+
         var dic = new Dictionary<string, string>();
         foreach (var item in items)
         {
-            dic.Add($"fileName:{item.FilePath}",
+            dic.Add($"fileName:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit,
                 await ReadItem(item.FilePath, item.Offset, item.Limit));
         }
 

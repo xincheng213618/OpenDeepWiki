@@ -39,7 +39,7 @@ public static partial class GenerateThinkCatalogueService
             try
             {
                 var result =
-                    await ExecuteSingleAttempt(path, gitRepository, catalogue, warehouse, classify, retryCount);
+                    await ExecuteSingleAttempt(path, catalogue, warehouse, classify, retryCount);
 
                 if (result != null)
                 {
@@ -95,7 +95,7 @@ public static partial class GenerateThinkCatalogueService
     }
 
     private static async Task<DocumentResultCatalogue?> ExecuteSingleAttempt(
-        string path, string gitRepository, string catalogue,
+        string path, string catalogue,
         Warehouse warehouse, ClassifyType? classify, int attemptNumber)
     {
         // 根据尝试次数调整提示词策略

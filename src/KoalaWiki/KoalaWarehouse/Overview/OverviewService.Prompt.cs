@@ -16,7 +16,8 @@ public partial class OverviewService
                 ["git_repository"] = gitRepository.Replace(".git", ""),
                 ["branch"] = branch,
                 ["readme"] = readme,
-                ["projectType"] = projectType
+                ["projectType"] = projectType,
+                ["language"] = Prompt.Language
             }, OpenAIOptions.ChatModel);
     }
 
