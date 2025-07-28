@@ -981,45 +981,45 @@ public class WarehouseService(
         }
 
         // Fetch fresh data only for repositories that need it
-        if (reposNeedingUpdate.Any())
-        {
-            var repositoryInfo = await gitRepositoryService.GetRepoInfoAsync(reposNeedingUpdate.ToArray());
-
-            foreach (var info in repositoryInfo)
-            {
-                var matchingDto = dto.FirstOrDefault(x => 
-                    x.Address.Replace(".git", "").Equals(info.RepoUrl.Replace(".git", ""), 
-                        StringComparison.InvariantCultureIgnoreCase));
-                
-                if (matchingDto != null)
-                {
-                    matchingDto.Stars = info.Stars;
-                    matchingDto.Forks = info.Forks;
-                    matchingDto.AvatarUrl = info.AvatarUrl;
-                    matchingDto.OwnerUrl = info.OwnerUrl;
-                    matchingDto.Language = info.Language;
-                    matchingDto.License = info.License;
-                    matchingDto.Error = info.Error;
-                    matchingDto.Success = info.Success;
-
-                    if (!string.IsNullOrEmpty(info.Description))
-                    {
-                        matchingDto.Description = info.Description;
-                    }
-
-                    // Update database with fresh data if API call was successful
-                    var warehouseEntity = list.FirstOrDefault(x => x.Id == matchingDto.Id);
-                    if (warehouseEntity != null && info.Success)
-                    {
-                        await koala.Warehouses
-                            .Where(w => w.Id == warehouseEntity.Id)
-                            .ExecuteUpdateAsync(w => w
-                                .SetProperty(p => p.Stars, info.Stars)
-                                .SetProperty(p => p.Forks, info.Forks));
-                    }
-                }
-            }
-        }
+        // if (reposNeedingUpdate.Any())
+        // {
+        //     var repositoryInfo = await gitRepositoryService.GetRepoInfoAsync(reposNeedingUpdate.ToArray());
+        //
+        //     foreach (var info in repositoryInfo)
+        //     {
+        //         var matchingDto = dto.FirstOrDefault(x => 
+        //             x.Address.Replace(".git", "").Equals(info.RepoUrl.Replace(".git", ""), 
+        //                 StringComparison.InvariantCultureIgnoreCase));
+        //         
+        //         if (matchingDto != null)
+        //         {
+        //             matchingDto.Stars = info.Stars;
+        //             matchingDto.Forks = info.Forks;
+        //             matchingDto.AvatarUrl = info.AvatarUrl;
+        //             matchingDto.OwnerUrl = info.OwnerUrl;
+        //             matchingDto.Language = info.Language;
+        //             matchingDto.License = info.License;
+        //             matchingDto.Error = info.Error;
+        //             matchingDto.Success = info.Success;
+        //
+        //             if (!string.IsNullOrEmpty(info.Description))
+        //             {
+        //                 matchingDto.Description = info.Description;
+        //             }
+        //
+        //             // Update database with fresh data if API call was successful
+        //             var warehouseEntity = list.FirstOrDefault(x => x.Id == matchingDto.Id);
+        //             if (warehouseEntity != null && info.Success)
+        //             {
+        //                 await koala.Warehouses
+        //                     .Where(w => w.Id == warehouseEntity.Id)
+        //                     .ExecuteUpdateAsync(w => w
+        //                         .SetProperty(p => p.Stars, info.Stars)
+        //                         .SetProperty(p => p.Forks, info.Forks));
+        //             }
+        //         }
+        //     }
+        // }
 
         // Clean up sensitive fields for DTO
         foreach (var repository in dto)
