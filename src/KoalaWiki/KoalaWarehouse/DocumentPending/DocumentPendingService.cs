@@ -172,7 +172,6 @@ public partial class DocumentPendingService
         int retryCount = 0;
         const int retries = 5;
         var files = new List<string>();
-        DocumentContext.DocumentStore = new DocumentStore();
 
         while (true)
         {
@@ -184,10 +183,8 @@ public partial class DocumentPendingService
                 }
 
                 Log.Logger.Information("处理仓库；{path} ,处理标题：{name}", path, catalog.Name);
-                var fileItem = await ProcessCatalogueItems(catalog, kernel, catalogue, gitRepository, branch, path,
-                    classifyType);
-                files.AddRange(DocumentContext.DocumentStore.Files);
-
+                var fileItem = await ProcessCatalogueItems(catalog, catalogue, gitRepository, branch, path,
+                    classifyType, files);
                 // ProcessCatalogueItems内部已经进行了质量验证，这里只做最终检查
                 if (fileItem == null)
                 {
@@ -239,10 +236,11 @@ public partial class DocumentPendingService
     /// <summary>
     /// 处理每一个标题产生文件内容
     /// </summary>
-    private static async Task<DocumentFileItem> ProcessCatalogueItems(DocumentCatalog catalog, Kernel kernel,
+    private static async Task<DocumentFileItem> ProcessCatalogueItems(DocumentCatalog catalog,
         string codeFiles,
-        string gitRepository, string branch, string path, ClassifyType? classify)
+        string gitRepository, string branch, string path, ClassifyType? classify, List<string> files)
     {
+        DocumentContext.DocumentStore = new DocumentStore();
         // 为每个文档处理创建独立的Kernel实例，避免状态管理冲突
         var documentKernel = KernelFactory.GetKernel(
             OpenAIOptions.Endpoint,
@@ -441,6 +439,8 @@ public partial class DocumentPendingService
             Title = catalog.Name,
         };
 
+        files.AddRange(DocumentContext.DocumentStore.Files);
+
         return fileItem;
     }
 
@@ -470,6 +470,7 @@ public partial class DocumentPendingService
                 validationIssues.Add("文档内容为空");
                 return (false, string.Join("; ", validationIssues), metrics);
             }
+
             // 设置整体质量评分
             metrics.QualityScore = CalculateQualityScore(metrics, validationIssues.Count);
 

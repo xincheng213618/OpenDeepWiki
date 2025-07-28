@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -7,8 +8,8 @@ using FastService;
 using KoalaWiki.Domains.Users;
 using KoalaWiki.Dto;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore;
 using Octokit;
+using ProductHeaderValue = Octokit.ProductHeaderValue;
 using User = KoalaWiki.Domains.Users.User;
 
 namespace KoalaWiki.Services;
@@ -185,6 +186,168 @@ public class AuthService(
         {
             logger.LogError(ex, "用户注册失败");
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Gitee登录
+    /// </summary>
+    /// <param name="code">授权码</param>
+    /// <returns>登录结果</returns>
+    public async Task<LoginDto> GiteeLoginAsync(string code)
+    {
+        try
+        {
+            var clientId = configuration["Gitee:ClientId"];
+            var clientSecret = configuration["Gitee:ClientSecret"];
+            var redirectUri = configuration["Gitee:RedirectUri"];
+
+            if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
+            {
+                return new LoginDto(false, string.Empty, null, null, "Gitee配置错误");
+            }
+
+            // 获取访问令牌
+            using var httpClient = new HttpClient();
+            var tokenRequest = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("grant_type", "authorization_code"),
+                new KeyValuePair<string, string>("code", code),
+                new KeyValuePair<string, string>("client_id", clientId),
+                new KeyValuePair<string, string>("client_secret", clientSecret),
+                new KeyValuePair<string, string>("redirect_uri", redirectUri ?? "")
+            });
+
+            var tokenResponse = await httpClient.PostAsync("https://gitee.com/oauth/token", tokenRequest);
+            if (!tokenResponse.IsSuccessStatusCode)
+            {
+                return new LoginDto(false, string.Empty, null, null, "Gitee授权失败");
+            }
+
+            var tokenContent = await tokenResponse.Content.ReadAsStringAsync();
+            var tokenData = JsonSerializer.Deserialize<JsonElement>(tokenContent);
+            
+            if (!tokenData.TryGetProperty("access_token", out var accessTokenElement))
+            {
+                return new LoginDto(false, string.Empty, null, null, "获取Gitee访问令牌失败");
+            }
+
+            var accessToken = accessTokenElement.GetString();
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return new LoginDto(false, string.Empty, null, null, "Gitee访问令牌为空");
+            }
+
+            // 获取用户信息
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var userResponse = await httpClient.GetAsync("https://gitee.com/api/v5/user");
+            
+            if (!userResponse.IsSuccessStatusCode)
+            {
+                return new LoginDto(false, string.Empty, null, null, "获取Gitee用户信息失败");
+            }
+
+            var userContent = await userResponse.Content.ReadAsStringAsync();
+            var userData = JsonSerializer.Deserialize<JsonElement>(userContent);
+
+            var giteeUserId = userData.GetProperty("id").GetInt64().ToString();
+            var giteeLogin = userData.GetProperty("login").GetString() ?? "";
+            var giteeEmail = userData.TryGetProperty("email", out var emailElement) ? emailElement.GetString() : "";
+            var giteeAvatar = userData.TryGetProperty("avatar_url", out var avatarElement) ? avatarElement.GetString() : "";
+
+            // 查询用户是否存在
+            var userInAuth = await dbContext.UserInAuths.FirstOrDefaultAsync(u =>
+                u.Id == giteeUserId && u.Provider == "Gitee");
+
+            User user = null;
+            if (userInAuth != null)
+            {
+                user = await dbContext.Users
+                    .FirstOrDefaultAsync(u => u.Id == userInAuth.UserId);
+            }
+
+            // 用户不存在，自动注册
+            if (user == null)
+            {
+                user = new User
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Name = giteeLogin,
+                    Email = giteeEmail ?? string.Empty,
+                    Password = Guid.NewGuid().ToString(), // 随机密码
+                    Avatar = giteeAvatar,
+                    CreatedAt = DateTime.UtcNow,
+                };
+
+                // 绑定Gitee账号
+                userInAuth = new UserInAuth
+                {
+                    Id = giteeUserId,
+                    UserId = user.Id,
+                    Provider = "Gitee",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // 获取普通用户角色
+                var userRole = await dbContext.Roles
+                    .FirstOrDefaultAsync(r => r.Name == "user");
+
+                await dbContext.UserInRoles.AddAsync(new UserInRole
+                {
+                    UserId = user.Id,
+                    RoleId = userRole!.Id
+                });
+
+                // 保存用户
+                await dbContext.Users.AddAsync(user);
+                await dbContext.UserInAuths.AddAsync(userInAuth);
+                await dbContext.SaveChangesAsync();
+            }
+
+            // 更新登录信息
+            user.LastLoginAt = DateTime.UtcNow;
+            user.LastLoginIp = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+            if (httpContextAccessor.HttpContext?.Request.Headers["x-forwarded-for"].Count > 0)
+            {
+                user.LastLoginIp = httpContextAccessor.HttpContext.Request.Headers["x-forwarded-for"];
+            }
+            else if (httpContextAccessor.HttpContext?.Request.Headers["x-real-ip"].Count > 0)
+            {
+                user.LastLoginIp = httpContextAccessor.HttpContext.Request.Headers["x-real-ip"];
+            }
+
+            await dbContext.SaveChangesAsync();
+
+            // 获取当前用户的角色
+            var roleIds = await dbContext.UserInRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Select(x => x.RoleId)
+                .ToListAsync();
+
+            var roles = await dbContext.Roles
+                .Where(r => roleIds.Contains(r.Id))
+                .ToListAsync();
+
+            // 生成JWT令牌
+            var jwtToken = GenerateJwtToken(user, roles);
+            var refreshToken = GenerateRefreshToken(user);
+
+            var userDto = mapper.Map<UserInfoDto>(user);
+            userDto.Role = string.Join(',', roles.Select(x => x.Name));
+
+            // 设置到cookie
+            httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", refreshToken,
+                CreateCookieOptions(jwtOptions.RefreshExpireMinutes));
+            httpContextAccessor.HttpContext?.Response.Cookies.Append("token", jwtToken,
+                CreateCookieOptions(jwtOptions.ExpireMinutes));
+
+            return new LoginDto(true, jwtToken, refreshToken, userDto, null);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Gitee登录失败");
+            return new LoginDto(false, string.Empty, null, null, "Gitee登录失败，请稍后再试");
         }
     }
 
@@ -616,6 +779,19 @@ public class AuthService(
                 Icon = "https://www.google.com/favicon.ico",
                 ClientId = configuration["Google:ClientId"] ?? string.Empty,
                 RedirectUri = configuration["Google:RedirectUri"] ?? string.Empty
+            });
+        }
+
+        // 检查Gitee配置
+        if (!string.IsNullOrEmpty(configuration["Gitee:ClientId"]) &&
+            !string.IsNullOrEmpty(configuration["Gitee:ClientSecret"]))
+        {
+            supportedLogins.Add(new SupportedThirdPartyLoginsDto
+            {
+                Name = "Gitee",
+                Icon = "https://gitee.com/favicon.ico",
+                ClientId = configuration["Gitee:ClientId"] ?? string.Empty,
+                RedirectUri = configuration["Gitee:RedirectUri"] ?? string.Empty
             });
         }
 

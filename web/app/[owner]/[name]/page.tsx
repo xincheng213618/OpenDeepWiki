@@ -19,7 +19,7 @@ export default async function RepositoryPage({ params, searchParams }: any) {
 
   const { t } = await getTranslation(lng, 'common');
 
-    const { owner, name } = await params;
+  const { owner, name } = await params;
   const { branch, lang } = await searchParams;
 
   if (!owner || !name) {
@@ -28,14 +28,13 @@ export default async function RepositoryPage({ params, searchParams }: any) {
 
   // 获取文档目录数据，检查是否有菜单项
   const languageCode = lang || 'zh-CN';
-  
+
   try {
     const catalogResponse = await documentCatalog(owner, name, branch, languageCode);
-    
+
     // 如果有目录数据且存在菜单项，重定向到第一个菜单项
     if (catalogResponse.success && catalogResponse.data?.items && catalogResponse.data.items.length > 0) {
       const firstMenuItem = catalogResponse.data.items[0]
-      console.log('firstMenuItem', firstMenuItem);
       if (firstMenuItem?.url) {
         // 重定向到第一个菜单项
         redirect(`/${owner}/${name}/${firstMenuItem.url}`);

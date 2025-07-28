@@ -209,6 +209,11 @@ public class FileFunction(string gitPath)
                 limit = int.MaxValue;
             }
 
+            if (DocumentContext.DocumentStore?.Files != null)
+            {
+                DocumentContext.DocumentStore.Files.Add(filePath);
+            }
+
             // 先读取整个文件内容
             string fileContent = await File.ReadAllTextAsync(filePath);
 

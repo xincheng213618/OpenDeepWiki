@@ -132,6 +132,33 @@ export const googleLogin = async (idToken: string): Promise<LoginResponse> => {
   }
 };
 
+// Gitee登录
+export const giteeLogin = async (code: string): Promise<LoginResponse> => {
+  try {
+    const response = await fetch(`${API_URL}/api/Auth/GiteeLogin?code=${encodeURIComponent(code)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Gitee登录请求失败');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Gitee登录错误:', error);
+    return {
+      item1: false,
+      item2: error instanceof Error ? error.message : 'Gitee登录失败',
+      item3: '',
+      item4: null,
+      item5: ''
+    };
+  }
+};
+
 // 刷新令牌
 export const refreshToken = async (refreshToken: string): Promise<RefreshTokenResponse> => {
   try {

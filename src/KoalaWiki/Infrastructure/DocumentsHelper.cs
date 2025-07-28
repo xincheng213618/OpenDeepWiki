@@ -27,13 +27,15 @@ public class DocumentsHelper
         foreach (var item in items)
         {
             item.title = item.title.Replace(" ", "");
+            
+            var url = string.IsNullOrEmpty(parentTitle) ? item.title : $"{parentTitle}_{item.title}";
             var documentItem = new DocumentCatalog
             {
                 WarehouseId = warehouse.Id,
                 Description = item.title,
                 Id = Guid.NewGuid() + item.title,
                 Name = item.name,
-                Url = parentTitle + "_" + item.title,
+                Url = url,
                 DucumentId = document.Id,
                 ParentId = parentId,
                 Prompt = item.prompt,
