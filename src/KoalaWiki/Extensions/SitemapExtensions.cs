@@ -26,15 +26,6 @@ public static class SitemapExtensions
             .ToListAsync();
 
         var sb = new StringBuilder();
-        // 关键xml
-        foreach (var warehouseUrl in warehouses.Select(warehouse => string.Format(UrlTemplate,
-                     $"https://{context.Request.Host}/{warehouse.OrganizationName}/{warehouse.Name}",
-                     "weekly",
-                     "0.5")))
-        {
-            sb.Append(warehouseUrl);
-        }
-
         foreach (var catalogUrl in from catalog in catalogs let warehouse = warehouses
                      .FirstOrDefault(x => x.Id == catalog.WarehouseId) select string.Format(UrlTemplate,
                      $"https://{context.Request.Host}/{warehouse?.OrganizationName}/{warehouse?.Name}/{catalog.Url}",

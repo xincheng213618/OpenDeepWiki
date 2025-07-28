@@ -5,14 +5,13 @@ using KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 
 namespace KoalaWiki.KoalaWarehouse.Pipeline.Steps;
 
-public class DocumentStructureGenerationStep : DocumentProcessingStepBase<DocumentProcessingContext, DocumentProcessingContext>
+public sealed class DocumentStructureGenerationStep(ILogger<DocumentStructureGenerationStep> logger)
+    : DocumentProcessingStepBase<DocumentProcessingContext, DocumentProcessingContext>(logger)
 {
-    public DocumentStructureGenerationStep(ILogger<DocumentStructureGenerationStep> logger) : base(logger) { }
-
     public override string StepName => "生成目录结构";
 
     public override async Task<DocumentProcessingContext> ExecuteAsync(
-        DocumentProcessingContext context, 
+        DocumentProcessingContext context,
         CancellationToken cancellationToken = default)
     {
         using var activity = ActivitySource.StartActivity(StepName);
@@ -23,20 +22,20 @@ public class DocumentStructureGenerationStep : DocumentProcessingStepBase<Docume
         try
         {
             var result = await GenerateThinkCatalogueService.GenerateCatalogue(
-                context.Document.GitPath, 
-                context.GitRepository, 
+                context.Document.GitPath,
                 context.Catalogue ?? string.Empty,
                 context.Warehouse,
                 context.Classification);
 
             var documentCatalogs = new List<DocumentCatalog>();
-            
+
             // 递归处理目录层次结构
             DocumentsHelper.ProcessCatalogueItems(
-                result.items, 
-                null, 
-                context.Warehouse, 
-                context.Document, 
+                result.items,
+                null,
+                null,
+                context.Warehouse,
+                context.Document,
                 documentCatalogs);
 
             // 设置目录项属性
@@ -60,8 +59,8 @@ public class DocumentStructureGenerationStep : DocumentProcessingStepBase<Docume
             context.DocumentCatalogs = documentCatalogs;
             activity?.SetTag("documents.count", documentCatalogs.Count);
             context.SetStepResult(StepName, documentCatalogs);
-            
-            Logger.LogInformation("完成 {StepName} 步骤，生成文档数量: {Count}", 
+
+            Logger.LogInformation("完成 {StepName} 步骤，生成文档数量: {Count}",
                 StepName, documentCatalogs.Count);
         }
         catch (Exception ex)

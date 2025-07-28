@@ -13,15 +13,17 @@ public class DocumentsHelper
     /// 处理目录项，递归生成文档目录
     /// </summary>
     /// <param name="items"></param>
-    /// <param name="parentId"></param>
+    /// <param name="parentId">上级id</param>
+    /// <param name="parentTitle">上级标题</param>
     /// <param name="warehouse"></param>
     /// <param name="document"></param>
     /// <param name="documents"></param>
     public static void ProcessCatalogueItems(List<DocumentResultCatalogueItem> items, string? parentId,
+        string? parentTitle,
         Warehouse warehouse,
         Document document, List<DocumentCatalog> documents)
     {
-        int order = 0; // 创建排序计数器
+        var order = 0; // 创建排序计数器
         foreach (var item in items)
         {
             item.title = item.title.Replace(" ", "");
@@ -31,7 +33,7 @@ public class DocumentsHelper
                 Description = item.title,
                 Id = Guid.NewGuid() + item.title,
                 Name = item.name,
-                Url = item.title,
+                Url = parentTitle + "_" + item.title,
                 DucumentId = document.Id,
                 ParentId = parentId,
                 Prompt = item.prompt,
@@ -41,7 +43,7 @@ public class DocumentsHelper
             documents.Add(documentItem);
 
             if (item.children != null)
-                ProcessCatalogueItems(item.children.ToList(), documentItem.Id, warehouse, document,
+                ProcessCatalogueItems(item.children.ToList(), documentItem.Id, documentItem.Url, warehouse, document,
                     documents);
         }
     }

@@ -25,7 +25,7 @@ public static partial class GenerateThinkCatalogueService
         UnknownError // 未知错误
     }
 
-    public static async Task<DocumentResultCatalogue?> GenerateCatalogue(string path, string gitRepository,
+    public static async Task<DocumentResultCatalogue?> GenerateCatalogue(string path,
         string catalogue, Warehouse warehouse, ClassifyType? classify)
     {
         var retryCount = 0;
@@ -176,7 +176,7 @@ public static partial class GenerateThinkCatalogueService
         }
 
         // 多策略JSON提取
-        return await ExtractAndParseJson(str.ToString(), warehouse.Name, attemptNumber);
+        return ExtractAndParseJson(str.ToString(), warehouse.Name, attemptNumber);
     }
 
     private static async Task<string> RefineResponse(
@@ -219,7 +219,7 @@ public static partial class GenerateThinkCatalogueService
         }
     }
 
-    private static async Task<DocumentResultCatalogue?> ExtractAndParseJson(
+    private static DocumentResultCatalogue? ExtractAndParseJson(
         string responseText, string warehouseName, int attemptNumber)
     {
         var extractedJson = ExtractJsonWithMultipleStrategies(responseText, attemptNumber);
@@ -233,7 +233,7 @@ public static partial class GenerateThinkCatalogueService
         Log.Logger.Debug("提取的JSON内容长度：{length}，尝试次数：{attempt}", extractedJson.Length, attemptNumber + 1);
 
         // 多种JSON解析策略
-        return await ParseJsonWithFallback(extractedJson, warehouseName, attemptNumber);
+        return ParseJsonWithFallback(extractedJson, warehouseName, attemptNumber);
     }
 
     private static string ExtractJsonWithMultipleStrategies(string responseText, int attemptNumber)
@@ -309,7 +309,7 @@ public static partial class GenerateThinkCatalogueService
         return string.Empty;
     }
 
-    private static async Task<DocumentResultCatalogue?> ParseJsonWithFallback(
+    private static DocumentResultCatalogue? ParseJsonWithFallback(
         string jsonContent, string warehouseName, int attemptNumber)
     {
         var parsers = new List<Func<string, DocumentResultCatalogue?>>

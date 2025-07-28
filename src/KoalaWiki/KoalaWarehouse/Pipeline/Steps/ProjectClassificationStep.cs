@@ -1,7 +1,4 @@
 using System.Diagnostics;
-using KoalaWiki.Domains;
-using KoalaWiki.KoalaWarehouse.Overview;
-using KoalaWiki.Options;
 
 namespace KoalaWiki.KoalaWarehouse.Pipeline.Steps;
 
@@ -55,7 +52,7 @@ public class ProjectClassificationStep : DocumentProcessingStepBase<DocumentProc
             
             // 更新数据库
             await context.DbContext.Warehouses.Where(x => x.Id == context.Warehouse.Id)
-                .ExecuteUpdateAsync(x => x.SetProperty(y => y.Classify, classify));
+                .ExecuteUpdateAsync(x => x.SetProperty(y => y.Classify, classify), cancellationToken: cancellationToken);
             
             context.SetStepResult(StepName, classify);
             
