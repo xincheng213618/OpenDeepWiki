@@ -470,15 +470,6 @@ public partial class DocumentPendingService
                 validationIssues.Add("文档内容为空");
                 return (false, string.Join("; ", validationIssues), metrics);
             }
-
-            // 2. Mermaid图表验证
-            var mermaidRegex = new Regex(@"```mermaid\s*([\s\S]*?)```", RegexOptions.Multiline);
-            metrics.MermaidDiagramCount = mermaidRegex.Matches(content).Count;
-            if (metrics.MermaidDiagramCount < MinMermaidDiagrams)
-            {
-                validationIssues.Add($"Mermaid图表数量不足: {metrics.MermaidDiagramCount} 个 (最少需要{MinMermaidDiagrams}个)");
-            }
-
             // 设置整体质量评分
             metrics.QualityScore = CalculateQualityScore(metrics, validationIssues.Count);
 
@@ -512,9 +503,6 @@ public partial class DocumentPendingService
         if (metrics.ContentLength < MinContentLength) score -= 20;
         else if (metrics.ContentLength < MinContentLength * 1.5) score -= 10;
 
-        if (metrics.MermaidDiagramCount < MinMermaidDiagrams) score -= 15;
-        else if (metrics.MermaidDiagramCount < MinMermaidDiagrams + 2) score -= 5;
-
         score -= issueCount * 5;
 
         return Math.Max(score, 0);
@@ -526,9 +514,6 @@ public partial class DocumentPendingService
     public class DocumentQualityMetrics
     {
         public int ContentLength { get; set; }
-        public int MermaidDiagramCount { get; set; }
-        public int CitationCount { get; set; }
-        public double TechnicalKeywordDensity { get; set; }
         public double QualityScore { get; set; }
     }
 

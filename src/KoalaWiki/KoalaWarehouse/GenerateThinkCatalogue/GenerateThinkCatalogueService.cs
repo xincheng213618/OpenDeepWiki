@@ -179,34 +179,6 @@ public static partial class GenerateThinkCatalogueService
         return await ExtractAndParseJson(str.ToString(), warehouse.Name, attemptNumber);
     }
 
-    private static async Task<string> BuildEnhancedPrompt(
-        string promptName, string catalogue, string gitRepository,
-        Warehouse warehouse, int attemptNumber)
-    {
-        var basePrompt = await PromptContext.Warehouse(promptName,
-            new KernelArguments()
-            {
-                ["code_files"] = catalogue,
-                ["git_repository_url"] = gitRepository.Replace(".git", ""),
-                ["repository_name"] = warehouse.Name,
-            }, OpenAIOptions.AnalysisModel);
-
-        // 根据尝试次数增强提示词
-        var enhancementLevel = Math.Min(attemptNumber, 3);
-        var enhancement = enhancementLevel switch
-        {
-            0 => "\n\nPlease provide a comprehensive analysis in JSON format within <documentation_structure> tags.",
-            1 =>
-                "\n\nIMPORTANT: You must respond with valid JSON wrapped in <documentation_structure> tags. Ensure the JSON is properly formatted and complete.",
-            2 =>
-                "\n\nCRITICAL: Previous attempts failed. Please provide ONLY valid JSON within <documentation_structure> tags. Double-check JSON syntax before responding.",
-            _ =>
-                "\n\nFINAL ATTEMPT: Respond with MINIMAL but VALID JSON in <documentation_structure> tags. Focus on basic structure: {\"categories\":[{\"name\":\"...\",\"description\":\"...\"}],\"architecture_overview\":\"...\"}. Ensure valid JSON syntax."
-        };
-
-        return basePrompt + enhancement;
-    }
-
     private static async Task<string> RefineResponse(
         ChatHistory history, IChatCompletionService chat,
         OpenAIPromptExecutionSettings settings, Kernel kernel,

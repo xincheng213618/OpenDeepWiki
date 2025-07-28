@@ -1222,6 +1222,9 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         .HasColumnType("varchar(255)")
                         .HasComment("仓库类型");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Version")
                         .HasColumnType("longtext");
 

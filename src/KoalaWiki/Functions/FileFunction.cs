@@ -138,7 +138,8 @@ public class FileFunction(string gitPath)
                    "</system-reminder>";
         }
 
-        items = items.DistinctBy(item=>$"fileName:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit).ToArray();
+        items = items.DistinctBy(item => $"fileName:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit)
+            .ToArray();
 
         var dic = new Dictionary<string, string>();
         foreach (var item in items)
@@ -147,7 +148,16 @@ public class FileFunction(string gitPath)
                 await ReadItem(item.FilePath, item.Offset, item.Limit));
         }
 
-        _count++;
+        // 如果单次读取文件数量超过5个，每5个算一次
+        if (items.Length > 5)
+        {
+            _count += (int)Math.Ceiling((double)items.Length / 5);
+        }
+        else
+        {
+            _count++;
+        }
+
         // 在接近限制时发送警告
         if (DocumentOptions.MaxFileReadCount > 0 &&
             _count >= DocumentOptions.MaxFileReadCount * 0.8)

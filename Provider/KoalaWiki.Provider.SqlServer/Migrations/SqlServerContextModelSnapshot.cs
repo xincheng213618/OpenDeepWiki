@@ -1225,6 +1225,9 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasComment("仓库类型");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Version")
                         .HasColumnType("nvarchar(max)");
 

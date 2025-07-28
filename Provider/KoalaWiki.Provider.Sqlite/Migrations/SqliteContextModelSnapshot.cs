@@ -1220,6 +1220,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .HasColumnType("TEXT")
                         .HasComment("仓库类型");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Version")
                         .HasColumnType("TEXT");
 

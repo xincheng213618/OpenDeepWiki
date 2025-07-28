@@ -89,7 +89,7 @@ public class DocumentsHelper
     {
         if (model.StartsWith("kimi-k2", StringComparison.OrdinalIgnoreCase))
         {
-            return 65535;
+            return 32768;
         }
 
         if (model.StartsWith("deepseek-r1", StringComparison.OrdinalIgnoreCase))

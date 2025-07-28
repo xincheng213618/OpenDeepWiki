@@ -25,7 +25,6 @@ namespace KoalaWiki.Services;
 public class WarehouseService(
     IKoalaWikiContext koala,
     IMapper mapper,
-    GitRepositoryService gitRepositoryService,
     IUserContext userContext,
     IHttpContextAccessor httpContextAccessor)
     : FastApi
@@ -121,11 +120,6 @@ public class WarehouseService(
         await koala.Warehouses
             .Where(x => x.Id == warehouseId)
             .ExecuteUpdateAsync(x => x.SetProperty(y => y.Status, WarehouseStatus.Pending));
-
-        var warehouse = await koala.Warehouses
-            .AsNoTracking()
-            .Where(x => x.Id == warehouseId)
-            .FirstOrDefaultAsync();
     }
 
     /// <summary>
@@ -492,6 +486,7 @@ public class WarehouseService(
             CreatedAt = DateTime.UtcNow,
             OptimizedDirectoryStructure = string.Empty,
             Id = Guid.NewGuid().ToString(),
+            UserId = userContext.CurrentUserId,
             Stars = 0,
             Forks = 0
         };
@@ -590,6 +585,7 @@ public class WarehouseService(
             entity.Type = "git";
             entity.CreatedAt = DateTime.UtcNow;
             entity.OptimizedDirectoryStructure = string.Empty;
+            entity.UserId = userContext.CurrentUserId;
             entity.Id = Guid.NewGuid().ToString();
             entity.Stars = 0;
             entity.Forks = 0;
@@ -685,6 +681,7 @@ public class WarehouseService(
             entity.Id = Guid.NewGuid().ToString();
             entity.Stars = 0;
             entity.Forks = 0;
+            entity.UserId = userContext.CurrentUserId;
             await koala.Warehouses.AddAsync(entity);
 
             await koala.SaveChangesAsync();

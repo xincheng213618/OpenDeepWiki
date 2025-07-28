@@ -55,12 +55,6 @@ export default async function RepositoryLayoutServer({
 
   const tree = [
     {
-      name: '概述',
-      url: `/${owner}/${name}`,
-      defaultOpen: true,
-      type: 'file',
-    },
-    {
       name: '思维导图',
       url: `/${owner}/${name}/mindmap`,
       defaultOpen: false,

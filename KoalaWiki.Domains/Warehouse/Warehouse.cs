@@ -107,4 +107,9 @@ public class Warehouse : Entity<string>
     /// Fork数量
     /// </summary>
     public int Forks { get; set; }
+    
+    /// <summary>
+    /// 创建用户id
+    /// </summary>
+    public string? UserId { get; set; }
 }
