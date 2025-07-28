@@ -208,6 +208,7 @@ public class WarehouseService(
     /// 从URL下载文件到本地
     /// </summary>
     [EndpointSummary("从URL下载文件到本地")]
+    [Authorize]
     private async Task<FileInfo> DownloadFileFromUrlAsync(string fileUrl, string organization, string repositoryName)
     {
         using var httpClient = new HttpClient();
@@ -332,6 +333,7 @@ public class WarehouseService(
     /// 上传并且提交仓库
     /// </summary>
     [EndpointSummary("上传并且提交仓库")]
+    [Authorize]
     public async Task UploadAndSubmitWarehouseAsync(HttpContext context)
     {
         if (!DocumentOptions.EnableWarehouseCommit)
@@ -509,6 +511,7 @@ public class WarehouseService(
     /// 提交仓库
     /// </summary>
     [EndpointSummary("提交仓库")]
+    [Authorize]
     public async Task SubmitWarehouseAsync(WarehouseInput input, HttpContext context)
     {
         if (!DocumentOptions.EnableWarehouseCommit)
@@ -611,6 +614,7 @@ public class WarehouseService(
     }
 
     [EndpointSummary("自定义提交仓库")]
+    [Authorize]
     public async Task CustomSubmitWarehouseAsync(CustomWarehouseInput input, HttpContext context)
     {
         if (!DocumentOptions.EnableWarehouseCommit)
@@ -1058,6 +1062,7 @@ public class WarehouseService(
     /// 导出Markdown压缩包
     /// </summary>
     [EndpointSummary("导出Markdown压缩包")]
+    [Authorize]
     public async Task ExportMarkdownZip(string warehouseId, HttpContext context)
     {
         // 检查用户权限

@@ -18,7 +18,12 @@ namespace KoalaWiki.KoalaWarehouse.DocumentPending;
 
 public partial class DocumentPendingService
 {
-    private static readonly int TaskMaxSizePerUser = 5;
+    private static int TaskMaxSizePerUser = 5;
+    private static int MinContentLength = 1000;
+    private static int MinMermaidDiagrams = 3;
+    private static int MinCitations = 5;
+    private static double MinQualityScore = 60.0;
+    private static double MinChineseRatio = 0.3;
 
     static DocumentPendingService()
     {
@@ -27,6 +32,31 @@ public partial class DocumentPendingService
         if (!string.IsNullOrEmpty(maxSize) && int.TryParse(maxSize, out var maxSizeInt))
         {
             TaskMaxSizePerUser = maxSizeInt;
+        }
+
+        // 文档质量相关配置
+        var minLength = Environment.GetEnvironmentVariable("DOC_MIN_CONTENT_LENGTH").GetTrimmedValueOrEmpty();
+        if (!string.IsNullOrEmpty(minLength) && int.TryParse(minLength, out var lengthInt))
+        {
+            MinContentLength = lengthInt;
+        }
+
+        var minMermaid = Environment.GetEnvironmentVariable("DOC_MIN_MERMAID_DIAGRAMS").GetTrimmedValueOrEmpty();
+        if (!string.IsNullOrEmpty(minMermaid) && int.TryParse(minMermaid, out var mermaidInt))
+        {
+            MinMermaidDiagrams = mermaidInt;
+        }
+
+        var minCite = Environment.GetEnvironmentVariable("DOC_MIN_CITATIONS").GetTrimmedValueOrEmpty();
+        if (!string.IsNullOrEmpty(minCite) && int.TryParse(minCite, out var citeInt))
+        {
+            MinCitations = citeInt;
+        }
+
+        var minScore = Environment.GetEnvironmentVariable("DOC_MIN_QUALITY_SCORE").GetTrimmedValueOrEmpty();
+        if (!string.IsNullOrEmpty(minScore) && double.TryParse(minScore, out var scoreDouble))
+        {
+            MinQualityScore = scoreDouble;
         }
     }
 
@@ -87,8 +117,17 @@ public partial class DocumentPendingService
                 {
                     // 构建失败
                     Log.Logger.Error("处理仓库；{path} ,处理标题：{name} 失败:文件内容为空", path, catalog.Name);
-
                     throw new Exception("处理失败，文件内容为空: " + catalog.Name);
+                }
+
+                // 最终质量验证（双重保障）
+                var (isQualityValid, qualityMessage, finalMetrics) =
+                    ValidateDocumentQuality(fileItem.Content, catalog.Name);
+                if (!isQualityValid && finalMetrics.QualityScore < (MinQualityScore * 0.8)) // 最终验证标准稍微宽松一些
+                {
+                    Log.Logger.Error("处理仓库；{path} ,处理标题：{name} 失败:文档质量不达标 - {message}, 评分: {score}",
+                        path, catalog.Name, qualityMessage, finalMetrics.QualityScore);
+                    throw new Exception($"处理失败，文档质量不达标: {catalog.Name}, 详情: {qualityMessage}");
                 }
 
                 // 更新文档状态
@@ -149,6 +188,12 @@ public partial class DocumentPendingService
                     classifyType);
                 files.AddRange(DocumentContext.DocumentStore.Files);
 
+                // ProcessCatalogueItems内部已经进行了质量验证，这里只做最终检查
+                if (fileItem == null)
+                {
+                    throw new InvalidOperationException("文档生成失败：返回内容为空");
+                }
+
                 Log.Logger.Information("处理仓库；{path} ,处理标题：{name} 完成！", path, catalog.Name);
                 semaphore?.Release();
 
@@ -167,8 +212,24 @@ public partial class DocumentPendingService
                 }
                 else
                 {
-                    // 等待一段时间后重试
-                    await Task.Delay(10000 * retryCount);
+                    // 根据异常类型决定等待时间
+                    int delayMs;
+                    if (ex is InvalidOperationException && ex.Message.Contains("文档质量"))
+                    {
+                        // 质量问题重试间隔较短，因为主要是内容生成问题
+                        delayMs = 5000 * retryCount;
+                        Log.Logger.Information("文档质量问题重试 - 仓库: {path}, 标题: {name}, 第{retry}次重试, 等待{delay}ms",
+                            path, catalog.Name, retryCount, delayMs);
+                    }
+                    else
+                    {
+                        // API限流等其他问题需要更长等待时间
+                        delayMs = 10000 * retryCount;
+                        Log.Logger.Information("API异常重试 - 仓库: {path}, 标题: {name}, 第{retry}次重试, 等待{delay}ms",
+                            path, catalog.Name, retryCount, delayMs);
+                    }
+
+                    await Task.Delay(delayMs);
                 }
             }
         }
@@ -193,7 +254,7 @@ public partial class DocumentPendingService
 
         var chat = documentKernel.Services.GetService<IChatCompletionService>();
 
-        string prompt = await 
+        string prompt = await
             GetDocumentPendingPrompt(classify, codeFiles, gitRepository, branch, catalog.Name, catalog.Prompt);
 
         var history = new ChatHistory();
@@ -225,13 +286,33 @@ public partial class DocumentPendingService
 
         // 保存原始内容，防止精炼失败时丢失
         var originalContent = sr.ToString();
-        
-        if (DocumentOptions.RefineAndEnhanceQuality)
+
+        // 先进行基础质量验证，避免对质量过差的内容进行精炼
+        var (isInitialValid, initialMessage, initialMetrics) = ValidateDocumentQuality(originalContent, catalog.Name);
+
+        if (!isInitialValid)
+        {
+            Log.Logger.Warning("初始内容质量验证失败，跳过精炼 - 标题: {name}, 原因: {message}, 评分: {score}",
+                catalog.Name, initialMessage, initialMetrics.QualityScore);
+
+            // 如果内容质量太差，直接抛出异常重新生成，不进行精炼
+            if (initialMetrics.ContentLength < 500)
+            {
+                throw new InvalidOperationException($"初始内容质量过差，需要重新生成: {initialMessage}");
+            }
+        }
+        else
+        {
+            Log.Logger.Information("初始内容质量验证通过 - 标题: {name}, 评分: {score}",
+                catalog.Name, initialMetrics.QualityScore);
+        }
+
+        if (DocumentOptions.RefineAndEnhanceQuality && isInitialValid)
         {
             try
             {
                 history.AddAssistantMessage(originalContent);
-                
+
                 var refineContents = new ChatMessageContentItemCollection
                 {
                     new TextContent(
@@ -259,7 +340,7 @@ public partial class DocumentPendingService
                         """
                         <system-reminder>
                         CRITICAL: You are now in document refinement phase. Your task is to ENHANCE and IMPROVE the EXISTING documentation content that was just generated, NOT to create completely new content.
-                        
+
                         MANDATORY REQUIREMENTS:
                         1. PRESERVE the original document structure and organization
                         2. ENHANCE existing explanations with more depth and clarity
@@ -268,13 +349,13 @@ public partial class DocumentPendingService
                         5. REFINE language for better readability while maintaining technical precision
                         6. STRENGTHEN existing Mermaid diagrams or add complementary ones
                         7. ENSURE all enhancements are based on the code files analyzed in the original generation
-                        
+
                         FORBIDDEN ACTIONS:
                         - Do NOT restructure or reorganize the document completely
                         - Do NOT remove existing sections or content
                         - Do NOT add content not based on the analyzed code files
                         - Do NOT change the fundamental approach or style established in the original
-                        
+
                         Your goal is to take the good foundation that exists and make it BETTER, MORE DETAILED, and MORE COMPREHENSIVE while preserving its core structure and insights.
                         </system-reminder>
                         """)
@@ -361,6 +442,94 @@ public partial class DocumentPendingService
         };
 
         return fileItem;
+    }
+
+    /// <summary>
+    /// 验证文档质量是否符合标准
+    /// </summary>
+    /// <param name="content">文档内容</param>
+    /// <param name="title">文档标题</param>
+    /// <returns>验证结果和详细信息</returns>
+    public static (bool IsValid, string ValidationMessage, DocumentQualityMetrics Metrics) ValidateDocumentQuality(
+        string content, string title)
+    {
+        var metrics = new DocumentQualityMetrics();
+        var validationIssues = new List<string>();
+
+        try
+        {
+            // 1. 基础长度验证
+            metrics.ContentLength = content?.Length ?? 0;
+            if (metrics.ContentLength < MinContentLength)
+            {
+                validationIssues.Add($"文档内容过短: {metrics.ContentLength} 字符 (最少需要{MinContentLength}字符)");
+            }
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                validationIssues.Add("文档内容为空");
+                return (false, string.Join("; ", validationIssues), metrics);
+            }
+
+            // 2. Mermaid图表验证
+            var mermaidRegex = new Regex(@"```mermaid\s*([\s\S]*?)```", RegexOptions.Multiline);
+            metrics.MermaidDiagramCount = mermaidRegex.Matches(content).Count;
+            if (metrics.MermaidDiagramCount < MinMermaidDiagrams)
+            {
+                validationIssues.Add($"Mermaid图表数量不足: {metrics.MermaidDiagramCount} 个 (最少需要{MinMermaidDiagrams}个)");
+            }
+
+            // 设置整体质量评分
+            metrics.QualityScore = CalculateQualityScore(metrics, validationIssues.Count);
+
+            // 如果有严重问题，返回验证失败
+            var isValid = validationIssues.Count == 0 || (validationIssues.Count <= 2 && metrics.ContentLength >= 1500);
+
+            var message = validationIssues.Count > 0
+                ? $"质量问题: {string.Join("; ", validationIssues)}"
+                : "文档质量验证通过";
+
+            Log.Logger.Information("文档质量验证 - 标题: {title}, 质量评分: {score}, 问题数: {issues}",
+                title, metrics.QualityScore, validationIssues.Count);
+
+            return (isValid, message, metrics);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "文档质量验证失败 - 标题: {title}", title);
+            return (false, $"质量验证异常: {ex.Message}", metrics);
+        }
+    }
+
+    /// <summary>
+    /// 计算文档质量评分
+    /// </summary>
+    private static double CalculateQualityScore(DocumentQualityMetrics metrics, int issueCount)
+    {
+        double score = 100.0;
+
+        // 基于各项指标扣分
+        if (metrics.ContentLength < MinContentLength) score -= 20;
+        else if (metrics.ContentLength < MinContentLength * 1.5) score -= 10;
+
+        if (metrics.MermaidDiagramCount < MinMermaidDiagrams) score -= 15;
+        else if (metrics.MermaidDiagramCount < MinMermaidDiagrams + 2) score -= 5;
+
+        score -= issueCount * 5;
+
+        return Math.Max(score, 0);
+    }
+
+    /// <summary>
+    /// 文档质量指标
+    /// </summary>
+    public class DocumentQualityMetrics
+    {
+        public int ContentLength { get; set; }
+        public int MermaidDiagramCount { get; set; }
+        public int CitationCount { get; set; }
+        public double TechnicalKeywordDensity { get; set; }
+        public double QualityScore { get; set; }
     }
 
     /// <summary>

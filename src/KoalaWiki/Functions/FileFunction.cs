@@ -138,7 +138,7 @@ public class FileFunction(string gitPath)
                    "</system-reminder>";
         }
 
-        items = items.Distinct().ToArray();
+        items = items.DistinctBy(item=>$"fileName:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit).ToArray();
 
         var dic = new Dictionary<string, string>();
         foreach (var item in items)
