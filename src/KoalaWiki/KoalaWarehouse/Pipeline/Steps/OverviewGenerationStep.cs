@@ -7,7 +7,7 @@ namespace KoalaWiki.KoalaWarehouse.Pipeline.Steps;
 
 public class OverviewGenerationStep : DocumentProcessingStepBase<DocumentProcessingContext, DocumentProcessingContext>
 {
-    public OverviewGenerationStep(ILogger<OverviewGenerationStep> logger) : base(logger) 
+    public OverviewGenerationStep(ILogger<OverviewGenerationStep> logger) : base(logger)
     {
         OverviewService.SetLogger(logger);
     }
@@ -15,7 +15,7 @@ public class OverviewGenerationStep : DocumentProcessingStepBase<DocumentProcess
     public override string StepName => "生成项目概述";
 
     public override async Task<DocumentProcessingContext> ExecuteAsync(
-        DocumentProcessingContext context, 
+        DocumentProcessingContext context,
         CancellationToken cancellationToken = default)
     {
         using var activity = ActivitySource.StartActivity(StepName);
@@ -30,22 +30,23 @@ public class OverviewGenerationStep : DocumentProcessingStepBase<DocumentProcess
             {
                 context.FileKernelInstance = KernelFactory.GetKernel(
                     OpenAIOptions.Endpoint,
-                    OpenAIOptions.ChatApiKey, 
-                    context.Document.GitPath, 
-                    OpenAIOptions.ChatModel, 
+                    OpenAIOptions.ChatApiKey,
+                    context.Document.GitPath,
+                    OpenAIOptions.ChatModel,
                     false);
             }
-            
+
             var overview = await OverviewService.GenerateProjectOverview(
-                context.FileKernelInstance, 
+                context.FileKernelInstance,
                 context.Catalogue ?? string.Empty,
                 context.GitRepository,
-                context.Warehouse.Branch, 
-                context.Readme ?? string.Empty, 
+                context.Warehouse.Branch,
+                context.Readme ?? string.Empty,
                 context.Classification);
 
             // 处理 project_analysis 标签
-            var projectAnalysisRegex = new Regex(@"<project_analysis>(.*?)</project_analysis>", RegexOptions.Singleline);
+            var projectAnalysisRegex =
+                new Regex(@"<project_analysis>(.*?)</project_analysis>", RegexOptions.Singleline);
             var projectAnalysisMatch = projectAnalysisRegex.Match(overview);
             if (projectAnalysisMatch.Success)
             {
@@ -72,12 +73,13 @@ public class OverviewGenerationStep : DocumentProcessingStepBase<DocumentProcess
                 DocumentId = context.Document.Id,
                 Id = Guid.NewGuid().ToString("N")
             }, cancellationToken);
+            await context.DbContext.SaveChangesAsync(cancellationToken);
 
             context.Overview = overview;
             activity?.SetTag("overview.length", overview?.Length ?? 0);
             context.SetStepResult(StepName, overview);
-            
-            Logger.LogInformation("完成 {StepName} 步骤，概述长度: {Length}", 
+
+            Logger.LogInformation("完成 {StepName} 步骤，概述长度: {Length}",
                 StepName, overview?.Length ?? 0);
         }
         catch (Exception ex)
