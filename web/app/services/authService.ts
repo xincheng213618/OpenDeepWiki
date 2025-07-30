@@ -32,10 +32,6 @@ export const login = async (username: string, password: string): Promise<any> =>
       },
     });
     
-    if (!response.ok) {
-      throw new Error('登录请求失败');
-    }
-    
     return await response.json();
   } catch (error) {
     console.error('登录错误:', error);
@@ -63,10 +59,6 @@ export const register = async (username: string, email: string, password: string
         password: password
       })
     });
-    
-    if (!response.ok) {
-      throw new Error('注册请求失败');
-    }
     
     return await response.json();
   } catch (error) {
@@ -115,10 +107,6 @@ export const googleLogin = async (idToken: string): Promise<LoginResponse> => {
       },
     });
     
-    if (!response.ok) {
-      throw new Error('Google登录请求失败');
-    }
-    
     return await response.json();
   } catch (error) {
     console.error('Google登录错误:', error);
@@ -142,10 +130,6 @@ export const giteeLogin = async (code: string): Promise<LoginResponse> => {
       },
     });
     
-    if (!response.ok) {
-      throw new Error('Gitee登录请求失败');
-    }
-    
     return await response.json();
   } catch (error) {
     console.error('Gitee登录错误:', error);
@@ -168,10 +152,6 @@ export const refreshToken = async (refreshToken: string): Promise<RefreshTokenRe
         'Content-Type': 'application/json',
       },
     });
-    
-    if (!response.ok) {
-      throw new Error('刷新令牌请求失败');
-    }
     
     return await response.json();
   } catch (error) {
