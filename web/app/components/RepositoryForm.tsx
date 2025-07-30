@@ -202,6 +202,8 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
         if (response.defaultBranch && response.data.includes(response.defaultBranch)) {
           setFormData(prev => ({ ...prev, branch: response.defaultBranch }));
         } else {
+          // 如果默认分支不在列表中，添加到列表并设置为当前分支
+          response.data.unshift(response.defaultBranch);
           setFormData(prev => ({ ...prev, branch: response.data[0] }));
         }
         toast.success(`已加载 ${response.data.length} 个分支`);
