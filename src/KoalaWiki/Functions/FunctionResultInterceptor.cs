@@ -1,6 +1,4 @@
-﻿using Microsoft.SemanticKernel;
-
-namespace KoalaWiki.Functions;
+﻿namespace KoalaWiki.Functions;
 
 public class FunctionResultInterceptor : IFunctionInvocationFilter
 {

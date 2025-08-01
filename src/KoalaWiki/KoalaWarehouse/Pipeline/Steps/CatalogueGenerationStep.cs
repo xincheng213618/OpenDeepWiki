@@ -6,7 +6,9 @@ namespace KoalaWiki.KoalaWarehouse.Pipeline.Steps;
 
 public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProcessingContext, DocumentProcessingContext>
 {
-    public CatalogueGenerationStep(ILogger<CatalogueGenerationStep> logger) : base(logger) { }
+    public CatalogueGenerationStep(ILogger<CatalogueGenerationStep> logger) : base(logger)
+    {
+    }
 
     public override string StepName => "读取并生成目录结构";
 
@@ -33,7 +35,7 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
     };
 
     public override async Task<DocumentProcessingContext> ExecuteAsync(
-        DocumentProcessingContext context, 
+        DocumentProcessingContext context,
         CancellationToken cancellationToken = default)
     {
         using var activity = ActivitySource.StartActivity(StepName);
@@ -43,34 +45,14 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
 
         try
         {
-            var catalogue = context.Warehouse.OptimizedDirectoryStructure;
+            var catalogue = DocumentsService.GetCatalogueSmartFilterOptimizedAsync(
+                context.Document.GitPath,
+                context.Readme ?? string.Empty);
 
-            if (string.IsNullOrWhiteSpace(catalogue))
-            {
-                activity?.SetTag("action", "generate_new_catalogue");
-                Logger.LogInformation("生成新的目录结构");
-                
-                catalogue = await DocumentsService.GetCatalogueSmartFilterOptimizedAsync(
-                    context.Document.GitPath, 
-                    context.Readme ?? string.Empty);
-                
-                if (!string.IsNullOrWhiteSpace(catalogue))
-                {
-                    await context.DbContext.Warehouses.Where(x => x.Id == context.Warehouse.Id)
-                        .ExecuteUpdateAsync(x => x.SetProperty(y => y.OptimizedDirectoryStructure, catalogue), cancellationToken: cancellationToken);
-                }
-            }
-            else
-            {
-                activity?.SetTag("action", "use_existing_catalogue");
-                Logger.LogInformation("使用现有目录结构");
-            }
-
-            context.Catalogue = catalogue;
             activity?.SetTag("catalogue.length", catalogue?.Length ?? 0);
             context.SetStepResult(StepName, catalogue);
-            
-            Logger.LogInformation("完成 {StepName} 步骤，目录结构长度: {Length}", 
+
+            Logger.LogInformation("完成 {StepName} 步骤，目录结构长度: {Length}",
                 StepName, catalogue?.Length ?? 0);
         }
         catch (Exception ex)
@@ -84,12 +66,12 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
     }
 
     public override async Task<DocumentProcessingContext> HandleErrorAsync(
-        DocumentProcessingContext input, 
-        Exception exception, 
+        DocumentProcessingContext input,
+        Exception exception,
         int attemptCount)
     {
         Logger.LogWarning("目录结构生成失败，使用基础目录结构，异常: {Exception}", exception.Message);
-        
+
         // 目录结构生成失败时，生成基础的目录结构
         if (string.IsNullOrEmpty(input.Catalogue))
         {
@@ -105,7 +87,7 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
                 input.Catalogue = "项目目录结构暂时无法生成";
             }
         }
-        
+
         return input;
     }
 
@@ -119,7 +101,7 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
                 Logger.LogWarning("目录不存在: {Path}", input.Document.GitPath);
                 return false;
             }
-            
+
             // 检查是否有读取权限
             try
             {

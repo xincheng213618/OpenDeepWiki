@@ -79,190 +79,292 @@ Analyze repository code files to create clear, actionable documentation structur
 3. **Consider Multiple User Types**: Structure for end users, developers, operators, and contributors
 4. **Ensure Complete Coverage**: Every significant component should be documented appropriately
 
-## 📋 Comprehensive Documentation Structure Framework
+## 📋 Documentation Structure Framework - Google Diátaxis Standard
 
-### Level 1: Core Function Documentation (Based on Analysis)
-**For each identified Primary Value Function, create detailed sections:**
+### Core Diátaxis Principles
+The Diátaxis framework organizes documentation around four distinct user needs, creating a systematic relationship between different documentation types. Each quadrant serves a specific purpose and follows unique principles:
 
-1. **Function Overview & Purpose**
-   - What this function does and why it exists
-   - User problems it solves and business value
-   - Integration with other system functions
-
-2. **User Interaction & Workflows**
-   - How different user types interact with this function
-   - Common workflows and use cases
-   - Configuration options and customization
-
-3. **Technical Implementation**
-   - Architecture and design patterns
-   - Key components and their relationships  
-   - API interfaces and data flows
-
-4. **Configuration & Setup**
-   - Installation and setup procedures
-   - Environment configuration
-   - Dependencies and prerequisites
-
-### Level 2: System Integration & Architecture
-**Cross-cutting concerns that span multiple functions:**
-
-5. **System Architecture Overview**
-   - Overall system design and component relationships
-   - Data flow and processing pipelines
-   - Integration patterns and communication protocols
-
-6. **Authentication & Security**
-   - Security architecture and implementations
-   - Authentication and authorization systems
-   - Data protection and compliance measures
-
-7. **Data Management**
-   - Data models and database design
-   - Storage systems and data processing
-   - Backup, recovery, and data lifecycle
-
-8. **API & Integration Systems**
-   - External API integrations and webhooks
-   - Third-party service connections
-   - Extension points and plugin systems
-
-### Level 3: Development & Operations
-**Supporting development and operational needs:**
-
-9. **Development Environment**
-   - Local development setup and tools
-   - Code organization and project structure
-   - Development workflows and best practices
-
-10. **Testing & Quality Assurance**
-    - Testing strategies and automation
-    - Code quality tools and standards
-    - Performance testing and optimization
-
-11. **Build & Deployment**
-    - Build processes and automation
-    - Deployment strategies and environments
-    - Infrastructure requirements and scaling
-
-12. **Monitoring & Operations**
-    - Logging and monitoring systems
-    - Error handling and alerting
-    - Performance metrics and optimization
-
-### Level 4: Advanced Topics & Extension
-**For complex systems requiring detailed coverage:**
-
-13. **Advanced Configuration**
-    - Advanced setup and customization options
-    - Performance tuning and optimization
-    - Enterprise deployment considerations
-
-14. **Extension & Customization**
-    - Plugin development and extension points
-    - Customization guides and examples
-    - Integration with external systems
-
-15. **Troubleshooting & Maintenance**
-    - Common issues and solutions
-    - Debugging guides and tools
-    - Maintenance procedures and updates
-
-**Adaptive Structure Guidelines:**
-- **Simple Projects (8-12 sections)**: Focus on Levels 1-2, core functions + basic operations
-- **Medium Projects (12-20 sections)**: Include Level 3 development and operations content
-- **Complex Projects (20-30 sections)**: Full coverage including Level 4 advanced topics
-- **Enterprise Systems (25-35+ sections)**: Comprehensive coverage with detailed subsections
-
-## 📝 Content Guidelines & Prompt Templates
-
-### Balanced Documentation Approach
-
-**Each documentation section should provide:**
-
-1. **Clear Purpose & Context**: What this component does and why it exists in the system
-2. **Practical Implementation Guide**: How to configure, use, and integrate this functionality
-3. **Technical Architecture**: Design decisions, patterns, and implementation details
-4. **Business Value**: Problems solved and benefits delivered (when relevant to user needs)
-5. **Operational Guidance**: Deployment, monitoring, troubleshooting, and maintenance
-
-### Core Function Documentation Template
-
+**The Four Quadrants Matrix:**
 ```
-Analyze the [specific core function] implementation within this repository to create comprehensive documentation for users who need to understand, configure, and use this functionality effectively.
-
-**Function Overview and Purpose:**
-Examine what [function] accomplishes, the user problems it solves, and its role in the overall system architecture. Explain the business and technical context that led to this implementation [^1].
-
-**Architecture and Implementation:**
-Analyze the technical implementation including key components, design patterns, data flows, and integration points. Document the architectural decisions and explain how they support the function's requirements [^2].
-
-**Usage and Configuration:**
-Detail how users interact with [function], including configuration options, common workflows, and integration approaches. Provide practical examples of typical usage scenarios and configuration patterns [^3].
-
-**APIs and Integration Points:**
-Document all programmatic interfaces, data formats, and integration mechanisms. Include API specifications, webhook configurations, and integration examples where applicable [^4].
-
-**Deployment and Operations:**
-Cover deployment requirements, environment setup, monitoring approaches, and operational considerations. Include performance characteristics, scaling options, and troubleshooting guidance [^5].
-
-**Content Requirements:**
-- Focus on enabling successful implementation and usage
-- Include practical code examples and configuration samples
-- Balance technical depth with clear explanations
-- Provide troubleshooting guidance for common issues
-- Use [^n] citations for specific implementation references
-- Minimum 500 words with comprehensive coverage
+             Practical (Doing)        |  Theoretical (Thinking)
+          ----------------------------|-----------------------------
+Study     |  📚 TUTORIALS             |  🧠 EXPLANATION
+(Learning)|  - Learning-oriented      |  - Understanding-oriented
+          |  - Guided experience      |  - Conceptual clarity
+          |  - Guaranteed success     |  - Context & reasoning
+          ----------------------------|-----------------------------
+Work      |  🛠️ HOW-TO GUIDES         |  📖 REFERENCE
+(Doing)   |  - Problem-oriented       |  - Information-oriented
+          |  - Goal achievement       |  - Authoritative facts
+          |  - Task completion        |  - Comprehensive coverage
 ```
 
-### Supporting System Documentation Template
+#### 1. 📚 Tutorials (Learning-Oriented + Practical)
+**Guided learning experiences that guarantee success**
+- **Purpose**: Help beginners acquire skills through doing
+- **Characteristics**: Teacher-led, concrete actions, visible results
+- **Focus**: Student's learning experience, not information transfer
+- **Language**: "We will..." - first person plural
+- **Success Metric**: Learner completes with confidence and skill
+
+#### 2. 🛠️ How-to Guides (Work-Oriented + Practical) 
+**Goal-oriented solutions for specific problems**
+- **Purpose**: Help competent users achieve specific tasks
+- **Characteristics**: User-centered, action-oriented, adaptable
+- **Focus**: Real-world problems and practical goals
+- **Language**: Conditional imperatives, clear directions
+- **Success Metric**: User accomplishes their specific goal
+
+#### 3. 📖 Reference (Work-Oriented + Theoretical)
+**Authoritative technical specifications**
+- **Purpose**: Provide factual information about system machinery
+- **Characteristics**: Neutral, objective, comprehensive
+- **Focus**: Describe what exists, not how to use it
+- **Language**: Factual statements, technical precision
+- **Success Metric**: User finds accurate information quickly
+
+#### 4. 🧠 Explanation (Learning-Oriented + Theoretical)
+**Conceptual understanding and context**
+- **Purpose**: Deepen understanding of why things work as they do
+- **Characteristics**: Broader perspective, connections, context
+- **Focus**: Background, alternatives, design decisions
+- **Language**: Discursive, thoughtful, opinion-friendly
+- **Success Metric**: User develops deeper understanding
+
+### Diátaxis-First Documentation Structure
+
+**CRITICAL REQUIREMENT**: All documentation must be organized by Diátaxis quadrant FIRST, then by functionality within each quadrant. This ensures proper separation of user contexts and documentation purposes.
+
+#### 📚 TUTORIALS QUADRANT (Learning + Practical)
+**Create guided learning experiences with guaranteed outcomes**
+
+1. **Getting Started Tutorial**
+   - First successful interaction with the system
+   - Complete guided journey from setup to working result
+   - Focus: Building learner confidence through success
+
+2. **Core Workflow Tutorial**
+   - Step-by-step lesson for primary system workflow
+   - Hands-on practice with concrete, visible results
+   - Focus: Skill acquisition through guided doing
+
+3. **Feature Learning Tutorials**
+   - Individual lessons for each major feature
+   - Progressive skill building with safe practice
+   - Focus: Competence development in controlled environment
+
+#### 🛠️ HOW-TO GUIDES QUADRANT (Work + Practical)
+**Provide goal-oriented solutions for real problems**
+
+4. **Installation & Deployment How-tos**
+   - Production deployment procedures
+   - Environment-specific setup instructions
+   - Focus: Achieving deployment goals in real environments
+
+5. **Feature Implementation How-tos**
+   - Solve specific implementation challenges
+   - Configure features for particular use cases
+   - Focus: Accomplishing user's specific objectives
+
+6. **Integration How-tos**
+   - Connect with external systems and services
+   - Implement custom extensions and plugins
+   - Focus: Achieving integration goals
+
+7. **Troubleshooting How-tos**
+   - Diagnose and resolve specific problems
+   - Performance optimization procedures
+   - Focus: Solving real operational issues
+
+#### 📖 REFERENCE QUADRANT (Work + Theoretical)
+**Provide authoritative technical specifications**
+
+8. **API Reference**
+   - Complete endpoint specifications
+   - Parameter schemas and response formats
+   - Focus: Factual API machinery descriptions
+
+9. **Configuration Reference**
+   - All configuration options and parameters
+   - Environment variables and settings
+   - Focus: Comprehensive configuration facts
+
+10. **Component Reference**
+    - Technical specifications for all system components
+    - Interface definitions and data models
+    - Focus: Authoritative component descriptions
+
+11. **Command Reference**
+    - All available commands, options, and flags
+    - Syntax specifications and parameter lists
+    - Focus: Complete command machinery documentation
+
+#### 🧠 EXPLANATION QUADRANT (Learning + Theoretical)
+**Provide understanding and context**
+
+12. **Architecture Explanation**
+    - Why the system is designed this way
+    - Component relationships and design principles
+    - Focus: Understanding system design decisions
+
+13. **Core Concepts Explanation**
+    - Domain concepts and terminology
+    - Business logic and workflow reasoning
+    - Focus: Conceptual understanding of system foundations
+
+14. **Technology Choices Explanation**
+    - Why specific technologies were selected
+    - Trade-offs and alternatives considered
+    - Focus: Understanding technical decision-making
+
+15. **Operational Theory Explanation**
+    - How different components work together
+    - Data flow and processing concepts
+    - Focus: Understanding system operation principles
+
+**Diátaxis Structure Guidelines:**
+- **Simple Projects (8-12 sections)**: 2-3 tutorials, 3-4 how-tos, 2-3 references, 1-2 explanations
+- **Medium Projects (12-18 sections)**: 3-4 tutorials, 5-6 how-tos, 4-5 references, 2-3 explanations  
+- **Complex Projects (18-25 sections)**: 4-5 tutorials, 7-8 how-tos, 6-7 references, 3-4 explanations
+- **Enterprise Systems (25-30+ sections)**: 5-6 tutorials, 8-10 how-tos, 8-10 references, 4-5 explanations
+
+**Balance Requirements:**
+- Each quadrant must be represented in every documentation structure
+- How-to guides typically form the largest section (40-50% of content)
+- Reference documentation should be comprehensive but focused
+- Tutorials must guarantee learner success
+- Explanations provide essential context and understanding
+
+## 📝 Diátaxis-Specific Content Templates
+
+### Template Selection Rules
+
+**CRITICAL**: Each documentation section MUST be created using the template that matches its Diátaxis quadrant. Mixing quadrant characteristics will result in confused, ineffective documentation.
+
+**Template Selection Guide:**
+- Use **Tutorial Template** for learning-oriented, guided experiences
+- Use **How-to Template** for problem-solving, goal-oriented instructions  
+- Use **Reference Template** for authoritative, factual specifications
+- Use **Explanation Template** for understanding-oriented, conceptual content
+
+### 📚 Tutorial Template (Learning + Practical)
 
 ```
-Analyze the [supporting system/component] within this repository to document how it enables and enhances the core system functionality.
+Create a guided learning experience for [specific functionality] that takes beginners through a complete, successful journey from start to finish.
 
-**System Purpose and Architecture:**
-Explain the role of [component] in the overall system, its architectural integration, and the technical requirements it addresses [^1].
+**Learning Objective:**
+Define what skill or capability the learner will acquire by completing this tutorial. Focus on the learning outcome, not the system feature [^1].
 
-**Implementation and Configuration:**
-Detail the implementation approach, configuration options, and setup procedures. Include examples of common configurations and customization approaches [^2].
+**Guided Journey Structure:**
+1. **Setup for Success**: Ensure learner has everything needed for guaranteed success
+2. **Step-by-Step Actions**: Provide concrete, specific actions with expected results
+3. **Visible Progress**: Show clear signs of progress and success at each step
+4. **Successful Completion**: End with a meaningful, confidence-building result
 
-**Integration with Core Functions:**
-Document how [component] integrates with and supports the core system functions. Explain data flows, dependencies, and interaction patterns [^3].
+**Tutorial Requirements:**
+- Use "We will..." language to guide the learner
+- Provide exact steps that guarantee success
+- Show expected results after each major step
+- Avoid explanations - focus on doing and experiencing
+- Ensure every learner reaches the same successful outcome
+- Build confidence through repeated small successes
+- Minimum 400 words with clear, actionable guidance
 
-**Operational Aspects:**
-Cover deployment, monitoring, maintenance, and troubleshooting specific to [component]. Include performance considerations and scaling guidance [^4].
-
-**Content Requirements:**
-- Focus on practical implementation guidance
-- Include configuration examples and best practices
-- Document integration patterns and dependencies
-- Provide operational guidance and troubleshooting tips
-- Minimum 400 words with clear technical detail
+**Avoid in Tutorials:**
+- Multiple ways to accomplish the same thing
+- Detailed explanations of why things work
+- Options and alternatives that complicate the path
+- Assumptions about prior knowledge beyond prerequisites
 ```
 
-### Quick Reference Documentation Template
+### 🛠️ How-to Guide Template (Work + Practical)
 
 ```
-Create practical reference documentation for [API/configuration/tool] that enables efficient usage and implementation.
+Provide practical instructions for [specific goal/problem] that help competent users achieve their objective efficiently.
 
-**Overview and Usage:**
-Provide a clear explanation of [subject] purpose and common usage patterns. Include quick-start examples for immediate implementation [^1].
+**Goal Definition:**
+Clearly state what problem this guide solves or what goal it helps users achieve. Focus on user outcomes, not system features [^1].
 
-**Detailed Specifications:**
-Document all available options, parameters, and configuration possibilities. Include data formats, validation rules, and constraint information [^2].
+**Solution Approach:**
+1. **Context Assessment**: When and why users need this solution
+2. **Prerequisites**: What users need to know or have before starting
+3. **Step Sequence**: Logical sequence of actions to achieve the goal
+4. **Verification**: How to confirm successful achievement of the goal
 
-**Integration Examples:**
-Provide practical examples of integration approaches, common patterns, and configuration templates. Include code samples and real-world usage scenarios [^3].
+**How-to Requirements:**
+- Focus on solving real-world problems
+- Assume user competence and existing knowledge
+- Provide adaptable instructions for different scenarios
+- Use conditional language ("If you want X, then do Y")
+- Address practical concerns and edge cases
+- Enable users to achieve their specific goals
+- Minimum 300 words with actionable guidance
 
-**Troubleshooting and Best Practices:**
-Document common issues, solutions, and implementation best practices. Include performance considerations and optimization guidance [^4].
+**Avoid in How-to Guides:**
+- Teaching concepts or explaining fundamentals
+- Assuming users are learning (they're working)
+- Rigid, tutorial-style step-by-step instructions
+- Comprehensive coverage of all possibilities
+```
 
-**Content Requirements:**
-- Prioritize practical, actionable information
-- Include comprehensive examples and code samples
-- Organize for quick reference and lookup
-- Focus on common use cases and solutions
-- Minimum 300 words with clear structure
+### 📖 Reference Template (Work + Theoretical)
+
+```
+Document the factual, technical specifications of [system component/API/configuration] for authoritative reference.
+
+**Specification Overview:**
+Provide a neutral, factual description of what this component/API/feature is and what it does. Focus on describing the machinery, not how to use it [^1].
+
+**Technical Specifications:**
+1. **Complete Parameter List**: All available options, parameters, and their types
+2. **Data Formats**: Input/output formats, schemas, and validation rules
+3. **Behavior Description**: What the system does with different inputs
+4. **Constraints and Limits**: Technical limitations and boundaries
+
+**Reference Requirements:**
+- Use neutral, objective language
+- Describe facts about the system, not opinions
+- Be comprehensive and authoritative
+- Structure information for quick lookup
+- Mirror the system's own structure
+- Provide examples only to illustrate usage patterns
+- Minimum 200 words with complete coverage
+
+**Avoid in Reference:**
+- Instructions on how to use features
+- Explanations of why things work certain ways
+- Opinions or recommendations
+- Tutorial-style guidance
+```
+
+### 🧠 Explanation Template (Learning + Theoretical)
+
+```
+Explain the concepts, context, and reasoning behind [system aspect/design decision] to deepen understanding.
+
+**Conceptual Framework:**
+Provide the broader context and background needed to understand this aspect of the system. Focus on illuminating understanding, not providing instructions [^1].
+
+**Understanding Structure:**
+1. **Background Context**: Historical development, problem context, requirements
+2. **Design Rationale**: Why this approach was chosen, what it solves
+3. **Alternative Approaches**: Other possibilities considered, trade-offs made
+4. **Conceptual Connections**: How this relates to other system concepts
+
+**Explanation Requirements:**
+- Focus on understanding rather than doing
+- Provide context and background
+- Explain the "why" behind decisions
+- Make connections between concepts
+- Allow for opinion and perspective
+- Consider multiple viewpoints
+- Minimum 350 words with thoughtful analysis
+
+**Avoid in Explanations:**
+- Step-by-step instructions
+- Specific technical procedures
+- Comprehensive technical specifications
+- Urgent, task-oriented content
 ```
 
 ## 🎯 Structure Generation Approach
@@ -300,28 +402,72 @@ Document common issues, solutions, and implementation best practices. Include pe
 - Balance comprehensiveness with usability
 - Adapt section count to project complexity (8-25 sections typically)
 
-## 🎯 Output Format
+## 🎯 Diátaxis-Compliant Output Format
 
-**Required JSON Structure:**
+**MANDATORY ORGANIZATION**: Documentation structure MUST be organized by Diátaxis quadrant first, with clear quadrant identification.
+
+**Required JSON Structure with Diátaxis Organization:**
 
 <documentation_structure>
 {
   "items": [
     {
-      "title": "project-overview",
-      "name": "Project Overview",
-      "prompt": "Analyze the repository to create a comprehensive project overview that explains what this software does, its key benefits, target users, and main use cases. Include business context and technical approach [^1].",
+      "title": "tutorials",
+      "name": "📚 Tutorials (Learning-Oriented)",
+      "description": "Guided learning experiences for building skills through practice",
       "children": [
         {
-          "title": "getting-started",
-          "name": "Getting Started Guide", 
-          "prompt": "Create a practical getting started guide covering installation, setup, and first successful use of the system..."
+          "title": "getting-started-tutorial",
+          "name": "Getting Started Tutorial",
+          "prompt": "Create a guided learning experience for [specific functionality] that takes beginners through a complete, successful journey from start to finish..."
+        }
+      ]
+    },
+    {
+      "title": "how-to-guides", 
+      "name": "🛠️ How-to Guides (Problem-Oriented)",
+      "description": "Goal-oriented solutions for specific problems and tasks",
+      "children": [
+        {
+          "title": "installation-setup",
+          "name": "Installation & Setup",
+          "prompt": "Provide practical instructions for [specific goal/problem] that help competent users achieve their objective efficiently..."
+        }
+      ]
+    },
+    {
+      "title": "reference",
+      "name": "📖 Reference (Information-Oriented)", 
+      "description": "Authoritative technical specifications and factual information",
+      "children": [
+        {
+          "title": "api-reference",
+          "name": "API Reference",
+          "prompt": "Document the factual, technical specifications of [system component/API/configuration] for authoritative reference..."
+        }
+      ]
+    },
+    {
+      "title": "explanation",
+      "name": "🧠 Explanation (Understanding-Oriented)",
+      "description": "Conceptual guides for deeper understanding and context",
+      "children": [
+        {
+          "title": "architecture-explanation",
+          "name": "Architecture Explanation",
+          "prompt": "Explain the concepts, context, and reasoning behind [system aspect/design decision] to deepen understanding..."
         }
       ]
     }
   ]
 }
 </documentation_structure>
+
+**Critical Output Requirements:**
+1. **Quadrant Organization**: Top-level sections MUST be the four Diátaxis quadrants
+3. **Quadrant Icons**: Use specified emojis for each quadrant in names
+4. **Template Matching**: Each prompt must use the corresponding Diátaxis template
+5. **Clear Separation**: No mixing of quadrant types within sections
 
 ## ✅ Quality Guidelines
 
@@ -345,60 +491,68 @@ Document common issues, solutions, and implementation best practices. Include pe
 
 ## 🚀 Execution Protocol
 
-### Mandatory Analysis Sequence
+### Diátaxis-Compliant Analysis Protocol
 
 **Phase 1: Complete Repository Analysis (REQUIRED)**
 1. **Systematic Code Review**: Read and analyze ALL provided code files to understand system architecture, components, and functionality
-2. **Core Function Identification**: Identify Primary Value Functions, Supporting Technical Functions, Operational Functions, and User Interface Functions based on actual code analysis
-3. **Architecture Mapping**: Document system design, component relationships, data flows, and integration patterns
-4. **Technology Assessment**: Catalog all frameworks, libraries, databases, and architectural patterns in use
+2. **Core Function Identification**: Identify Primary Value Functions, Supporting Technical Functions, Operational Functions, and User Interface Functions based on actual code analysis  
+3. **User Context Mapping**: Determine what users need to learn (tutorials), accomplish (how-tos), reference (specifications), and understand (explanations)
+4. **Technology Assessment**: Catalog all frameworks, libraries, databases, and architectural patterns for proper documentation
 
-**Phase 2: Documentation Structure Generation**
-1. **Function-Based Organization**: Create main sections for each identified core function with detailed subsections
-2. **Comprehensive Coverage Planning**: Ensure every significant component, API, configuration, and operational aspect is covered
-3. **Multi-Level Hierarchy**: Generate 3-4 levels of documentation structure (15-30 sections for most projects)
-4. **User-Centric Organization**: Structure content to serve different user types and common tasks
+**Phase 2: Diátaxis Structure Generation**
+1. **Quadrant Organization**: Organize all content within the four Diátaxis quadrants first
+2. **Template Selection**: Match each identified need to the appropriate Diátaxis template
+3. **Balanced Distribution**: Ensure each quadrant has appropriate content for the project complexity
+4. **User Journey Mapping**: Structure content to support natural user progression through documentation types
 
-**Phase 3: Detailed Prompt Creation**
-1. **Function-Specific Prompts**: Use Core Function template for primary value functions (500+ words)
-2. **System-Level Prompts**: Use Supporting System template for infrastructure components (400+ words)
-3. **Reference Prompts**: Use Quick Reference template for APIs and configuration guides (300+ words)
-4. **Comprehensive Coverage**: Ensure every section has detailed, actionable prompts
+**Phase 3: Diátaxis-Specific Prompt Creation**
+1. **Tutorial Prompts**: Use Tutorial template for learning-oriented content (400+ words)
+2. **How-to Prompts**: Use How-to template for problem-solving content (300+ words)
+3. **Reference Prompts**: Use Reference template for specification content (200+ words)
+4. **Explanation Prompts**: Use Explanation template for understanding-oriented content (350+ words)
+5. **Template Compliance**: Ensure each prompt strictly follows its Diátaxis template requirements
 
-### Quality Requirements
+### Diátaxis Quality Requirements
 
 **Structure Validation:**
-- Every identified core function has comprehensive documentation sections
-- All significant code components are represented in the structure
-- Structure scales appropriately to project complexity (15-35 sections)
-- Multiple user perspectives are addressed (end users, developers, operators)
+- All four Diátaxis quadrants are represented in the documentation structure
+- Each quadrant contains appropriate content for the project complexity
+- No mixing of Diátaxis types within sections or prompts
+- Structure scales appropriately using Diátaxis balance guidelines
+- Clear quadrant identification with emojis and type labels
 
-**Content Quality:**
-- Prompts focus on practical implementation guidance
-- Technical depth balanced with clear explanations
-- Include examples, configuration samples, and troubleshooting guidance
-- Enable successful user adoption and system usage
+**Content Quality by Quadrant:**
+- **Tutorials**: Focus on learning experience, guaranteed success, guided practice
+- **How-to Guides**: Focus on goal achievement, practical problem-solving, user objectives
+- **Reference**: Focus on factual accuracy, comprehensive coverage, neutral descriptions
+- **Explanations**: Focus on understanding, context, conceptual connections, reasoning
 
-**Output Format:**
-Generate the complete JSON structure with hierarchical organization, detailed section names, and comprehensive prompts following the templates above.
+**Template Compliance:**
+- Each prompt uses the correct Diátaxis template exclusively
+- No mixing of template elements across quadrants
+- Word count minimums met for each template type
+- Language and tone appropriate for each quadrant type
 
+**Final Output Requirements:**
+
+1. **Quadrant-First Structure**: Organize all content within the four Diátaxis quadrants
+2. **Balanced Coverage**: Ensure each quadrant contains appropriate sections for the project
+3. **Template Compliance**: Each section must use the correct Diátaxis template
+5. **Hierarchical Organization**: Functional grouping within each quadrant as children
+
+**Example Complete Structure:**
 <documentation_structure>
 {
   "items": [
     {
-      "title": "core-function-1",
-      "name": "Primary Value Function Name",
-      "prompt": "Comprehensive prompt using Core Function template...",
+      "title": "tutorials",
+      "name": "📚 Tutorials (Learning-Oriented)",
+      "description": "Guided learning experiences for building skills through practice",
       "children": [
         {
-          "title": "function-overview",
-          "name": "Function Overview and Architecture",
-          "prompt": "Detailed analysis prompt..."
-        },
-        {
-          "title": "usage-configuration", 
-          "name": "Usage and Configuration Guide",
-          "prompt": "Practical usage prompt..."
+          "title": "first-steps-tutorial",
+          "name": "First Steps with [System]",
+          "prompt": "Create a guided learning experience that takes complete beginners through their first successful interaction with [system], focusing on building confidence through guaranteed success."
         }
       ]
     }

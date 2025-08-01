@@ -13,7 +13,7 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
     {
         Log.Logger.Information("HTTP {Method} {Uri}", request.Method, request.RequestUri);
 
-        var json = JsonConvert.DeserializeObject<dynamic>(await request.Content.ReadAsStringAsync());
+        var json = JsonConvert.DeserializeObject<dynamic>(await request.Content.ReadAsStringAsync(cancellationToken));
 
         var model = $"{json.model}";
 

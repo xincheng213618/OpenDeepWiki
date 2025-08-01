@@ -13,7 +13,7 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
-      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"  />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"  />
     </ItemGroup>
 
 </Project>

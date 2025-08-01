@@ -62,7 +62,7 @@ public partial class DocumentsService
     /// <param name="readme">README内容</param>
     /// <param name="format">输出格式</param>
     /// <returns>优化后的目录结构</returns>
-    public static async Task<string> GetCatalogueSmartFilterOptimizedAsync(string path, string readme,
+    public static string GetCatalogueSmartFilterOptimizedAsync(string path, string readme,
         string format = "compact")
     {
         using var activity = s_activitySource.StartActivity("智能过滤优化目录结构", ActivityKind.Server);
@@ -75,111 +75,14 @@ public partial class DocumentsService
         // 递归扫描目录所有文件和目录
         DocumentsHelper.ScanDirectory(path, pathInfos, ignoreFiles);
         activity?.SetTag("total_files", pathInfos.Count);
-
-        // 如果文件数量较少，直接返回优化结构
-        if (pathInfos.Count < 800)
+        
+        var fileTree = FileTreeBuilder.BuildTree(pathInfos, path);
+        return format.ToLower() switch
         {
-            activity?.SetTag("processing_type", "direct_build");
-            var fileTree = FileTreeBuilder.BuildTree(pathInfos, path);
-            return format.ToLower() switch
-            {
-                "json" => FileTreeBuilder.ToCompactJson(fileTree),
-                "pathlist" => string.Join("\n", FileTreeBuilder.ToPathList(fileTree)),
-                "compact" or _ => FileTreeBuilder.ToCompactString(fileTree)
-            };
-        }
-
-        // 如果不启用智能过滤，返回优化结构
-        if (DocumentOptions.EnableSmartFilter == false)
-        {
-            activity?.SetTag("processing_type", "smart_filter_disabled");
-            var fileTree = FileTreeBuilder.BuildTree(pathInfos, path);
-            return format.ToLower() switch
-            {
-                "json" => FileTreeBuilder.ToCompactJson(fileTree),
-                "pathlist" => string.Join("\n", FileTreeBuilder.ToPathList(fileTree)),
-                "compact" or _ => FileTreeBuilder.ToCompactString(fileTree)
-            };
-        }
-
-        activity?.SetTag("processing_type", "ai_smart_filter");
-        Log.Logger.Information($"开始优化目录结构（使用{DocumentOptions.CatalogueFormat}格式）");
-
-        var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
-            OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel);
-
-        var codeDirSimplifier = analysisModel.Plugins["CodeAnalysis"]["CodeDirSimplifier"];
-
-        // 使用优化的目录结构作为输入
-        var optimizedInput = DocumentsHelper.GetCatalogueOptimized(path, DocumentOptions.CatalogueFormat);
-        activity?.SetTag("optimized_input.length", optimizedInput?.Length ?? 0);
-
-        var sb = new StringBuilder();
-        int retryCount = 0;
-        const int maxRetries = 5;
-        Exception? lastException = null;
-
-        while (retryCount < maxRetries)
-        {
-            try
-            {
-                await foreach (var item in analysisModel.InvokeStreamingAsync(codeDirSimplifier, new KernelArguments(
-                                   new OpenAIPromptExecutionSettings()
-                                   {
-                                       MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.AnalysisModel)
-                                   })
-                               {
-                                   ["code_files"] = optimizedInput,
-                                   ["readme"] = readme
-                               }))
-                {
-                    sb.Append(item);
-                }
-
-                // 成功则跳出循环
-                lastException = null;
-                break;
-            }
-            catch (Exception ex)
-            {
-                retryCount++;
-                lastException = ex;
-                Log.Logger.Error(ex, $"优化目录结构失败，重试第{retryCount}次");
-                activity?.SetTag($"retry.{retryCount}.error", ex.Message);
-                if (retryCount >= maxRetries)
-                {
-                    activity?.SetTag("failed_after_retries", true);
-                    throw new Exception($"优化目录结构失败，已重试{maxRetries}次", ex);
-                }
-
-                await Task.Delay(5000 * retryCount);
-                sb.Clear();
-            }
-        }
-
-        activity?.SetTag("retry_count", retryCount);
-        activity?.SetTag("raw_result.length", sb.Length);
-
-        // 正则表达式提取response_file
-        var regex = new Regex("<response_file>(.*?)</response_file>", RegexOptions.Singleline);
-        var match = regex.Match(sb.ToString());
-        if (match.Success)
-        {
-            activity?.SetTag("extraction_method", "response_file_tag");
-            return match.Groups[1].Value;
-        }
-
-        // 可能是```json
-        var jsonRegex = new Regex("```json(.*?)```", RegexOptions.Singleline);
-        var jsonMatch = jsonRegex.Match(sb.ToString());
-        if (jsonMatch.Success)
-        {
-            activity?.SetTag("extraction_method", "json_code_block");
-            return jsonMatch.Groups[1].Value;
-        }
-
-        activity?.SetTag("extraction_method", "raw_content");
-        return sb.ToString();
+            "json" => FileTreeBuilder.ToCompactJson(fileTree),
+            "pathlist" => string.Join("\n", FileTreeBuilder.ToPathList(fileTree)),
+            "compact" or _ => FileTreeBuilder.ToCompactString(fileTree)
+        };
     }
 
     /// <summary>

@@ -39,7 +39,7 @@ public class FileTreeNode
 public static class FileTreeBuilder
 {
     /// <summary>
-    /// 从路径信息列表构建文件树
+    /// 从路径信息列表构建文件树，确保完整的目录结构
     /// </summary>
     /// <param name="pathInfos">路径信息列表</param>
     /// <param name="basePath">基础路径，用于计算相对路径</param>
@@ -57,38 +57,84 @@ public static class FileTreeBuilder
             if (relativePath.StartsWith("."))
                 continue;
                 
-            // 分割路径
-            var parts = relativePath.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+            // 分割路径，确保处理空字符串
+            var parts = relativePath.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
             
-            // 从根节点开始构建路径
-            var currentNode = root;
+            // 如果路径为空，跳过
+            if (parts.Length == 0)
+                continue;
             
-            for (int i = 0; i < parts.Length; i++)
-            {
-                var part = parts[i];
-                var isLastPart = i == parts.Length - 1;
-                
-                if (!currentNode.Children.ContainsKey(part))
-                {
-                    currentNode.Children[part] = new FileTreeNode
-                    {
-                        Name = part,
-                        Type = isLastPart && pathInfo.Type == "File" ? "F" : "D"
-                    };
-                }
-                
-                currentNode = currentNode.Children[part];
-            }
+            // 从根节点开始构建完整路径
+            BuildPathInTree(root, parts, pathInfo.Type);
         }
         
         return root;
     }
     
     /// <summary>
-    /// 将文件树转换为紧凑的字符串表示
+    /// 在文件树中构建指定路径，确保所有中间目录都被创建
+    /// </summary>
+    /// <param name="root">根节点</param>
+    /// <param name="pathParts">路径片段数组</param>
+    /// <param name="finalType">最终节点类型（File 或 Directory）</param>
+    private static void BuildPathInTree(FileTreeNode root, string[] pathParts, string finalType)
+    {
+        var currentNode = root;
+        
+        for (int i = 0; i < pathParts.Length; i++)
+        {
+            var part = pathParts[i];
+            var isLastPart = i == pathParts.Length - 1;
+            
+            // 确定当前节点的类型
+            string nodeType;
+            if (isLastPart)
+            {
+                // 最后一个部分：根据传入的类型决定
+                nodeType = finalType == "File" ? "F" : "D";
+            }
+            else
+            {
+                // 中间部分：肯定是目录
+                nodeType = "D";
+            }
+            
+            // 如果节点不存在，创建新节点
+            if (!currentNode.Children.ContainsKey(part))
+            {
+                currentNode.Children[part] = new FileTreeNode
+                {
+                    Name = part,
+                    Type = nodeType
+                };
+            }
+            else
+            {
+                // 如果节点已存在，但类型可能需要更新
+                // 例如：先遇到 "src/main.js"，后遇到 "src/" 目录
+                var existingNode = currentNode.Children[part];
+                
+                // 如果现有节点是文件，但当前路径表明它应该是目录，则更新类型
+                if (existingNode.IsFile && (!isLastPart || finalType != "File"))
+                {
+                    existingNode.Type = "D";
+                }
+                // 如果现有节点是目录，但当前是最后一个部分且应该是文件，保持目录类型
+                // （因为目录的优先级高于文件）
+            }
+            
+            currentNode = currentNode.Children[part];
+        }
+    }
+    
+    /// <summary>
+    /// 将文件树转换为紧凑的字符串表示，确保完整构建所有目录层次
     /// 格式示例：
     /// /
-    ///   src/D
+    ///   server/D
+    ///     src/D
+    ///       Main/F
+    ///   web/D
     ///     components/D
     ///       Header.tsx/F
     ///       Footer.tsx/F
@@ -103,22 +149,65 @@ public static class FileTreeBuilder
         var sb = new StringBuilder();
         var indentStr = new string(' ', indent * 2);
         
+        // 根节点特殊处理
         if (indent == 0)
         {
             sb.AppendLine("/");
         }
         
-        foreach (var child in node.Children.OrderBy(x => x.Value.IsFile).ThenBy(x => x.Key))
+        // 按照目录优先，然后按名称排序的方式遍历子节点
+        var sortedChildren = node.Children
+            .OrderBy(x => x.Value.IsFile)  // 目录在前，文件在后
+            .ThenBy(x => x.Key)            // 按名称排序
+            .ToList();
+        
+        foreach (var child in sortedChildren)
         {
+            // 输出当前节点信息
             sb.AppendLine($"{indentStr}{child.Key}/{child.Value.Type}");
             
-            if (child.Value.IsDirectory && child.Value.Children.Count > 0)
+            // 如果是目录，无论是否有子节点都要递归处理，确保完整的目录结构
+            if (child.Value.IsDirectory)
             {
-                sb.Append(ToCompactString(child.Value, indent + 1));
+                // 递归处理子目录，即使子目录为空也要保持结构
+                var childContent = ToCompactString(child.Value, indent + 1);
+                if (!string.IsNullOrEmpty(childContent.Trim()))
+                {
+                    sb.Append(childContent);
+                }
             }
         }
         
         return sb.ToString();
+    }
+    
+    /// <summary>
+    /// 获取文件树的所有完整路径，用于验证结构完整性
+    /// </summary>
+    /// <param name="node">文件树节点</param>
+    /// <param name="currentPath">当前路径</param>
+    /// <returns>所有完整路径的列表</returns>
+    public static List<string> GetAllPaths(FileTreeNode node, string currentPath = "")
+    {
+        var allPaths = new List<string>();
+        
+        foreach (var child in node.Children)
+        {
+            var childPath = string.IsNullOrEmpty(currentPath) 
+                ? child.Key 
+                : $"{currentPath}/{child.Key}";
+                
+            // 添加当前路径（目录也要记录）
+            allPaths.Add($"{childPath}({child.Value.Type})");
+            
+            // 如果是目录，递归获取子路径
+            if (child.Value.IsDirectory && child.Value.Children.Count > 0)
+            {
+                allPaths.AddRange(GetAllPaths(child.Value, childPath));
+            }
+        }
+        
+        return allPaths;
     }
     
     /// <summary>
@@ -131,7 +220,8 @@ public static class FileTreeBuilder
     {
         return System.Text.Json.JsonSerializer.Serialize(SerializeNodeCompact(node), new System.Text.Json.JsonSerializerOptions
         {
-            WriteIndented = false
+            WriteIndented = false,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         });
     }
     

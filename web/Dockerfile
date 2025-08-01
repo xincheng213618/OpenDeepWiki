@@ -52,5 +52,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# 使用启动脚本而不是直接启动 server.js
-CMD ["sh", "/app/start.sh"]
+# 直接启动 server.js 不然可能会出现无法执行脚本
+CMD ["node", "server.js"]

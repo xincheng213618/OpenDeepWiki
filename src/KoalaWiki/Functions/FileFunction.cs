@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Microsoft.SemanticKernel;
 using OpenDeepWiki.CodeFoundation;
 using OpenDeepWiki.CodeFoundation.Utils;
@@ -89,6 +90,231 @@ public class FileFunction(string gitPath)
     }
 
     /// <summary>
+    /// 获取指定目录下所有目录和文件
+    /// </summary>
+    /// <param name="path"></param>
+    /// <param name="pattern"></param>
+    /// <returns></returns>
+        [KernelFunction(name: "Glob"),
+     Description(
+        """
+        - Fast file pattern matching tool for targeted file searches in codebases
+        - Use specific patterns like \"*.js\", \"src/**/*.tsx\", \"components/**/*.css\" to find relevant files
+        - Avoid broad patterns like \"**/*\" or \"*\" which scan entire directories
+        - Focus on searching for files related to specific features, technologies, or file types
+        - Returns matching file paths sorted by modification time
+        - Best for finding files when you know the general location or file extension
+        - When you need open-ended exploration, use the Agent tool instead of broad scanning
+        - You have the capability to call multiple tools in a single response for targeted searches
+        - Examples: \"pages/**/*.tsx\" (React pages), \"*.config.js\" (config files), \"src/components/**/*.ts\" (TypeScript components)
+        """)]
+    public string Glob(
+        [Description("Specific glob pattern for targeted file search (e.g., '*.tsx', 'src/**/*.ts', 'components/**/*.css'). Avoid broad patterns like '**/*' or '*'.")]
+        string pattern,
+        [Description(
+            """
+            The directory to search in. If not specified, the current working directory will be used. IMPORTANT: Omit this field to use the default directory. DO NOT enter "undefined" or "null" - simply omit it for the default behavior. Must be a valid directory path if provided.
+            """
+        )]
+        string? path = null)
+    {
+        try
+        {
+            if (pattern == "**/*")
+            {
+                return "Please use a more specific pattern instead of '**/*'. This pattern is too broad and may cause performance issues. Try using patterns like '*.js', 'src/**/*.tsx', or 'components/**/*.css' to narrow down your search.";
+            }
+            
+            // 如果没有指定路径，使用根目录
+            if (string.IsNullOrEmpty(path))
+            {
+                path = gitPath;
+            }
+            else
+            {
+                path = Path.Combine(gitPath, path.TrimStart('/'));
+            }
+
+            // 检查目录是否存在
+            if (!Directory.Exists(path))
+            {
+                return $"Directory not found: {path.Replace(gitPath, "").TrimStart(Path.DirectorySeparatorChar)}";
+            }
+
+            // 获取忽略文件列表
+            var ignoreFiles = DocumentsHelper.GetIgnoreFiles(gitPath);
+
+            // 获取匹配的文件
+            var matchedFiles = GetMatchingFiles(path, pattern, ignoreFiles);
+
+            // 按修改时间排序
+            var sortedFiles = matchedFiles
+                .Select(f => new FileInfo(f))
+                .Where(fi => fi.Exists)
+                .OrderByDescending(fi => fi.LastWriteTime)
+                .Select(fi => fi.FullName)
+                .ToList();
+
+            // 处理路径，去掉gitPath前缀
+            var relativePaths = sortedFiles
+                .Select(f => f.Replace(gitPath, "").TrimStart(Path.DirectorySeparatorChar))
+                .Select(f => f.Replace(Path.DirectorySeparatorChar, '/')) // 统一使用正斜杠
+                .ToList();
+
+            if (!relativePaths.Any())
+            {
+                return $"No files found matching pattern: {pattern}";
+            }
+
+            return string.Join("\n", relativePaths);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in Glob: {ex.Message}");
+            return $"Error matching files: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// 获取匹配glob模式的文件
+    /// </summary>
+    private List<string> GetMatchingFiles(string searchPath, string pattern, string[] ignoreFiles)
+    {
+        var matchedFiles = new List<string>();
+
+        // 处理递归模式 (**)
+        bool isRecursive = pattern.Contains("**/") || pattern.Contains("**\\");
+
+        SearchOption searchOption = isRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+
+        // 如果是简单的扩展名模式（如 *.js, *.ts）
+        if (pattern.StartsWith("*.") && !pattern.Contains("/") && !pattern.Contains("\\"))
+        {
+            string searchPattern = pattern;
+            var files = Directory.GetFiles(searchPath, searchPattern, searchOption);
+            matchedFiles.AddRange(files.Where(f => !IsIgnoredFile(f, ignoreFiles)));
+        }
+        // 如果是复杂的glob模式
+        else
+        {
+            // 获取所有文件
+            var allFiles = Directory.GetFiles(searchPath, "*.*", searchOption);
+
+            // 创建正则表达式来匹配glob模式
+            var regexPattern = ConvertGlobToRegex(pattern);
+            var regex = new Regex(regexPattern, RegexOptions.IgnoreCase);
+
+            foreach (var file in allFiles)
+            {
+                if (IsIgnoredFile(file, ignoreFiles))
+                    continue;
+
+                // 获取相对于搜索路径的路径
+                var relativePath = Path.GetRelativePath(searchPath, file).Replace(Path.DirectorySeparatorChar, '/');
+
+                if (regex.IsMatch(relativePath))
+                {
+                    matchedFiles.Add(file);
+                }
+            }
+        }
+
+        return matchedFiles;
+    }
+
+    /// <summary>
+    /// 将glob模式转换为正则表达式
+    /// </summary>
+    private string ConvertGlobToRegex(string globPattern)
+    {
+        var pattern = globPattern.Replace(Path.DirectorySeparatorChar, '/');
+        var regexPattern = new StringBuilder();
+
+        for (int i = 0; i < pattern.Length; i++)
+        {
+            var c = pattern[i];
+
+            switch (c)
+            {
+                case '*':
+                    if (i + 1 < pattern.Length && pattern[i + 1] == '*')
+                    {
+                        // ** 匹配任意层级目录
+                        if (i + 2 < pattern.Length && pattern[i + 2] == '/')
+                        {
+                            regexPattern.Append("(.*/)");
+                            i += 2; // 跳过 **/
+                        }
+                        else
+                        {
+                            regexPattern.Append(".*");
+                            i++; // 跳过第二个 *
+                        }
+                    }
+                    else
+                    {
+                        // 单个 * 匹配除路径分隔符外的任意字符
+                        regexPattern.Append("[^/]*");
+                    }
+
+                    break;
+                case '?':
+                    regexPattern.Append("[^/]");
+                    break;
+                case '.':
+                case '(':
+                case ')':
+                case '[':
+                case ']':
+                case '{':
+                case '}':
+                case '+':
+                case '^':
+                case '$':
+                case '|':
+                case '\\':
+                    regexPattern.Append('\\').Append(c);
+                    break;
+                default:
+                    regexPattern.Append(c);
+                    break;
+            }
+        }
+
+        return "^" + regexPattern.ToString() + "$";
+    }
+
+    /// <summary>
+    /// 检查文件是否应该被忽略
+    /// </summary>
+    private bool IsIgnoredFile(string filePath, string[] ignoreFiles)
+    {
+        var filename = Path.GetFileName(filePath);
+
+        foreach (var pattern in ignoreFiles)
+        {
+            if (string.IsNullOrWhiteSpace(pattern) || pattern.StartsWith("#"))
+                continue;
+
+            var trimmedPattern = pattern.Trim();
+
+            // 转换gitignore模式到正则表达式
+            if (trimmedPattern.Contains('*'))
+            {
+                string regexPattern = "^" + Regex.Escape(trimmedPattern).Replace("\\*", ".*") + "$";
+                if (Regex.IsMatch(filename, regexPattern, RegexOptions.IgnoreCase))
+                    return true;
+            }
+            else if (filename.Equals(trimmedPattern, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// 从指定行数开始读取文件内容
     /// </summary>
     /// <returns></returns>
@@ -138,13 +364,13 @@ public class FileFunction(string gitPath)
                    "</system-reminder>";
         }
 
-        items = items.DistinctBy(item => $"fileName:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit)
+        items = items.DistinctBy(item => $"FilePath:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit)
             .ToArray();
 
         var dic = new Dictionary<string, string>();
         foreach (var item in items)
         {
-            dic.Add($"fileName:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit,
+            dic.Add($"FilePath:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit,
                 await ReadItem(item.FilePath, item.Offset, item.Limit));
         }
 

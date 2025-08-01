@@ -263,7 +263,8 @@ public partial class DocumentPendingService
         {
             new TextContent(prompt)
         };
-        contents.AddSystemReminder();
+        
+        contents.AddDocsGenerateSystemReminder();
         history.AddUserMessage(contents);
 
         var sr = new StringBuilder();
