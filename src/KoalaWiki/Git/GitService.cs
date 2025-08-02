@@ -8,15 +8,32 @@ public class GitService
 {
     public static (string localPath, string organization) GetRepositoryPath(string repositoryUrl)
     {
-        // 解析仓库地址
-        var uri = new Uri(repositoryUrl);
-        // 得到组织名和仓库名称
-        var segments = uri.Segments;
-        var organization = segments[1].Trim('/');
-        var repositoryName = segments[2].Trim('/').Replace(".git", "");
-
-        // 拼接本地路径，默认使用"/repositories"，
-        var repositoryPath = Path.Combine(Constant.GitPath, organization, repositoryName);
+        var uri = new Uri(repositoryUrl);  
+        var segments = uri.Segments;  
+        
+        if (segments.Length < 2)  
+        {  
+            throw new ArgumentException("仓库URL格式不正确，至少需要包含组织名和仓库名");  
+        }  
+        
+        string organization;  
+        string repositoryName;  
+        
+        
+        // 对于 GitLab，最后一个段是仓库名，前面的都是组织/子组织  
+        repositoryName = segments[segments.Length - 1].Trim('/').Replace(".git", "");  
+        
+        // 组织名包含所有中间路径，用下划线连接以避免路径冲突  
+        var orgParts = new List<string>();  
+        for (int i = 1; i < segments.Length - 1; i++)  
+        {  
+            orgParts.Add(segments[i].Trim('/'));  
+        }  
+        organization = string.Join("/", orgParts);  
+        
+    
+        // 拼接本地路径  
+        var repositoryPath = Path.Combine(Constant.GitPath, organization, repositoryName);  
         return (repositoryPath, organization);
     }
 
