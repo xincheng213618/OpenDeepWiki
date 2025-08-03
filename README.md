@@ -307,10 +307,10 @@ make build-frontend-amd  # Frontend only AMD
 
 # Community
 
-- Discord: [join us](https://discord.gg/8sxUNacv)
-- WeChat Official Account QR Code:
+- Discord: [join us](https://discord.gg/Y3fvpnGVwt)
+- Feishu QR Code:
 
-![WeChat QR](/img/wechat.jpg)
+![Feishu](/img/feishu.png)
 
 ---
 
