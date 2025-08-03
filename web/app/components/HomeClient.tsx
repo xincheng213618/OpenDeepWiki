@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
@@ -85,6 +86,7 @@ export default function HomeClient({
   const repositories = initialRepositories;
   const [formVisible, setFormVisible] = useState(false);
   const [lastRepoModalVisible, setLastRepoModalVisible] = useState(false);
+  const [qrCodeModalVisible, setQrCodeModalVisible] = useState(false);
   const [searchValue, setSearchValue] = useState<string>(initialSearchValue);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
@@ -228,7 +230,7 @@ export default function HomeClient({
                       {searchValue ? t('home.repo_list.not_found', { keyword: searchValue }) : t('home.repo_list.empty')}
                     </h3>
                     <p className="text-muted-foreground mb-6">
-                      {searchValue ? '尝试调整搜索关键词' : '开始添加您的第一个代码仓库'}
+                      {searchValue ? t('home.repo_list.try_adjust_keywords') : t('home.repo_list.get_started')}
                     </p>
                     <Button
                       onClick={() => setFormVisible(true)}
@@ -305,11 +307,59 @@ export default function HomeClient({
             open={lastRepoModalVisible}
             onCancel={() => setLastRepoModalVisible(false)}
           />
+
+          {/* 二维码预览模态框 */}
+          <Dialog open={qrCodeModalVisible} onOpenChange={setQrCodeModalVisible}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-center">
+                  {t('home.community.qr_preview_title')}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex justify-center p-4">
+                <img 
+                  src="/feishu.jpg" 
+                  alt={t('home.community.qr_alt')}
+                  className="w-80 h-80 object-contain rounded-lg"
+                />
+              </div>
+              <p className="text-center text-sm text-muted-foreground">
+                {t('home.community.scan_tip')}
+              </p>
+            </DialogContent>
+          </Dialog>
         </main>
 
         {/* 页脚 */}
         <footer className="glass-effect border-t mt-12">
           <div className="max-w-7xl mx-auto container-padding py-12">
+            {/* 交流群区域 */}
+            <div className="mb-8">
+              <div className="flex justify-center">
+                <Card className="card-modern max-w-md">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-4">
+                      <img 
+                        src="/feishu.jpg" 
+                        alt={t('home.community.qr_alt')}
+                        className="w-20 h-20 object-contain rounded-lg flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => setQrCodeModalVisible(true)}
+                        title={t('home.community.click_to_enlarge')}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-foreground mb-1 text-sm">
+                          {t('home.community.join_group')}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {t('home.community.description')}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
             {/* 赞助商区域 */}
             <div className="mb-12">
               <h3 className="text-2xl font-bold text-center mb-8 text-foreground">

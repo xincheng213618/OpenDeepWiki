@@ -39,6 +39,15 @@
       "processing_repositories": "处理中",
       "github_stars": "GitHub Stars"
     },
+    "community": {
+      "title": "加入社区交流群",
+      "join_group": "扫码加入飞书群",
+      "description": "与开发者交流讨论，获取最新资讯",
+      "qr_alt": "飞书交流群二维码",
+      "click_to_enlarge": "点击查看大图",
+      "qr_preview_title": "飞书交流群二维码",
+      "scan_tip": "使用飞书扫描此二维码加入交流群"
+    },
     "sponsors": {
       "title": "感谢赞助商支持",
       "antsk": {
@@ -61,7 +70,9 @@
       "add_button": "添加仓库",
       "empty": "暂无仓库数据",
       "not_found": "没有找到与\"{{keyword}}\"相关的仓库",
-      "add_now": "立即添加"
+      "add_now": "立即添加",
+      "get_started": "开始添加您的第一个代码仓库",
+      "try_adjust_keywords": "尝试调整搜索关键词"
     },
     "pagination": {
       "total": "共 {{total}} 个仓库"

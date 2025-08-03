@@ -39,6 +39,15 @@
       "processing_repositories": "Processing",
       "github_stars": "GitHub Stars"
     },
+    "community": {
+      "title": "Join Our Community",
+      "join_group": "Scan to Join Feishu Group",
+      "description": "Connect with developers, discuss and get latest updates",
+      "qr_alt": "Feishu Community QR Code",
+      "click_to_enlarge": "Click to enlarge",
+      "qr_preview_title": "Feishu Community QR Code",
+      "scan_tip": "Use Feishu to scan this QR code and join our community"
+    },
     "sponsors": {
       "title": "Thanks to Our Sponsors",
       "antsk": {
@@ -61,7 +70,9 @@
       "add_button": "Add Repository",
       "empty": "No repositories found",
       "not_found": "No repositories matching \"{{keyword}}\" found",
-      "add_now": "Add Now"
+      "add_now": "Add Now",
+      "get_started": "Start adding your first code repository",
+      "try_adjust_keywords": "Try adjusting search keywords"
     },
     "pagination": {
       "total": "Total {{total}} repositories"
