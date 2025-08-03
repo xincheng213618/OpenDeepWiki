@@ -20,7 +20,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, KnowledgeGraphGenerationStep>();
         services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, DocumentStructureGenerationStep>();
         services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, DocumentContentGenerationStep>();
-        services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, UpdateLogGenerationStep>();
 
         // 注册管道和协调器
         services.AddScoped<IDocumentProcessingPipeline, ResilientDocumentProcessingPipeline>();
