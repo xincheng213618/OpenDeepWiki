@@ -67,12 +67,24 @@ public class WarehouseTask(
                     activity?.SetTag("git.version", info.Version);
                     activity?.SetTag("git.local_path", info.LocalPath);
 
-                    await dbContext!.Warehouses.Where(x => x.Id == value.Id)
-                        .ExecuteUpdateAsync(x => x.SetProperty(a => a.Name, info.RepositoryName)
-                            .SetProperty(x => x.Branch, info.BranchName)
-                            .SetProperty(x => x.Version, info.Version)
-                            .SetProperty(x => x.Status, WarehouseStatus.Processing)
-                            .SetProperty(x => x.OrganizationName, info.Organization), stoppingToken);
+                    // 判断是否组织名称和项目名称为空
+                    if (string.IsNullOrEmpty(value.OrganizationName) && string.IsNullOrEmpty(value.Name))
+                    {
+                        await dbContext!.Warehouses.Where(x => x.Id == value.Id)
+                            .ExecuteUpdateAsync(x =>
+                                x.SetProperty(a => a.Name, info.RepositoryName)
+                                    .SetProperty(x => x.Branch, info.BranchName)
+                                    .SetProperty(x => x.Version, info.Version)
+                                    .SetProperty(x => x.Status, WarehouseStatus.Processing)
+                                    .SetProperty(x => x.OrganizationName, info.Organization), stoppingToken);
+                    }
+                    else
+                    {
+                        await dbContext!.Warehouses.Where(x => x.Id == value.Id)
+                            .ExecuteUpdateAsync(x =>
+                                x.SetProperty(x => x.Version, info.Version)
+                                    .SetProperty(x => x.Status, WarehouseStatus.Processing), stoppingToken);
+                    }
 
                     logger.LogInformation("更新仓库信息到数据库完成，仓库ID：{Id}", value.Id);
 

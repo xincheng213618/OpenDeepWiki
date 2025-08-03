@@ -47,5 +47,5 @@ public class UserContext : IUserContext
     /// <summary>
     /// 判断用户是否是管理员
     /// </summary>
-    public bool IsAdmin => CurrentUserRole == "admin";
+    public bool IsAdmin => _httpContextAccessor.HttpContext?.User?.IsInRole("admin") ?? false;
 } 

@@ -843,12 +843,17 @@ public class AuthService(
     /// <returns>cookie选项</returns>
     private CookieOptions CreateCookieOptions(int expireMinutes)
     {
+        var isHttps = httpContextAccessor.HttpContext?.Request.IsHttps ?? false;
+        var isDevelopment = configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT") == "Development";
+        
         return new CookieOptions
         {
             HttpOnly = true,
-            Secure = false, // 开发环境或HTTP时不要求HTTPS
-            SameSite = SameSiteMode.Lax, // 开发环境使用更宽松的策略
-            Expires = DateTime.UtcNow.AddMinutes(expireMinutes)
+            Secure = isHttps, // 在HTTPS环境下设置为true
+            SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddMinutes(expireMinutes),
+            Path = "/", // 确保cookie在整个站点有效
+            Domain = null // 让浏览器自动设置域名
         };
     }
 }

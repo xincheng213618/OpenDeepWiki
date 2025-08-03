@@ -139,12 +139,10 @@ export default function AdminLayout({
     if (userRole === 'admin') {
       return allItems;
     } else {
-      // 普通用户显示：数据统计、仓库管理、数据微调、系统设置
+      // 普通用户显示：仓库管理、数据微调
       return [
-        allItems[0], // 数据统计
         allItems[2], // 仓库管理
         allItems[3], // 数据微调
-        allItems[5], // 系统设置
       ];
     }
   };
@@ -187,9 +185,19 @@ export default function AdminLayout({
           try {
             const userInfo = JSON.parse(userInfoStr);
             if (userInfo.role) {
-              setUserRole(userInfo.role);
+              // 检查是否包含 admin 角色（支持多角色，如 "admin,user"）
+              const roles = userInfo.role.split(',').map((r: string) => r.trim());
+              if (roles.includes('admin')) {
+                setUserRole('admin');
+              } else {
+                setUserRole('user');
+                // 普通用户重定向逻辑
+                redirectUserIfNeeded('user');
+              }
             } else {
               setUserRole('user');
+              // 普通用户重定向逻辑
+              redirectUserIfNeeded('user');
             }
           } catch (error) {
             console.error('解析用户信息失败:', error);
@@ -205,6 +213,13 @@ export default function AdminLayout({
     checkLoginStatus();
   }, [router, pathname]);
 
+  // 监听用户角色变化，进行权限检查
+  useEffect(() => {
+    if (!isLoading && isLoggedIn && userRole) {
+      redirectUserIfNeeded(userRole);
+    }
+  }, [userRole, pathname, isLoading, isLoggedIn]);
+
   // 处理登出
   const handleLogout = () => {
     console.log('用户退出登录');
@@ -218,6 +233,30 @@ export default function AdminLayout({
     setUserRole('user');
 
     router.push('/login');
+  };
+
+  // 检查普通用户是否需要重定向
+  const redirectUserIfNeeded = (role: string) => {
+    if (role === 'user') {
+      // 普通用户无权访问的页面列表
+      const restrictedPaths = [
+        '/admin', // 数据统计
+        '/admin/users', // 用户管理
+        '/admin/roles', // 角色管理
+        '/admin/permissions', // 权限管理
+        '/admin/settings' // 系统设置
+      ];
+      
+      // 检查当前路径是否是受限制的
+      const isRestrictedPath = restrictedPaths.some(path => 
+        pathname === path || pathname.startsWith(path + '/')
+      );
+      
+      if (isRestrictedPath) {
+        // 重定向到仓库管理页面
+        router.push('/admin/repositories');
+      }
+    }
   };
 
   // 处理菜单点击

@@ -183,11 +183,56 @@ export default function UsersPage() {
 
   // 处理表单提交（创建/更新用户）
   const handleFormSubmit = async () => {
-    // 简单的表单验证
+    // 表单验证
     if (!formData.name || !formData.email || (!currentUser && !formData.password)) {
       toast({
         title: "错误",
         description: "请填写所有必填字段",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 验证角色是否选择
+    if (!formData.role) {
+      toast({
+        title: "错误",
+        description: "请选择用户角色",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "错误",
+        description: "请输入正确的邮箱地址",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 检查邮箱是否已存在（除了当前编辑的用户）
+    const existingUser = users.find(user => 
+      user.email.toLowerCase() === formData.email.toLowerCase() && 
+      (!currentUser || user.id !== currentUser.id)
+    );
+    if (existingUser) {
+      toast({
+        title: "错误",
+        description: "该邮箱地址已被使用",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 验证密码强度（只在创建用户或修改密码时）
+    if ((!currentUser || formData.password) && formData.password.length < 6) {
+      toast({
+        title: "错误",
+        description: "密码长度不能少于6位",
         variant: "destructive",
       });
       return;
@@ -203,13 +248,15 @@ export default function UsersPage() {
           password: formData.password || undefined, // 如果没有输入密码，会是undefined
         };
 
+        console.log('更新用户数据:', updateData);
         const response = await updateUser(currentUser.id, updateData);
+        console.log('更新用户响应:', response);
         if (response.code === 200) {
           toast({
             title: "成功",
-            description: "用户更新成功",
+            description: `用户 "${formData.name}" 更新成功`,
           });
-          setIsModalOpen(false);
+          handleModalClose(false);
           loadUsers(); // 重新加载用户列表
         } else {
           toast({
@@ -224,21 +271,23 @@ export default function UsersPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          role: formData.role,
+          role: formData.role || undefined, // 确保空值传递undefined
         };
 
-        const { data } = await createUser(createData) as any;
-        if (data.code === 200) {
+        console.log('创建用户数据:', createData);
+        const response = await createUser(createData);
+        console.log('创建用户响应:', response);
+        if (response.code === 200) {
           toast({
             title: "成功",
-            description: "用户创建成功",
+            description: `用户 "${formData.name}" 创建成功，角色为 "${formData.role}"`,
           });
-          setIsModalOpen(false);
+          handleModalClose(false);
           loadUsers(); // 重新加载用户列表
         } else {
           toast({
             title: "错误",
-            description: data.message || '创建用户失败',
+            description: response.message || '创建用户失败',
             variant: "destructive",
           });
         }
@@ -263,6 +312,20 @@ export default function UsersPage() {
       role: '',
     });
     setIsModalOpen(true);
+  };
+  
+  // 关闭对话框时清空表单
+  const handleModalClose = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+      setCurrentUser(null);
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        role: '',
+      });
+    }
   };
 
   // 根据角色获取标签颜色和样式
@@ -325,7 +388,7 @@ export default function UsersPage() {
               >
                 搜索
               </Button>
-              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+              <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
                 <DialogTrigger asChild>
                   <Button onClick={handleAddUser}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -340,54 +403,68 @@ export default function UsersPage() {
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="name">用户名</Label>
+                      <Label htmlFor="name">用户名 <span className="text-red-500">*</span></Label>
                       <Input
                         id="name"
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
                         placeholder="请输入用户名"
+                        required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="email">邮箱</Label>
+                      <Label htmlFor="email">邮箱 <span className="text-red-500">*</span></Label>
                       <Input
                         id="email"
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
                         placeholder="请输入邮箱"
+                        required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="password">密码</Label>
+                      <Label htmlFor="password">
+                        密码 
+                        {!currentUser && <span className="text-red-500">*</span>}
+                        {currentUser && <span className="text-gray-500 text-sm">(留空则不修改)</span>}
+                      </Label>
                       <Input
                         id="password"
                         type="password"
                         value={formData.password}
                         onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        placeholder={currentUser ? "留空则不修改密码" : "请输入密码"}
+                        placeholder={currentUser ? "留空则不修改密码" : "请输入密码（最少6位）"}
+                        required={!currentUser}
+                        minLength={6}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="role">角色</Label>
+                      <Label htmlFor="role">角色 <span className="text-red-500">*</span></Label>
                       <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
                         <SelectTrigger>
                           <SelectValue placeholder="选择角色" />
                         </SelectTrigger>
                         <SelectContent>
-                          {roles.map((role) => (
-                            <SelectItem key={role.id} value={role.name}>
-                              {role.name}
-                            </SelectItem>
-                          ))}
+                          {rolesLoading ? (
+                            <SelectItem value="" disabled>加载中...</SelectItem>
+                          ) : roles.length === 0 ? (
+                            <SelectItem value="" disabled>暂无可用角色</SelectItem>
+                          ) : (
+                            roles.map((role) => (
+                              <SelectItem key={role.id} value={role.name} disabled={!role.isActive}>
+                                {role.name} {!role.isActive && '(已禁用)'}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                      <Button variant="outline" onClick={() => handleModalClose(false)}>
                         取消
                       </Button>
-                      <Button onClick={handleFormSubmit}>
+                      <Button onClick={handleFormSubmit} disabled={!formData.role && !currentUser}>
                         {currentUser ? '更新' : '创建'}
                       </Button>
                     </div>

@@ -97,12 +97,13 @@ export async function getHomeStats(): Promise<HomeStats> {
 
 /**
  * 获取简化的统计数据（仅包含基本信息，用于快速加载）
+ * @param cookieString 可选的cookie字符串，用于服务端请求
  * @returns Promise<Partial<HomeStats>>
  */
-export async function getBasicHomeStats(): Promise<Partial<HomeStats>> {
+export async function getBasicHomeStats(cookieString?: string): Promise<Partial<HomeStats>> {
   try {
     const [repositoriesResponse, openDeepWikiInfo] = await Promise.all([
-      getWarehouse(1, 100), // 获取基本仓库信息
+      getWarehouse(1, 100, '', cookieString), // 获取基本仓库信息
       getGitHubRepoInfo('AIDotNet', 'OpenDeepWiki')
     ]);
 

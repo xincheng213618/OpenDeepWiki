@@ -313,18 +313,24 @@ export async function getBranchList(
  * Get warehouse list
  * 此函数可在服务器组件中使用
  */
-export async function getWarehouse(page: number, pageSize: number, keyword?: string): Promise<ApiResponse<WarehouseListResponse>> {
+export async function getWarehouse(page: number, pageSize: number, keyword?: string, cookieString?: string): Promise<ApiResponse<WarehouseListResponse>> {
 
   // keyword == undefined 时，置空
   if (keyword === undefined || keyword === 'undefined') {
     keyword = '';
   }
 
+  const headers: HeadersInit = {};
+  if (cookieString) {
+    headers['Cookie'] = cookieString;
+  }
+
   // @ts-ignore
   return fetchApi<WarehouseListResponse>(API_URL + '/api/Warehouse/WarehouseList?page=' + page + '&pageSize=' + pageSize + '&keyword=' + keyword, {
     method: 'GET',
     // 添加缓存控制使其适用于服务器组件
-    cache: 'no-store'
+    cache: 'no-store',
+    headers
   });
 }
 
