@@ -307,10 +307,10 @@ make build-frontend-amd  # 仅前端AMD
 
 # 交流社区 Community
 
-- Discord: [join us](https://discord.gg/8sxUNacv)
-- 微信公众号二维码：
+- Discord: [join us](https://discord.gg/Y3fvpnGVwt)
+- 飞书交流群二维码：
 
-![WeChat QR](/img/wechat.jpg)
+![飞书交流群](/img/feishu.png)
 
 ---
 
