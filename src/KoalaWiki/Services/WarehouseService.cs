@@ -558,11 +558,14 @@ public class WarehouseService(
             {
                 var branch = await koala.Warehouses
                     .AsNoTracking()
-                    .Where(x => x.Branch == input.Branch && x.OrganizationName == decodedOrganization &&
-                                x.Name == decodedRepositoryName)
+                    .Where(x => x.Branch.ToLower() == input.Branch.ToLower() && x.OrganizationName.ToLower() == decodedOrganization.ToLower() &&
+                                x.Name.ToLower() == decodedRepositoryName.ToLower())
                     .FirstOrDefaultAsync();
 
-                if (branch is { Status: WarehouseStatus.Completed or WarehouseStatus.Processing })
+                if (branch is
+                    {
+                        Status: WarehouseStatus.Completed or WarehouseStatus.Processing or WarehouseStatus.Pending
+                    })
                 {
                     throw new Exception("该分支已经存在");
                 }
@@ -801,7 +804,8 @@ public class WarehouseService(
         {
             address += "/tree/" + warehouse.Branch + "/";
         }
-        else if (address.Contains("gitlab.com") || System.Text.RegularExpressions.Regex.IsMatch(address, @"^gitlab\.[\w-]+\.(com|cn|net|org)", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        else if (address.Contains("gitlab.com") || System.Text.RegularExpressions.Regex.IsMatch(address,
+                     @"^gitlab\.[\w-]+\.(com|cn|net|org)", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
         {
             address += "/-/tree/" + warehouse.Branch + "/";
         }
@@ -960,7 +964,7 @@ public class WarehouseService(
         foreach (var warehouseEntity in list)
         {
             var repository = dto.First(x => x.Id == warehouseEntity.Id);
-            
+
             // Check if we have stored fork/star counts (non-zero values indicate we have data)
             if (warehouseEntity.Stars > 0 || warehouseEntity.Forks > 0)
             {

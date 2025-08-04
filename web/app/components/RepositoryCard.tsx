@@ -2,11 +2,10 @@
 
 import React, { useMemo } from 'react';
 import { Repository } from '../types';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '../i18n/client';
 import { formatRelativeTime } from '../utils/timeFormat';
 import {
@@ -16,7 +15,8 @@ import {
   ExternalLink,
   FileText,
   Star,
-  GitBranch
+  GitBranch,
+  Clock
 } from 'lucide-react';
 
 interface RepositoryCardProps {
@@ -54,8 +54,6 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
       if (owner) {
         return `https://gitlab.com/${owner}.png`;
       }
-    } else {
-      return null;
     }
     return null;
   };
@@ -67,44 +65,44 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
     return parseInt(status, 10) || 0;
   };
 
-  // 获取状态配置
+  // 获取状态配置 - 简化版本
   const getStatusConfig = (status: string | number) => {
     const statusNumber = getStatusNumber(status);
     switch (statusNumber) {
       case 0: return {
         variant: 'secondary' as const,
-        color: '#6c757d',
-        text: t('repository.status.pending', '待处理')
+        text: t('repository.status.pending', '待处理'),
+        className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
       };
       case 1: return {
         variant: 'default' as const,
-        color: '#007bff',
-        text: t('repository.status.processing', '处理中')
+        text: t('repository.status.processing', '处理中'),
+        className: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
       };
       case 2: return {
-        variant: 'success' as const,
-        color: '#28a745',
-        text: t('repository.status.completed', '已完成')
+        variant: 'default' as const,
+        text: t('repository.status.completed', '已完成'),
+        className: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
       };
       case 3: return {
         variant: 'outline' as const,
-        color: '#6c757d',
-        text: t('repository.status.cancelled', '已取消')
+        text: t('repository.status.cancelled', '已取消'),
+        className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
       };
       case 4: return {
-        variant: 'secondary' as const,
-        color: '#ffc107',
-        text: t('repository.status.unauthorized', '未授权')
+        variant: 'default' as const,
+        text: t('repository.status.unauthorized', '未授权'),
+        className: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
       };
       case 99: return {
         variant: 'destructive' as const,
-        color: '#dc3545',
-        text: t('repository.status.failed', '已失败')
+        text: t('repository.status.failed', '已失败'),
+        className: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
       };
       default: return {
         variant: 'outline' as const,
-        color: '#6c757d',
-        text: t('repository.status.unknown', '未知状态')
+        text: t('repository.status.unknown', '未知状态'),
+        className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
       };
     }
   };
@@ -115,13 +113,13 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
 
   const getRepoIcon = () => {
     if (repository.address?.includes('github.com')) {
-      return <Github className="h-4 w-4" />;
+      return <Github className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
     } else if (repository.address?.includes('gitee.com')) {
-      return <div className="h-4 w-4 bg-foreground rounded-sm flex items-center justify-center">
-        <span className="text-background text-xs font-bold">G</span>
+      return <div className="h-4 w-4 bg-gray-600 dark:bg-gray-400 rounded-sm flex items-center justify-center">
+        <span className="text-white text-xs font-bold">G</span>
       </div>;
     } else {
-      return <FileText className="h-4 w-4" />;
+      return <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -131,113 +129,93 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository }) => {
     window.location.href = `/${repository.organizationName}/${repository.name}`;
   };
 
+  const handleExternalClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(repository.address, '_blank');
+  };
+
   return (
     <Card
-      className="cursor-pointer transition-all duration-200 hover:shadow-lg border-border/40 hover:border-border/80 bg-card/50 hover:bg-card/80 backdrop-blur-sm group flex flex-col h-full min-h-[220px]"
+      className="group cursor-pointer transition-all duration-150 hover:shadow-md hover:shadow-black/5 border border-border/60 hover:border-border bg-card hover:bg-card/80 backdrop-blur-sm"
       onClick={handleCardClick}
     >
-      <CardHeader className="pb-3 pt-5 px-5 flex-shrink-0">
-        <div className="flex items-start gap-3">
-          <Avatar className="h-11 w-11 shrink-0 ring-2 ring-border/20 group-hover:ring-border/40 transition-all">
+      <CardContent className="p-6">
+        {/* Header: Avatar, Name, Status */}
+        <div className="flex items-start gap-4 mb-4">
+          <Avatar className="h-12 w-12 shrink-0 ring-1 ring-border/20">
             <AvatarImage src={avatarUrl || ''} alt={repository.organizationName} />
-            <AvatarFallback className="bg-muted/80 text-muted-foreground text-sm font-medium">
+            <AvatarFallback className="bg-muted text-muted-foreground font-medium">
               {repository.organizationName?.slice(0, 2)?.toUpperCase() || 'RE'}
             </AvatarFallback>
           </Avatar>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="min-w-0 flex-1 max-w-[calc(100%-80px)]">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <h3 className="font-semibold text-foreground text-lg leading-tight cursor-pointer truncate group-hover:text-primary transition-colors">
-                        {repository.name || t('repository.unknown_name', '未知仓库名称')}
-                      </h3>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{repository.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Badge
-                color={statusConfig.color}
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
+                {repository.name || t('repository.unknown_name', '未知仓库名称')}
+              </h3>
+              <Badge 
                 variant={statusConfig.variant}
-                className="shrink-0 text-xs px-2.5 py-1 font-medium whitespace-nowrap"
+                className={`shrink-0 text-xs px-2 py-1 font-medium border-0 ${statusConfig.className}`}
               >
                 {statusConfig.text}
               </Badge>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {getRepoIcon()}
-              <span className="text-sm text-muted-foreground/80 truncate font-medium">
-                {repository.organizationName}
-              </span>
+              <span className="font-medium">{repository.organizationName}</span>
             </div>
           </div>
         </div>
-      </CardHeader>
 
-      <CardContent className="pt-0 px-5 pb-4 flex-1 flex flex-col justify-between">
-        <div className="flex-1 mb-4">
-          {repository.description && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <p className="text-sm text-muted-foreground/90 line-clamp-3 cursor-pointer leading-relaxed">
-                    {repository.description || t('repository.no_description', '暂无描述')}
-                  </p>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">{repository.description}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          {/* 元数据行 */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground/80">
-            {repository.branch && (
-              <div className="flex items-center gap-1.5 min-w-0">
-                <GitBranch className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate max-w-20 font-mono text-xs">{repository.branch}</span>
-              </div>
-            )}
-
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Calendar className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate text-xs">{formatDate(repository.createdAt)}</span>
-            </div>
+        {/* Content: Description */}
+        {repository.description && (
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+              {repository.description}
+            </p>
           </div>
+        )}
 
-          {/* 统计和操作行 */}
+        {/* Footer: Stats and Metadata */}
+        <div className="space-y-3 pt-3 border-t border-border/40">
+          {/* Stats Row */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                 <Star className="h-4 w-4" fill="currentColor" />
-                <span className="font-medium">{repository.stars}</span>
+                <span className="font-medium">{repository.stars || 0}</span>
               </div>
               <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
                 <GitFork className="h-4 w-4" />
-                <span className="font-medium">{repository.forks}</span>
+                <span className="font-medium">{repository.forks || 0}</span>
               </div>
             </div>
 
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 hover:bg-muted/80 transition-all opacity-60 group-hover:opacity-100"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(repository.address, '_blank');
-              }}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all"
+              onClick={handleExternalClick}
+              title={t('repository.view_source', '查看源码')}
             >
               <ExternalLink className="h-4 w-4" />
             </Button>
+          </div>
+
+          {/* Metadata Row */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            {repository.branch && (
+              <div className="flex items-center gap-1.5">
+                <GitBranch className="h-3.5 w-3.5" />
+                <span className="font-mono">{repository.branch}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5" />
+              <span>{formatDate(repository.createdAt)}</span>
+            </div>
           </div>
         </div>
       </CardContent>

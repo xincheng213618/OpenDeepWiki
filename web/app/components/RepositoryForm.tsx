@@ -2,7 +2,7 @@
 
 import React, { useState, } from 'react';
 import { RepositoryFormValues } from '../types';
-import { submitWarehouse, UploadAndSubmitWarehouse, getBranchList, Customsubmitwarehouse } from '../services';
+import { getBranchList } from '../services';
 import { useTranslation } from '../i18n/client';
 import { toast } from 'sonner';
 
@@ -78,82 +78,40 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
           toast.error(t('repository.form.branch_required', '请选择分支'));
           return;
         }
-
-        const response = await submitWarehouse(formData) as any;
-        if (response.data.code === 200) {
-          toast.success(t('repository.form.success_message', '仓库添加成功'));
-          onSubmit(formData);
-          resetForm();
-        } else {
-          toast.error(response.data.message || t('repository.form.error_message', '添加失败，请重试'));
-        }
       } else if (formData.submitType === 'custom') {
         // 自定义仓库提交
         if (!formData.organization || !formData.repositoryName || !formData.address) {
-          toast.error('请填写完整的仓库信息');
+          toast.error(t('repository.form.complete_repo_info', '请填写完整的仓库信息'));
           return;
-        }
-
-        const response = await Customsubmitwarehouse(formData) as any;
-        if (response.data.code === 200) {
-          toast.success(t('repository.form.success_message', '仓库添加成功'));
-          onSubmit(formData);
-          resetForm();
-        } else {
-          toast.error(response.data.message || t('repository.form.error_message', '添加失败，请重试'));
         }
       } else {
         // 压缩包上传
         if (!formData.organization || !formData.repositoryName) {
-          toast.error('请填写完整的仓库信息');
+          toast.error(t('repository.form.complete_repo_info', '请填写完整的仓库信息'));
           return;
         }
 
         if (formData.uploadMethod === 'file') {
           // 文件上传方式
           if (!formData.file) {
-            toast.error('请选择要上传的压缩包文件');
+            toast.error(t('repository.form.select_zip_file', '请选择要上传的压缩包文件'));
             return;
-          }
-
-          const formDataObj = new FormData();
-          formDataObj.append('file', formData.file);
-          formDataObj.append('organization', formData.organization);
-          formDataObj.append('repositoryName', formData.repositoryName);
-
-          const { data } = await UploadAndSubmitWarehouse(formDataObj) as any;
-          if (data && data.code === 200) {
-            toast.success('文件上传成功');
-            onSubmit(formData);
-            resetForm();
-          } else {
-            toast.error(data?.message || '文件上传失败，请重试');
           }
         } else {
           // URL下载方式
           if (!formData.fileUrl) {
-            toast.error('请输入压缩包URL地址');
+            toast.error(t('repository.form.enter_zip_url', '请输入压缩包URL地址'));
             return;
-          }
-
-          const formDataObj = new FormData();
-          formDataObj.append('fileUrl', formData.fileUrl);
-          formDataObj.append('organization', formData.organization);
-          formDataObj.append('repositoryName', formData.repositoryName);
-
-          const { data } = await UploadAndSubmitWarehouse(formDataObj) as any;
-          if (data && data.code === 200) {
-            toast.success(t('repository.form.url_download_success', '从URL下载压缩包成功'));
-            onSubmit(formData);
-            resetForm();
-          } else {
-            toast.error(data?.message || t('repository.form.url_download_failed', '从URL下载失败，请重试'));
           }
         }
       }
+
+      // 只进行表单验证，然后调用 onSubmit 回调，让父组件处理实际的提交
+      onSubmit(formData);
+      resetForm();
     } catch (error) {
-      console.error('Form submission failed:', error);
-      toast.error('提交失败，请重试');
+      console.error('Form validation failed:', error);
+      toast.error(t('repository.form.submit_failed_retry', '提交失败，请重试'));
     } finally {
       setLoading(false);
     }
@@ -209,11 +167,11 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
         toast.success(`已加载 ${response.data.length} 个分支`);
       } else {
         setBranches([]);
-        toast.warning('未能获取分支信息，可以手动输入分支名');
+        toast.warning(t('repository.form.branch_fetch_no_info', '未能获取分支信息，可以手动输入分支名'));
       }
     } catch (error) {
       console.error('Failed to fetch branches:', error);
-      toast.error('获取分支失败');
+      toast.error(t('repository.form.branch_fetch_failed', '获取分支失败'));
       setBranches([]);
     } finally {
       setLoadingBranches(false);
@@ -428,32 +386,32 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  请填写自定义仓库的详细信息，包括组织名、仓库名、Git地址等。
+                  {t('repository.form.custom_repo_description', '请填写自定义仓库的详细信息，包括组织名、仓库名、Git地址等。')}
                 </AlertDescription>
               </Alert>
 
               <div className="space-y-2">
-                <Label htmlFor="organization">组织名称</Label>
+                <Label htmlFor="organization">{t('repository.form.org_name_cn', '组织名称')}</Label>
                 <Input
                   id="organization"
-                  placeholder="请输入组织名称"
+                  placeholder={t('repository.form.org_name_placeholder_cn', '请输入组织名称')}
                   value={formData.organization || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, organization: e.target.value }))}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="repositoryName">仓库名称</Label>
+                <Label htmlFor="repositoryName">{t('repository.form.repo_name_cn', '仓库名称')}</Label>
                 <Input
                   id="repositoryName"
-                  placeholder="请输入仓库名称"
+                  placeholder={t('repository.form.repo_name_placeholder_cn', '请输入仓库名称')}
                   value={formData.repositoryName || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, repositoryName: e.target.value }))}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="customAddress">仓库地址</Label>
+                <Label htmlFor="customAddress">{t('repository.form.repo_address_cn', '仓库地址')}</Label>
                 <div className="relative">
                   <Link className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -468,7 +426,7 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="customBranch">分支</Label>
+                  <Label htmlFor="customBranch">{t('repository.form.branch', '分支')}</Label>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -476,7 +434,7 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
                     disabled={loadingBranches || !formData.address}
                   >
                     <RefreshCw className={`h-4 w-4 mr-1 ${loadingBranches ? 'animate-spin' : ''}`} />
-                    加载分支
+                    {t('repository.form.load_branches_cn', '加载分支')}
                   </Button>
                 </div>
                 
@@ -486,7 +444,7 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
                     onValueChange={(value) => setFormData(prev => ({ ...prev, branch: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="选择分支" />
+                      <SelectValue placeholder={t('repository.form.branch_placeholder', '选择分支')} />
                     </SelectTrigger>
                     <SelectContent>
                       {branches.map(branch => (
@@ -501,7 +459,7 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
                     <GitBranch className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="customBranch"
-                      placeholder="请输入分支名称"
+                      placeholder={t('repository.form.branch_placeholder_cn', '请输入分支名称')}
                       value={formData.branch || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, branch: e.target.value }))}
                       className="pl-10"
@@ -514,34 +472,34 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
 
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="customUserName">Git用户名（可选）</Label>
+                  <Label htmlFor="customUserName">{t('repository.form.git_username_optional', 'Git用户名（可选）')}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="customUserName"
-                      placeholder="Git用户名"
+                      placeholder={t('repository.form.git_username_placeholder_cn', 'Git用户名')}
                       value={formData.gitUserName || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, gitUserName: e.target.value }))}
                       className="pl-10"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">私有仓库需要提供用户名</p>
+                  <p className="text-xs text-muted-foreground">{t('repository.form.private_repo_username_tip', '私有仓库需要提供用户名')}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="customPassword">Git密码/令牌（可选）</Label>
+                  <Label htmlFor="customPassword">{t('repository.form.git_password_optional', 'Git密码/令牌（可选）')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="customPassword"
                       type="password"
-                      placeholder="Git密码或访问令牌"
+                      placeholder={t('repository.form.git_password_placeholder_cn', 'Git密码或访问令牌')}
                       value={formData.gitPassword || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, gitPassword: e.target.value }))}
                       className="pl-10"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">私有仓库需要提供密码或访问令牌</p>
+                  <p className="text-xs text-muted-foreground">{t('repository.form.private_repo_password_tip', '私有仓库需要提供密码或访问令牌')}</p>
                 </div>
               </div>
             </div>
@@ -579,7 +537,7 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
 
               {/* 上传方式选择 */}
               <div className="space-y-2">
-                <Label>上传方式</Label>
+                <Label>{t('repository.form.upload_method', '上传方式')}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant={formData.uploadMethod === 'file' ? 'default' : 'outline'}
@@ -588,7 +546,7 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
                     className="justify-start"
                   >
                     <Upload className="h-4 w-4 mr-1" />
-                    选择文件
+                    {t('repository.form.select_file', '选择文件')}
                   </Button>
                   <Button
                     variant={formData.uploadMethod === 'url' ? 'default' : 'outline'}
@@ -597,7 +555,7 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
                     className="justify-start"
                   >
                     <Link className="h-4 w-4 mr-1" />
-                    从URL下载
+                    {t('repository.form.download_from_url', '从URL下载')}
                   </Button>
                 </div>
               </div>
@@ -605,7 +563,7 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
               {/* 文件上传 */}
               {formData.uploadMethod === 'file' && (
                 <div className="space-y-2">
-                  <Label htmlFor="fileUpload">选择压缩包文件</Label>
+                  <Label htmlFor="fileUpload">{t('repository.form.select_zip_file_cn', '选择压缩包文件')}</Label>
                   <Input
                     id="fileUpload"
                     type="file"
@@ -619,7 +577,7 @@ const RepositoryForm: React.FC<RepositoryFormProps> = ({
                     className="cursor-pointer"
                   />
                   <p className="text-xs text-muted-foreground">
-                    支持的文件格式：zip、gz、tar、br、7z、rar，最大100MB
+                    {t('repository.form.supported_formats_tip', '支持的文件格式：zip、gz、tar、br、7z、rar，最大100MB')}
                   </p>
                 </div>
               )}

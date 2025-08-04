@@ -19,7 +19,7 @@ import LastRepoModal from './LastRepoModal';
 import LanguageSwitcher from './LanguageSwitcher';
 import UserAvatar from './UserAvatar';
 import { Repository, RepositoryFormValues } from '../types';
-import { submitWarehouse } from '../services/warehouseService';
+import { submitWarehouse, Customsubmitwarehouse, UploadAndSubmitWarehouse } from '../services/warehouseService';
 import { HomeStats } from '../services/statsService';
 import { homepage } from '../const/urlconst';
 import { useTranslation } from '../i18n/client';
@@ -108,12 +108,45 @@ export default function HomeClient({
 
   const handleAddRepository = async (values: RepositoryFormValues) => {
     try {
-      const response = await submitWarehouse(values);
-      if (response.success) {
-        toast.success(t('home.messages.repo_add_success'));
-        window.location.reload();
+      let response: any;
+      
+      if (values.submitType === 'git') {
+        // Git仓库提交
+        response = await submitWarehouse(values);
+        if (response.data?.code === 200) {
+          toast.success(t('home.messages.repo_add_success'));
+          window.location.reload();
+        } else {
+          toast.error(response.data?.message || t('home.messages.repo_add_failed', { error: response.error || t('home.messages.unknown_error') }));
+        }
+      } else if (values.submitType === 'custom') {
+        // 自定义仓库提交
+        response = await Customsubmitwarehouse(values);
+        if (response.data?.code === 200) {
+          toast.success(t('home.messages.repo_add_success'));
+          window.location.reload();
+        } else {
+          toast.error(response.data?.message || t('home.messages.repo_add_failed', { error: response.error || t('home.messages.unknown_error') }));
+        }
       } else {
-        toast.error(t('home.messages.repo_add_failed', { error: response.error || t('home.messages.unknown_error') }));
+        // 压缩包上传
+        const formData = new FormData();
+        formData.append('organization', values.organization!);
+        formData.append('repositoryName', values.repositoryName!);
+        
+        if (values.uploadMethod === 'file' && values.file) {
+          formData.append('file', values.file);
+        } else if (values.uploadMethod === 'url' && values.fileUrl) {
+          formData.append('fileUrl', values.fileUrl);
+        }
+        
+        response = await UploadAndSubmitWarehouse(formData);
+        if (response.data?.code === 200) {
+          toast.success(t('home.messages.repo_add_success'));
+          window.location.reload();
+        } else {
+          toast.error(response.data?.message || t('home.messages.repo_add_failed', { error: response.error || t('home.messages.unknown_error') }));
+        }
       }
     } catch (error) {
       console.error('添加仓库出错:', error);
