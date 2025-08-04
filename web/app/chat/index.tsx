@@ -52,8 +52,8 @@ interface ReferenceFile {
 
 // Tailwind CSS 类名常量
 const styles = {
-  floatingButton: "fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center shadow-lg z-[1000] transition-all duration-300 hover:scale-105 hover:shadow-xl",
-  chatContainer: "fixed bottom-6 right-6 w-[550px] h-[700px] bg-card rounded-lg shadow-xl z-[1001] flex flex-col overflow-hidden transition-all duration-300 border",
+  floatingButton: "fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center shadow-lg z-[10] transition-all duration-300 hover:scale-105 hover:shadow-xl",
+  chatContainer: "fixed bottom-6 right-6 w-[550px] h-[700px] bg-card rounded-lg shadow-xl z-[10] flex flex-col overflow-hidden transition-all duration-300 border",
   chatContainerMinimized: "h-[60px]",
   chatContainerMaximized: "w-[580px] h-full bottom-0 right-0",
   chatContainerEmbedded: "relative !bottom-auto !right-auto !w-full !h-full !rounded-none !shadow-none !border-none",
