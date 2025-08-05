@@ -7,7 +7,11 @@
       "Bash(dotnet ef migrations add AddStarsAndForksToWarehouse --project src/KoalaWiki --context KoalaWikiContext)",
       "Bash(dotnet ef migrations add AddStarsAndForksToWarehouse --project src/KoalaWiki --context IKoalaWikiContext)",
       "Bash(find OpenDeepWiki -type f -name \"*.cs\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:learn.microsoft.com)",
+      "Bash(dotnet build:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

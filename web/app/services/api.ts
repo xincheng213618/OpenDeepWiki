@@ -203,5 +203,7 @@ async function* fetchSSE(url: string, data: any): AsyncIterableIterator<any> {
 }
 const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || '';
 
+console.log("API_URL", API_URL);
+
 export { fetchApi, serverFetchApi, clientFetchApi, API_URL, fetchSSE };
 export type { ApiResponse }; 

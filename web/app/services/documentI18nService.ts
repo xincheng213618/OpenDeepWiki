@@ -2,6 +2,9 @@ import { fetchApi, ApiResponse } from './api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
+console.log("API_URL", API_URL);
+
+
 // 文档目录多语言数据
 interface DocumentCatalogI18n {
   id: string;
