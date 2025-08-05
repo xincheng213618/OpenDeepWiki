@@ -71,6 +71,7 @@
   
   koalawiki-web:
     image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/koala-wiki-web
+    command: ["/app/start.sh"]
     networks:
       - koala_network
     environment:
