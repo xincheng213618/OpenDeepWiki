@@ -298,7 +298,7 @@ namespace KoalaWiki.CodeMap
             return tree;
         }
 
-        private DependencyTree BuildFunctionDependencyTree(string filePath, string functionName, HashSet<string> visited, int level, int maxDepth = 10)
+        private DependencyTree BuildFunctionDependencyTree(string filePath, string functionName, HashSet<string> visited, int level, int maxDepth = 2)
         {
             var fullFunctionId = $"{filePath}:{functionName}";
             
@@ -354,7 +354,6 @@ namespace KoalaWiki.CodeMap
         private HashSet<string> ResolveImportPaths(List<string> imports, string currentFile, string basePath)
         {
             var result = new HashSet<string>();
-            var currentDir = Path.GetDirectoryName(currentFile);
             var parser = GetParserForFile(currentFile);
             
             foreach (var import in imports)
@@ -417,7 +416,7 @@ namespace KoalaWiki.CodeMap
             
             return extension switch
             {
-                // ".cs" => _parsers.FirstOrDefault(p => p is CSharpParser),
+                ".cs" => _parsers.FirstOrDefault(p => p is CSharpParser),
                 ".js" => _parsers.FirstOrDefault(p => p is JavaScriptParser),
                 ".py" => _parsers.FirstOrDefault(p => p is PythonParser),
                 ".java" => _parsers.FirstOrDefault(p => p is JavaParser),

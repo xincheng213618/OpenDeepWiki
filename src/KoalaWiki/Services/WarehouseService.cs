@@ -705,64 +705,6 @@ public class WarehouseService(
         }
     }
 
-    /// <summary>
-    /// 获取仓库概述
-    /// </summary>
-    [EndpointSummary("获取仓库概述")]
-    public async Task GetWarehouseOverviewAsync(string owner, string name, string? branch, HttpContext context)
-    {
-        owner = owner.Trim().ToLower();
-        name = name.Trim().ToLower();
-
-        var warehouse = await koala.Warehouses
-            .AsNoTracking()
-            .Where(x => x.Name.ToLower() == name && x.OrganizationName.ToLower() == owner &&
-                        (string.IsNullOrEmpty(branch) || x.Branch == branch) &&
-                        (x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing))
-            .FirstOrDefaultAsync();
-
-        // 如果没有找到仓库，返回空列表
-        if (warehouse == null)
-        {
-            throw new NotFoundException($"仓库不存在，请检查仓库名称和组织名称:{owner} {name} {branch}");
-        }
-
-        // 检查用户权限
-        if (!await CheckWarehouseAccessAsync(warehouse.Id))
-        {
-            context.Response.StatusCode = 403;
-            await context.Response.WriteAsJsonAsync(new
-            {
-                code = 403,
-                message = "您没有权限访问此仓库"
-            });
-            return;
-        }
-
-        var document = await koala.Documents
-            .AsNoTracking()
-            .Where(x => x.WarehouseId == warehouse.Id)
-            .FirstOrDefaultAsync();
-
-        if (document == null)
-        {
-            throw new NotFoundException("没有找到文档, 可能在生成中或者已经出现错误");
-        }
-
-        var overview = await koala.DocumentOverviews.FirstOrDefaultAsync(x => x.DocumentId == document.Id);
-
-        if (overview == null)
-        {
-            throw new NotFoundException("没有找到概述");
-        }
-
-        await context.Response.WriteAsJsonAsync(new
-        {
-            content = overview.Content,
-            title = overview.Title
-        });
-    }
-
 
     /// <summary>
     /// 获取知识图谱
@@ -1112,17 +1054,6 @@ public class WarehouseService(
         using var memoryStream = new MemoryStream();
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
         {
-            // 添加仓库概述文件
-            var overview = await koala.DocumentOverviews
-                .FirstOrDefaultAsync(x => x.DocumentId == documents.Id);
-
-            if (overview != null)
-            {
-                var readmeEntry = archive.CreateEntry("README.md");
-                await using var writer = new StreamWriter(readmeEntry.Open());
-                await writer.WriteAsync($"# 概述\n\n{overview.Content}");
-            }
-
             // 构建目录树结构
             var catalogDict = documentCatalogs.ToDictionary(x => x.Id);
             var rootCatalogs = documentCatalogs.Where(x => string.IsNullOrEmpty(x.ParentId)).ToList();
@@ -1153,8 +1084,8 @@ public class WarehouseService(
 
                     // 创建并写入文档内容
                     var entry = archive.CreateEntry(entryPath.Replace('\\', '/'));
-                    using var writer = new StreamWriter(entry.Open());
-                    writer.Write($"# {catalog.Name}\n\n{item.Content}");
+                    await using var writer = new StreamWriter(entry.Open());
+                    await writer.WriteAsync($"# {catalog.Name}\n\n{item.Content}");
 
                     await writer.DisposeAsync();
 
