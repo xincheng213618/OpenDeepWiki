@@ -196,7 +196,7 @@ public static class MCPExtensions
                         .Where(x => x.WarehouseId == warehouse.Id)
                         .FirstOrDefaultAsync(token);
 
-                    var fileFunction = new FileFunction(document.GitPath);
+                    var fileFunction = new FileFunction(document.GitPath, null);
 
                     var sw = Stopwatch.StartNew();
 
@@ -235,7 +235,7 @@ public static class MCPExtensions
                         .Where(x => x.WarehouseId == warehouse.Id)
                         .FirstOrDefaultAsync(token);
 
-                    var fileFunction = new FileFunction(document.GitPath);
+                    var fileFunction = new FileFunction(document.GitPath, null);
 
                     var sw = Stopwatch.StartNew();
 

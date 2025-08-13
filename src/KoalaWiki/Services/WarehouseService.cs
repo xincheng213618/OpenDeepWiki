@@ -1,22 +1,16 @@
 ﻿using System.IO.Compression;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Web;
 using FastService;
-using KoalaWiki.Domains;
+using KoalaWiki.Core;
 using KoalaWiki.Domains.DocumentFile;
-using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Dto;
 using KoalaWiki.Functions;
 using LibGit2Sharp;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
-using KoalaWiki.Core.DataAccess;
-using KoalaWiki.Git;
-using KoalaWiki.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using KoalaWiki.Core;
 
 namespace KoalaWiki.Services;
 
@@ -558,7 +552,8 @@ public class WarehouseService(
             {
                 var branch = await koala.Warehouses
                     .AsNoTracking()
-                    .Where(x => x.Branch.ToLower() == input.Branch.ToLower() && x.OrganizationName.ToLower() == decodedOrganization.ToLower() &&
+                    .Where(x => x.Branch.ToLower() == input.Branch.ToLower() &&
+                                x.OrganizationName.ToLower() == decodedOrganization.ToLower() &&
                                 x.Name.ToLower() == decodedRepositoryName.ToLower())
                     .FirstOrDefaultAsync();
 
@@ -746,8 +741,8 @@ public class WarehouseService(
         {
             address += "/tree/" + warehouse.Branch + "/";
         }
-        else if (address.Contains("gitlab.com") || System.Text.RegularExpressions.Regex.IsMatch(address,
-                     @"^gitlab\.[\w-]+\.(com|cn|net|org)", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        else if (address.Contains("gitlab.com") || Regex.IsMatch(address,
+                     @"^gitlab\.[\w-]+\.(com|cn|net|org)", RegexOptions.IgnoreCase))
         {
             address += "/-/tree/" + warehouse.Branch + "/";
         }
@@ -994,7 +989,7 @@ public class WarehouseService(
             throw new NotFoundException("文件不存在");
         }
 
-        var fileFunction = new FileFunction(query.GitPath);
+        var fileFunction = new FileFunction(query.GitPath, null);
 
         var result = await fileFunction.ReadFileAsync(path);
 
@@ -1145,7 +1140,7 @@ public class WarehouseService(
             throw new Exception("Document not found");
         }
 
-        var fileFunction = new FileFunction(document.GitPath);
+        var fileFunction = new FileFunction(document.GitPath, null);
 
         var value = await fileFunction.ReadFileAsync(filePath);
 

@@ -24,7 +24,6 @@ public class DocumentContext
 
 public class DocumentStore
 {
-    public List<string> Files { get; set; } = new();
 
     public List<GitIssusItem> GitIssus { get; set; } = new();
 }

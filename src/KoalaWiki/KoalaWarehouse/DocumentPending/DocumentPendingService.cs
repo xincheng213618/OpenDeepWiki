@@ -2,15 +2,8 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using KoalaWiki.Core.Extensions;
-using KoalaWiki.Domains;
 using KoalaWiki.Domains.DocumentFile;
-using KoalaWiki.Domains.Warehouse;
-using KoalaWiki.Entities;
-using KoalaWiki.Functions;
-using KoalaWiki.Options;
 using KoalaWiki.Prompts;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
@@ -247,7 +240,8 @@ public partial class DocumentPendingService
             OpenAIOptions.ChatApiKey,
             path,
             OpenAIOptions.ChatModel,
-            false // 文档生成不需要代码分析功能
+            false, // 文档生成不需要代码分析功能
+            files
         );
 
         var chat = documentKernel.Services.GetService<IChatCompletionService>();
@@ -439,8 +433,6 @@ public partial class DocumentPendingService
             Size = 0,
             Title = catalog.Name,
         };
-
-        files.AddRange(DocumentContext.DocumentStore.Files);
 
         return fileItem;
     }

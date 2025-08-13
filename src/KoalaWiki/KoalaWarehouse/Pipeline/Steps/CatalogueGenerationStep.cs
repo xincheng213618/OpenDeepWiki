@@ -51,6 +51,7 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
 
             activity?.SetTag("catalogue.length", catalogue?.Length ?? 0);
             context.SetStepResult(StepName, catalogue);
+            context.Catalogue = catalogue;
 
             Logger.LogInformation("完成 {StepName} 步骤，目录结构长度: {Length}",
                 StepName, catalogue?.Length ?? 0);

@@ -25,7 +25,8 @@ public static class KernelFactory
     public static Kernel GetKernel(string chatEndpoint,
         string apiKey,
         string gitPath,
-        string model, bool isCodeAnalysis = true)
+        string model, bool isCodeAnalysis = true,
+        List<string>? files = null)
     {
         using var activity = Activity.Current?.Source.StartActivity();
         activity?.SetTag("model", model);
@@ -98,7 +99,7 @@ public static class KernelFactory
         }
 
         // 添加文件函数
-        var fileFunction = new FileFunction(gitPath);
+        var fileFunction = new FileFunction(gitPath,files);
         kernelBuilder.Plugins.AddFromObject(fileFunction);
         activity?.SetTag("plugins.file_function", "loaded");
 

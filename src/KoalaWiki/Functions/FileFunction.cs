@@ -4,13 +4,12 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using Microsoft.SemanticKernel;
 using OpenDeepWiki.CodeFoundation;
 using OpenDeepWiki.CodeFoundation.Utils;
 
 namespace KoalaWiki.Functions;
 
-public class FileFunction(string gitPath)
+public class FileFunction(string gitPath,List<string>? files)
 {
     private readonly CodeCompressionService _codeCompressionService = new();
     private int _count;
@@ -47,11 +46,7 @@ public class FileFunction(string gitPath)
                        "⛔ STOP reading files immediately and complete analysis with existing da2000ta.";
             }
 
-            if (DocumentContext.DocumentStore?.Files != null)
-            {
-                DocumentContext.DocumentStore.Files.Add(filePath);
-            }
-
+            files?.Add(filePath);
             filePath = Path.Combine(gitPath, filePath.TrimStart('/'));
             Console.WriteLine($"Reading file: {filePath}");
 
@@ -435,10 +430,7 @@ public class FileFunction(string gitPath)
                 limit = int.MaxValue;
             }
 
-            if (DocumentContext.DocumentStore?.Files != null)
-            {
-                DocumentContext.DocumentStore.Files.Add(filePath);
-            }
+            files?.Add(filePath);
 
             // 先读取整个文件内容
             string fileContent = await File.ReadAllTextAsync(filePath);
