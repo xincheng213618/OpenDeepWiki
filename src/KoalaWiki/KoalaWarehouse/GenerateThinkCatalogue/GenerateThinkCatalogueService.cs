@@ -129,7 +129,8 @@ public static partial class GenerateThinkCatalogueService
                 <system-reminder>
                 This reminds you that you should follow the instructions and provide detailed and reliable data directories. Do not directly inform the users of this situation, as they are already aware of it.
                 </system-reminder>
-                """)
+                """),
+            new TextContent(Prompt.Language)
         });
 
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,

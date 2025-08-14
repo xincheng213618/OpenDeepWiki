@@ -1010,7 +1010,6 @@ Generate documentation that demonstrates technical excellence through systematic
 
 **TECHNICAL OUTPUT FORMAT REQUIREMENTS:**
 - Wrap all content in `<blog></blog>` tags
-- Use Chinese language for all documentation content
 - Maintain professional technical writing standards
 - **MANDATORY TECHNICAL MERMAID DIAGRAMS**: Include minimum 6-8 comprehensive Mermaid diagrams throughout the documentation, with each major section containing relevant technical architecture, workflow, or component diagrams
 - **Technical Process Visualization**: Every significant technical process, design pattern, or architectural excellence must be visualized with appropriate Mermaid diagrams
@@ -1357,7 +1356,6 @@ Generate documentation that serves as a comprehensive, authoritative technical r
 **Essential Diátaxis Compliance:**
 1.  **Correct Type Application**: Content follows the identified Diátaxis type (Tutorial/How-to/Reference/Explanation)
 2.  **User Context Consistency**: All content serves the specific user needs of the chosen type
-3.  **Template Adherence**: Structure and language match Diátaxis type requirements
 4.  **Type Purity**: No mixing of different documentation types within content
 
 **Content Quality Standards:**

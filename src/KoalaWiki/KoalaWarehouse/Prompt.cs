@@ -14,9 +14,11 @@ public static class Prompt
         {
             _language = language;
         }
+        
+        Console.WriteLine("当前语言环境：" + _language);
     }
 
-    public static string Language => $"\nYou must communicate with me in {_language}.\n";
+    public static string Language => $"\nNote: You must reply in {_language}.\n";
 
     public static readonly string AnalyzeNewCatalogue =
         """

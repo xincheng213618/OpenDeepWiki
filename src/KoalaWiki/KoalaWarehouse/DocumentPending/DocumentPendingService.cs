@@ -255,9 +255,10 @@ public partial class DocumentPendingService
 
         var contents = new ChatMessageContentItemCollection
         {
-            new TextContent(prompt)
+            new TextContent(prompt),
+            new TextContent(Prompt.Language)
         };
-        
+
         contents.AddDocsGenerateSystemReminder();
         history.AddUserMessage(contents);
 
@@ -351,7 +352,8 @@ public partial class DocumentPendingService
 
                         Your goal is to take the good foundation that exists and make it BETTER, MORE DETAILED, and MORE COMPREHENSIVE while preserving its core structure and insights.
                         </system-reminder>
-                        """)
+                        """),
+                    new TextContent(Prompt.Language)
                 };
                 history.AddUserMessage(refineContents);
 

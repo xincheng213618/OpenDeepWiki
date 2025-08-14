@@ -20,7 +20,6 @@ public partial class DocumentPendingService
                 ["git_repository"] = gitRepository.Replace(".git", ""),
                 ["branch"] = branch,
                 ["title"] = title,
-                ["language"] = Prompt.Language,
                 ["projectType"] = projectType
             }, OpenAIOptions.ChatModel);
     }
