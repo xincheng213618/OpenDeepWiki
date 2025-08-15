@@ -158,8 +158,7 @@ public static partial class GenerateThinkCatalogueService
             }
         }
 
-        var initialResponse = str.ToString();
-        if (string.IsNullOrWhiteSpace(initialResponse))
+        if (str.Length == 0)
         {
             throw new InvalidOperationException("AI 返回了空响应");
         }
@@ -167,6 +166,8 @@ public static partial class GenerateThinkCatalogueService
         // 质量增强逻辑
         if (DocumentOptions.RefineAndEnhanceQuality && attemptNumber < 4) // 前几次尝试才进行质量增强
         {
+            var initialResponse = str.ToString();
+
             var refinedResponse =
                 await RefineResponse(history, chat, settings, analysisModel, initialResponse, attemptNumber);
             if (!string.IsNullOrWhiteSpace(refinedResponse))

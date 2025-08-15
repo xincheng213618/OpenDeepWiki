@@ -270,6 +270,10 @@ public partial class DocumentPendingService
             MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel),
         };
 
+        int count = 1;
+
+        reset:
+
         await foreach (var i in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
         {
             if (!string.IsNullOrEmpty(i.Content))
@@ -278,8 +282,15 @@ public partial class DocumentPendingService
             }
         }
 
+
         // 保存原始内容，防止精炼失败时丢失
         var originalContent = sr.ToString();
+
+        if (string.IsNullOrEmpty(originalContent) && count < 3)
+        {
+            count++;
+            goto reset;
+        }
 
         // 先进行基础质量验证，避免对质量过差的内容进行精炼
         var (isInitialValid, initialMessage, initialMetrics) = ValidateDocumentQuality(originalContent, catalog.Name);

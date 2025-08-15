@@ -101,6 +101,7 @@ public static class KernelFactory
         // 添加文件函数
         var fileFunction = new FileFunction(gitPath,files);
         kernelBuilder.Plugins.AddFromObject(fileFunction);
+        kernelBuilder.Plugins.AddFromType<AgentFunction>();
         activity?.SetTag("plugins.file_function", "loaded");
 
         if (DocumentOptions.EnableCodeDependencyAnalysis)
