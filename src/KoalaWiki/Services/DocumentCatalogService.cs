@@ -96,6 +96,9 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
     public async Task GetDocumentByIdAsync(string owner, string name, string? branch,
         string path, string? languageCode, HttpContext httpContext)
     {
+        // URL解码，处理包含特殊字符（如日文字符）的路径
+        var decodedPath = System.Web.HttpUtility.UrlDecode(path);
+        
         // 先根据仓库名称和组织名称找到仓库
         var warehouse = await dbAccess.Warehouses
             .AsNoTracking()
@@ -112,7 +115,7 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         // 找到catalog
         var id = await dbAccess.DocumentCatalogs
             .AsNoTracking()
-            .Where(x => x.WarehouseId == warehouse.Id && x.Url == path && x.IsDeleted == false)
+            .Where(x => x.WarehouseId == warehouse.Id && x.Url == decodedPath && x.IsDeleted == false)
             .Select(x => x.Id)
             .FirstOrDefaultAsync();
 

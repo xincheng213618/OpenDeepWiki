@@ -339,13 +339,13 @@ export async function getWarehouse(page: number, pageSize: number, keyword?: str
  * 此函数可在服务器组件中使用
  */
 export async function documentCatalog(organizationName: string, name: string, branch?: string, languageCode?: string): Promise<any> {
-  // 构建URL，如果branch存在则添加到查询参数中
-  let url = API_URL + '/api/DocumentCatalog/DocumentCatalogs?organizationName=' + organizationName + '&name=' + name;
+  // 构建URL，如果branch存在则添加到查询参数中，并确保所有参数都被正确编码以处理特殊字符
+  let url = API_URL + '/api/DocumentCatalog/DocumentCatalogs?organizationName=' + encodeURIComponent(organizationName) + '&name=' + encodeURIComponent(name);
   if (branch) {
-    url += '&branch=' + branch;
+    url += '&branch=' + encodeURIComponent(branch);
   }
   if (languageCode) {
-    url += '&languageCode=' + languageCode;
+    url += '&languageCode=' + encodeURIComponent(languageCode);
   }
   
   // @ts-ignore
@@ -361,13 +361,13 @@ export async function documentCatalog(organizationName: string, name: string, br
  * 此函数可在服务器组件中使用
  */
 export async function documentById(owner: string, name: string, path: string, branch?: string, languageCode?: string): Promise<any> {
-  // 构建URL，如果branch存在则添加到查询参数中
-  let url = API_URL + '/api/DocumentCatalog/DocumentById?owner=' + owner + '&name=' + name + '&path=' + path;
+  // 构建URL，如果branch存在则添加到查询参数中，并对除path外的参数进行编码（path在后端进行解码处理）
+  let url = API_URL + '/api/DocumentCatalog/DocumentById?owner=' + encodeURIComponent(owner) + '&name=' + encodeURIComponent(name) + '&path=' + path;
   if (branch) {
-    url += '&branch=' + branch;
+    url += '&branch=' + encodeURIComponent(branch);
   }
   if (languageCode) {
-    url += '&languageCode=' + languageCode;
+    url += '&languageCode=' + encodeURIComponent(languageCode);
   }
 
   // @ts-ignore
