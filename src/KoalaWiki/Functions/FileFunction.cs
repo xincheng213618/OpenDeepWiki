@@ -423,6 +423,8 @@ public class FileFunction(string gitPath, List<string>? files)
     {
         try
         {
+            files?.Add(filePath);
+
             filePath = Path.Combine(gitPath, filePath.TrimStart('/'));
             Console.WriteLine(
                 $"Reading file from line {offset}: {filePath} offset={offset}, limit={limit}");
@@ -443,8 +445,6 @@ public class FileFunction(string gitPath, List<string>? files)
             {
                 limit = int.MaxValue;
             }
-
-            files?.Add(filePath);
 
             // 先读取整个文件内容
             string fileContent = await File.ReadAllTextAsync(filePath);

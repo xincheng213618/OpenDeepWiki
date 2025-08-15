@@ -131,11 +131,13 @@ public partial class DocumentPendingService
                 RepairMermaid(fileItem);
 
                 await dbContext.DocumentFileItems.AddAsync(fileItem);
+
                 await dbContext.DocumentFileItemSources.AddRangeAsync(files.Select(x => new DocumentFileItemSource()
                 {
                     Address = x,
                     DocumentFileItemId = fileItem.Id,
-                    Name = x,
+                    Name = Path.GetFileName(x),
+                    CreatedAt = DateTime.Now,
                     Id = Guid.NewGuid().ToString("N"),
                 }));
 
