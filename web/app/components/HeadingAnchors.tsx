@@ -13,14 +13,11 @@ export default function HeadingAnchors() {
                           document.querySelector('article');
       
       if (!markdownBody) {
-        console.log('No markdown body found');
         return;
       }
       
       // 查找所有h1-h6标签
       const headings = markdownBody.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      console.log('Found headings:', headings.length);
-      
       const existingSlugs = new Set<string>();
       
       headings.forEach(function(heading) {

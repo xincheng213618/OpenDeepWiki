@@ -80,7 +80,6 @@ export default function AdminLayout({
         config={{
           proxy: 'custom',
           customCdnFn: (e: { pkg: string, version: string, path: string }) => {
-            console.log(e);
             return `/${e.pkg}/${e.version}/${e.path}`;
           }
         }}

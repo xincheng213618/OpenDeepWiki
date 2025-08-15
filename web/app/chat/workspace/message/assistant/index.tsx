@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CollapsibleCard, Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent, CollapsibleCard } from '@/components/ui/collapsible';
 import { toast } from "sonner";
 import { Markdown } from "@lobehub/ui";
 import { Copy, MoreHorizontal, Trash2, FileText, Brain, Settings, ChevronDown, ChevronRight, Maximize2, ExternalLink, Calendar, User, Loader2 } from "lucide-react";

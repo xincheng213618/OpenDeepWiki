@@ -4,22 +4,12 @@ export interface DocumentData {
   title: string;
   content: string;
   description?: string;
-  fileSource?: SourceFile[];
+  fileSource?: any[];
   branch: string;
   address: string;
   createdAt?: string;
   updatedAt?: string;
   lastUpdate?: any;
-}
-
-// 文件源类型 - 匹配SourceFiles组件的接口
-export interface SourceFile {
-  documentFileItemId: string;
-  address: string;
-  name: string;
-  documentFileItem: any;
-  id: string;
-  createdAt: string;
 }
 
 // 标题类型

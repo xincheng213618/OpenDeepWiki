@@ -248,9 +248,7 @@ export default function UsersPage() {
           password: formData.password || undefined, // 如果没有输入密码，会是undefined
         };
 
-        console.log('更新用户数据:', updateData);
         const response = await updateUser(currentUser.id, updateData);
-        console.log('更新用户响应:', response);
         if (response.code === 200) {
           toast({
             title: "成功",
@@ -274,9 +272,7 @@ export default function UsersPage() {
           role: formData.role || undefined, // 确保空值传递undefined
         };
 
-        console.log('创建用户数据:', createData);
         const response = await createUser(createData);
-        console.log('创建用户响应:', response);
         if (response.code === 200) {
           toast({
             title: "成功",

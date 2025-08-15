@@ -222,7 +222,6 @@ export default function AdminLayout({
 
   // 处理登出
   const handleLogout = () => {
-    console.log('用户退出登录');
     localStorage.removeItem('userToken');
     localStorage.removeItem('userName');
     localStorage.removeItem('userInfo');

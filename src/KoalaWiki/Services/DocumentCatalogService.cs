@@ -97,14 +97,14 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         string path, string? languageCode, HttpContext httpContext)
     {
         // 先根据仓库名称和组织名称找到仓库
-        var query = await dbAccess.Warehouses
+        var warehouse = await dbAccess.Warehouses
             .AsNoTracking()
             .Where(x => x.Name == name && x.OrganizationName == owner &&
                         (string.IsNullOrEmpty(branch) || x.Branch == branch) &&
                         (x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing))
             .FirstOrDefaultAsync();
 
-        if (query == null)
+        if (warehouse == null)
         {
             throw new NotFoundException($"仓库不存在，请检查仓库名称和组织名称:{owner} {name}");
         }
@@ -112,8 +112,13 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         // 找到catalog
         var id = await dbAccess.DocumentCatalogs
             .AsNoTracking()
-            .Where(x => x.WarehouseId == query.Id && x.Url == path && x.IsDeleted == false)
+            .Where(x => x.WarehouseId == warehouse.Id && x.Url == path && x.IsDeleted == false)
             .Select(x => x.Id)
+            .FirstOrDefaultAsync();
+
+        var document = await dbAccess.Documents
+            .AsNoTracking()
+            .Where(x => x.WarehouseId.ToLower() == warehouse.Id.ToLower())
             .FirstOrDefaultAsync();
 
         var item = await dbAccess.DocumentFileItems
@@ -136,19 +141,48 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         var localizedContent = GetLocalizedContent(item, languageCode);
         var localizedDescription = GetLocalizedFileDescription(item, languageCode);
 
+        // 处理fileSource中地址可能是绝对路径
+        foreach (var source in fileSource)
+        {
+            source.Name = source.Name.Replace(document?.GitPath, string.Empty);
+            source.Address = source.Address.Replace(document?.GitPath, string.Empty);
+        }
+
         //md
         await httpContext.Response.WriteAsJsonAsync(new
         {
             content = localizedContent,
             title = localizedTitle,
             description = localizedDescription,
-            fileSource,
-            address = query?.Address.Replace(".git", string.Empty),
-            query?.Branch,
+            fileSource = fileSource.Select(x => ToFileSource(x, warehouse)),
+            address = warehouse?.Address.Replace(".git", string.Empty),
+            warehouse?.Branch,
             lastUpdate = item.CreatedAt,
             documentCatalogId = id,
             currentLanguage = languageCode ?? "zh-CN"
         });
+    }
+
+    private object ToFileSource(DocumentFileItemSource fileItemSource, Warehouse? warehouse)
+    {
+        var url = string.Empty;
+
+        if (warehouse.Address.StartsWith("https://github.com") || warehouse.Address.StartsWith("https://gitee.com"))
+        {
+            url = warehouse.Address.TrimEnd('/') + $"/tree/{warehouse.Branch}/" + fileItemSource.Address;
+        }
+
+        var name = Path.GetFileName(fileItemSource.Address);
+
+        return new
+        {
+            name = name.TrimStart('/').TrimStart('\\'),
+            Address = fileItemSource.Address.TrimStart('/').TrimStart('\\'),
+            fileItemSource.CreatedAt,
+            url,
+            fileItemSource.Id,
+            fileItemSource.DocumentFileItemId,
+        };
     }
 
     /// <summary>

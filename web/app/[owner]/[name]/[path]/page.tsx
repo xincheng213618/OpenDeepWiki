@@ -247,7 +247,6 @@ export default async function DocumentPage({
 
   try {
     const response = await documentById(owner, name, path, branch, lang);
-    console.log('response', response.data);
     
     if (response.isSuccess && response.data) {
       document = response.data as DocumentData;

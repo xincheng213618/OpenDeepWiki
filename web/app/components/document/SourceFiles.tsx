@@ -51,4 +51,4 @@ const SourceFiles: React.FC<SourceFilesProps> = ({
   );
 };
 
-export default SourceFiles; 
+export default SourceFiles;

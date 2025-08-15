@@ -1,10 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { Github, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Badge } from '@/components/ui/badge';
+import { useTheme } from 'next-themes';
+import { ThemeProvider } from '@lobehub/ui';
 
 interface FileSource {
   id: string;
   name: string;
+  url: string;
+  address: string;
 }
 
 interface FileDependenciesProps {
@@ -12,55 +22,48 @@ interface FileDependenciesProps {
 }
 
 export default function FileDependencies({ files }: FileDependenciesProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const { resolvedTheme } = useTheme();
 
   return (
-    <div className="mb-6 border border-gray-200 rounded-lg bg-gray-50">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-100 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">
-            文档依赖文件
-          </span>
-          <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
-            {files.length}
-          </span>
-        </div>
-        <svg
-          className={`w-4 h-4 text-gray-500 transition-transform ${
-            isExpanded ? 'rotate-180' : ''
-          }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-      
-      {isExpanded && (
-        <div className="border-t border-gray-200">
-          <div className="max-h-48 overflow-y-auto p-4">
-            <div className="space-y-2">
+    <ThemeProvider themeMode={resolvedTheme as any}>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+          <CollapsibleTrigger asChild>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <CardTitle className="text-base font-medium">
+                文档依赖文件
+              </CardTitle>
+              <Badge variant="secondary">{files.length}</Badge>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''
+                  }`}
+              />
+            </div>
+          </CollapsibleTrigger>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="px-4 pb-4">
+            <div className="max-h-48 overflow-y-auto space-y-2">
               {files.map((file) => (
-                <div
-                  key={file.id}
-                  className="text-sm text-gray-600 py-1 px-2 bg-white rounded border border-gray-100 hover:border-gray-200 transition-colors"
-                >
-                  {file.name}
-                </div>
+                <Link
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                  }}
+                  rel="noopener noreferrer" target="_blank" href={file.url} key={file.id} passHref>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-1.5 px-2 rounded-md border hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer">
+                    <Github className="h-3.5 w-3.5" />
+                    <span className="flex-1 truncate">{file.address}</span>
+                  </div>
+                </Link>
               ))}
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </ThemeProvider>
   );
-} 
+}

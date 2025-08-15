@@ -91,7 +91,6 @@ export default function RegisterPage() {
       
       // 调用注册API
       const {data} = await register(username, email, password)
-      console.log('注册响应:', data)
       if (data.success) {
         // 登录成功
         toast.success('注册成功')
