@@ -36,8 +36,8 @@ export default async function RepositoryPage({ params, searchParams }: any) {
     if (catalogResponse.success && catalogResponse.data?.items && catalogResponse.data.items.length > 0) {
       const firstMenuItem = catalogResponse.data.items[0]
       if (firstMenuItem?.url) {
-        // 重定向到第一个菜单项
-        redirect(`/${owner}/${name}/${firstMenuItem.url}`);
+        // 重定向到第一个菜单项，必须编码以避免日文等字符导致的redirect错误
+        redirect(`/${owner}/${name}/${encodeURIComponent(firstMenuItem.url)}`);
       }
     }
   } catch (error) {
