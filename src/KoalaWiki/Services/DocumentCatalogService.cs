@@ -169,9 +169,23 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
 
         if (warehouse.Address.StartsWith("https://github.com") || warehouse.Address.StartsWith("https://gitee.com"))
         {
-            url = warehouse.Address.TrimEnd('/') + $"/tree/{warehouse.Branch}/" + fileItemSource.Address;
+            // 删除.git后缀
+            url = warehouse.Address
+                            .Replace(".git", string.Empty)
+                            .TrimEnd('/') + $"/tree/{warehouse.Branch}/" + fileItemSource.Address;
         }
-
+        // TODO: 兼容其他提供商
+        else if(warehouse.Address.StartsWith("https://gitlab.com"))
+        {
+            url = warehouse.Address
+                            .Replace(".git", string.Empty)
+                            .TrimEnd('/') + $"/-/tree/{warehouse.Branch}/" + fileItemSource.Address;
+        }
+        else
+        {
+            url = warehouse.Address.TrimEnd('/') + "/" + fileItemSource.Address;
+        }
+        
         var name = Path.GetFileName(fileItemSource.Address);
 
         return new
