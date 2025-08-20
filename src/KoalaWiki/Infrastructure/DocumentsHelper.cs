@@ -133,8 +133,8 @@ public class DocumentsHelper
             "qwen2.5-coder-3b-instruct" => 65535,
             "qwen3-235b-a22b" => 16384,
             "claude-sonnet-4-20250514" => 63999,
-            "gemini-2.5-pro-preview-05-06" => 32768,
-            "gemini-2.5-flash-preview-04-17" => 32768,
+            "gemini-2.5-pro" => 32768,
+            "gemini-2.5-flash" => 32768,
             "Qwen3-32B" => 32768,
             "deepseek-r1:32b-qwen-distill-fp16" => 32768,
             _ => null
