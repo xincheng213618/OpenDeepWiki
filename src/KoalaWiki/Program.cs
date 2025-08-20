@@ -158,7 +158,7 @@ app.MapDefaultEndpoints();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<IKoalaWikiContext>();
-    // await dbContext.RunMigrateAsync();
+    await dbContext.RunMigrateAsync();
 
     // 初始化动态配置系统
     try
