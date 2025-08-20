@@ -56,7 +56,8 @@ public abstract class DocumentProcessingStepBase<TInput, TOutput>(ILogger logger
         ContinueOnFailure = true
     };
     
-    public abstract Task<TOutput> ExecuteAsync(TInput input, CancellationToken cancellationToken = default);
+    public abstract Task<TOutput> ExecuteAsync(TInput input,
+        CancellationToken cancellationToken = default);
     
     public virtual Task<bool> CanExecuteAsync(TInput input) => Task.FromResult(true);
     

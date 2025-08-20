@@ -10,8 +10,7 @@ public sealed class DocumentStructureGenerationStep(ILogger<DocumentStructureGen
 {
     public override string StepName => "生成目录结构";
 
-    public override async Task<DocumentProcessingContext> ExecuteAsync(
-        DocumentProcessingContext context,
+    public override async Task<DocumentProcessingContext> ExecuteAsync(DocumentProcessingContext context,
         CancellationToken cancellationToken = default)
     {
         using var activity = ActivitySource.StartActivity(StepName);

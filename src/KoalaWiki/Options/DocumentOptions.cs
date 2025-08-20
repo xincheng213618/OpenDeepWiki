@@ -85,6 +85,14 @@ public class DocumentOptions
     /// <returns></returns>
     public static int MaxFileReadCount { get; set; } = 5;
 
+    /// <summary>
+    /// Git代理设置
+    /// 支持HTTP/HTTPS代理，格式：http://proxy-server:port 或 https://proxy-server:port
+    /// 可通过环境变量GIT_PROXY进行配置
+    /// </summary>
+    /// <returns></returns>
+    public static string? Proxy { get; set; }
+
     public static void InitConfig(IConfiguration configuration)
     {
         configuration.GetSection(Name).Get<DocumentOptions>();
@@ -166,6 +174,12 @@ public class DocumentOptions
             {
                 MaxFileReadCount = count;
             }
+        }
+
+        var proxy = configuration.GetValue<string>($"GIT_PROXY");
+        if (!string.IsNullOrEmpty(proxy))
+        {
+            Proxy = proxy;
         }
     }
 }

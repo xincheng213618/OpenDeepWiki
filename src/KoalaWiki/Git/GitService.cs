@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using KoalaWiki.Core;
+using KoalaWiki.Options;
 using LibGit2Sharp;
 
 namespace KoalaWiki.Git;
@@ -43,18 +44,26 @@ public class GitService
         string userName = "",
         string password = "")
     {
+        var fetchOptions = new FetchOptions()
+        {
+            CertificateCheck = (_, _, _) => true,
+            CredentialsProvider = (_url, _user, _cred) =>
+                new UsernamePasswordCredentials
+                {
+                    Username = userName,
+                    Password = password
+                }
+        };
+
+        // 设置代理
+        if (!string.IsNullOrEmpty(DocumentOptions.Proxy))
+        {
+            fetchOptions.ProxyOptions.Url = DocumentOptions.Proxy;
+        }
+
         var pullOptions = new PullOptions
         {
-            FetchOptions = new FetchOptions()
-            {
-                CertificateCheck = (_, _, _) => true,
-                CredentialsProvider = (_url, _user, _cred) =>
-                    new UsernamePasswordCredentials
-                    {
-                        Username = userName,
-                        Password = password
-                    }
-            }
+            FetchOptions = fetchOptions
         };
 
         // 先克隆
@@ -107,13 +116,20 @@ public class GitService
     {
         var (localPath, organization) = GetRepositoryPath(repositoryUrl);
 
-        var cloneOptions = new CloneOptions
+        var fetchOptions = new FetchOptions
         {
-            FetchOptions =
-            {
-                CertificateCheck = (_, _, _) => true,
-                Depth = 0,
-            },
+            CertificateCheck = (_, _, _) => true,
+            Depth = 0,
+        };
+
+        // 设置代理
+        if (!string.IsNullOrEmpty(DocumentOptions.Proxy))
+        {
+            fetchOptions.ProxyOptions.Url = DocumentOptions.Proxy;
+        }
+
+        var cloneOptions = new CloneOptions(fetchOptions)
+        {
             BranchName = branch
         };
 
@@ -149,22 +165,29 @@ public class GitService
                 // 删除目录以后在尝试一次
                 Directory.Delete(localPath, true);
                 
-                cloneOptions = new CloneOptions
+                var retryFetchOptions = new FetchOptions
+                {
+                    Depth = 0,
+                    CertificateCheck = (_, _, _) => true,
+                    CredentialsProvider = (_url, _user, _cred) =>
+                    {
+                        return new UsernamePasswordCredentials
+                        {
+                            Username = userName, // 对于Token认证，Username可以随便填
+                            Password = password
+                        };
+                    }
+                };
+
+                // 设置代理
+                if (!string.IsNullOrEmpty(DocumentOptions.Proxy))
+                {
+                    retryFetchOptions.ProxyOptions.Url = DocumentOptions.Proxy;
+                }
+
+                cloneOptions = new CloneOptions(retryFetchOptions)
                 {
                     BranchName = branch,
-                    FetchOptions =
-                    {
-                        Depth = 0,
-                        CertificateCheck = (_, _, _) => true,
-                        CredentialsProvider = (_url, _user, _cred) =>
-                        {
-                            return new UsernamePasswordCredentials
-                            {
-                                Username = userName, // 对于Token认证，Username可以随便填
-                                Password = password
-                            };
-                        }
-                    }
                 };
 
                 Repository.Clone(repositoryUrl, localPath, cloneOptions);
@@ -195,22 +218,29 @@ public class GitService
             {
                 var info = Directory.CreateDirectory(localPath);
 
-                cloneOptions = new CloneOptions
+                var authFetchOptions = new FetchOptions
+                {
+                    Depth = 0,
+                    CertificateCheck = (_, _, _) => true,
+                    CredentialsProvider = (_url, _user, _cred) =>
+                    {
+                        return new UsernamePasswordCredentials
+                        {
+                            Username = userName, // 对于Token认证，Username可以随便填
+                            Password = password
+                        };
+                    }
+                };
+
+                // 设置代理
+                if (!string.IsNullOrEmpty(DocumentOptions.Proxy))
+                {
+                    authFetchOptions.ProxyOptions.Url = DocumentOptions.Proxy;
+                }
+
+                cloneOptions = new CloneOptions(authFetchOptions)
                 {
                     BranchName = branch,
-                    FetchOptions =
-                    {
-                        Depth = 0,
-                        CertificateCheck = (_, _, _) => true,
-                        CredentialsProvider = (_url, _user, _cred) =>
-                        {
-                            return new UsernamePasswordCredentials
-                            {
-                                Username = userName, // 对于Token认证，Username可以随便填
-                                Password = password
-                            };
-                        }
-                    }
                 };
 
                 Repository.Clone(repositoryUrl, localPath, cloneOptions);

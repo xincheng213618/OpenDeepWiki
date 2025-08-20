@@ -40,6 +40,9 @@ public static class MiniMapService
         var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint, OpenAIOptions.ChatApiKey, path,
             OpenAIOptions.ChatModel, false);
 
+        int retry = 1;
+        retry:
+        
         await foreach (var item in kernel.GetRequiredService<IChatCompletionService>()
                            .GetStreamingChatMessageContentsAsync(history, new OpenAIPromptExecutionSettings()
                            {
@@ -57,6 +60,18 @@ public static class MiniMapService
 
         var thinkingPattern = new Regex(@"<thinking>.*?</thinking>", RegexOptions.Singleline);
         miniMap = new StringBuilder(thinkingPattern.Replace(miniMap.ToString(), string.Empty).Trim());
+        
+        // 如果内容是空的则再次执行
+        if (miniMap.Length == 0)
+        {
+            retry++;
+            if (retry > 3)
+            {
+                throw new Exception("知识图谱生成失败，请检查仓库是否存在代码文件或仓库地址是否正确。");
+            }
+
+            goto retry;
+        }
 
         // 开始解析知识图谱
         var miniMapContent = miniMap.ToString();

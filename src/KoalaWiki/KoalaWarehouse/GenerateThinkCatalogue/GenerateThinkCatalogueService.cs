@@ -149,6 +149,9 @@ public static partial class GenerateThinkCatalogueService
             MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.AnalysisModel)
         };
 
+        int retry = 1;
+        retry:
+
         // 流式获取响应
         await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, analysisModel))
         {
@@ -158,9 +161,21 @@ public static partial class GenerateThinkCatalogueService
             }
         }
 
+        // str先清空<think>标签
+        var thinkTagRegex = new Regex(@"<think>.*?</think>", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        var thinkContent = thinkTagRegex.Match(str.ToString());
+        str = new StringBuilder(thinkTagRegex.Replace(str.ToString(), string.Empty).Trim());
+
+        
         if (str.Length == 0)
         {
-            throw new InvalidOperationException("AI 返回了空响应");
+            history.AddAssistantMessage(thinkContent.Value);
+            retry++;
+            if (retry > 3)
+            {
+                throw new Exception("AI生成目录的时候重复多次响应空内容");
+            }
+            goto retry;
         }
 
         // 质量增强逻辑

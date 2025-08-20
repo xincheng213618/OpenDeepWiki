@@ -14,7 +14,8 @@ import {
   Save,
   Camera,
   CheckCircle,
-  Upload
+  Upload,
+  Loader2
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -100,6 +101,7 @@ export default function SettingsPage() {
 
   const [activeSection, setActiveSection] = useState('profile');
   const [loading, setLoading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
 
@@ -221,7 +223,7 @@ export default function SettingsPage() {
     }
 
     try {
-      setLoading(true);
+      setAvatarUploading(true);
       const { data } = await uploadAvatar(file) as any;
       if (data.code === 200 && data.data) {
         // 添加时间戳参数到头像URL以防止浏览器缓存
@@ -251,7 +253,7 @@ export default function SettingsPage() {
       console.error('头像上传失败:', error);
       toast.error('头像上传失败，请重试');
     } finally {
-      setLoading(false);
+      setAvatarUploading(false);
     }
 
     return false;
@@ -287,31 +289,39 @@ export default function SettingsPage() {
       case 'profile':
         return (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-semibold">账户信息</h2>
-              <p className="text-muted-foreground">管理您的个人资料和基本信息</p>
+            <div className="pb-6 border-b">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent mb-3">账户信息</h2>
+              <p className="text-lg text-muted-foreground">管理您的个人资料和基本信息</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               {/* 头像卡片 */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center space-y-4">
-                    <div className="relative">
-                      <Avatar className="w-20 h-20">
-                        <AvatarImage src={avatarUrl} />
-                        <AvatarFallback>
-                          <User className="w-8 h-8" />
-                        </AvatarFallback>
-                      </Avatar>
+              <Card className="border-0 shadow-lg">
+                <CardContent className="pt-8 pb-8">
+                  <div className="flex flex-col items-center space-y-6">
+                    <div className="relative group">
+                      <div className="relative">
+                        <Avatar className="w-24 h-24 ring-4 ring-background shadow-xl transition-all duration-300 group-hover:ring-primary/20">
+                          <AvatarImage src={avatarUrl} className="object-cover" />
+                          <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/5">
+                            <User className="w-10 h-10 text-primary" />
+                          </AvatarFallback>
+                        </Avatar>
+                        {avatarUploading && (
+                          <div className="absolute inset-0 bg-background/80 rounded-full flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                          </div>
+                        )}
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0"
+                        disabled={avatarUploading}
+                        className="absolute -bottom-1 -right-1 rounded-full w-10 h-10 p-0 shadow-lg border-2 border-background bg-background hover:bg-primary hover:text-primary-foreground transition-all duration-200"
                         onClick={() => {
                           const input = document.createElement('input');
                           input.type = 'file';
-                          input.accept = 'image/*';
+                          input.accept = 'image/jpeg,image/png,image/gif';
                           input.onchange = (e) => {
                             const file = (e.target as HTMLInputElement).files?.[0];
                             if (file) {
@@ -321,38 +331,57 @@ export default function SettingsPage() {
                           input.click();
                         }}
                       >
-                        <Camera className="w-4 h-4" />
+                        {avatarUploading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Camera className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
-                    <div className="text-center">
-                      <h3 className="font-medium">{userInfo?.name}</h3>
-                      <p className="text-sm text-muted-foreground">{userInfo?.email}</p>
-                      <Badge variant="secondary" className="mt-2">
+                    <div className="text-center space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-lg text-foreground">{userInfo?.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{userInfo?.email}</p>
+                      </div>
+                      <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
                         <CheckCircle className="w-3 h-3 mr-1" />
                         已验证
                       </Badge>
+                      <p className="text-xs text-muted-foreground px-4">
+                        支持 JPG、PNG、GIF 格式，文件大小不超过 2MB
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* 基本信息表单 */}
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>基本信息</CardTitle>
+              <Card className="lg:col-span-3 border-0 shadow-lg">
+                <CardHeader className="pb-6">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <User className="w-5 h-5 text-primary" />
+                    基本信息
+                  </CardTitle>
+                  <CardDescription className="text-base">
+                    管理您的个人资料信息
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-6">
                   <Form {...profileForm}>
-                    <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField
                           control={profileForm.control}
                           name="name"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>用户名</FormLabel>
+                            <FormItem className="space-y-3">
+                              <FormLabel className="text-sm font-medium text-foreground">用户名</FormLabel>
                               <FormControl>
-                                <Input placeholder="请输入用户名" {...field} />
+                                <Input 
+                                  placeholder="请输入用户名" 
+                                  className="h-11 border-2 focus:border-primary transition-colors" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -362,20 +391,39 @@ export default function SettingsPage() {
                           control={profileForm.control}
                           name="email"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>邮箱地址</FormLabel>
+                            <FormItem className="space-y-3">
+                              <FormLabel className="text-sm font-medium text-foreground">邮箱地址</FormLabel>
                               <FormControl>
-                                <Input placeholder="请输入邮箱地址" {...field} />
+                                <Input 
+                                  placeholder="请输入邮箱地址" 
+                                  className="h-11 border-2 focus:border-primary transition-colors" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
-                      <Button type="submit" disabled={loading} className="w-full md:w-auto">
-                        <Save className="w-4 h-4 mr-2" />
-                        保存更改
-                      </Button>
+                      <div className="pt-4 border-t">
+                        <Button 
+                          type="submit" 
+                          disabled={loading} 
+                          className="h-11 px-8 bg-primary hover:bg-primary/90 transition-all duration-200"
+                        >
+                          {loading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              保存中...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4 mr-2" />
+                              保存更改
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
@@ -387,71 +435,107 @@ export default function SettingsPage() {
       case 'security':
         return (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-semibold">安全设置</h2>
-              <p className="text-muted-foreground">管理您的账户安全和密码设置</p>
+            <div className="pb-6 border-b">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent mb-3">安全设置</h2>
+              <p className="text-lg text-muted-foreground">管理您的账户安全和密码设置</p>
             </div>
 
-            <div className="max-w-2xl">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="w-5 h-5" />
+            <div className="max-w-3xl">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="pb-6">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-primary" />
                     修改密码
                   </CardTitle>
-                  <CardDescription>
-                    定期更改密码有助于保护您的账户安全
+                  <CardDescription className="text-base mt-2">
+                    定期更改密码有助于保护您的账户安全。请确保使用强密码。
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-6">
                   <Form {...passwordForm}>
-                    <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
-                      <FormField
-                        control={passwordForm.control}
-                        name="currentPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>当前密码</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="请输入当前密码" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={passwordForm.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>新密码</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="请输入新密码" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              密码必须至少8个字符，包含大小写字母和数字
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={passwordForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>确认新密码</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="请再次输入新密码" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button type="submit" disabled={loading} className="w-full md:w-auto">
-                        <Save className="w-4 h-4 mr-2" />
-                        更新密码
-                      </Button>
+                    <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-6">
+                      <div className="space-y-6">
+                        <FormField
+                          control={passwordForm.control}
+                          name="currentPassword"
+                          render={({ field }) => (
+                            <FormItem className="space-y-3">
+                              <FormLabel className="text-sm font-medium text-foreground">当前密码</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="password" 
+                                  placeholder="请输入当前密码" 
+                                  className="h-11 border-2 focus:border-primary transition-colors" 
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField
+                            control={passwordForm.control}
+                            name="newPassword"
+                            render={({ field }) => (
+                              <FormItem className="space-y-3">
+                                <FormLabel className="text-sm font-medium text-foreground">新密码</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="password" 
+                                    placeholder="请输入新密码" 
+                                    className="h-11 border-2 focus:border-primary transition-colors" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormDescription className="text-xs text-muted-foreground">
+                                  密码必须至少8个字符，包含大小写字母和数字
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={passwordForm.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                              <FormItem className="space-y-3">
+                                <FormLabel className="text-sm font-medium text-foreground">确认新密码</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="password" 
+                                    placeholder="请再次输入新密码" 
+                                    className="h-11 border-2 focus:border-primary transition-colors" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="pt-4 border-t">
+                        <Button 
+                          type="submit" 
+                          disabled={loading} 
+                          className="h-11 px-8 bg-primary hover:bg-primary/90 transition-all duration-200"
+                        >
+                          {loading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              更新中...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4 mr-2" />
+                              更新密码
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
@@ -463,12 +547,62 @@ export default function SettingsPage() {
       case 'apps':
         return (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-semibold">应用管理</h2>
-              <p className="text-muted-foreground">管理与您账户连接的应用</p>
+            <div className="pb-6 border-b">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent mb-3">应用管理</h2>
+              <p className="text-lg text-muted-foreground">管理与您账户连接的应用</p>
             </div>
-            <div>
-              <AppManagement />
+            <div className="max-w-3xl">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="pb-6">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-primary" />
+                    应用管理
+                  </CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    管理您的应用偏好设置和通知选项
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="space-y-1">
+                        <Label className="text-base font-medium cursor-pointer">邮件通知</Label>
+                        <p className="text-sm text-muted-foreground">
+                          接收重要更新和通知邮件
+                        </p>
+                      </div>
+                      <Switch className="data-[state=checked]:bg-primary" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="space-y-1">
+                        <Label className="text-base font-medium cursor-pointer">桌面通知</Label>
+                        <p className="text-sm text-muted-foreground">
+                          在桌面显示实时通知
+                        </p>
+                      </div>
+                      <Switch className="data-[state=checked]:bg-primary" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="space-y-1">
+                        <Label className="text-base font-medium cursor-pointer">自动保存</Label>
+                        <p className="text-sm text-muted-foreground">
+                          自动保存您的工作进度
+                        </p>
+                      </div>
+                      <Switch defaultChecked className="data-[state=checked]:bg-primary" />
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Settings className="w-4 h-4" />
+                      <span>设置将自动保存</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         );
@@ -507,28 +641,29 @@ export default function SettingsPage() {
         </Sidebar>
 
         {/* Main content */}
-        <SidebarInset className="flex-1">
+        <SidebarInset className="flex-1 bg-gradient-to-br from-background via-background to-muted/20">
           {/* 顶部导航栏 */}
-          <div className="border-b bg-background">
-            <div className="flex items-center gap-4 px-4 py-4">
-              <SidebarTrigger />
+          <div className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-40">
+            <div className="flex items-center gap-4 px-6 py-4">
+              <SidebarTrigger className="hover:bg-muted/50 transition-colors" />
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleGoHome}
-                className="gap-2"
+                className="gap-2 hover:bg-muted/50 transition-all duration-200"
               >
                 <ArrowLeft className="w-4 h-4" />
                 返回
               </Button>
+              <Separator orientation="vertical" className="h-6" />
               <div>
-                <h1 className="text-2xl font-semibold">设置</h1>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">设置</h1>
               </div>
             </div>
           </div>
 
           {/* 内容区域 */}
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-8 max-w-7xl mx-auto">
             {loading && (
               <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
                 <div className="text-center">

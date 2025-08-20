@@ -10,8 +10,7 @@ public class KnowledgeGraphGenerationStep : DocumentProcessingStepBase<DocumentP
 
     public override string StepName => "生成知识图谱";
 
-    public override async Task<DocumentProcessingContext> ExecuteAsync(
-        DocumentProcessingContext context, 
+    public override async Task<DocumentProcessingContext> ExecuteAsync(DocumentProcessingContext context,
         CancellationToken cancellationToken = default)
     {
         using var activity = ActivitySource.StartActivity(StepName);

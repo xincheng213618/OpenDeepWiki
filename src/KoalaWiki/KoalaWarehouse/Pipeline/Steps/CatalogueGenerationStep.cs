@@ -63,7 +63,7 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
             throw;
         }
 
-        return context;
+        return await Task.FromResult(context);
     }
 
     public override async Task<DocumentProcessingContext> HandleErrorAsync(

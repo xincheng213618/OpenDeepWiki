@@ -10,8 +10,7 @@ public class DocumentContentGenerationStep : DocumentProcessingStepBase<Document
 
     public override string StepName => "生成目录结构中的文档";
 
-    public override async Task<DocumentProcessingContext> ExecuteAsync(
-        DocumentProcessingContext context, 
+    public override async Task<DocumentProcessingContext> ExecuteAsync(DocumentProcessingContext context,
         CancellationToken cancellationToken = default)
     {
         using var activity = ActivitySource.StartActivity(StepName);
