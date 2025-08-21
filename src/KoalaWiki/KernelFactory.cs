@@ -26,7 +26,7 @@ public static class KernelFactory
         string apiKey,
         string gitPath,
         string model, bool isCodeAnalysis = true,
-        List<string>? files = null)
+        List<string>? files = null, Action<IKernelBuilder>? kernelBuilderAction = null)
     {
         using var activity = Activity.Current?.Source.StartActivity();
         activity?.SetTag("model", model);
@@ -99,7 +99,7 @@ public static class KernelFactory
         }
 
         // 添加文件函数
-        var fileFunction = new FileFunction(gitPath,files);
+        var fileFunction = new FileFunction(gitPath, files);
         kernelBuilder.Plugins.AddFromObject(fileFunction);
         kernelBuilder.Plugins.AddFromType<AgentFunction>();
         activity?.SetTag("plugins.file_function", "loaded");
@@ -111,6 +111,8 @@ public static class KernelFactory
             activity?.SetTag("plugins.code_analyze_function", "loaded");
         }
 
+        kernelBuilderAction?.Invoke(kernelBuilder);
+        
         var kernel = kernelBuilder.Build();
         kernel.FunctionInvocationFilters.Add(new FunctionResultInterceptor());
 

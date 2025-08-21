@@ -236,6 +236,8 @@ public partial class DocumentPendingService
         string gitRepository, string branch, string path, ClassifyType? classify, List<string> files)
     {
         DocumentContext.DocumentStore = new DocumentStore();
+
+        var docs = new DocsFunction();
         // 为每个文档处理创建独立的Kernel实例，避免状态管理冲突
         var documentKernel = KernelFactory.GetKernel(
             OpenAIOptions.Endpoint,
@@ -243,7 +245,7 @@ public partial class DocumentPendingService
             path,
             OpenAIOptions.ChatModel,
             false, // 文档生成不需要代码分析功能
-            files
+            files, (builder => { builder.Plugins.AddFromObject(docs); })
         );
 
         var chat = documentKernel.Services.GetService<IChatCompletionService>();
@@ -288,7 +290,7 @@ public partial class DocumentPendingService
         // 保存原始内容，防止精炼失败时丢失
         var originalContent = sr.ToString();
 
-        if (string.IsNullOrEmpty(originalContent) && count < 3)
+        if (string.IsNullOrEmpty(docs.Content) && count < 3)
         {
             count++;
             goto reset;
@@ -371,12 +373,20 @@ public partial class DocumentPendingService
                 history.AddUserMessage(refineContents);
 
                 var refinedContent = new StringBuilder();
+                int reset1 = 1;
+                reset1:
                 await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
                 {
                     if (!string.IsNullOrEmpty(item.Content))
                     {
                         refinedContent.Append(item.Content);
                     }
+                }
+
+                if (string.IsNullOrEmpty(docs.Content) && reset1 < 3)
+                {
+                    reset1++;
+                    goto reset1;
                 }
 
                 // 检查精炼后的内容是否有效
@@ -398,43 +408,10 @@ public partial class DocumentPendingService
             }
         }
 
-        // 删除内容中所有的<thinking>内的内容，可能存在多个<thinking>标签,
-        var thinkingRegex = new Regex(@"<thinking>.*?</thinking>", RegexOptions.Singleline);
-        sr = new StringBuilder(thinkingRegex.Replace(sr.ToString(), string.Empty));
-
-
-        // 使用正则表达式将<blog></blog>中的内容提取
-        var regex = new Regex(@"<blog>(.*?)</blog>", RegexOptions.Singleline);
-
-        var match = regex.Match(sr.ToString());
-
-        if (match.Success)
-        {
-            // 提取到的内容
-            var extractedContent = match.Groups[1].Value;
-            sr.Clear();
-            sr.Append(extractedContent);
-        }
-
-        var content = sr.ToString().Trim();
-
-        // 删除所有的所有的<think></think>
-        var thinkRegex = new Regex(@"<think>(.*?)</think>", RegexOptions.Singleline);
-        content = thinkRegex.Replace(content, string.Empty);
-
-        // 从docs提取
-        var docsRegex = new Regex(@"<docs>(.*?)</docs>", RegexOptions.Singleline);
-        var docsMatch = docsRegex.Match(content);
-        if (docsMatch.Success)
-        {
-            // 提取到的内容
-            var extractedDocs = docsMatch.Groups[1].Value;
-            content = content.Replace(docsMatch.Value, extractedDocs);
-        }
 
         var fileItem = new DocumentFileItem()
         {
-            Content = content,
+            Content = docs.Content,
             DocumentCatalogId = catalog.Id,
             Description = string.Empty,
             Extra = new Dictionary<string, string>(),

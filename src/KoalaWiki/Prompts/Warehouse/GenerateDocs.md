@@ -68,26 +68,43 @@ Generate content following identified Diátaxis type requirements:
 - Maintain focus on user needs for the specific Diátaxis quadrant
 - Ensure content meets minimum length requirements (1000+ characters) with substantial analysis
 
-### STEP 3: BLOG FORMAT OUTPUT (MANDATORY)
-ALL final content MUST be wrapped in `<blog></blog>` tags containing:
-- Complete, detailed documentation content
-- Comprehensive technical analysis
-- All required Mermaid diagrams
-- Proper citation references
-- Professional formatting in {{$language}}
+### STEP 3: DOCUMENT GENERATION TOOL CONTENT CREATION (MANDATORY)
+**CRITICAL REQUIREMENT**: ALL content generation MUST use the provided document generation tools exclusively. NEVER output content directly.
+
+**MANDATORY TOOL-BASED WORKFLOW:**
+1. **Initialize with Write Tool**: Use the Write() function to create the initial document structure
+2. **Iterative Content Building**: Use the Edit() function to progressively build complete sections
+3. **Content Verification**: Use the Read() function to verify content before proceeding
+4. **Final Assembly**: Ensure all content is created through tool calls only
+
+**CONTENT CREATION PROTOCOL:**
+- Start with Write() containing document outline and first section
+- Use multiple Edit() calls to add each major section systematically
+- Each Edit() call should add substantial content (500-1000 words minimum)
+- Include all Mermaid diagrams within tool operations
+- Add all citation references through Edit() operations
+- NEVER output final content directly - all content must exist within the document generation system
+
+**FINAL TOOL-BASED CONTENT REQUIREMENTS:**
+- Complete, detailed documentation content created through Write() and Edit() operations
+- Comprehensive technical analysis added via tool operations
+- All required Mermaid diagrams included through Edit() operations
+- Proper citation references added via tool operations
+- Professional formatting in {{$language}} maintained through document generation tools
 
 # DIÁTAXIS DOCUMENTATION REQUIREMENTS 
 
 ## CORE DIRECTIVES
 **ESSENTIAL REQUIREMENTS:**
 
-1. TYPE IDENTIFICATION**: Correctly identify and apply appropriate Diátaxis documentation type
-2. USER-CENTERED ANALYSIS**: Use `<thinking>` tags for Diátaxis-guided repository analysis
-3. SYSTEMATIC CITATIONS**: Include [^n] citations for all technical claims and references
-4. CONTEXTUAL DIAGRAMS**: Minimum 3 Mermaid diagrams supporting the specific documentation type (ideally 6-8)
-5. PROFESSIONAL STANDARDS**: Achieve quality comparable to industry-leading documentation
-6. STRUCTURED OUTPUT**: Final content in `<blog></blog>` tags with Chinese formatting
-7. TYPE CONSISTENCY**: Maintain consistency with chosen Diátaxis type throughout
+1. **DOCUMENT GENERATION TOOL USAGE**: Exclusively use available document generation tools for ALL content creation - NEVER output content directly
+2. **TYPE IDENTIFICATION**: Correctly identify and apply appropriate Diátaxis documentation type
+3. **USER-CENTERED ANALYSIS**: Use `<thinking>` tags for Diátaxis-guided repository analysis
+4. **SYSTEMATIC CITATIONS**: Include [^n] citations for all technical claims and references via Edit() operations
+5. **CONTEXTUAL DIAGRAMS**: Minimum 3 Mermaid diagrams supporting the specific documentation type (ideally 6-8) added through Edit() operations
+6. **PROFESSIONAL STANDARDS**: Achieve quality comparable to industry-leading documentation through tool operations
+7. **TOOL-BASED CONTENT CREATION**: Final content must exist entirely within the document generation system - no direct output allowed
+8. **TYPE CONSISTENCY**: Maintain consistency with chosen Diátaxis type throughout tool-based content creation
 
 # CORE DIRECTIVES
 
@@ -940,13 +957,13 @@ Generate documentation that demonstrates technical excellence through systematic
 - **Code as Evidence**: Use strategic code examples to support your analysis and explanations, showing the actual implementation that backs up your technical insights
 
 **TECHNICAL OUTPUT FORMAT REQUIREMENTS:**
-- Wrap all content in `<blog></blog>` tags
-- Maintain professional technical writing standards
-- **MANDATORY TECHNICAL MERMAID DIAGRAMS**: Include minimum 6-8 comprehensive Mermaid diagrams throughout the documentation, with each major section containing relevant technical architecture, workflow, or component diagrams
-- **Technical Process Visualization**: Every significant technical process, design pattern, or architectural excellence must be visualized with appropriate Mermaid diagrams
-- **Technical-to-Code Mapping**: Ensure every diagram element represents actual technical implementations and patterns found in the analyzed files
-- **STRATEGIC CODE EXAMPLES**: Include essential code examples for critical usage patterns, properly contextualized within comprehensive technical analysis
-- **MANDATORY CITATION SYSTEM**: Integrate footnote citations [^n] with proper file references formatted as: `[^n]: [Technical Description]({{$git_repository}}/tree/{{$branch}}/path/file#Lstart-Lend)`
+- **MANDATORY TOOL USAGE**: ALL content creation must use document generation tools exclusively
+- **NO DIRECT OUTPUT ALLOWED**: Never output documentation content directly in response
+- **TOOL-BASED CONTENT STRUCTURE**: Create content through Write() and Edit() operations
+- **TOOL-BASED MERMAID INTEGRATION**: Include minimum 6-8 comprehensive Mermaid diagrams through Edit() operations
+- **TOOL-BASED TECHNICAL VISUALIZATION**: Every significant technical process must be visualized through tool operations
+- **TOOL-BASED CODE REFERENCES**: Ensure every diagram element represents actual implementations through tool operations
+- **TOOL-BASED CITATION SYSTEM**: Integrate footnote citations [^n] with proper file references through Edit() operations
 
 ## Technical Citation Implementation Guidelines
 
@@ -1266,16 +1283,14 @@ Write technical content that demonstrates the perspective of a senior engineer w
 
 Generate compelling engineering blog content that reads like an experienced developer's deep exploration of an interesting codebase. Create technical storytelling that reveals the engineering insights, architectural decisions, and implementation wisdom that other developers would find valuable and inspiring. Focus on the human story behind the code - the problems being solved, the clever solutions employed, and the engineering craftsmanship that makes this project worth understanding and learning from.
 
-**FINAL OUTPUT REQUIREMENT**: The final result MUST be COMPLETE documentation content wrapped in `<blog></blog>` tags, written in {{$language}}, following the identified Diátaxis type, with minimum 3 contextual Mermaid diagrams, proper citations, and professional formatting.
+**FINAL OUTPUT REQUIREMENT**: The final result MUST be complete documentation content created entirely through available document generation tools. Use Write() to initialize and Edit() to build comprehensive content in {{$language}}, following the identified Diátaxis type, with minimum 3 contextual Mermaid diagrams, proper citations, and professional formatting. 
 
-**CRITICAL OUTPUT FORMAT**: 
-- ALL final content MUST be wrapped in `<blog></blog>` tags
-- NO content should appear outside these tags in the final response
-- The `<blog>` opening tag should be on its own line
-- The `</blog>` closing tag should be on its own line
-- Content inside should be properly formatted {{$language}} documentation
-- `<thinking>` tags and their content will be automatically removed from final output
-- Use `<thinking>` tags only for analysis and planning, never for content meant to be visible
+**CRITICAL TOOL-BASED OUTPUT PROTOCOL**: 
+- **NO DIRECT CONTENT OUTPUT**: Never output documentation content directly in your response
+- **EXCLUSIVE TOOL USAGE**: ALL content must be created through Write() and Edit() operations
+- **PROGRESSIVE CONTENT BUILDING**: Use multiple Edit() calls to systematically build complete documentation
+- **TOOL-BASED CONTENT VERIFICATION**: Use Read() to verify content structure and completeness
+- **TOOL-BASED CONTENT CREATION**: The user will access the final documentation through the document generation system, not through direct response output
 
 ---
 
@@ -1289,10 +1304,10 @@ Generate compelling engineering blog content that reads like an experienced deve
 4.  **Type Purity**: No mixing of different documentation types within content
 
 **Content Quality Standards:**
-5.  **Contextual Diagrams**: Minimum 3 Mermaid diagrams appropriate for documentation type
-6.  **Systematic Citations**: [^n] references for all technical claims
-7.  **Repository Grounding**: Content based on actual code analysis
-8.  **Proper Formatting**: {{$language}} content wrapped in `<blog></blog>` tags
+5.  **Contextual Diagrams**: Minimum 3 Mermaid diagrams appropriate for documentation type added through Edit() operations
+6.  **Systematic Citations**: [^n] references for all technical claims added via tool operations
+7.  **Repository Grounding**: Content based on actual code analysis created through document generation tools
+8.  **Tool-Based Content Creation**: {{$language}} content created entirely through Write() and Edit() operations
 
 This Diátaxis-optimized approach ensures documentation truly serves user intent and provides maximum value within the specific user context.
 
