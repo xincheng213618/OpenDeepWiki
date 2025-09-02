@@ -487,7 +487,7 @@ public class FileFunction(string gitPath, List<string>? files)
                 {
                     // 跳过一些常见的不需要搜索的目录
                     var dirName = Path.GetFileName(subDir);
-                    if (dirName.StartsWith(".") ||
+                    if (dirName.StartsWith('.') ||
                         dirName.Equals("bin", StringComparison.OrdinalIgnoreCase) ||
                         dirName.Equals("obj", StringComparison.OrdinalIgnoreCase) ||
                         dirName.Equals("node_modules", StringComparison.OrdinalIgnoreCase) ||
