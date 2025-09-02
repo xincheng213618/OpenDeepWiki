@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
-using Microsoft.SemanticKernel;
 
-namespace KoalaWiki.Functions;
+namespace KoalaWiki.Tools;
 
 [Description("Gitee相关功能")]
 public class GiteeFunction(

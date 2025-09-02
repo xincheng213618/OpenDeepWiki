@@ -1,8 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Text.Json;
-using Microsoft.SemanticKernel;
 
-namespace KoalaWiki.Functions;
+namespace KoalaWiki.Tools;
 
 public class CodeAnalyzeFunction(string gitPath)
 {

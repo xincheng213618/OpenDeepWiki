@@ -4,6 +4,7 @@ using System.Diagnostics;
 using KoalaWiki.Functions;
 using KoalaWiki.Options;
 using KoalaWiki.plugins;
+using KoalaWiki.Tools;
 using Microsoft.SemanticKernel;
 using OpenAI;
 using Serilog;
@@ -114,7 +115,7 @@ public static class KernelFactory
         kernelBuilderAction?.Invoke(kernelBuilder);
         
         var kernel = kernelBuilder.Build();
-        kernel.FunctionInvocationFilters.Add(new FunctionResultInterceptor());
+        kernel.FunctionInvocationFilters.Add(new ToolResultInterceptor());
 
         activity?.SetStatus(ActivityStatusCode.Ok);
         activity?.SetTag("kernel.created", true);

@@ -8,6 +8,7 @@ using KoalaWiki.Core;
 using KoalaWiki.Domains.DocumentFile;
 using KoalaWiki.Dto;
 using KoalaWiki.Functions;
+using KoalaWiki.Tools;
 using LibGit2Sharp;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authorization;

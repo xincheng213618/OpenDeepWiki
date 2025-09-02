@@ -1,4 +1,4 @@
-﻿using KoalaWiki.Prompts;
+using KoalaWiki.Prompts;
 
 namespace KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 
@@ -8,26 +8,32 @@ public partial class GenerateThinkCatalogueService
         string catalogue, int attemptNumber)
     {
         var projectType = GetProjectTypeDescription(classifyType);
+        var language = Environment.GetEnvironmentVariable("LANGUAGE");
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            // Default to English if not provided; Prompt.Language note will still be appended downstream
+            language = "English";
+        }
 
         var basePrompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.AnalyzeCatalogue),
             new KernelArguments()
             {
                 ["code_files"] = catalogue,
-                ["projectType"] = projectType
+                ["projectType"] = projectType,
+                ["language"] = language
             }, OpenAIOptions.AnalysisModel);
 
-
-        // 根据尝试次数增强提示词
+        // Attempt-based reinforcement aligned with AnalyzeCatalogue.md output contract
         var enhancementLevel = Math.Min(attemptNumber, 3);
         var enhancement = enhancementLevel switch
         {
-            0 => "\n\nGenerate documentation catalog in the specified hierarchical JSON format within <documentation_structure> tags.",
+            0 => "\n\nRespond with JSON only following the items/children schema. No code fences, XML/HTML tags, or explanations.",
             1 =>
-                "\n\nIMPORTANT: You must respond with valid JSON using the items/children structure within <documentation_structure> tags. Follow the exact format specified.",
+                "\n\nIMPORTANT: Output valid JSON only (no code fences or tags). Use fields: title (kebab-case), name, requirement, children[]. Top-level must include 'getting-started' then 'deep-dive'.",
             2 =>
-                "\n\nCRITICAL: Previous attempts failed. Generate ONLY valid JSON within <documentation_structure> tags. Use the hierarchical items structure with title, name, and children fields.",
+                "\n\nCRITICAL: Previous output was invalid. Return ONLY valid JSON with an 'items' array and the two required top-level modules ('getting-started', 'deep-dive') in this order. No extra text.",
             _ =>
-                "\n\nFINAL ATTEMPT: Generate minimal but valid JSON structure. Must include: {\"items\":[{\"title\":\"getting-started\",\"name\":\"入门指南\",\"children\":[...]},{\"title\":\"deep-dive\",\"name\":\"深入解剖\",\"children\":[...]}]}."
+                "\n\nFINAL ATTEMPT: Return minimal valid JSON with exactly the two required top-level modules and empty children arrays. No extra text."
         };
 
         return basePrompt + enhancement;
@@ -122,3 +128,4 @@ public partial class GenerateThinkCatalogueService
                """;
     }
 }
+

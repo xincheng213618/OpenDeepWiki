@@ -10,15 +10,15 @@ Transform repository code analysis into hierarchical documentation catalogs with
 
 ## Input Analysis
 
-**Repository Code Files:**
+Repository Code Files:
 <code_files>
 {{$code_files}}
 </code_files>
 
-**Project Type Context:**
+Project Type Context:
 {{$projectType}}
 
-**Target Language:**
+Target Language:
 {{$language}}
 
 **IMPORTANT: ALL generated content, titles, descriptions, and requirements must be written in {{$language}}.**
@@ -62,8 +62,6 @@ Transform repository code analysis into hierarchical documentation catalogs with
 4. **Use Case Implementation** - How different use cases are handled in the codebase
 5. **Feature Interaction Matrix** - Dependencies and interactions between different features
 6. **Performance & Scalability** - How each feature performs and scales under load
-7. **Error Handling & Edge Cases** - How features handle failures and boundary conditions
-8. **Testing & Validation** - Testing strategies and validation mechanisms for each feature
 
 ## Content Generation Strategy
 
@@ -80,46 +78,15 @@ Transform repository code analysis into hierarchical documentation catalogs with
 - **Feature Implementation**: In-depth examination of key features and business logic
 - **Technical Details**: Algorithms, design patterns, performance optimization
 - **Integration & APIs**: External interfaces, plugin systems, extension mechanisms
-- **Advanced Topics**: Deployment, scaling, customization, development workflows
 
 ## Output Format
 
-Generate a hierarchical JSON structure organized into two main modules based on actual project analysis. The structure should dynamically adapt to the repository's specific features and complexity.
+Generate a hierarchical JSON structure organized into two main modules based on actual project analysis. The structure should dynamically adapt to the repository's specific features and complexity. Return only JSON (no explanations, headings, or code fences).
 
-### Dynamic Structure Example:
-
-```json
-{
-  "items": [
-    {
-      "title": "getting-started",
-      "name": "[Getting Started Guide Name]",
-      "description": "Help users quickly understand and start using the project",
-      "children": [
-        // Dynamic sections based on project analysis:
-        // - project-overview (always included)
-        // - environment-setup (if setup is complex)
-        // - core-concepts (if project has complex abstractions)
-        // - basic-usage (always included)
-        // - quick-reference (if many commands/configurations)
-      ]
-    },
-    {
-      "title": "deep-dive",
-      "name": "[Deep Dive Analysis Name]", 
-      "description": "In-depth analysis of core components and functionality",
-      "children": [
-        // Dynamic sections based on actual project features:
-        // - architecture-analysis (always included)
-        // - core-components (if project has multiple modules/services)
-        // - feature-implementation (if project has distinct features)
-        // - technical-implementation (always included)
-        // - integration-apis (if project has APIs/integrations)
-      ]
-    }
-  ]
-}
-```
+### Output Contract (concise)
+- Root JSON: { "items": Section[] }
+- Section: { "title": kebab-case, "name": {{$language}}, "requirement": {{$language}}, "children"?: Section[] }
+- Top-level modules: include 'getting-started' and 'deep-dive' (in this order)
 
 ### Dynamic Section Generation Rules:
 
@@ -137,8 +104,17 @@ Generate a hierarchical JSON structure organized into two main modules based on 
 
 **Sub-section Creation:**
 - Break down sections into children only when they contain multiple distinct aspects
-- Create 2-3 nesting levels maximum based on actual complexity
+- Choose nesting depth based on actual complexity
 - Each child should represent a meaningful, separable analysis area
+
+**Refinement (concise):**
+- Create children only when a parent topic has multiple responsibilities, dimensions, cross-module dependencies, or file clusters.
+- Depth and item count are driven by actual complexity; do not impose artificial limits on item count or text length.
+- Align node names with source directories/modules/services/APIs/entities; avoid invented or irrelevant items.
+
+**Grounding & Output:**
+- Base all structure strictly on code_files; no speculation.
+- Output the catalog JSON only; no explanations or code fences.
 
 ## Section Structure Guidelines
 
@@ -148,7 +124,7 @@ Generate a hierarchical JSON structure organized into two main modules based on 
 - `requirement`: Specific, actionable generation instruction in {{$language}}
 - `children`: Optional array for complex topics requiring detailed breakdown
 
-**Nesting Levels:**
+**Nesting Levels (examples):**
 - **Level 1**: Main sections (overview, setup, analysis, etc.)
 - **Level 2**: Sub-topics within main sections (components, features, etc.)
 - **Level 3**: Detailed aspects for complex features (algorithms, patterns, etc.)
@@ -159,6 +135,13 @@ Generate a hierarchical JSON structure organized into two main modules based on 
 - Technical concepts needing layered explanation
 - Business logic with multiple workflows
 - Integration patterns with various approaches
+
+**Clustering Guidance (concise):**
+- Module clustering: by directories, name prefixes, or layers (e.g., Services, Controllers, Components).
+- Feature clustering: by user use cases, routes, pages, interaction flows.
+- Data clustering: by entities/models/schemas/tables and their relationships.
+- API/integration clustering: by resource endpoints, external systems, messaging/cache/auth boundaries.
+- Complexity trigger: when multi-responsibility, cross-module dependencies, or file clusters exist, add subsections and deeper levels.
 
 ## Content Depth Requirements
 
@@ -196,9 +179,9 @@ Generate a hierarchical JSON structure organized into two main modules based on 
    - Map system modules, service layers, data models, and API interfaces
 
 2. **Documentation Structure Generation**:
-   - Dynamically create "Getting Started Guide" with 3-6 sections based on actual project needs
-   - Dynamically create "Deep Dive Analysis" with 3-7 sections based on project complexity and features
-   - Adapt nesting levels (2-3 levels) based on actual component complexity, not fixed structure
+   - Dynamically create "Getting Started Guide" with sections driven by actual project needs
+   - Dynamically create "Deep Dive Analysis" with sections aligned to project complexity and features
+   - Adapt nesting levels to reflect actual component complexity
    - Only include sections that are relevant to the actual project (don't force unnecessary sections)
    - Create sub-sections only when the parent section contains multiple distinct, separable aspects
    - Structure should reflect the project's actual organization and feature set
@@ -212,14 +195,6 @@ Generate a hierarchical JSON structure organized into two main modules based on 
    - Scale technical depth requirements based on the project's actual implementation sophistication
    - Ensure all requirements focus on real, identifiable elements in the codebase
    - Requirements should be written in {{$language}} and match the project's domain
-
-4. **Quality Assurance**:
-   - Verify that the structure accurately reflects the actual project's architecture and features
-   - Ensure no unnecessary sections are included (only what's relevant to this specific project)
-   - Validate that complexity levels match the real sophistication of the codebase
-   - Confirm that all sections and requirements are grounded in actual code analysis
-   - Ensure logical progression that matches the project's natural learning curve
-   - Validate that technical depth is appropriate for the project's actual implementation level
 
 ## Success Criteria
 

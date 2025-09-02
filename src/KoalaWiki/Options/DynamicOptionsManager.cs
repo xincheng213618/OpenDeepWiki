@@ -92,7 +92,7 @@ public class DynamicOptionsManager
         DocumentOptions.RefineAndEnhanceQuality = await _configService.GetValueAsync<bool>("RefineAndEnhanceQuality", true);
         DocumentOptions.EnableWarehouseCommit = await _configService.GetValueAsync<bool>("EnableWarehouseCommit", true);
         DocumentOptions.EnableCodeCompression = await _configService.GetValueAsync<bool>("EnableCodeCompression", false);
-        DocumentOptions.MaxFileReadCount = await _configService.GetValueAsync<int>("MaxFileReadCount", 15);
+        DocumentOptions.ReadMaxTokens = await _configService.GetValueAsync<int>("MaxFileReadCount", 15);
 
         _logger.LogDebug("Document配置已加载");
     }

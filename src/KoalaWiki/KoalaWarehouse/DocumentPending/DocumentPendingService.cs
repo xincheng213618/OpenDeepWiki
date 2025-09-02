@@ -245,7 +245,7 @@ public partial class DocumentPendingService
             path,
             OpenAIOptions.ChatModel,
             false, // 文档生成不需要代码分析功能
-            files, (builder => { builder.Plugins.AddFromObject(docs); })
+            files, (builder => { builder.Plugins.AddFromObject(docs,"Docs"); })
         );
 
         var chat = documentKernel.Services.GetService<IChatCompletionService>();

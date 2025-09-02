@@ -2,9 +2,8 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Mem0.NET;
-using Microsoft.SemanticKernel;
 
-namespace KoalaWiki.Functions;
+namespace KoalaWiki.Tools;
 
 public class RagFunction(string warehouseId)
 {

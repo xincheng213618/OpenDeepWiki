@@ -7,12 +7,12 @@ using System.Text.RegularExpressions;
 using OpenDeepWiki.CodeFoundation;
 using OpenDeepWiki.CodeFoundation.Utils;
 
-namespace KoalaWiki.Functions;
+namespace KoalaWiki.Tools;
 
 public class FileFunction(string gitPath, List<string>? files)
 {
     private readonly CodeCompressionService _codeCompressionService = new();
-    private int _count;
+    private int _readTokens = 0;
 
     /// <summary>
     /// 获取当前仓库压缩结构
@@ -35,15 +35,10 @@ public class FileFunction(string gitPath, List<string>? files)
         try
         {
             // 检查是否已达到文件读取限制
-            if (DocumentOptions.MaxFileReadCount > 0 &&
-                _count >= DocumentOptions.MaxFileReadCount)
+            if (DocumentOptions.ReadMaxTokens > 0 &&
+                _readTokens >= DocumentOptions.ReadMaxTokens)
             {
-                int i = _count;
-                _count = 0;
-
-                return "🚨 FILE READ LIMIT EXCEEDED 🚨\n" +
-                       $"Current attempts: {i}/{DocumentOptions.MaxFileReadCount}\n" +
-                       "⛔ STOP reading files immediately and complete analysis with existing da2000ta.";
+                return "FILE READ LIMIT EXCEEDED STOP reading files immediately and complete analysis ";
             }
 
             files?.Add(filePath);
@@ -72,7 +67,7 @@ public class FileFunction(string gitPath, List<string>? files)
                 content = _codeCompressionService.CompressCode(content, filePath);
             }
 
-            _count++;
+            _readTokens = TokenHelper.GetTokens(content);
 
             return content;
         }
@@ -138,25 +133,25 @@ public class FileFunction(string gitPath, List<string>? files)
                 return $"Directory not found: {path.Replace(gitPath, "").TrimStart(Path.DirectorySeparatorChar)}";
             }
 
-// 检查目录是否存在
+            // 检查目录是否存在
             if (!Directory.Exists(path))
             {
                 return $"Directory not found: {path.Replace(gitPath, "").TrimStart(Path.DirectorySeparatorChar)}";
             }
 
-// 获取忽略文件列表
+            // 获取忽略文件列表
             var ignoreFiles = DocumentsHelper.GetIgnoreFiles(gitPath);
 
-// 使用改进的文件搜索方法
+            // 使用改进的文件搜索方法
             var matchedFiles = new List<string>();
             SearchFiles(path, pattern, matchedFiles, gitPath);
 
-// 排除忽略文件
+            // 排除忽略文件
             matchedFiles = matchedFiles
                 .Where(f => !ignoreFiles.Any(ignore => IsIgnoredFile(f, ignoreFiles)))
                 .ToList();
 
-// 按修改时间排序
+            // 按修改时间排序
             var sortedFiles = matchedFiles
                 .Select(f => new FileInfo(Path.Combine(gitPath, f.Replace('/', Path.DirectorySeparatorChar))))
                 .Where(fi => fi.Exists)
@@ -164,7 +159,7 @@ public class FileFunction(string gitPath, List<string>? files)
                 .Select(fi => fi.FullName)
                 .ToList();
 
-// 处理路径，去掉gitPath前缀
+            // 处理路径，去掉gitPath前缀
             var relativePaths = sortedFiles
                 .Select(f => f.Replace(gitPath, "").TrimStart(Path.DirectorySeparatorChar))
                 .Select(f => f.Replace(Path.DirectorySeparatorChar, '/')) // 统一使用正斜杠
@@ -342,28 +337,15 @@ public class FileFunction(string gitPath, List<string>? files)
          """)]
     public async Task<string> ReadFileFromLineAsync(
         [Description(
-            "The Read File List.")]
-        ReadFileItemInput[] items)
+            "The Read File")]
+        ReadFileItemInput? item)
     {
         // 检查是否已达到文件读取限制
-        if (DocumentOptions.MaxFileReadCount > 0 &&
-            _count >= DocumentOptions.MaxFileReadCount)
+        if (DocumentOptions.ReadMaxTokens > 0 &&
+            _readTokens >= DocumentOptions.ReadMaxTokens)
         {
-            int i = _count;
-            _count = 0;
-
-            return JsonSerializer.Serialize(new Dictionary<string, string>
-                   {
-                       ["system_warning"] =
-                           $"File read limit exceeded ({i}/{DocumentOptions.MaxFileReadCount})"
-                   }, new JsonSerializerOptions()
-                   {
-                       Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                       PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                   }) +
-                   "\n\n<system-reminder>\n" +
+            return "\n\n<system-reminder>\n" +
                    "CRITICAL: FILE READ LIMIT EXCEEDED \n" +
-                   $"Current attempts: {i}/{DocumentOptions.MaxFileReadCount}\n" +
                    "IMMEDIATE ACTION REQUIRED:\n" +
                    "• STOP reading files NOW\n" +
                    "• Use ONLY the information you have already gathered\n" +
@@ -373,46 +355,7 @@ public class FileFunction(string gitPath, List<string>? files)
                    "</system-reminder>";
         }
 
-        items = items.DistinctBy(item => $"FilePath:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit)
-            .ToArray();
-
-        var dic = new Dictionary<string, string>();
-        foreach (var item in items)
-        {
-            dic.Add($"FilePath:{item.FilePath}\noffset:" + item.Offset + "\nlimit" + item.Limit,
-                await ReadItem(item.FilePath, item.Offset, item.Limit));
-        }
-
-        // 如果单次读取文件数量超过5个，每5个算一次
-        if (items.Length > 5)
-        {
-            _count += (int)Math.Ceiling((double)items.Length / 5);
-        }
-        else
-        {
-            _count++;
-        }
-
-        // 在接近限制时发送警告
-        if (DocumentOptions.MaxFileReadCount > 0 &&
-            _count >= DocumentOptions.MaxFileReadCount * 0.8)
-        {
-            return JsonSerializer.Serialize(dic, new JsonSerializerOptions()
-                   {
-                       Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                       PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                   }) +
-                   "\n\n<system-warning>\n" +
-                   $"⚠️ Approaching file read limit: {_count}/{DocumentOptions.MaxFileReadCount}\n" +
-                   "Consider completing your analysis soon to avoid hitting the limit.\n" +
-                   "</system-warning>";
-        }
-
-        return JsonSerializer.Serialize(dic, new JsonSerializerOptions()
-        {
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        return await ReadItem(item.FilePath, item.Offset, item.Limit);
     }
 
 
@@ -494,7 +437,9 @@ public class FileFunction(string gitPath, List<string>? files)
             // 将结果行号从1开始
             var numberedLines = resultLines.Select((line, index) => $"{index + 1}: {line}").ToList();
 
-            return string.Join("\n", numberedLines);
+            var content = string.Join("\n", numberedLines);
+            _readTokens = TokenHelper.GetTokens(content);
+            return content;
         }
         catch (Exception ex)
         {
@@ -583,7 +528,7 @@ public class FileFunction(string gitPath, List<string>? files)
             // 使用正则表达式匹配复杂的glob模式
             var regexPattern = ConvertGlobToRegex(pattern);
             var regex = new Regex(regexPattern, RegexOptions.IgnoreCase);
-            
+
             // 同时检查文件名和相对路径
             return regex.IsMatch(fileName) || regex.IsMatch(relativePath);
         }

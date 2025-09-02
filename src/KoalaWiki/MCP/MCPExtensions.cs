@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using KoalaWiki.Core.DataAccess;
 using KoalaWiki.Functions;
 using KoalaWiki.MCP.Tools;
+using KoalaWiki.Tools;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.WebEncoders.Testing;
 using ModelContextProtocol.Protocol;
@@ -12,7 +13,7 @@ using Serilog;
 
 namespace KoalaWiki.MCP;
 
-public static class MCPExtensions
+public static class McpExtensions
 {
     public static IServiceCollection AddKoalaMcp(this IServiceCollection service)
     {
@@ -102,32 +103,24 @@ public static class MCPExtensions
                         {
                           "type": "object",
                           "properties": {
-                            "items": {
-                              "type": "array",
-                              "description": "An array of file items to read. Each item contains the file path and the start and end line numbers for reading.",
-                              "items": {
-                                "type": "object",
-                                "properties": {
-                                  "filePath": {
-                                    "type": "string",
-                                    "description": "The absolute or relative path of the target file. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown."
-                                  },
-                                  "startLine": {
-                                    "type": "integer",
-                                    "description": "The starting line number for reading (starting from 0), must be less than or equal to the ending line number, and must be within the actual number of lines in the file.",
-                                    "default": 0
-                                  },
-                                  "endLine": {
-                                    "type": "integer",
-                                    "description": "The ending line number for reading (including this line), must be greater than or equal to the starting line number, and must not exceed the total number of lines in the file.",
-                                    "default": 200
-                                  }
-                                },
-                                "required": ["filePath"]
-                              }
+                            "filePath": {
+                              "type": "string",
+                              "description": "The absolute or relative path of the target file. The file must exist and be readable. If the path is invalid or the file does not exist, an exception will be thrown."
+                            },
+                            "startLine": {
+                              "type": "integer",
+                              "description": "The starting line number for reading (starting from 0), must be less than or equal to the ending line number, and must be within the actual number of lines in the file.",
+                              "default": 0
+                            },
+                            "endLine": {
+                              "type": "integer",
+                              "description": "The ending line number for reading (including this line), must be greater than or equal to the starting line number, and must not exceed the total number of lines in the file.",
+                              "default": 200
                             }
                           },
-                          "required": ["items"]
+                          "required": [
+                            "filePath"
+                          ]
                         }
                         """)
                 });
@@ -202,7 +195,7 @@ public static class MCPExtensions
 
                     var result = await
                         fileFunction.ReadFileFromLineAsync(
-                            JsonSerializer.Deserialize<ReadFileItemInput[]>(itemsElement, JsonSerializerOptions.Web));
+                            itemsElement.Deserialize<ReadFileItemInput>(JsonSerializerOptions.Web));
 
                     sw.Stop();
 

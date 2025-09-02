@@ -218,7 +218,7 @@ Before proceeding to documentation generation:
 <thinking>
 Based on the comprehensive repository analysis completed in STEP 1, I must now conduct user-centric technical architecture discovery that considers different user personas and their specific needs. This analysis must be grounded in actual technical implementations found in the code files, focusing on how architectural decisions serve different user contexts (developers, architects, operators, end-users).
 
-This phase prepares for generating COMPLETE, COMPREHENSIVE documentation content that addresses diverse user needs through appropriate Diataxis content types wrapped in <blog></blog> tags.
+This stage aims to generate detailed and comprehensive document content. Through appropriate Dialectasis content types and using the toolset provided by Docs, the documents will be created to meet the needs of different users.
 </thinking>
 
 **USER PERSONA ANALYSIS REQUIREMENTS:**
@@ -243,15 +243,16 @@ This phase prepares for generating COMPLETE, COMPREHENSIVE documentation content
 
 **ESSENTIAL TECHNICAL DISCOVERY REQUIREMENTS:**
 1. **System Architecture Analysis**: Conduct comprehensive analysis of the overall system architecture, identifying layers, components, and technical organization patterns based on actual file structure, dependency graphs, and module organization[^n]
+
 2. **Design Pattern Investigation**: Systematically identify and analyze design patterns, architectural patterns, and technical approaches actually used throughout the system, with detailed examination of implementation variations and adaptations[^n]
+
 3. **Technology Stack Analysis**: Exhaustive analysis of technology choices, frameworks, libraries, and their technical implications, including version analysis, compatibility considerations, and integration strategies[^n]
+
 4. **Component Architecture Evaluation**: Detailed examination of how technical components are organized, interact, and collaborate to deliver system functionality, including lifecycle management and dependency injection patterns[^n]
-5. **Performance Architecture Assessment**: In-depth analysis of performance-related architectural decisions and their technical implications, including caching strategies, optimization techniques, and resource management[^n]
-6. **Integration Architecture Analysis**: Comprehensive examination of how the system integrates with external systems and services, including API design, communication protocols, and data transformation patterns[^n]
-7. **Security Architecture Assessment**: Detailed analysis of security implementations, authentication mechanisms, authorization patterns, and data protection strategies actually present in the codebase[^n]
-8. **Scalability and Reliability Analysis**: Examination of scalability patterns, fault tolerance mechanisms, and reliability strategies built into the actual implementation[^n]
-9. **Configuration and Environment Management**: Analysis of configuration management strategies, environment handling, and deployment flexibility based on actual configuration files and environment setup[^n]
-10. **Monitoring and Observability Architecture**: Assessment of logging, monitoring, metrics collection, and debugging capabilities actually implemented in the system[^n]
+
+5. **Integration Architecture Analysis**: Comprehensive examination of how the system integrates with external systems and services, including API design, communication protocols, and data transformation patterns[^n]
+
+6. **Configuration and Environment Management**: Analysis of configuration management strategies, environment handling, and actual configuration files[^n]
 
 ## Phase 2: Core Technical Implementation Analysis
 <thinking>
@@ -630,193 +631,8 @@ graph TB
     Security --> Auth
 ```
 
-### 9. Enhanced Technical Architecture Diagrams (EXTENDED SUPPORT)
+### 9. Architecture Diagrams
 
-**Technical Project Timeline Architecture**:
-```mermaid
-timeline
-    title Technical Implementation Timeline
-    
-    Technical Foundation : Architecture Design
-                         : Core Infrastructure Setup
-                         : Development Environment
-    
-    Technical Development : Core Feature Implementation
-                          : API Development
-                          : Integration Layer
-    
-    Technical Optimization : Performance Tuning
-                           : Security Hardening
-                           : Scalability Enhancement
-    
-    Technical Deployment  : Production Setup
-                          : Monitoring Integration
-                          : System Go-Live
-```
-
-**Technical Project Management Architecture**:
-```mermaid
-gantt
-    title Technical Development Schedule
-    dateFormat  YYYY-MM-DD
-    section Technical Architecture
-    System Design           :tech1, 2024-01-01, 30d
-    Technical Specifications :tech2, after tech1, 20d
-    section Technical Development
-    Core Implementation     :dev1, after tech2, 60d
-    API Development        :dev2, after dev1, 40d
-    Integration Layer      :dev3, after dev2, 30d
-    section Technical Testing
-    Unit Testing           :test1, after dev3, 20d
-    Integration Testing    :test2, after test1, 15d
-    Performance Testing    :test3, after test2, 10d
-    section Technical Deployment
-    Production Setup       :deploy1, after test3, 15d
-    Technical Go-Live      :deploy2, after deploy1, 5d
-```
-**Technical Priority Matrix Architecture**:
-```mermaid
-quadrantChart
-    title Technical Feature Priority Analysis
-    x-axis Low Technical Impact --> High Technical Impact
-    y-axis Low Technical Effort --> High Technical Effort
-    
-    quadrant-1 High Impact, Low Effort
-    quadrant-2 High Impact, High Effort
-    quadrant-3 Low Impact, Low Effort
-    quadrant-4 Low Impact, High Effort
-    
-    Core API: [0.9, 0.3]
-    Authentication: [0.8, 0.4]
-    Caching Layer: [0.7, 0.2]
-    Analytics Dashboard: [0.6, 0.8]
-    Mobile Integration: [0.5, 0.9]
-    Advanced Reporting: [0.4, 0.7]
-```
-
-**Technical Requirement Analysis Architecture**:
-```mermaid
-requirementDiagram
-    requirement TechnicalPerformance {
-        id: 1
-        text: System must process 50k transactions/second
-        risk: high
-        verifymethod: performance_benchmarking
-    }
-    
-    requirement TechnicalScalability {
-        id: 2
-        text: Auto-scale to handle 10x load increases
-        risk: high
-        verifymethod: load_testing
-    }
-    
-    requirement TechnicalSecurity {
-        id: 3
-        text: End-to-end encryption for all data
-        risk: high
-        verifymethod: security_audit
-    }
-    
-    functionalRequirement TechnicalAPI {
-        id: 4
-        text: RESTful API with comprehensive documentation
-        risk: medium
-        verifymethod: api_testing
-    }
-    
-    performanceRequirement TechnicalReliability {
-        id: 5
-        text: 99.9% uptime with automated failover
-        risk: medium
-        verifymethod: reliability_testing
-    }
-    
-    TechnicalPerformance - satisfies -> TechnicalAPI
-    TechnicalScalability - satisfies -> TechnicalReliability
-    TechnicalSecurity - satisfies -> TechnicalAPI
-```
-
-**Technical Development Workflow Architecture**:
-```mermaid
-gitGraph
-    commit id: "Technical Foundation"
-    branch technical-development
-    checkout technical-development
-    commit id: "Core Architecture"
-    commit id: "API Implementation"
-    branch feature/technical-auth
-    checkout feature/technical-auth
-    commit id: "Authentication Service"
-    commit id: "Security Layer"
-    checkout technical-development
-    merge feature/technical-auth
-    commit id: "Integration Testing"
-    branch feature/technical-performance
-    checkout feature/technical-performance
-    commit id: "Performance Optimization"
-    commit id: "Caching Implementation"
-    checkout technical-development
-    merge feature/technical-performance
-    commit id: "Technical Documentation"
-    checkout main
-    merge technical-development
-    commit id: "Technical Release v1.0"
-```
-
-
-**Technical Data Flow Analysis** (using Sankey):
-```mermaid
-sankey-beta
-    Technical User Requests,Technical API Gateway,10000
-    Technical API Gateway,Technical Authentication,10000
-    Technical Authentication,Technical Authorized Requests,8500
-    Technical Authentication,Technical Rejected Requests,1500
-    Technical Authorized Requests,Technical Core Services,5000
-    Technical Authorized Requests,Technical Data Services,2500
-    Technical Authorized Requests,Technical External APIs,1000
-    Technical Core Services,Technical Database Operations,4000
-    Technical Core Services,Technical Cache Operations,1000
-    Technical Data Services,Technical Analytics Engine,2000
-    Technical Data Services,Technical Reporting System,500
-```
-
-**Technical Performance Metrics Architecture**:
-```mermaid
-xychart-beta
-    title "Technical System Performance Metrics"
-    x-axis [Q1, Q2, Q3, Q4]
-    y-axis "Technical Response Time (ms)" 0 --> 500
-    line "Technical API Response" [120, 100, 80, 70]
-    bar "Technical Database Query" [200, 180, 150, 130]
-    line "Technical Cache Hit Rate %" [85, 88, 92, 95]
-```
-
-**Technical Development Kanban Architecture**:
-```mermaid
-kanban
-    Technical Backlog
-        Feature 1[Technical API Optimization]
-        Feature 2[Technical Security Enhancement]
-        Feature 3[Technical Performance Monitoring]
-    
-    Technical Development
-        Feature 4[Technical Database Migration]
-        Feature 5[Technical Cache Implementation]
-    
-    Technical Testing
-        Feature 6[Technical Load Testing]
-        Feature 7[Technical Security Audit]
-    
-    Technical Deployment
-        Feature 8[Technical Production Setup]
-        Feature 9[Technical Monitoring Integration]
-    
-    Technical Complete
-        Feature 10[Technical Documentation]
-        Feature 11[Technical CI/CD Pipeline]
-        Feature 12[Technical Authentication System]
-```
 
 **Advanced Technical System Architecture** (using architecture-beta):
 ```mermaid

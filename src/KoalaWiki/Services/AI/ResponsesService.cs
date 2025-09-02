@@ -8,6 +8,7 @@ using FastService;
 using KoalaWiki.Dto;
 using KoalaWiki.Functions;
 using KoalaWiki.Prompts;
+using KoalaWiki.Tools;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;

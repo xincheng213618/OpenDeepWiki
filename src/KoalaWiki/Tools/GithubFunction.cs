@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Text;
-using Microsoft.SemanticKernel;
 using Octokit;
 
-namespace KoalaWiki.Functions;
+namespace KoalaWiki.Tools;
 
 public class GithubFunction(
     string owner,
