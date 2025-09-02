@@ -137,6 +137,7 @@ public class DocumentsHelper
             "gemini-2.5-flash" => 32768,
             "Qwen3-32B" => 32768,
             "glm-4.5" => 32768,
+            "zai-org/glm-4.5" => 32768,
             "glm-4.5v" => 32768,
             "deepseek-r1:32b-qwen-distill-fp16" => 32768,
             _ => null

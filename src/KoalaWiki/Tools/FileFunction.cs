@@ -67,7 +67,7 @@ public class FileFunction(string gitPath, List<string>? files)
                 content = _codeCompressionService.CompressCode(content, filePath);
             }
 
-            _readTokens = TokenHelper.GetTokens(content);
+            _readTokens += TokenHelper.GetTokens(content);
 
             return content;
         }
@@ -438,7 +438,7 @@ public class FileFunction(string gitPath, List<string>? files)
             var numberedLines = resultLines.Select((line, index) => $"{index + 1}: {line}").ToList();
 
             var content = string.Join("\n", numberedLines);
-            _readTokens = TokenHelper.GetTokens(content);
+            _readTokens += TokenHelper.GetTokens(content);
             return content;
         }
         catch (Exception ex)

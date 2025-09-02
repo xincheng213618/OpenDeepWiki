@@ -9,7 +9,7 @@ public static class TokenHelper
 
     static TokenHelper()
     {
-        GptEncoding ??= GptEncoding.GetEncoding("gpt-4");
+        GptEncoding ??= GptEncoding.GetEncoding("cl100k_base");
     }
 
     /// <summary>

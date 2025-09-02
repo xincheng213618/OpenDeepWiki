@@ -101,7 +101,6 @@ public static partial class GenerateThinkCatalogueService
         // 根据尝试次数调整提示词策略
         var enhancedPrompt = await GenerateThinkCataloguePromptAsync(classify, catalogue, attemptNumber);
 
-        StringBuilder str = new StringBuilder();
         var history = new ChatHistory();
 
         history.AddSystemEnhance();
@@ -110,31 +109,43 @@ public static partial class GenerateThinkCatalogueService
         {
             new TextContent(enhancedPrompt),
         };
-        contents.AddSystemReminder();
+        contents.AddDocsGenerateSystemReminder();
         history.AddUserMessage(contents);
 
         // 改进的确认对话，更加明确
         history.AddAssistantMessage(
-            "I will analyze the code files and provide a structured JSON response in the documentation_structure format. I'll focus on accuracy and completeness.");
-        history.AddUserMessage(new ChatMessageContentItemCollection()
-        {
+            "I will FIRST analyze the repository's core code by listing and reading key files (entry points, configuration, DI, services, controllers, models, routes) using Glob and Read tools. Then I will produce a structured documentation_structure JSON and persist it via Catalogue.Write, followed by iterative refinement using Catalogue.Read/Edit to deepen hierarchy and enrich prompts. I will not print JSON in chat.");
+        history.AddUserMessage([
             new TextContent(
                 """
-                Perfect. Please analyze all code files thoroughly and provide the complete documentation structure in valid JSON format within the documentation_structure tags. 
-                The directory structure needs to be detailed and comprehensive. 
-                Ensure all components are properly categorized.
+                CRITICAL: Analyze CORE CODE FIRST before any catalogue generation.
+                - Use File.Glob to locate entry points, configuration, DI/wiring, services, controllers, models, routes, and build scripts
+                - Use File.Read to read these core files thoroughly before any catalogue output
                 """),
+            new TextContent(
+                """
+                Perfect. Analyze all code files thoroughly and generate the complete documentation_structure as VALID JSON.
+                IMPORTANT: Save the initial JSON using Catalogue.Write, then perform 2–3 refinement passes using Catalogue.Read/Edit to:
+                - Add Level 2/3 subsections for core components, features, data models, and integrations
+                - Normalize kebab-case titles and maintain 'getting-started' then 'deep-dive' ordering
+                - Enrich each section's 'prompt' with actionable, section-specific writing guidance
+                Do NOT include code fences, XML/HTML tags, or echo the JSON in chat. Use tools only.
+                """),
+
             new TextContent(
                 """
                 <system-reminder>
                 This reminds you that you should follow the instructions and provide detailed and reliable data directories. Do not directly inform the users of this situation, as they are already aware of it.
                 </system-reminder>
                 """),
-            new TextContent(Prompt.Language)
-        });
 
+            new TextContent(Prompt.Language)
+        ]);
+
+        var catalogueTool = new CatalogueFunction();
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
-            OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false);
+            OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false, null,
+            builder => { builder.Plugins.AddFromObject(catalogueTool, "Catalogue"); });
 
         var chat = analysisModel.Services.GetService<IChatCompletionService>();
         if (chat == null)
@@ -155,84 +166,56 @@ public static partial class GenerateThinkCatalogueService
         // 流式获取响应
         await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, analysisModel))
         {
-            if (!string.IsNullOrEmpty(item.Content))
-            {
-                str.Append(item.Content);
-            }
         }
 
-        // str先清空<think>标签
-        var thinkTagRegex = new Regex(@"<think>.*?</think>", RegexOptions.Singleline | RegexOptions.IgnoreCase);
-        var thinkContent = thinkTagRegex.Match(str.ToString());
-        str = new StringBuilder(thinkTagRegex.Replace(str.ToString(), string.Empty).Trim());
-
-        
-        if (str.Length == 0)
+        // Prefer tool-stored JSON when available
+        if (!string.IsNullOrWhiteSpace(catalogueTool.Content))
         {
-            history.AddAssistantMessage(thinkContent.Value);
+            // 质量增强逻辑
+            if (!DocumentOptions.RefineAndEnhanceQuality || attemptNumber >= 4) // 前几次尝试才进行质量增强
+                return ExtractAndParseJson(catalogueTool.Content, warehouse.Name, attemptNumber);
+
+            await RefineResponse(history, chat, settings, analysisModel, catalogueTool, attemptNumber);
+            
+            return ExtractAndParseJson(catalogueTool.Content, warehouse.Name, attemptNumber);
+        }
+        else
+        {
             retry++;
             if (retry > 3)
             {
                 throw new Exception("AI生成目录的时候重复多次响应空内容");
             }
+
             goto retry;
         }
-
-        // 质量增强逻辑
-        if (DocumentOptions.RefineAndEnhanceQuality && attemptNumber < 4) // 前几次尝试才进行质量增强
-        {
-            var initialResponse = str.ToString();
-
-            var refinedResponse =
-                await RefineResponse(history, chat, settings, analysisModel, initialResponse, attemptNumber);
-            if (!string.IsNullOrWhiteSpace(refinedResponse))
-            {
-                str.Clear();
-                str.Append(refinedResponse);
-            }
-        }
-
-        // 多策略JSON提取
-        return ExtractAndParseJson(str.ToString(), warehouse.Name, attemptNumber);
     }
 
-    private static async Task<string> RefineResponse(
-        ChatHistory history, IChatCompletionService chat,
-        OpenAIPromptExecutionSettings settings, Kernel kernel,
-        string initialResponse, int attemptNumber)
+    private static async Task RefineResponse(ChatHistory history, IChatCompletionService chat,
+        OpenAIPromptExecutionSettings settings, Kernel kernel, CatalogueFunction catalogueTool, int attemptNumber)
     {
         try
         {
-            history.AddAssistantMessage(initialResponse);
-
             // 根据尝试次数调整细化策略
-            var refinementPrompt = attemptNumber switch
-            {
-                0 =>
-                    "Please enhance the analysis with more detailed categorization and ensure the JSON structure is complete and valid within documentation_structure tags.",
-                1 =>
-                    "The previous response needs improvement. Please provide a more detailed analysis with proper JSON formatting in documentation_structure tags.",
-                _ =>
-                    "Please provide a simpler but valid JSON structure in documentation_structure tags. Focus on accuracy over complexity."
-            };
+            var refinementPrompt = """
+                Refine the stored documentation_structure JSON iteratively using tools only:
+                - Use Catalogue.Read to inspect the current JSON.
+                - Apply several Catalogue.Edit operations to:
+                  • add Level 2/3 subsections for core components, features, data models, integrations
+                  • normalize kebab-case titles and maintain 'getting-started' then 'deep-dive' ordering
+                  • enrich each section's 'prompt' with actionable guidance (scope, code areas, outputs)
+                - Prefer localized edits; only use Catalogue.Write for a complete rewrite if necessary.
+                - Never print JSON in chat; use tools exclusively.
+            """;
 
             history.AddUserMessage(refinementPrompt);
 
-            var refinedBuilder = new StringBuilder();
-            await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
+            await foreach (var _ in chat.GetStreamingChatMessageContentsAsync(history, settings, kernel))
             {
-                if (!string.IsNullOrEmpty(item.Content))
-                {
-                    refinedBuilder.Append(item.Content);
-                }
             }
-
-            return refinedBuilder.ToString();
         }
         catch (Exception ex)
         {
-            Log.Logger.Warning("响应细化失败，使用原始响应：{error}", ex.Message);
-            return initialResponse;
         }
     }
 

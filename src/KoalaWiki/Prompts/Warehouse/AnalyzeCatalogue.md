@@ -81,11 +81,11 @@ Target Language:
 
 ## Output Format
 
-Generate a hierarchical JSON structure organized into two main modules based on actual project analysis. The structure should dynamically adapt to the repository's specific features and complexity. Return only JSON (no explanations, headings, or code fences).
+Generate a hierarchical JSON structure organized into two main modules based on actual project analysis. The structure should dynamically adapt to the repository's specific features and complexity. Persist JSON using the Catalogue.Write tool and refine using Catalogue.Edit. Do NOT print JSON in chat, do NOT use code fences or tags.
 
 ### Output Contract (concise)
 - Root JSON: { "items": Section[] }
-- Section: { "title": kebab-case, "name": {{$language}}, "requirement": {{$language}}, "children"?: Section[] }
+- Section: { "title": kebab-case, "name": {{$language}}, "prompt": {{$language}}, "children"?: Section[] }
 - Top-level modules: include 'getting-started' and 'deep-dive' (in this order)
 
 ### Dynamic Section Generation Rules:
@@ -172,6 +172,11 @@ Generate a hierarchical JSON structure organized into two main modules based on 
 
 ## Execution Instructions
 
+0. **Core Code First (Mandatory):**
+   - Use File.Glob to identify core files: entry points (Program/Main/App), configuration/DI, services, controllers, models/entities, routing, build scripts, key configs (csproj/package.json), README.
+   - Use File.Read to read these files thoroughly before any catalogue generation.
+   - Prefer specific glob patterns over broad scans; read multiple key files in one response if needed.
+
 1. **Repository Analysis**:
    - Analyze provided code files to understand project purpose, architecture, and features
    - Identify technology stack, core components, and implementation patterns
@@ -194,7 +199,33 @@ Generate a hierarchical JSON structure organized into two main modules based on 
    - Adapt workflow analysis requirements to the project's actual business processes
    - Scale technical depth requirements based on the project's actual implementation sophistication
    - Ensure all requirements focus on real, identifiable elements in the codebase
-   - Requirements should be written in {{$language}} and match the project's domain
+   - Section prompts ("prompt" field) should be written in {{$language}} and provide actionable guidance for generating documentation for that section
+
+## Iterative Refinement Protocol
+
+Follow a multi-pass approach to improve granularity and completeness:
+
+1. Initial Skeleton (Catalogue.Write):
+   - Create minimal valid JSON with the two top-level modules and essential child sections.
+   - Ensure kebab-case titles and correct ordering.
+
+2. Depth Expansion (Catalogue.Read + Catalogue.Edit):
+   - Decompose large modules into meaningful Level 2 and Level 3 subsections where complexity exists.
+   - Add children arrays for modules with multiple responsibilities, features, or components.
+   - Normalize titles and ensure consistent section naming.
+
+3. Prompt Enrichment (Catalogue.Edit):
+   - For each section, populate the "prompt" field with concrete, actionable writing instructions tailored to that section.
+   - Include scope, expected depth, code areas to examine, and deliverables.
+
+4. Coverage & Balance (Catalogue.Edit):
+   - Balance Getting Started vs Deep Dive: foundational guidance vs in-depth technical analysis.
+   - Ensure feature modules reflect real code clusters (services, APIs, models, pages/routes, etc.).
+
+5. Validation (Catalogue.Read):
+   - Validate JSON remains valid after edits; if large restructuring is required, re-write complete JSON via Catalogue.Write.
+
+Aim for practical granularity: under 'deep-dive', include core components, feature modules, data models, and integration points with 2–3 levels of depth where warranted by the codebase.
 
 ## Success Criteria
 
