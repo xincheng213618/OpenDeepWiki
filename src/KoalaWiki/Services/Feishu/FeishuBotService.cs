@@ -228,6 +228,8 @@ public class FeishuBotService(
             var userInput = JsonSerializer.Deserialize<UserInputs>(content);
             logger.LogInformation("消息解析成功，IsText: {IsText}", userInput?.IsText);
 
+            await SendMessages("sessionId", "正在努力思考中，请稍后...", type);
+
             var history = new ChatHistory();
 
             // 解析仓库的目录结构
@@ -354,7 +356,6 @@ public class FeishuBotService(
                                {
                                    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
                                    MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.DeepResearchModel),
-                                   Temperature = 0.5,
                                }, kernel))
             {
                 // 发送数据
@@ -375,10 +376,11 @@ public class FeishuBotService(
             // 使用正则表达式移除<thinking>标签及其内容
             sb = new StringBuilder(Regex.Replace(sb.ToString(), @"<thinking>.*?<\/thinking>", "",
                 RegexOptions.IgnoreCase | RegexOptions.Singleline));
+            sb = new StringBuilder(Regex.Replace(sb.ToString(), @"<think>.*?<\/think>", "",
+                RegexOptions.IgnoreCase | RegexOptions.Singleline));
 
             // 解析sb的#标题
-            var titleMatch = Regex.Match(sb.ToString(), @"#\s*(.+)");
-            var title = titleMatch.Success ? titleMatch.Groups[1].Value.Trim() : "OpenDeepWiki 回复";
+            var title = "来自 " + warehouse.Name + " 的回复";
 
             await SendRichMessage(sessionId, title, sb.ToString(), type);
             logger.LogInformation("已发送回复消息给用户: {SessionId}", sessionId);
