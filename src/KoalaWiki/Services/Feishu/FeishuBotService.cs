@@ -23,7 +23,6 @@ namespace KoalaWiki.Services.Feishu;
 
 [Tags("飞书Bot")]
 [FastService.Route("/api/feishu-bot")]
-[Filter(typeof(ResultFilter))]
 public class FeishuBotService(
     ILogger<FeishuBotService> logger,
     IMemoryCache memoryCache,
