@@ -4,7 +4,7 @@ using Octokit;
 
 namespace KoalaWiki.Tools;
 
-public class GithubFunction(
+public class GithubTool(
     string owner,
     string name,
     string branch
@@ -17,7 +17,7 @@ public class GithubFunction(
     /// <param name="maxResults">最大返回数量</param>
     /// <returns>搜索结果字符串</returns>
     [Description("搜索相关 Issue 内容")]
-    [KernelFunction("SearchIssues")]
+    [KernelFunction("search_issues")]
     public async Task<string> SearchIssuesAsync(
         [Description("搜索关键词")] string query,
         int maxResults = 5)
@@ -73,7 +73,7 @@ public class GithubFunction(
     /// <param name="maxResults">最大返回数量</param>
     /// <returns>搜索结果字符串</returns>
     [Description("搜索指定编号 Issue 评论内容")]
-    [KernelFunction("SearchIssueComments")]
+    [KernelFunction("search_issue_comments")]
     public async Task<string> SearchIssueCommentsAsync(
         [Description("Issue编号")] int issueNumber,
         int maxResults = 5)

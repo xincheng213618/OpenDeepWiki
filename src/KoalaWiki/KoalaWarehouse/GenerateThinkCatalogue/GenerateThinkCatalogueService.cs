@@ -5,6 +5,7 @@ using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 
@@ -144,7 +145,7 @@ public static partial class GenerateThinkCatalogueService
 
         var catalogueTool = new CatalogueFunction();
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
-            OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false, null,
+            OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, true, null,
             builder => { builder.Plugins.AddFromObject(catalogueTool, "Catalogue"); });
 
         var chat = analysisModel.Services.GetService<IChatCompletionService>();
@@ -173,16 +174,16 @@ public static partial class GenerateThinkCatalogueService
         {
             // 质量增强逻辑
             if (!DocumentOptions.RefineAndEnhanceQuality || attemptNumber >= 4) // 前几次尝试才进行质量增强
-                return ExtractAndParseJson(catalogueTool.Content, warehouse.Name, attemptNumber);
+                return ExtractAndParseJson(catalogueTool.Content);
 
             await RefineResponse(history, chat, settings, analysisModel, catalogueTool, attemptNumber);
-            
-            return ExtractAndParseJson(catalogueTool.Content, warehouse.Name, attemptNumber);
+
+            return ExtractAndParseJson(catalogueTool.Content);
         }
         else
         {
             retry++;
-            if (retry > 3)
+            if (retry > 5)
             {
                 throw new Exception("AI生成目录的时候重复多次响应空内容");
             }
@@ -198,15 +199,15 @@ public static partial class GenerateThinkCatalogueService
         {
             // 根据尝试次数调整细化策略
             var refinementPrompt = """
-                Refine the stored documentation_structure JSON iteratively using tools only:
-                - Use Catalogue.Read to inspect the current JSON.
-                - Apply several Catalogue.Edit operations to:
-                  • add Level 2/3 subsections for core components, features, data models, integrations
-                  • normalize kebab-case titles and maintain 'getting-started' then 'deep-dive' ordering
-                  • enrich each section's 'prompt' with actionable guidance (scope, code areas, outputs)
-                - Prefer localized edits; only use Catalogue.Write for a complete rewrite if necessary.
-                - Never print JSON in chat; use tools exclusively.
-            """;
+                                       Refine the stored documentation_structure JSON iteratively using tools only:
+                                       - Use Catalogue.Read to inspect the current JSON.
+                                       - Apply several Catalogue.Edit operations to:
+                                         • add Level 2/3 subsections for core components, features, data models, integrations
+                                         • normalize kebab-case titles and maintain 'getting-started' then 'deep-dive' ordering
+                                         • enrich each section's 'prompt' with actionable guidance (scope, code areas, outputs)
+                                       - Prefer localized edits; only use Catalogue.Write for a complete rewrite if necessary.
+                                       - Never print JSON in chat; use tools exclusively.
+                                   """;
 
             history.AddUserMessage(refinementPrompt);
 
@@ -219,95 +220,13 @@ public static partial class GenerateThinkCatalogueService
         }
     }
 
-    private static DocumentResultCatalogue? ExtractAndParseJson(
-        string responseText, string warehouseName, int attemptNumber)
+    private static DocumentResultCatalogue? ExtractAndParseJson(string responseText)
     {
-        var extractedJson = ExtractJsonWithMultipleStrategies(responseText, attemptNumber);
+        var extractedJson = JsonSerializer.Deserialize<DocumentResultCatalogue>(responseText);
 
-        if (string.IsNullOrWhiteSpace(extractedJson))
-        {
-            Log.Logger.Warning("无法从响应中提取有效JSON内容，原始响应长度：{length}", responseText.Length);
-            return null;
-        }
-
-        Log.Logger.Debug("提取的JSON内容长度：{length}，尝试次数：{attempt}", extractedJson.Length, attemptNumber + 1);
-
-        // 多种JSON解析策略
-        return ParseJsonWithFallback(extractedJson, warehouseName, attemptNumber);
+        return extractedJson;
     }
 
-    private static string ExtractJsonWithMultipleStrategies(string responseText, int attemptNumber)
-    {
-        var strategies = new List<Func<string, string>>
-        {
-            // 策略1: documentation_structure 标签
-            text =>
-            {
-                var regex = new Regex(@"<documentation_structure>\s*(.*?)\s*</documentation_structure>",
-                    RegexOptions.Singleline | RegexOptions.IgnoreCase);
-                var match = regex.Match(text);
-                return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
-            },
-
-            // 策略2: ```json 代码块
-            text =>
-            {
-                var regex = new Regex(@"```json\s*(.*?)\s*```",
-                    RegexOptions.Singleline | RegexOptions.IgnoreCase);
-                var match = regex.Match(text);
-                return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
-            },
-
-            // 策略3: 简单的 ``` 代码块
-            text =>
-            {
-                var regex = new Regex(@"```\s*(.*?)\s*```",
-                    RegexOptions.Singleline);
-                var match = regex.Match(text);
-                var content = match.Success ? match.Groups[1].Value.Trim() : string.Empty;
-                return content.StartsWith("{") && content.EndsWith("}") ? content : string.Empty;
-            },
-
-            // 策略4: 寻找最大的JSON对象
-            text =>
-            {
-                var regex = new Regex(@"\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}",
-                    RegexOptions.Singleline);
-                var matches = regex.Matches(text);
-                return matches.Count > 0
-                    ? matches.Cast<Match>().OrderByDescending(m => m.Length).First().Value
-                    : string.Empty;
-            },
-
-            // 策略5: 清理并返回原文本（如果看起来像JSON）
-            text =>
-            {
-                var cleaned = text.Trim().TrimStart("json").Trim();
-                return cleaned.StartsWith("{") && cleaned.EndsWith("}") ? cleaned : string.Empty;
-            }
-        };
-
-        // 根据尝试次数决定使用哪些策略
-        var strategiesToUse = attemptNumber < 3 ? strategies.Take(3) : strategies;
-
-        foreach (var strategy in strategiesToUse)
-        {
-            try
-            {
-                var result = strategy(responseText);
-                if (!string.IsNullOrWhiteSpace(result))
-                {
-                    return result;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug("JSON提取策略失败：{error}", ex.Message);
-            }
-        }
-
-        return string.Empty;
-    }
 
     private static DocumentResultCatalogue? ParseJsonWithFallback(
         string jsonContent, string warehouseName, int attemptNumber)

@@ -66,18 +66,18 @@ Target Language:
 ## Content Generation Strategy
 
 ### Getting Started Guide Content:
-- **Project Overview**: Core purpose, technology stack, target users, key benefits
-- **Environment Setup**: Prerequisites, installation, configuration, verification steps
-- **Core Concepts**: Essential terminology, architectural principles, key abstractions  
-- **Basic Usage**: First examples, common workflows, fundamental operations
-- **Quick Reference**: Essential commands, configurations, troubleshooting guide
+- Core purpose, technology stack, target users, key benefits
+- Prerequisites, installation, configuration, verification steps
+- Essential terminology, architectural principles, key abstractions  
+- First examples, common workflows, fundamental operations
+- Essential commands, configurations, troubleshooting guide
 
 ### Deep Dive Analysis Content:
-- **Architecture Analysis**: System design, component relationships, data flow patterns
-- **Core Components**: Detailed analysis of system modules, services, and data layers
-- **Feature Implementation**: In-depth examination of key features and business logic
-- **Technical Details**: Algorithms, design patterns, performance optimization
-- **Integration & APIs**: External interfaces, plugin systems, extension mechanisms
+- System design, component relationships, data flow patterns
+- Detailed analysis of system modules, services, and data layers
+- In-depth examination of key features and business logic
+- Algorithms, design patterns, performance optimization
+- External interfaces, plugin systems, extension mechanisms
 
 ## Output Format
 
@@ -125,9 +125,9 @@ Generate a hierarchical JSON structure organized into two main modules based on 
 - `children`: Optional array for complex topics requiring detailed breakdown
 
 **Nesting Levels (examples):**
-- **Level 1**: Main sections (overview, setup, analysis, etc.)
-- **Level 2**: Sub-topics within main sections (components, features, etc.)
-- **Level 3**: Detailed aspects for complex features (algorithms, patterns, etc.)
+- Main sections (overview, setup, analysis, etc.)
+- Sub-topics within main sections (components, features, etc.)
+- Detailed aspects for complex features (algorithms, patterns, etc.)
 
 **Sub-section Creation Rules:**
 - System modules with multiple responsibilities
@@ -146,29 +146,17 @@ Generate a hierarchical JSON structure organized into two main modules based on 
 ## Content Depth Requirements
 
 ### Getting Started Guide Requirements:
-- **Project Overview**: Technology stack analysis, architectural overview, core value analysis
-- **Environment Setup**: Step-by-step installation, dependency management, configuration validation
-- **Core Concepts**: Technical terminology, system abstractions, component relationships
-- **Basic Usage**: Practical examples, workflow demonstrations, operational procedures
+- Technology stack analysis, architectural overview, core value analysis
+- Step-by-step installation, dependency management, configuration validation
+- Technical terminology, system abstractions, component relationships
+- Practical examples, workflow demonstrations, operational procedures
 
 ### Deep Dive Analysis Requirements:
-- **Architecture Analysis**: Design pattern identification, component interaction mapping, scalability analysis
-- **Core Components**: 
-  - System module responsibilities and interfaces
-  - Service layer architecture and dependencies  
-  - Data model relationships and schemas
-  - API design patterns and endpoints
-- **Feature Implementation**:
-  - Core functionality breakdown with feature decomposition into sub-components
-  - Business logic and workflow analysis with step-by-step process mapping  
-  - Feature architecture patterns and structural organization
-  - Use case implementation analysis and user scenario handling
-  - Feature interaction matrix and dependency mapping
-  - Performance characteristics and scalability analysis per feature
-  - Error handling mechanisms and edge case management
-  - Testing strategies and validation approaches for each functional module
-- **Technical Implementation**: Algorithm complexity, design pattern usage, security implementations
-- **Integration & APIs**: External system interfaces, plugin architectures, extension mechanisms
+- Design pattern identification, component interaction mapping, scalability analysis
+- System module responsibilities and interfaces, service layer architecture and dependencies, data model relationships and schemas, API design patterns and endpoints
+- Core functionality breakdown with feature decomposition into sub-components, business logic and workflow analysis with step-by-step process mapping, feature architecture patterns and structural organization, use case implementation analysis and user scenario handling, feature interaction matrix and dependency mapping, performance characteristics and scalability analysis per feature, error handling mechanisms and edge case management, testing strategies and validation approaches for each functional module
+- Algorithm complexity, design pattern usage, security implementations
+- External system interfaces, plugin architectures, extension mechanisms
 
 ## Execution Instructions
 

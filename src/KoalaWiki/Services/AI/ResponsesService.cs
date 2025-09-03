@@ -99,17 +99,17 @@ public class ResponsesService(IKoalaWikiContext koala) : FastApi
 
         if (OpenAIOptions.EnableMem0)
         {
-            kernel.Plugins.AddFromObject(new RagFunction(warehouse!.Id));
+            kernel.Plugins.AddFromObject(new RagTool(warehouse!.Id));
         }
 
         if (warehouse.Address.Contains("github.com"))
         {
-            kernel.Plugins.AddFromObject(new GithubFunction(warehouse.OrganizationName, warehouse.Name,
+            kernel.Plugins.AddFromObject(new GithubTool(warehouse.OrganizationName, warehouse.Name,
                 warehouse.Branch), "Github");
         }
         else if (warehouse.Address.Contains("gitee.com") && !string.IsNullOrWhiteSpace(GiteeOptions.Token))
         {
-            kernel.Plugins.AddFromObject(new GiteeFunction(warehouse.OrganizationName, warehouse.Name,
+            kernel.Plugins.AddFromObject(new GiteeTool(warehouse.OrganizationName, warehouse.Name,
                 warehouse.Branch), "Gitee");
         }
 

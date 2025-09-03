@@ -95,7 +95,7 @@ public static class McpExtensions
 
                 tools.Add(new Tool()
                 {
-                    Name = $"{mcpName}-" + nameof(FileFunction.ReadFileFromLineAsync),
+                    Name = $"{mcpName}-" + nameof(FileTool.ReadFileFromLineAsync),
                     Description =
                         "Returns the file content from the specified starting line to the ending line (inclusive). If the total output length exceeds 10,000 characters, only the first 10,000 characters are returned, the content order is consistent with the original file, and the original line breaks are retained.",
                     InputSchema = JsonSerializer.Deserialize<JsonElement>(
@@ -127,7 +127,7 @@ public static class McpExtensions
 
                 tools.Add(new Tool()
                 {
-                    Name = $"{mcpName}-" + nameof(FileFunction.GetTree),
+                    Name = $"{mcpName}-" + nameof(FileTool.GetTree),
                     Description = "Returns the file tree of the repository, including directories and files.",
                     InputSchema = JsonSerializer.Deserialize<JsonElement>("""
                                                                           {
@@ -159,7 +159,7 @@ public static class McpExtensions
 
 
                 var functionName = context.Params.Name;
-                if (functionName.Equals(mcpName + "-" + nameof(FileFunction.ReadFileFromLineAsync),
+                if (functionName.Equals(mcpName + "-" + nameof(FileTool.ReadFileFromLineAsync),
                         StringComparison.CurrentCulture))
                 {
                     var items = context.Params?.Arguments?["items"];
@@ -189,7 +189,7 @@ public static class McpExtensions
                         .Where(x => x.WarehouseId == warehouse.Id)
                         .FirstOrDefaultAsync(token);
 
-                    var fileFunction = new FileFunction(document.GitPath, null);
+                    var fileFunction = new FileTool(document.GitPath, null);
 
                     var sw = Stopwatch.StartNew();
 
@@ -215,7 +215,7 @@ public static class McpExtensions
                     };
                 } // 在这里需要根据不同方法名称调用不同实现
 
-                if (functionName.Equals(mcpName + "-" + nameof(FileFunction.GetTree),
+                if (functionName.Equals(mcpName + "-" + nameof(FileTool.GetTree),
                         StringComparison.CurrentCulture))
                 {
                     var dbContext = context.Services!.GetService<IKoalaWikiContext>();
@@ -228,7 +228,7 @@ public static class McpExtensions
                         .Where(x => x.WarehouseId == warehouse.Id)
                         .FirstOrDefaultAsync(token);
 
-                    var fileFunction = new FileFunction(document.GitPath, null);
+                    var fileFunction = new FileTool(document.GitPath, null);
 
                     var sw = Stopwatch.StartNew();
 
@@ -278,7 +278,7 @@ public static class McpExtensions
 
                     var sw = Stopwatch.StartNew();
 
-                    var rag = new RagFunction(warehouse.Id);
+                    var rag = new RagTool(warehouse.Id);
 
                     var response = await rag.SearchAsync(question, limit, minRelevance);
 

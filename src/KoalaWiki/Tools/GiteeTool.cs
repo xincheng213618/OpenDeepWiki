@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace KoalaWiki.Tools;
 
 [Description("Gitee相关功能")]
-public class GiteeFunction(
+public class GiteeTool(
     string owner,
     string name,
     string branch
@@ -17,7 +17,7 @@ public class GiteeFunction(
     /// <param name="query">搜索关键词</param>
     /// <param name="maxResults">最大返回数量</param>
     /// <returns>搜索结果字符串</returns>
-    [KernelFunction("SearchIssues")]
+    [KernelFunction("search_issues")]
     [Description("搜索 Issue 内容")]
     public async Task<string> SearchIssuesAsync(
         [Description("搜索关键词")] string query,

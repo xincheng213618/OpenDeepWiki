@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace KoalaWiki.Tools;
 
-public class CodeAnalyzeFunction(string gitPath)
+public class CodeAnalyzeTool(string gitPath)
 {
     /// <summary>
     /// Analyzes the dependency tree of a specified function within a file.
