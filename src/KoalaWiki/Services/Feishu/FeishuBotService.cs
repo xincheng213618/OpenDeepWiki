@@ -188,7 +188,7 @@ public class FeishuBotService(
                     }
 
                     // 没有 mention 机器人，则退出。
-                    if (input.Event.message.mentions[0].name != "Image智能体")
+                    if (input.Event.message.mentions[0].name != FeishuOptions.FeishuBotName)
                     {
                         logger.LogWarning("群聊消息@的不是机器人，被@的用户: {MentionName}", input.Event.message.mentions[0].name);
                         await context.Response.WriteAsJsonAsync(new
@@ -235,70 +235,9 @@ public class FeishuBotService(
             var userInput = JsonSerializer.Deserialize<UserInputs>(content);
             logger.LogInformation("消息解析成功，IsText: {IsText}", userInput?.IsText);
 
+            await SendMessages(sessionId, "正在努力思考中，请稍等片刻...", type);
+
             var history = new ChatHistory();
-
-            if (userInput?.IsText == true)
-            {
-                logger.LogInformation("处理纯文本消息，原始文本: {Text}", userInput.text);
-                history.AddUserMessage(userInput.text);
-            }
-            else
-            {
-                logger.LogInformation("处理复合消息内容");
-
-                if (userInput.content.Any(x => x.Any(a => a.IsImage)))
-                {
-                    logger.LogInformation("检测到图片内容，开始处理图片编辑");
-
-                    var contents = new ChatMessageContentItemCollection();
-                    foreach (var input in userInput.content.SelectMany(x => x))
-                    {
-                        if (input.IsText)
-                        {
-                            contents.Add(new TextContent(input.text));
-                        }
-                        else
-                        {
-                            var originalImageBytes = await DownloadImageAsync(messageId, input.image_key);
-                            contents.Add(new ImageContent(originalImageBytes, "image/png"));
-                        }
-                    }
-
-                    history.AddUserMessage(contents);
-                }
-                else
-                {
-                    logger.LogInformation("处理纯文字复合消息");
-
-                    // 提取所有的文字
-                    var texts = userInput.content.First().Where(x => x.IsText).Select(x => x.text);
-                    var prompt = string.Join("\n", texts);
-                    logger.LogInformation("提取的文字内容: {Prompt}", prompt);
-
-                    if (string.IsNullOrWhiteSpace(prompt))
-                    {
-                        logger.LogWarning("没有提取到有效的文字描述");
-                        await SendMessages(sessionId, "没有提取到有效的文字描述，无法生成图片", type);
-                        return;
-                    }
-
-                    var contents = new ChatMessageContentItemCollection();
-                    foreach (var input in userInput.content.SelectMany(x => x))
-                    {
-                        if (input.IsText)
-                        {
-                            contents.Add(new TextContent(input.text));
-                        }
-                        else
-                        {
-                            var originalImageBytes = await DownloadImageAsync(messageId, input.image_key);
-                            contents.Add(new ImageContent(originalImageBytes, "image/png"));
-                        }
-                    }
-
-                    history.AddUserMessage(contents);
-                }
-            }
 
 
             // 解析仓库的目录结构
@@ -362,6 +301,69 @@ public class FeishuBotService(
                 }, OpenAIOptions.DeepResearchModel));
 
             var sb = new StringBuilder();
+
+            if (userInput?.IsText == true)
+            {
+                logger.LogInformation("处理纯文本消息，原始文本: {Text}", userInput.text);
+                history.AddUserMessage(userInput.text);
+            }
+            else
+            {
+                logger.LogInformation("处理复合消息内容");
+
+                if (userInput.content.Any(x => x.Any(a => a.IsImage)))
+                {
+                    logger.LogInformation("检测到图片内容，开始处理图片编辑");
+
+                    var contents = new ChatMessageContentItemCollection();
+                    foreach (var input in userInput.content.SelectMany(x => x))
+                    {
+                        if (input.IsText)
+                        {
+                            contents.Add(new TextContent(input.text));
+                        }
+                        else
+                        {
+                            var originalImageBytes = await DownloadImageAsync(messageId, input.image_key);
+                            contents.Add(new ImageContent(originalImageBytes, "image/png"));
+                        }
+                    }
+
+                    history.AddUserMessage(contents);
+                }
+                else
+                {
+                    logger.LogInformation("处理纯文字复合消息");
+
+                    // 提取所有的文字
+                    var texts = userInput.content.First().Where(x => x.IsText).Select(x => x.text);
+                    var prompt = string.Join("\n", texts);
+                    logger.LogInformation("提取的文字内容: {Prompt}", prompt);
+
+                    if (string.IsNullOrWhiteSpace(prompt))
+                    {
+                        logger.LogWarning("没有提取到有效的文字描述");
+                        await SendMessages(sessionId, "没有提取到有效的文字描述，无法生成图片", type);
+                        return;
+                    }
+
+                    var contents = new ChatMessageContentItemCollection();
+                    foreach (var input in userInput.content.SelectMany(x => x))
+                    {
+                        if (input.IsText)
+                        {
+                            contents.Add(new TextContent(input.text));
+                        }
+                        else
+                        {
+                            var originalImageBytes = await DownloadImageAsync(messageId, input.image_key);
+                            contents.Add(new ImageContent(originalImageBytes, "image/png"));
+                        }
+                    }
+
+                    history.AddUserMessage(contents);
+                }
+            }
 
             await foreach (var chatItem in chat.GetStreamingChatMessageContentsAsync(history,
                                new OpenAIPromptExecutionSettings()
