@@ -154,12 +154,6 @@ public class FeishuBotService(
                     // 是文本消息，直接回复
                     var userInput = JsonSerializer.Deserialize<FeishuUserInput>(input.Event.message.content);
                     logger.LogInformation("解析私聊文本消息成功，内容: {Text}", userInput?.text);
-
-                    // TODO: 需要注入chatAiService服务
-                    // await chatAiService.TextMessageAsync(userInput, sessionId);
-                    await SendMessages(sessionId, $"稍等图片生成中，生成:{userInput?.text}");
-                    logger.LogInformation("已发送私聊回复消息给用户: {SessionId}", sessionId);
-
                     await context.Response.WriteAsJsonAsync(new
                     {
                         code = 0,
@@ -198,7 +192,6 @@ public class FeishuBotService(
                         return;
                     }
 
-                    await SendMessages(chatId, $"稍等图片生成中，稍后我们将为你提供更专业的图片生成。", "chat_id");
                     logger.LogInformation("已发送群聊回复消息到群: {ChatId}", chatId);
 
                     await context.Response.WriteAsJsonAsync(new
@@ -235,22 +228,13 @@ public class FeishuBotService(
             var userInput = JsonSerializer.Deserialize<UserInputs>(content);
             logger.LogInformation("消息解析成功，IsText: {IsText}", userInput?.IsText);
 
-            await SendMessages(sessionId, "正在努力思考中，请稍等片刻...", type);
-
             var history = new ChatHistory();
-
-
+            
             // 解析仓库的目录结构
             var path = document.GitPath;
 
-            using var kernelCreateActivity = Activity.Current.Source.StartActivity("AI.KernelCreation");
-            kernelCreateActivity?.SetTag("kernel.path", path);
-            kernelCreateActivity?.SetTag("kernel.model", OpenAIOptions.ChatModel);
-
             var kernel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
                 OpenAIOptions.ChatApiKey, path, OpenAIOptions.ChatModel, false);
-
-            kernelCreateActivity?.SetStatus(ActivityStatusCode.Ok);
 
             if (OpenAIOptions.EnableMem0)
             {
