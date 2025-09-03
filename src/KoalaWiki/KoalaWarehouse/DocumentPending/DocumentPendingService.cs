@@ -272,10 +272,6 @@ public partial class DocumentPendingService
             }
         }
 
-
-        // 保存原始内容，防止精炼失败时丢失
-        var originalContent = sr.ToString();
-
         if (string.IsNullOrEmpty(docs.Content) && count < 5)
         {
             count++;
@@ -306,8 +302,6 @@ public partial class DocumentPendingService
         {
             try
             {
-                history.AddAssistantMessage(originalContent);
-
                 var refineContents = new ChatMessageContentItemCollection
                 {
                     new TextContent(
