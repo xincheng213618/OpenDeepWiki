@@ -201,7 +201,7 @@ public class FeishuBotService(
 
                     logger.LogInformation("启动异步任务处理群聊消息");
                     await Task.Factory.StartNew(async () =>
-                        await Handler(input.Event.message.content, input.Event.message.message_id, chatId, warehouse,
+                        await Handler(input.Event.message.message_id, input.Event.message.content, chatId, warehouse,
                             document, "chat_id"));
                     return;
                 }
@@ -229,7 +229,7 @@ public class FeishuBotService(
             logger.LogInformation("消息解析成功，IsText: {IsText}", userInput?.IsText);
 
             var history = new ChatHistory();
-            
+
             // 解析仓库的目录结构
             var path = document.GitPath;
 
@@ -376,7 +376,11 @@ public class FeishuBotService(
             sb = new StringBuilder(Regex.Replace(sb.ToString(), @"<thinking>.*?<\/thinking>", "",
                 RegexOptions.IgnoreCase | RegexOptions.Singleline));
 
-            await SendMessages(sessionId, sb.ToString(), type);
+            // 解析sb的#标题
+            var titleMatch = Regex.Match(sb.ToString(), @"#\s*(.+)");
+            var title = titleMatch.Success ? titleMatch.Groups[1].Value.Trim() : "OpenDeepWiki 回复";
+
+            await SendRichMessage(sessionId, title, sb.ToString(), type);
             logger.LogInformation("已发送回复消息给用户: {SessionId}", sessionId);
         }
         catch (Exception exception)
@@ -394,6 +398,31 @@ public class FeishuBotService(
                 {
                     text = message,
                 }, JsonSerializerOptions.Web), "text",
+                sessionId), receiveIdType);
+    }
+
+    public async Task SendRichMessage(string sessionId, string title, string text,
+        string receiveIdType = "open_id")
+    {
+        await feiShuClient.SendMessages(
+            new SendMessageInput(JsonSerializer.Serialize(new
+                {
+                    zh_cn = new
+                    {
+                        title,
+                        content = new object[]
+                        {
+                            new object[]
+                            {
+                                new
+                                {
+                                    tag = "text",
+                                    text,
+                                }
+                            }
+                        }
+                    }
+                }, JsonSerializerOptions.Web), "post",
                 sessionId), receiveIdType);
     }
 

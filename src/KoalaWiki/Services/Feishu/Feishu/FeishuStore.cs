@@ -94,6 +94,11 @@ public class FeishuStore : IHostedService, IDisposable
     {
         _logger.LogInformation("飞书token定时刷新服务启动");
 
+        if (string.IsNullOrEmpty(FeishuOptions.AppId))
+        {
+            return;
+        }
+
         // 立即刷新一次token
         await RefreshTokenInternalAsync();
 

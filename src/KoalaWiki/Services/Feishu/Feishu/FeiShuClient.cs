@@ -19,10 +19,10 @@ public class FeiShuClient(IHttpClientFactory httpClientFactory, ILogger<FeiShuCl
         var result =
             await client.PostAsJsonAsync(
                 "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=" + receiveIdType,
-                input);
+                input,JsonSerializerOptions.Web);
 
         var response = await result.Content.ReadFromJsonAsync<FeiShuResult>();
-
+        
         if (response.code == 0)
         {
             return;
