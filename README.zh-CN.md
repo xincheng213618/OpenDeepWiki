@@ -130,7 +130,7 @@ services:
       - ENABLE_WAREHOUSE_DESCRIPTION_TASK=true # 是否启用仓库描述任务
       - CATALOGUE_FORMAT=compact # 目录结构格式 (compact, json, pathlist, unix)
       - ENABLE_CODE_COMPRESSION=false # 是否启用代码压缩
-      - MAX_FILE_READ_COUNT=10 # AI最大文件读取数量限制，防止无限制读取文件（默认：10，0表示不限制）
+      - READ_MAX_TOKENS=100000 # AI最大文件读取token数量限制，防止无限制读取文件，建议填写模型最大token的百分之七十
       # 飞书 Bot 配置（可选，如需接入飞书）
       - FeishuAppId=
       - FeishuAppSecret=
