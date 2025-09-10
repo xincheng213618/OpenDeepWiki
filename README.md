@@ -374,6 +374,8 @@ make build-frontend-amd  # Frontend only AMD
 
 ![Feishu](/img/feishu.png)
 
+![WeChat](https://github.com/user-attachments/assets/cb346569-2635-4038-a5cd-1c14485da7b2)
+
 ---
 
 # 📄 License
