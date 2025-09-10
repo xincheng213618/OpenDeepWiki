@@ -372,6 +372,8 @@ make build-frontend-amd  # 仅前端AMD
 
 ![飞书交流群](/img/feishu.png)
 
+![微信交流群](https://github.com/user-attachments/assets/cb346569-2635-4038-a5cd-1c14485da7b2)
+
 ---
 
 # 📄 许可证 License
