@@ -11,6 +11,7 @@ const AboutPage = lazy(() => import('@/pages/about/index'))
 const ProfilePage = lazy(() => import('@/pages/profile/index'))
 const RepositoryLayout = lazy(() => import('@/components/layout/RepositoryLayout/index'))
 const RepositoryDetailPage = lazy(() => import('@/pages/repository/RepositoryDetailPage/index'))
+const DocumentPage = lazy(() => import('@/pages/repository/DocumentPage/index'))
 
 // 加载组件
 const Loading = () => (
@@ -84,15 +85,14 @@ const routes = [
           </Suspense>
         ),
       },
-      // 后续可以添加更多子路由
-      // {
-      //   path: "docs",
-      //   element: <DocumentsPage />
-      // },
-      // {
-      //   path: "mindmap",
-      //   element: <MindmapPage />
-      // },
+      {
+        path: "*",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <DocumentPage />
+          </Suspense>
+        ),
+      },
     ]
   },
 ]
