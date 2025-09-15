@@ -84,10 +84,8 @@ export default function MindMapPage() {
 
   useEffect(() => {
     if (mindMapData && mindMapData.nodes) {
-      console.log('Raw mindMapData:', mindMapData)
       // 转换后端数据格式为前端期望格式
       const convertedNodes = convertBackendToFrontend(mindMapData.nodes)
-      console.log('Converted nodes:', convertedNodes)
       processNodesData(convertedNodes)
     }
   }, [mindMapData])
@@ -156,72 +154,76 @@ export default function MindMapPage() {
     if (processedNodes.length === 0) {
       // Generate a simple test diagram if no nodes
       const testDiagram = `flowchart TD
-  A["${owner}/${name}"]
-  B["No documents found"]
-  A --> B`
-      console.log('Generated test diagram:', testDiagram)
+    A["${owner || 'Owner'}/${name || 'Repository'}"]
+    B["No documents found"]
+    A --> B`
       setMermaidDiagram(testDiagram)
       return
     }
 
-    // Generate simple flowchart diagram that should work reliably
-    let diagram = 'flowchart TD\n'
+    try {
+      // Generate flowchart with real data
+      let diagram = 'flowchart TD\n'
+      const rootId = 'ROOT'
+      const rootName = `${owner}/${name}`.replace(/["\[\]]/g, '')
+      diagram += `    ${rootId}["${rootName}"]\n`
 
-    // Use simple node IDs without special characters
-    const rootId = 'A'
-    const rootName = `${owner}/${name}`.replace(/[^\w\s]/g, ' ').trim()
-    diagram += `  ${rootId}["${rootName}"]\n`
-
-    const rootNodes = processedNodes.filter(node => node.level === 0)
-
-    // If no root nodes, show the processed nodes directly
-    if (rootNodes.length === 0 && processedNodes.length > 0) {
-      processedNodes.slice(0, 5).forEach((node, index) => {
-        const simpleId = `N${index + 1}`
-        const safeName = node.name.replace(/[^\w\s\u4e00-\u9fa5]/g, ' ').trim() || 'Node'
-        diagram += `  ${simpleId}["${safeName}"]\n`
-        diagram += `  ${rootId} --> ${simpleId}\n`
-      })
-    } else {
-      // Add nodes with simple IDs
-      let nodeIdCounter = 1
+      // Add nodes with simple sequential IDs
       const nodeIdMap = new Map<string, string>()
-
-      processedNodes.forEach(node => {
-        const simpleId = `N${nodeIdCounter++}`
+      processedNodes.forEach((node, index) => {
+        const simpleId = `N${index}`
         nodeIdMap.set(node.id, simpleId)
 
-        const safeName = node.name.replace(/[^\w\s\u4e00-\u9fa5]/g, ' ').trim() || 'Node'
-        diagram += `  ${simpleId}["${safeName}"]\n`
+        // Clean node name for display
+        const cleanName = node.name
+          .replace(/["\[\]]/g, '')
+          .replace(/[^\w\s\u4e00-\u9fa5.-]/g, ' ')
+          .trim() || `Node${index}`
+
+        diagram += `    ${simpleId}["${cleanName}"]\n`
       })
 
-      // Add connections
-      rootNodes.forEach(node => {
-        const nodeId = nodeIdMap.get(node.id)
-        if (nodeId) {
-          diagram += `  ${rootId} --> ${nodeId}\n`
-          diagram = addChildConnections(node, processedNodes, diagram, nodeIdMap)
-        }
-      })
-    }
+      // Add connections from root to level 0 nodes
+      const rootNodes = processedNodes.filter(node => node.level === 0)
+      if (rootNodes.length === 0) {
+        // If no level 0 nodes, connect first few nodes directly
+        processedNodes.slice(0, Math.min(5, processedNodes.length)).forEach(node => {
+          const nodeId = nodeIdMap.get(node.id)
+          if (nodeId) {
+            diagram += `    ${rootId} --> ${nodeId}\n`
+          }
+        })
+      } else {
+        // Connect root nodes and their children
+        rootNodes.forEach(node => {
+          const nodeId = nodeIdMap.get(node.id)
+          if (nodeId) {
+            diagram += `    ${rootId} --> ${nodeId}\n`
 
-    console.log('Generated diagram:', diagram)
-    setMermaidDiagram(diagram)
-  }
-
-  const addChildConnections = (node: ProcessedNode, allNodes: ProcessedNode[], diagram: string, nodeIdMap: Map<string, string>): string => {
-    const children = allNodes.filter(n => n.parent === node.id)
-    const parentId = nodeIdMap.get(node.id)
-
-    children.forEach(child => {
-      const childId = nodeIdMap.get(child.id)
-      if (parentId && childId) {
-        diagram += `  ${parentId} --> ${childId}\n`
-        diagram = addChildConnections(child, allNodes, diagram, nodeIdMap)
+            // Add child connections
+            const children = processedNodes.filter(n => n.parent === node.id)
+            children.forEach(child => {
+              const childId = nodeIdMap.get(child.id)
+              if (childId) {
+                diagram += `    ${nodeId} --> ${childId}\n`
+              }
+            })
+          }
+        })
       }
-    })
-    return diagram
+
+      setMermaidDiagram(diagram)
+    } catch (error) {
+      console.error('Error in generateMermaidDiagram:', error)
+      // Fallback to simple diagram
+      const fallbackDiagram = `flowchart TD
+    A["${owner}/${name}"]
+    B["Error generating diagram"]
+    A --> B`
+      setMermaidDiagram(fallbackDiagram)
+    }
   }
+
 
 
   const renderMermaidDiagram = async () => {
@@ -246,8 +248,6 @@ export default function MindMapPage() {
       }, 100)
     } catch (error) {
       console.error('Error rendering mermaid diagram:', error)
-      console.error('Diagram content:', mermaidDiagram)
-      console.error('Processed nodes:', processedNodes)
 
       // Show user-friendly error instead of letting Mermaid render to DOM
       mermaidRef.current.innerHTML = `
