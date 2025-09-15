@@ -1,7 +1,7 @@
 // 仓库详情页专用布局
 
-import { useEffect } from 'react'
-import { Outlet, useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,12 @@ import {
   ChevronLeft,
   Menu,
   X,
-  Search
+  Search,
+  PanelLeftOpen,
+  ChevronRight,
+  Hash,
+  Book,
+  AlertCircle
 } from 'lucide-react'
 
 interface RepositoryLayoutProps {
@@ -24,7 +29,9 @@ interface RepositoryLayoutProps {
 export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const { owner, name } = useParams<{ owner: string; name: string }>()
+  const [hasNavigatedToFirstDoc, setHasNavigatedToFirstDoc] = useState(false)
 
   // 使用store
   const {
@@ -52,7 +59,11 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
     selectNode(node)
     // 导航到文档页面
     if (node.type === 'file' && owner && name) {
-      navigate(`/${owner}/${name}/docs/${encodeURIComponent(node.path)}`)
+      const basePath = `/${owner}/${name}/${encodeURIComponent(node.path)}`
+      const pathWithBranch = selectedBranch && selectedBranch !== 'main'
+        ? `${basePath}?branch=${selectedBranch}`
+        : basePath
+      navigate(pathWithBranch)
     }
     // 移动端关闭菜单
     if (window.innerWidth < 1024) {
@@ -63,6 +74,8 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
   // 初始化
   useEffect(() => {
     if (owner && name) {
+      // 清除之前的错误状态
+      clearError()
       setRepository(owner, name)
       fetchBranches()
     }
@@ -72,6 +85,33 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
       reset()
     }
   }, [owner, name])
+
+  // 自动跳转到第一个文档
+  useEffect(() => {
+    // 只在仓库页面（不是具体文档页面）且有文档数据时执行自动跳转
+    const isRepositoryRoot = location.pathname === `/${owner}/${name}` || location.pathname === `/${owner}/${name}/`
+
+    if (
+      isRepositoryRoot &&
+      !hasNavigatedToFirstDoc &&
+      documentNodes.length > 0 &&
+      !loadingDocuments &&
+      selectedNode?.path
+    ) {
+      const basePath = `/${owner}/${name}/${encodeURIComponent(selectedNode.path)}`
+      const pathWithBranch = selectedBranch && selectedBranch !== 'main'
+        ? `${basePath}?branch=${selectedBranch}`
+        : basePath
+
+      setHasNavigatedToFirstDoc(true)
+      navigate(pathWithBranch, { replace: true })
+    }
+  }, [owner, name, location.pathname, documentNodes, selectedNode, loadingDocuments, hasNavigatedToFirstDoc, selectedBranch, navigate])
+
+  // 重置自动跳转状态当仓库或分支改变时
+  useEffect(() => {
+    setHasNavigatedToFirstDoc(false)
+  }, [owner, name, selectedBranch])
 
   // 移动端关闭菜单
   useEffect(() => {
@@ -87,66 +127,93 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
   return (
     <div className="min-h-screen bg-background">
       {/* 顶部导航栏 */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-14 items-center px-4">
-          <div className="flex items-center gap-4 flex-1">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center px-4 lg:px-6">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             {/* 移动端菜单按钮 */}
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden h-8 w-8"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
 
-            {/* Logo/Home */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/')}
-              className="hidden lg:flex"
-            >
-              <Home className="h-5 w-5" />
-            </Button>
-
-            {/* 面包屑 */}
-            <div className="flex items-center gap-2">
+            {/* 品牌/Logo */}
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/')}
+                className="flex items-center gap-2 px-2 h-8"
+              >
+                <div className="w-5 h-5 rounded-sm bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <Hash className="w-3 h-3 text-white" />
+                </div>
+                <span className="font-semibold text-sm hidden sm:inline">OpenDeepWiki</span>
+              </Button>
+
+              {/* 分隔符 */}
+              <div className="h-4 w-px bg-border hidden sm:block" />
+            </div>
+
+            {/* 面包屑导航 */}
+            <nav className="flex items-center gap-1 min-w-0 flex-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="text-muted-foreground hover:text-foreground h-7 px-2 text-sm"
               >
                 {t('nav.repositories')}
               </Button>
-              <span className="text-muted-foreground">/</span>
-              <span className="font-medium">{owner}</span>
-              <span className="text-muted-foreground">/</span>
-              <span className="font-medium">{name}</span>
-            </div>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+
+              {error ? (
+                <div className="flex items-center gap-2 text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-sm font-medium">{t('repository.layout.repositoryNotFound')}</span>
+                </div>
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-muted-foreground hover:text-foreground cursor-pointer">
+                    {owner}
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  <span className="text-sm font-semibold text-foreground truncate">
+                    {name}
+                  </span>
+                </>
+              )}
+            </nav>
           </div>
 
           {/* 右侧操作按钮 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
-              size="icon"
-              className="hidden lg:flex"
+              size="sm"
+              className="hidden lg:flex h-8 px-2"
+              disabled
             >
-              <Search className="h-5 w-5" />
+              <Search className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
+              className="h-8 px-2"
+              disabled
             >
-              <Download className="h-5 w-5" />
+              <Download className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
+              className="h-8 px-2"
               onClick={() => window.open(`https://github.com/${owner}/${name}`, '_blank')}
             >
-              <Github className="h-5 w-5" />
+              <Github className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -156,25 +223,32 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
         {/* 侧边栏 - 桌面端 */}
         <aside
           className={cn(
-            "hidden lg:block w-72 min-h-[calc(100vh-3.5rem)]",
-            "transition-all duration-300",
-            !sidebarOpen && "lg:w-0 lg:overflow-hidden"
+            "hidden lg:block min-h-[calc(100vh-4rem)]",
+            "transition-all duration-300 ease-in-out",
+            sidebarOpen ? "w-72" : "w-0 overflow-hidden"
           )}
         >
-          {owner && name && (
-            <FumadocsSidebar
-              owner={owner}
-              name={name}
-              branches={branches}
-              selectedBranch={selectedBranch}
-              onBranchChange={selectBranch}
-              documentNodes={documentNodes}
-              selectedPath={selectedNode?.path}
-              onSelectNode={handleNodeSelect}
-              loading={loadingBranches || loadingDocuments}
-              className="h-[calc(100vh-3.5rem)]"
-            />
-          )}
+          <div className={cn(
+            "w-72 transition-opacity duration-300 ease-in-out",
+            sidebarOpen ? "opacity-100" : "opacity-0"
+          )}>
+            {owner && name && (
+              <FumadocsSidebar
+                owner={owner}
+                name={name}
+                branches={branches}
+                selectedBranch={selectedBranch}
+                onBranchChange={selectBranch}
+                documentNodes={documentNodes}
+                selectedPath={selectedNode?.path}
+                onSelectNode={handleNodeSelect}
+                loading={loadingBranches || loadingDocuments}
+                className="h-[calc(100vh-4rem)]"
+                sidebarOpen={sidebarOpen}
+                onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+              />
+            )}
+          </div>
         </aside>
 
         {/* 侧边栏 - 移动端 */}
@@ -184,7 +258,7 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
               className="fixed inset-0 z-40 bg-black/50 lg:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <aside className="fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-72 bg-background lg:hidden">
+            <aside className="fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-72 bg-background lg:hidden">
               {owner && name && (
                 <FumadocsSidebar
                   owner={owner}
@@ -197,6 +271,8 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
                   onSelectNode={handleNodeSelect}
                   loading={loadingBranches || loadingDocuments}
                   className="h-full"
+                  sidebarOpen={true}
+                  onSidebarToggle={() => setMobileMenuOpen(false)}
                 />
               )}
             </aside>
@@ -204,27 +280,47 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
         )}
 
         {/* 主内容区 */}
-        <main className="flex-1 min-h-[calc(100vh-3.5rem)]">
-          <div className="container mx-auto p-6">
-            {children || <Outlet context={{ branch: selectedBranch, selectedNode }} />}
+        <main className="flex-1 h-[calc(100vh-4rem)] relative flex flex-col">
+          {/* 悬浮的侧边栏切换按钮 */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSidebarOpen(true)}
+            className={cn(
+              "fixed left-4 top-24 z-30 shadow-lg transition-all duration-300 ease-in-out",
+              "bg-background/95 backdrop-blur-sm border-border/50",
+              "hover:bg-accent hover:text-accent-foreground",
+              "hidden lg:flex h-8 w-8",
+              sidebarOpen ? "opacity-0 pointer-events-none translate-x-[-100%]" : "opacity-100 pointer-events-auto translate-x-0"
+            )}
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+          </Button>
+
+          <div className="flex-1 overflow-hidden">
+            {error ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center space-y-3">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-semibold">{t('repository.layout.repositoryNotFound')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('repository.layout.checkRepositoryAddress')}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/')}
+                    className="mt-4"
+                  >
+                    <Home className="h-4 w-4 mr-2" />
+                    {t('repository.layout.backToHome')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              children || <Outlet context={{ branch: selectedBranch, selectedNode }} />
+            )}
           </div>
         </main>
-
-        {/* 侧边栏切换按钮 - 桌面端 */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "hidden lg:flex fixed top-20 transition-all duration-300 z-30",
-            sidebarOpen ? "left-[17rem]" : "left-2"
-          )}
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          <ChevronLeft className={cn(
-            "h-4 w-4 transition-transform",
-            !sidebarOpen && "rotate-180"
-          )} />
-        </Button>
       </div>
     </div>
   )

@@ -118,6 +118,7 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
             selectedBranch: defaultBranch,
             defaultBranch: defaultBranch,
             loadingBranches: false,
+            error: null, // 成功时清除错误状态
           })
 
           // 处理文档目录
@@ -143,6 +144,7 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
             selectedBranch: 'main',
             defaultBranch: 'main',
             loadingBranches: false,
+            error: null, // 成功时清除错误状态
           })
 
           // 处理文档目录
@@ -158,6 +160,7 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
           selectedBranch: 'main',
           defaultBranch: 'main',
           loadingBranches: false,
+          error: null, // 成功时清除错误状态
         })
       }
     } catch (error: any) {

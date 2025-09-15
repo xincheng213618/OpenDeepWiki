@@ -458,7 +458,7 @@ public class FileTool(string gitPath, List<string>? files)
          - The filePath must be a relative directory provided by the user
          - By default, it reads up to 200 lines from the beginning of the file
          - You can choose to specify the line offset and limit (particularly useful for long files), but it is recommended not to provide these parameters to read the entire file
-         - Any lines exceeding 2000 characters will be truncated
+         - Any lines exceeding 200 characters will be truncated
          - You can call multiple tools in a single response. It is best to batch read multiple potentially useful files. It is best to batch read multiple potentially useful files.
          - If the file you read exists but is empty, you will receive a system alert warning instead of the file content.
          - Reading an non-existent file is also fine, and it will return an error.
@@ -578,68 +578,6 @@ public class FileTool(string gitPath, List<string>? files)
     }
 
     /// <summary>
-    /// 使用迭代方式搜索文件，避免递归调用栈溢出
-    /// </summary>
-    private void SearchFiles(string directory, string pattern, List<string> results, string baseDirectory = null)
-    {
-        // 如果没有指定基础目录，使用当前目录作为基础
-        if (baseDirectory == null)
-            baseDirectory = directory;
-
-        // 使用栈来实现迭代遍历，避免递归
-        var directoriesToSearch = new Stack<string>();
-        directoriesToSearch.Push(directory);
-
-        while (directoriesToSearch.Count > 0)
-        {
-            var currentDir = directoriesToSearch.Pop();
-
-            try
-            {
-                // 搜索当前目录中的文件
-                var enumerateFiles = Directory.EnumerateFiles(currentDir);
-                foreach (var file in enumerateFiles)
-                {
-                    var fileName = Path.GetFileName(file);
-                    var relativePath = GetRelativePath(baseDirectory, file).Replace('\\', '/');
-
-                    if (IsMatch(fileName, relativePath, pattern))
-                    {
-                        results.Add(relativePath);
-                    }
-                }
-
-                // 将子目录添加到栈中进行后续搜索
-                var directories = Directory.EnumerateDirectories(currentDir);
-                foreach (var subDir in directories)
-                {
-                    // 跳过一些常见的不需要搜索的目录
-                    var dirName = Path.GetFileName(subDir);
-                    if (dirName.StartsWith('.') ||
-                        dirName.Equals("bin", StringComparison.OrdinalIgnoreCase) ||
-                        dirName.Equals("obj", StringComparison.OrdinalIgnoreCase) ||
-                        dirName.Equals("node_modules", StringComparison.OrdinalIgnoreCase) ||
-                        dirName.Equals(".git", StringComparison.OrdinalIgnoreCase) ||
-                        dirName.Equals(".vs", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    directoriesToSearch.Push(subDir);
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // 跳过无权限访问的目录
-            }
-            catch (Exception)
-            {
-                // 跳过其他错误的目录
-            }
-        }
-    }
-
-    /// <summary>
     /// 检查文件名或路径是否匹配给定的glob模式
     /// </summary>
     private bool IsMatch(string fileName, string relativePath, string pattern)
@@ -716,5 +654,5 @@ public class ReadFileItemInput
     [Description(
         "The number of lines to read. Only provide if the file is too large to read at once.")]
     [JsonPropertyName("limit")]
-    public int Limit { get; set; } = 2000;
+    public int Limit { get; set; } = 200;
 }

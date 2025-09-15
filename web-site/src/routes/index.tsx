@@ -12,6 +12,7 @@ const ProfilePage = lazy(() => import('@/pages/profile/index'))
 const RepositoryLayout = lazy(() => import('@/components/layout/RepositoryLayout/index'))
 const RepositoryDetailPage = lazy(() => import('@/pages/repository/RepositoryDetailPage/index'))
 const DocumentPage = lazy(() => import('@/pages/repository/DocumentPage/index'))
+const MindMapPage = lazy(() => import('@/pages/repository/MindMapPage/index'))
 
 // 加载组件
 const Loading = () => (
@@ -82,6 +83,14 @@ const routes = [
         element: (
           <Suspense fallback={<Loading />}>
             <RepositoryDetailPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "mindmap",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <MindMapPage />
           </Suspense>
         ),
       },

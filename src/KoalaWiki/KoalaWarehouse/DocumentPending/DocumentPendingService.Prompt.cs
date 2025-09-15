@@ -12,6 +12,31 @@ public partial class DocumentPendingService
     {
         string projectType = GetProjectTypeDescription(classifyType);
 
+        // Add tool usage limitations to prevent context overflow
+        string toolUsageLimitations = """
+
+                                       ## CRITICAL TOOL USAGE LIMITATIONS (Context Overflow Prevention)
+
+                                       **PARALLEL READ OPERATIONS:**
+                                       - **MANDATORY: Use PARALLEL File.Read operations** - batch multiple file reads in a SINGLE message for maximum efficiency
+                                       - **CRITICAL: Always read MULTIPLE files simultaneously** using multiple tool calls in one message
+                                       - **DO NOT read files one by one** - this is inefficient and wastes context
+
+                                       **MANDATORY EDITING CONSTRAINTS:**
+                                       - **CRITICAL LIMIT: MAXIMUM 3 editing operations total** (Docs.MultiEdit + Docs.Edit combined)
+                                       - **PREFER Docs.MultiEdit over individual Docs.Edit calls** - MultiEdit allows multiple changes in one operation and is more efficient
+                                       - **Plan your edits carefully** - combine related changes into single operations where possible
+                                       - **Use Docs.Write for major restructuring** rather than multiple edit operations
+                                       - **Always use Docs.Read to verify content** before proceeding with additional edits
+
+                                       **EDITING STRATEGY:**
+                                       1. Create initial structure with Docs.Write
+                                       2. Use Docs.MultiEdit for batch improvements (preferred, counts toward 3-operation limit)
+                                       3. Use individual Docs.Edit only when MultiEdit is not suitable (counts toward 3-operation limit)
+                                       4. Verify with Docs.Read between major changes (Read operations don't count toward limit)
+
+                                       """;
+
         return await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.GenerateDocs),
             new KernelArguments()
             {
@@ -21,7 +46,7 @@ public partial class DocumentPendingService
                 ["branch"] = branch,
                 ["title"] = title,
                 ["language"] = Prompt.Language,
-                ["projectType"] = projectType
+                ["projectType"] = projectType + toolUsageLimitations
             }, OpenAIOptions.ChatModel);
     }
 

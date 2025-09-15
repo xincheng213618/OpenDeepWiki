@@ -117,6 +117,11 @@ public class DocumentsHelper
             return 40000;
         }
 
+        if (model.StartsWith("qwen/qwen3-next-80b-a3b-instruct", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return 32768;
+        }
+
         return model switch
         {
             "deepseek-chat" => 8192,

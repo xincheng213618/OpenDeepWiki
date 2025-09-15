@@ -1,6 +1,6 @@
 // Fumadocs风格的侧边栏组件
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
@@ -15,11 +15,6 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger
-} from '@/components/ui/collapsible'
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -27,11 +22,11 @@ import {
 } from '@/components/ui/tooltip'
 import {
   Search,
-  ChevronRight,
   GitBranch,
   Code,
-  ChevronsUpDown,
-  ChevronsDown
+  PanelLeftClose,
+  PanelLeftOpen,
+  Hash
 } from 'lucide-react'
 import type { DocumentNode } from '@/components/repository/DocumentTree'
 
@@ -55,6 +50,8 @@ interface FumadocsSidebarProps {
   onSelectNode?: (node: DocumentNode) => void
   loading?: boolean
   className?: string
+  sidebarOpen?: boolean
+  onSidebarToggle?: () => void
 }
 
 export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
@@ -67,12 +64,14 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
   selectedPath,
   onSelectNode,
   loading,
-  className
+  className,
+  sidebarOpen = true,
+  onSidebarToggle
 }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+
 
   // 将DocumentNode转换为MenuItem
   const convertToMenuItem = (node: DocumentNode): MenuItem => {
@@ -91,112 +90,57 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
     }
   }
 
-  // 切换节点展开状态
-  const toggleNode = (nodeId: string) => {
-    const newExpanded = new Set(expandedNodes)
-    if (newExpanded.has(nodeId)) {
-      newExpanded.delete(nodeId)
-    } else {
-      newExpanded.add(nodeId)
-    }
-    setExpandedNodes(newExpanded)
-  }
 
-  // 获取所有带子节点的节点ID
-  const getAllExpandableNodeIds = (nodes: DocumentNode[]): string[] => {
-    const ids: string[] = []
-    const traverse = (nodeList: DocumentNode[]) => {
-      for (const node of nodeList) {
-        if (node.children && node.children.length > 0) {
-          ids.push(node.id)
-          traverse(node.children)
-        }
-      }
-    }
-    traverse(nodes)
-    return ids
-  }
-
-  // 展开/收起所有节点
-  const toggleAllNodes = () => {
-    const allNodeIds = getAllExpandableNodeIds(documentNodes)
-    if (expandedNodes.size === allNodeIds.length) {
-      // 如果所有节点都已展开，则收起所有
-      setExpandedNodes(new Set())
-    } else {
-      // 否则展开所有
-      setExpandedNodes(new Set(allNodeIds))
-    }
-  }
-
-  // 渲染菜单项
+  // 渲染菜单项 - 简化版本，总是展开
   const renderMenuItem = (item: MenuItem, level: number = 0): React.ReactNode => {
     const hasChildren = item.children && item.children.length > 0
-    const isExpanded = expandedNodes.has(item.id)
     const isSelected = item.path === selectedPath ||
       item.path === window.location.pathname ||
       window.location.pathname.includes(item.path + '/')
 
+    // Fumadocs 风格的缩进，增大字体和间距
+    const indent = level * 16 + 16 // 基础16px + 每级16px
+
     if (hasChildren) {
       return (
-        <div key={item.id} className="select-none">
-          <div className={cn(
-            "flex items-center group",
-            "hover:bg-accent/60 rounded-md transition-colors",
-            isSelected && "bg-accent"
-          )}>
-            <button
-              className={cn(
-                "p-1.5 hover:bg-accent/30 rounded transition-colors",
-                level === 0 ? "ml-0" : level === 1 ? "ml-4" : level === 2 ? "ml-8" : "ml-12"
-              )}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                toggleNode(item.id)
-              }}
-            >
-              <ChevronRight className={cn(
-                "h-3.5 w-3.5 transition-transform duration-200 text-muted-foreground",
-                isExpanded && "rotate-90"
-              )} />
-            </button>
-            <button
-              className={cn(
-                "flex-1 px-1 py-1.5 text-sm text-left transition-colors",
-                isSelected && "text-accent-foreground font-medium"
-              )}
-              onClick={() => {
-                if (item.path) {
-                  navigate(item.path)
-                  // 查找并通知父组件选中的节点
-                  const findNode = (nodes: DocumentNode[], id: string): DocumentNode | null => {
-                    for (const node of nodes) {
-                      if (node.id === id) return node
-                      if (node.children) {
-                        const found = findNode(node.children, id)
-                        if (found) return found
-                      }
+        <div key={item.id} className="group">
+          <button
+            className={cn(
+              "flex items-center w-full py-2 px-3 text-sm transition-all duration-150 rounded-md",
+              "hover:bg-accent/50 hover:text-accent-foreground",
+              isSelected && "bg-accent text-accent-foreground font-medium"
+            )}
+            style={{ paddingLeft: `${indent}px` }}
+            onClick={() => {
+              if (item.path) {
+                navigate(item.path)
+                const findNode = (nodes: DocumentNode[], id: string): DocumentNode | null => {
+                  for (const node of nodes) {
+                    if (node.id === id) return node
+                    if (node.children) {
+                      const found = findNode(node.children, id)
+                      if (found) return found
                     }
-                    return null
                   }
-                  const node = findNode(documentNodes, item.id)
-                  if (node && onSelectNode) {
-                    onSelectNode(node)
-                  }
+                  return null
                 }
-              }}
-            >
-              <span className="truncate">{item.label}</span>
-            </button>
+                const node = findNode(documentNodes, item.id)
+                if (node && onSelectNode) {
+                  onSelectNode(node)
+                }
+              }
+            }}
+          >
+            <span className="truncate flex-1 text-left font-normal">{item.label}</span>
+            {item.badge && (
+              <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                {item.badge}
+              </span>
+            )}
+          </button>
+          <div className="pb-1">
+            {item.children?.map(child => renderMenuItem(child, level + 1))}
           </div>
-          <Collapsible open={isExpanded}>
-            <CollapsibleContent className="animate-accordion-down">
-              <div className="mt-0.5">
-                {item.children?.map(child => renderMenuItem(child, level + 1))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
         </div>
       )
     }
@@ -205,16 +149,34 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
       <button
         key={item.id}
         className={cn(
-          "w-full flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
-          "hover:bg-accent/60",
-          isSelected && "bg-accent text-accent-foreground font-medium",
-          level === 0 ? "pl-6" : level === 1 ? "pl-10" : level === 2 ? "pl-14" : "pl-18"
+          "flex items-center w-full py-2 px-3 text-sm transition-all duration-150 rounded-md group",
+          "hover:bg-accent/50 hover:text-accent-foreground",
+          isSelected ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground"
         )}
-        onClick={() => item.path && navigate(item.path)}
+        style={{ paddingLeft: `${indent + 16}px` }} // 叶节点额外缩进
+        onClick={() => {
+          if (item.path) {
+            navigate(item.path)
+            const findNode = (nodes: DocumentNode[], id: string): DocumentNode | null => {
+              for (const node of nodes) {
+                if (node.id === id) return node
+                if (node.children) {
+                  const found = findNode(node.children, id)
+                  if (found) return found
+                }
+              }
+              return null
+            }
+            const node = findNode(documentNodes, item.id)
+            if (node && onSelectNode) {
+              onSelectNode(node)
+            }
+          }
+        }}
       >
-        <span className="truncate flex-1 text-left">{item.label}</span>
+        <span className="truncate flex-1 text-left font-normal">{item.label}</span>
         {item.badge && (
-          <span className="ml-auto text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm font-medium">
+          <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
             {item.badge}
           </span>
         )}
@@ -223,90 +185,111 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
   }
 
 
+
   return (
     <div className={cn(
-      "flex flex-col h-full bg-sidebar/50 backdrop-blur-sm border-r border-border/40",
+      "flex flex-col h-full bg-background border-r border-border",
       className
     )}>
-      {/* 搜索框 */}
-      <div className="p-3 border-b bg-background/95">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder={t('repository.layout.searchDocuments')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-10 h-8 text-sm bg-muted/40 border-muted focus:bg-background"
-            />
-            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted/60 px-1 font-mono text-[10px] font-medium text-muted-foreground opacity-60">
-              <span className="text-[9px]">⌘</span>K
-            </kbd>
+      {/* 品牌头部 */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 flex items-center justify-center shadow-sm">
+              <Hash className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-background"></div>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={toggleAllNodes}
-                  disabled={documentNodes.length === 0}
-                >
-                  {expandedNodes.size === getAllExpandableNodeIds(documentNodes).length ? (
-                    <ChevronsDown className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronsUpDown className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">
-                  {expandedNodes.size === getAllExpandableNodeIds(documentNodes).length
-                    ? t('repository.layout.collapseAll')
-                    : t('repository.layout.expandAll')}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="flex flex-col">
+            <span className="font-semibold text-sm text-foreground">{name}</span>
+            <span className="text-xs text-muted-foreground">{owner}</span>
+          </div>
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 hover:bg-accent/50"
+                onClick={onSidebarToggle}
+                disabled={!onSidebarToggle}
+              >
+                {sidebarOpen ? (
+                  <PanelLeftClose className="h-3.5 w-3.5" />
+                ) : (
+                  <PanelLeftOpen className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p className="text-xs">
+                {sidebarOpen
+                  ? t('repository.layout.collapseSidebar')
+                  : t('repository.layout.expandSidebar')}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* 搜索框 */}
+      <div className="px-3 py-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="搜索文档..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-14 h-8 text-sm bg-accent/30 border-0 focus:bg-accent/50 transition-colors placeholder:text-muted-foreground/60"
+          />
+          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border border-border/50 bg-background px-1 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className="text-[10px]">⌘</span>K
+          </kbd>
         </div>
       </div>
 
-      {/* 分支选择器 */}
-      <div className="p-3 border-b bg-muted/30">
-        <Select
-          value={selectedBranch}
-          onValueChange={onBranchChange}
-          disabled={loading || branches.length === 0}
-        >
-          <SelectTrigger className="h-8 text-sm bg-background/60 border-muted hover:bg-background transition-colors">
-            <div className="flex items-center gap-1.5">
-              <GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
-              <SelectValue placeholder={t('repository.layout.selectBranch')} />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            {branches.map(branch => (
-              <SelectItem key={branch} value={branch} className="text-sm">
-                {branch}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* 导航内容 */}
+      <ScrollArea className="flex-1">
+        <div className="px-2 py-1 space-y-1">
+          {/* 仓库概览 */}
+          <button
+            className="w-full flex items-center px-3 py-1.5 text-sm text-muted-foreground hover:text-accent-foreground hover:bg-accent/50 rounded-md transition-all duration-150"
+            onClick={() => navigate(`/${owner}/${name}`)}
+          >
+            {t('repository.layout.overview')}
+          </button>
 
-      {/* 菜单内容 */}
-      <ScrollArea className="flex-1 px-2">
-        <div className="py-2">
-          {/* 文档标题 */}
-          <div className="mb-1 px-2 py-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              {t('repository.layout.documentTree')}
-            </span>
+          {/* 思维导图 */}
+          <button
+            className="w-full flex items-center px-3 py-1.5 text-sm text-muted-foreground hover:text-accent-foreground hover:bg-accent/50 rounded-md transition-all duration-150"
+            onClick={() => navigate(`/${owner}/${name}/mindmap`)}
+          >
+            {t('repository.layout.mindMap')}
+          </button>
+
+          {/* 分支选择器 */}
+          <div className="px-3 py-2">
+            <div className="flex items-center gap-2">
+              <GitBranch className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <Select value={selectedBranch} onValueChange={onBranchChange} disabled={loading || branches.length === 0}>
+                <SelectTrigger className="h-7 text-sm bg-accent/30 border-0 hover:bg-accent/50 transition-colors">
+                  <SelectValue placeholder={t('repository.layout.selectBranch')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map(branch => (
+                    <SelectItem key={branch} value={branch} className="text-sm">{branch}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* 文档树 */}
+          {/* 分隔线 */}
+          <div className="h-px bg-border/30 mx-2 my-3" />
+
+          {/* 文档部分 */}
           <div className="space-y-0.5">
             {documentNodes.length > 0 ? (
               documentNodes
@@ -314,7 +297,7 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
                   node.name.toLowerCase().includes(searchQuery.toLowerCase()))
                 .map(node => renderMenuItem(convertToMenuItem(node)))
             ) : (
-              <p className="text-xs text-muted-foreground/60 text-center py-8">
+              <p className="text-xs text-muted-foreground/60 text-center py-4 px-6">
                 {t('repository.layout.noDocuments')}
               </p>
             )}
@@ -323,22 +306,24 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
       </ScrollArea>
 
       {/* 底部信息 */}
-      <div className="p-3 border-t bg-muted/20">
+      <div className="px-3 py-2 border-t border-border/50">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-muted-foreground/60 font-medium">
+          <span className="text-xs text-muted-foreground/70 font-mono">
             {owner}/{name}
           </span>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  className="p-1 rounded hover:bg-accent/50 transition-colors"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 hover:bg-accent/50"
                   onClick={() => window.open(`https://github.com/${owner}/${name}`, '_blank')}
                 >
-                  <Code className="h-3 w-3 text-muted-foreground" />
-                </button>
+                  <Code className="h-3 w-3" />
+                </Button>
               </TooltipTrigger>
-              <TooltipContent side="left">
+              <TooltipContent side="right">
                 <p className="text-xs">{t('common.viewOnGithub')}</p>
               </TooltipContent>
             </Tooltip>

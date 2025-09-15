@@ -117,4 +117,146 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* 代码块样式 */
+  pre code {
+    @apply text-foreground;
+    line-height: 1.5;
+  }
+
+  /* 脚注样式 */
+  .footnote-ref {
+    @apply no-underline;
+  }
+
+  .footnote-ref:hover {
+    @apply text-primary/80;
+  }
+
+  /* 脚注引用悬停效果 */
+  .footnote-tooltip {
+    transform: translateX(-50%) translateY(-100%);
+    margin-bottom: 0.5rem;
+  }
+
+  /* 脚注弹出卡片动画 */
+  .footnote-popup {
+    animation: footnotePopupIn 0.2s ease-out;
+  }
+
+  @keyframes footnotePopupIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -100%) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -100%) scale(1);
+    }
+  }
+
+  /* 防止弹出卡片内容溢出 */
+  .footnote-popup-content {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  /* Highlight.js 主题适配 */
+  .hljs {
+    background: transparent !important;
+    color: inherit !important;
+  }
+
+  /* 亮色模式语法高亮 */
+  :root .hljs-comment,
+  :root .hljs-quote {
+    color: oklch(0.556 0 0) !important;
+    font-style: italic;
+  }
+
+  :root .hljs-string,
+  :root .hljs-template-string {
+    color: oklch(0.398 0.07 227.392) !important;
+  }
+
+  :root .hljs-keyword,
+  :root .hljs-selector-tag,
+  :root .hljs-type {
+    color: oklch(0.577 0.245 27.325) !important;
+    font-weight: 600;
+  }
+
+  :root .hljs-function,
+  :root .hljs-title {
+    color: oklch(0.646 0.222 41.116) !important;
+  }
+
+  :root .hljs-number,
+  :root .hljs-literal {
+    color: oklch(0.6 0.118 184.704) !important;
+  }
+
+  :root .hljs-variable,
+  :root .hljs-name {
+    color: oklch(0.145 0 0) !important;
+  }
+
+  /* 深色模式语法高亮 */
+  .dark .hljs-comment,
+  .dark .hljs-quote {
+    color: oklch(0.708 0 0) !important;
+    font-style: italic;
+  }
+
+  .dark .hljs-string,
+  .dark .hljs-template-string {
+    color: oklch(0.769 0.188 70.08) !important;
+  }
+
+  .dark .hljs-keyword,
+  .dark .hljs-selector-tag,
+  .dark .hljs-type {
+    color: oklch(0.704 0.191 22.216) !important;
+    font-weight: 600;
+  }
+
+  .dark .hljs-function,
+  .dark .hljs-title {
+    color: oklch(0.488 0.243 264.376) !important;
+  }
+
+  .dark .hljs-number,
+  .dark .hljs-literal {
+    color: oklch(0.696 0.17 162.48) !important;
+  }
+
+  .dark .hljs-variable,
+  .dark .hljs-name {
+    color: oklch(0.985 0 0) !important;
+  }
+
+  /* 简约风格滚动条 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--muted-foreground) / 0.2);
+  }
+
+  /* Firefox 滚动条样式 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
 }

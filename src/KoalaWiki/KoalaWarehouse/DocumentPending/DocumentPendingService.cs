@@ -6,6 +6,7 @@ using KoalaWiki.Domains.DocumentFile;
 using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using OpenAI.Chat;
 
 namespace KoalaWiki.KoalaWarehouse.DocumentPending;
 
@@ -31,7 +32,7 @@ public partial class DocumentPendingService
         {
             MinContentLength = lengthInt;
         }
-        
+
         var minScore = Environment.GetEnvironmentVariable("DOC_MIN_QUALITY_SCORE").GetTrimmedValueOrEmpty();
         if (!string.IsNullOrEmpty(minScore) && double.TryParse(minScore, out var scoreDouble))
         {
@@ -97,16 +98,6 @@ public partial class DocumentPendingService
                     // 构建失败
                     Log.Logger.Error("处理仓库；{path} ,处理标题：{name} 失败:文件内容为空", path, catalog.Name);
                     throw new Exception("处理失败，文件内容为空: " + catalog.Name);
-                }
-
-                // 最终质量验证（双重保障）
-                var (isQualityValid, qualityMessage, finalMetrics) =
-                    ValidateDocumentQuality(fileItem.Content, catalog.Name);
-                if (!isQualityValid && finalMetrics.QualityScore < (MinQualityScore * 0.8)) // 最终验证标准稍微宽松一些
-                {
-                    Log.Logger.Error("处理仓库；{path} ,处理标题：{name} 失败:文档质量不达标 - {message}, 评分: {score}",
-                        path, catalog.Name, qualityMessage, finalMetrics.QualityScore);
-                    throw new Exception($"处理失败，文档质量不达标: {catalog.Name}, 详情: {qualityMessage}");
                 }
 
                 // 更新文档状态
@@ -231,7 +222,7 @@ public partial class DocumentPendingService
             path,
             OpenAIOptions.ChatModel,
             false, // 文档生成不需要代码分析功能
-            files, (builder => { builder.Plugins.AddFromObject(docs,"Docs"); })
+            files, (builder => { builder.Plugins.AddFromObject(docs, "Docs"); })
         );
 
         var chat = documentKernel.Services.GetService<IChatCompletionService>();
@@ -262,15 +253,9 @@ public partial class DocumentPendingService
 
         int count = 1;
 
-        reset:
+    reset:
 
-        await foreach (var i in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
-        {
-            if (!string.IsNullOrEmpty(i.Content))
-            {
-                sr.Append(i.Content);
-            }
-        }
+        await chat.GetChatMessageContentAsync(history, settings, documentKernel);
 
         if (string.IsNullOrEmpty(docs.Content) && count < 5)
         {
@@ -278,27 +263,8 @@ public partial class DocumentPendingService
             goto reset;
         }
 
-        // 先进行基础质量验证，避免对质量过差的内容进行精炼
-        var (isInitialValid, initialMessage, initialMetrics) = ValidateDocumentQuality(docs.Content, catalog.Name);
 
-        if (!isInitialValid)
-        {
-            Log.Logger.Warning("初始内容质量验证失败，跳过精炼 - 标题: {name}, 原因: {message}, 评分: {score}",
-                catalog.Name, initialMessage, initialMetrics.QualityScore);
-
-            // 如果内容质量太差，直接抛出异常重新生成，不进行精炼
-            if (initialMetrics.ContentLength < 500)
-            {
-                throw new InvalidOperationException($"初始内容质量过差，需要重新生成: {initialMessage}");
-            }
-        }
-        else
-        {
-            Log.Logger.Information("初始内容质量验证通过 - 标题: {name}, 评分: {score}",
-                catalog.Name, initialMetrics.QualityScore);
-        }
-
-        if (DocumentOptions.RefineAndEnhanceQuality && isInitialValid)
+        if (DocumentOptions.RefineAndEnhanceQuality )
         {
             try
             {
@@ -326,7 +292,7 @@ public partial class DocumentPendingService
                         **Refinement Protocol (tools only):**
                         1) Use Docs.Read to review the current document thoroughly.
                         2) Plan improvements that preserve structure and voice.
-                        3) Apply multiple small, precise Docs.Edit operations to improve clarity, add missing details, and strengthen diagrams/citations.
+                        3) Apply multiple small, precise Docs.MultiEdit operations to improve clarity, add missing details, and strengthen diagrams/citations.
                         4) After each edit, re-run Docs.Read to verify changes and continue iterating (at least 2–3 passes).
                         5) Avoid full overwrites; prefer targeted edits that enhance existing content.
 
@@ -361,14 +327,9 @@ public partial class DocumentPendingService
 
                 var refinedContent = new StringBuilder();
                 int reset1 = 1;
-                reset1:
-                await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
-                {
-                    if (!string.IsNullOrEmpty(item.Content))
-                    {
-                        refinedContent.Append(item.Content);
-                    }
-                }
+            reset1:
+
+                await chat.GetChatMessageContentAsync(history, settings, documentKernel);
 
                 if (string.IsNullOrEmpty(docs.Content) && reset1 < 3)
                 {
@@ -414,55 +375,6 @@ public partial class DocumentPendingService
         };
 
         return fileItem;
-    }
-
-    /// <summary>
-    /// 验证文档质量是否符合标准
-    /// </summary>
-    /// <param name="content">文档内容</param>
-    /// <param name="title">文档标题</param>
-    /// <returns>验证结果和详细信息</returns>
-    public static (bool IsValid, string ValidationMessage, DocumentQualityMetrics Metrics) ValidateDocumentQuality(
-        string content, string title)
-    {
-        var metrics = new DocumentQualityMetrics();
-        var validationIssues = new List<string>();
-
-        try
-        {
-            // 1. 基础长度验证
-            metrics.ContentLength = content?.Length ?? 0;
-            if (metrics.ContentLength < MinContentLength)
-            {
-                validationIssues.Add($"文档内容过短: {metrics.ContentLength} 字符 (最少需要{MinContentLength}字符)");
-            }
-
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                validationIssues.Add("文档内容为空");
-                return (false, string.Join("; ", validationIssues), metrics);
-            }
-
-            // 设置整体质量评分
-            metrics.QualityScore = CalculateQualityScore(metrics, validationIssues.Count);
-
-            // 如果有严重问题，返回验证失败
-            var isValid = validationIssues.Count == 0 || (validationIssues.Count <= 2 && metrics.ContentLength >= 1500);
-
-            var message = validationIssues.Count > 0
-                ? $"质量问题: {string.Join("; ", validationIssues)}"
-                : "文档质量验证通过";
-
-            Log.Logger.Information("文档质量验证 - 标题: {title}, 质量评分: {score}, 问题数: {issues}",
-                title, metrics.QualityScore, validationIssues.Count);
-
-            return (isValid, message, metrics);
-        }
-        catch (Exception ex)
-        {
-            Log.Logger.Error(ex, "文档质量验证失败 - 标题: {title}", title);
-            return (false, $"质量验证异常: {ex.Message}", metrics);
-        }
     }
 
     /// <summary>
