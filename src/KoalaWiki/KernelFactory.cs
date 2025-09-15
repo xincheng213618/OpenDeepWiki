@@ -103,7 +103,13 @@ public static class KernelFactory
         // 添加文件函数
         var fileFunction = new FileTool(gitPath, files);
         kernelBuilder.Plugins.AddFromObject(fileFunction, "file");
-        kernelBuilder.Plugins.AddFromType<AgentTool>();
+
+        if (DocumentOptions.EnableAgentTool)
+        {
+            kernelBuilder.Plugins.AddFromType<AgentTool>();
+            activity?.SetTag("plugins.agent_tool", "loaded");
+        }
+
         activity?.SetTag("plugins.file_function", "loaded");
 
         if (DocumentOptions.EnableCodeDependencyAnalysis)

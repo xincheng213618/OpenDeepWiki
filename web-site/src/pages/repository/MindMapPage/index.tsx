@@ -84,8 +84,10 @@ export default function MindMapPage() {
 
   useEffect(() => {
     if (mindMapData && mindMapData.nodes) {
+      console.log('Raw mindMapData:', mindMapData)
       // 转换后端数据格式为前端期望格式
       const convertedNodes = convertBackendToFrontend(mindMapData.nodes)
+      console.log('Converted nodes:', convertedNodes)
       processNodesData(convertedNodes)
     }
   }, [mindMapData])
@@ -151,33 +153,76 @@ export default function MindMapPage() {
   }
 
   const generateMermaidDiagram = () => {
-    if (processedNodes.length === 0) return
+    if (processedNodes.length === 0) {
+      // Generate a simple test diagram if no nodes
+      const testDiagram = `flowchart TD
+  A["${owner}/${name}"]
+  B["No documents found"]
+  A --> B`
+      console.log('Generated test diagram:', testDiagram)
+      setMermaidDiagram(testDiagram)
+      return
+    }
 
-    // Generate mindmap diagram
-    let diagram = 'mindmap\n'
-    diagram += `  root((${owner}/${name}))\n`
+    // Generate simple flowchart diagram that should work reliably
+    let diagram = 'flowchart TD\n'
+
+    // Use simple node IDs without special characters
+    const rootId = 'A'
+    const rootName = `${owner}/${name}`.replace(/[^\w\s]/g, ' ').trim()
+    diagram += `  ${rootId}["${rootName}"]\n`
 
     const rootNodes = processedNodes.filter(node => node.level === 0)
-    rootNodes.forEach(node => {
-      diagram += generateNodeDiagram(node, processedNodes, 2)
-    })
 
+    // If no root nodes, show the processed nodes directly
+    if (rootNodes.length === 0 && processedNodes.length > 0) {
+      processedNodes.slice(0, 5).forEach((node, index) => {
+        const simpleId = `N${index + 1}`
+        const safeName = node.name.replace(/[^\w\s\u4e00-\u9fa5]/g, ' ').trim() || 'Node'
+        diagram += `  ${simpleId}["${safeName}"]\n`
+        diagram += `  ${rootId} --> ${simpleId}\n`
+      })
+    } else {
+      // Add nodes with simple IDs
+      let nodeIdCounter = 1
+      const nodeIdMap = new Map<string, string>()
+
+      processedNodes.forEach(node => {
+        const simpleId = `N${nodeIdCounter++}`
+        nodeIdMap.set(node.id, simpleId)
+
+        const safeName = node.name.replace(/[^\w\s\u4e00-\u9fa5]/g, ' ').trim() || 'Node'
+        diagram += `  ${simpleId}["${safeName}"]\n`
+      })
+
+      // Add connections
+      rootNodes.forEach(node => {
+        const nodeId = nodeIdMap.get(node.id)
+        if (nodeId) {
+          diagram += `  ${rootId} --> ${nodeId}\n`
+          diagram = addChildConnections(node, processedNodes, diagram, nodeIdMap)
+        }
+      })
+    }
+
+    console.log('Generated diagram:', diagram)
     setMermaidDiagram(diagram)
   }
 
-  const generateNodeDiagram = (node: ProcessedNode, allNodes: ProcessedNode[], indent: number = 2): string => {
-    const spaces = '  '.repeat(indent)
-    // Ensure node name is safe for mindmap syntax
-    const safeName = node.name.replace(/[()[\]{}]/g, '').trim() || 'Node'
-    let diagram = `${spaces}${safeName}\n`
-
+  const addChildConnections = (node: ProcessedNode, allNodes: ProcessedNode[], diagram: string, nodeIdMap: Map<string, string>): string => {
     const children = allNodes.filter(n => n.parent === node.id)
-    children.forEach(child => {
-      diagram += generateNodeDiagram(child, allNodes, indent + 1)
-    })
+    const parentId = nodeIdMap.get(node.id)
 
+    children.forEach(child => {
+      const childId = nodeIdMap.get(child.id)
+      if (parentId && childId) {
+        diagram += `  ${parentId} --> ${childId}\n`
+        diagram = addChildConnections(child, allNodes, diagram, nodeIdMap)
+      }
+    })
     return diagram
   }
+
 
   const renderMermaidDiagram = async () => {
     if (!mermaidRef.current || !mermaidDiagram) return
@@ -186,9 +231,9 @@ export default function MindMapPage() {
       // Clear previous content
       mermaidRef.current.innerHTML = ''
 
-      // Validate diagram syntax before rendering
-      if (!mermaidDiagram.includes('mindmap') || mermaidDiagram.trim().length < 10) {
-        throw new Error('Invalid mindmap syntax')
+      // Basic validation - just check if we have content
+      if (!mermaidDiagram || mermaidDiagram.trim().length < 5) {
+        throw new Error('No diagram content')
       }
 
       const { svg } = await mermaid.render('mindmap-diagram', mermaidDiagram)
@@ -201,12 +246,16 @@ export default function MindMapPage() {
       }, 100)
     } catch (error) {
       console.error('Error rendering mermaid diagram:', error)
+      console.error('Diagram content:', mermaidDiagram)
+      console.error('Processed nodes:', processedNodes)
+
       // Show user-friendly error instead of letting Mermaid render to DOM
       mermaidRef.current.innerHTML = `
         <div class="flex items-center justify-center h-64 text-muted-foreground">
           <div class="text-center">
             <p class="text-sm">Unable to render mind map</p>
             <p class="text-xs mt-1">Please try refreshing the page</p>
+            <p class="text-xs mt-1 text-red-500">Error: ${error?.message || 'Unknown error'}</p>
           </div>
         </div>
       `
