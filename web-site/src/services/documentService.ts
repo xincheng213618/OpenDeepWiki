@@ -1,19 +1,47 @@
 import { fetchService } from './fetch'
 
 export interface DocumentResponse {
-  data: {
-    content: string
-    path: string
+  content: string
+  title: string
+  description: string
+  fileSource: Array<{
     name: string
-  }
+    address: string
+    url: string
+  }>
+  address: string
+  branch: string
+  lastUpdate: string
+  documentCatalogId: string
+  currentLanguage: string
 }
 
 class DocumentService {
-  // 获取文档内容
-  async getDocument(owner: string, repo: string, path: string): Promise<DocumentResponse> {
+  // 获取文档内容 - 使用 GetDocumentByIdAsync (映射为 /DocumentById)
+  async getDocument(
+    owner: string,
+    repo: string,
+    path: string,
+    branch?: string,
+    languageCode?: string
+  ): Promise<DocumentResponse> {
     try {
+      const params = new URLSearchParams({
+        owner,
+        name: repo,
+        path  // 不要再次编码，因为 URLSearchParams 会自动编码
+      })
+
+      if (branch) {
+        params.append('branch', branch)
+      }
+
+      if (languageCode) {
+        params.append('languageCode', languageCode)
+      }
+
       const response = await fetchService.get<DocumentResponse>(
-        `/api/repositories/${owner}/${repo}/documents/${encodeURIComponent(path)}`
+        `/api/DocumentCatalog/DocumentById?${params.toString()}`
       )
       return response
     } catch (error) {

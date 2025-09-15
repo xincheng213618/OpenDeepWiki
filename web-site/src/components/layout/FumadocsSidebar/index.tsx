@@ -76,11 +76,17 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
 
   // 将DocumentNode转换为MenuItem
   const convertToMenuItem = (node: DocumentNode): MenuItem => {
+    // 构建包含分支参数的路径
+    const basePath = `/${owner}/${name}/${encodeURIComponent(node.path)}`
+    const pathWithBranch = selectedBranch && selectedBranch !== 'main'
+      ? `${basePath}?branch=${selectedBranch}`
+      : basePath
+
     return {
       id: node.id,
       label: node.name,
-      // 所有节点都可以点击
-      path: `/${owner}/${name}/${encodeURIComponent(node.path)}`,
+      // 所有节点都可以点击，并包含分支信息
+      path: pathWithBranch,
       children: node.children?.map(convertToMenuItem)
     }
   }
