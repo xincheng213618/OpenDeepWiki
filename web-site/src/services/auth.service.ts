@@ -15,9 +15,9 @@ export interface LoginResponse {
   refreshToken?: string
   user?: {
     id: string
-    name: string  // 后端返回的是 name 而不是 username
+    username: string  // 后端返回的是 name 而不是 username
     email: string
-    role: string  // 后端返回的是单个 role 字符串
+    roleName: string  // 后端返回的是单个 role 字符串
     avatar?: string
   }
   errorMessage?: string

@@ -109,12 +109,10 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
 
       if (response) {
         // 从DocumentCatalogs接口提取分支列表
-        const branchList = response.branches || response.branchs || []
-        const currentBranch = response.currentBranch || response.branch || 'main'
-
+        const branchList = response.branchs || response.branchs || []
         if (branchList.length > 0) {
           // 使用返回的分支列表
-          const defaultBranch = currentBranch || branchList[0]
+          const defaultBranch = branchList[0]
           set({
             branches: branchList,
             selectedBranch: defaultBranch,

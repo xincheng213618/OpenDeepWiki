@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { warehouseService } from '@/services/warehouse.service'
 import {
@@ -37,7 +37,8 @@ import {
   Lock,
   File,
   Info,
-  Loader2
+  Loader2,
+  ChevronDown
 } from 'lucide-react'
 
 export interface RepositoryFormValues {
@@ -49,9 +50,9 @@ export interface RepositoryFormValues {
   openAIKey?: string
   openAIEndpoint?: string
   enableGitAuth?: boolean
-  gitUserName?: string
-  gitPassword?: string
-  email?: string
+  gitUserName?: string | null
+  gitPassword?: string | null
+  email?: string | null
   submitType?: 'git' | 'file' | 'custom'
   uploadMethod?: 'url' | 'file'
   fileUpload?: File
@@ -89,12 +90,39 @@ export const RepositoryForm: React.FC<RepositoryFormProps> = ({
   const [loadingBranches, setLoadingBranches] = useState(false)
   const [lastAddress, setLastAddress] = useState<string>('')
   const [defaultBranch, setDefaultBranch] = useState<string>('')
+  const [showBranchDropdown, setShowBranchDropdown] = useState(false)
+  const [branchInputValue, setBranchInputValue] = useState('')
+  const branchInputRef = useRef<HTMLInputElement>(null)
+  const branchDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Handle clicks outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        branchDropdownRef.current &&
+        !branchDropdownRef.current.contains(event.target as Node) &&
+        branchInputRef.current &&
+        !branchInputRef.current.contains(event.target as Node)
+      ) {
+        setShowBranchDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Sync branch input value with form data
+  useEffect(() => {
+    setBranchInputValue(formData.branch)
+  }, [formData.branch])
 
 
 
   const handleSubmit = async () => {
     try {
       setLoading(true)
+
 
       if (formData.submitType === 'git') {
         // Git仓库提交验证
@@ -167,18 +195,10 @@ export const RepositoryForm: React.FC<RepositoryFormProps> = ({
         formData.gitPassword
       )
 
-      if (response.data?.branches && response.data.branches.length > 0) {
-        setBranches(response.data.branches)
-        if (response.data.defaultBranch) {
-          setFormData(prev => ({ ...prev, branch: response.data.defaultBranch }))
-          setDefaultBranch(response.data.defaultBranch)
-        }
-        setLastAddress(formData.address)
-      } else if (response.branches && response.branches.length > 0) {
-        // Handle alternate response structure
-        setBranches(response.branches)
+      if (response.data && response.data.length > 0) {
+        setBranches(response.data)
         if (response.defaultBranch) {
-          setFormData(prev => ({ ...prev, branch: response.defaultBranch }))
+          setFormData(prev => ({ ...prev, branch: response.defaultBranch || '' }))
           setDefaultBranch(response.defaultBranch)
         }
         setLastAddress(formData.address)
@@ -268,27 +288,61 @@ export const RepositoryForm: React.FC<RepositoryFormProps> = ({
                 {t('repository.form.branch')}
               </Label>
               <div className="flex gap-2">
-                <Select
-                  value={formData.branch}
-                  onValueChange={(value) => handleFieldChange('branch', value)}
-                  disabled={disabledFields.includes('branch') || branches.length === 0}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder={t('repository.form.branchPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {branches.length > 0 ? (
-                      branches.map(branch => (
-                        <SelectItem key={branch} value={branch}>
-                          {branch}
-                          {branch === defaultBranch && ` (${t('repository.form.default')})`}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="main">main</SelectItem>
+                <div className="flex-1 relative">
+                  <div className="relative">
+                    <Input
+                      ref={branchInputRef}
+                      id="branch"
+                      value={branchInputValue}
+                      onChange={(e) => {
+                        setBranchInputValue(e.target.value)
+                        handleFieldChange('branch', e.target.value)
+                      }}
+                      onFocus={() => branches.length > 0 && setShowBranchDropdown(true)}
+                      placeholder={t('repository.form.branchPlaceholder')}
+                      disabled={disabledFields.includes('branch')}
+                      className="pr-8"
+                    />
+                    {branches.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-2 hover:bg-transparent"
+                        onClick={() => setShowBranchDropdown(!showBranchDropdown)}
+                        disabled={disabledFields.includes('branch')}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
                     )}
-                  </SelectContent>
-                </Select>
+                  </div>
+                  {showBranchDropdown && branches.length > 0 && (
+                    <div
+                      ref={branchDropdownRef}
+                      className="absolute z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md"
+                    >
+                      {branches.map(branch => (
+                        <button
+                          key={branch}
+                          type="button"
+                          onClick={() => {
+                            setBranchInputValue(branch)
+                            handleFieldChange('branch', branch)
+                            setShowBranchDropdown(false)
+                          }}
+                          className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                        >
+                          <span>{branch}</span>
+                          {branch === defaultBranch && (
+                            <span className="text-xs text-muted-foreground">
+                              {t('repository.form.default')}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -304,11 +358,6 @@ export const RepositoryForm: React.FC<RepositoryFormProps> = ({
                   )}
                 </Button>
               </div>
-              {branches.length > 0 && (
-                <div className="text-sm text-muted-foreground">
-                  {t('repository.form.availableBranches')}: {branches.join(', ')}
-                </div>
-              )}
             </div>
 
             {/* Git认证 */}
@@ -590,27 +639,55 @@ export const RepositoryForm: React.FC<RepositoryFormProps> = ({
                   {t('repository.form.branch')}
                 </Label>
                 <div className="flex gap-2">
-                  <Select
-                    value={formData.branch}
-                    onValueChange={(value) => handleFieldChange('branch', value)}
-                    disabled={branches.length === 0}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder={t('repository.form.branchPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {branches.length > 0 ? (
-                        branches.map(branch => (
-                          <SelectItem key={branch} value={branch}>
-                            {branch}
-                            {branch === defaultBranch && ` (${t('repository.form.default')})`}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="main">main</SelectItem>
+                  <div className="flex-1 relative">
+                    <div className="relative">
+                      <Input
+                        id="customBranch"
+                        value={branchInputValue}
+                        onChange={(e) => {
+                          setBranchInputValue(e.target.value)
+                          handleFieldChange('branch', e.target.value)
+                        }}
+                        onFocus={() => branches.length > 0 && setShowBranchDropdown(true)}
+                        placeholder={t('repository.form.branchPlaceholder')}
+                        className="pr-8"
+                      />
+                      {branches.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-2 hover:bg-transparent"
+                          onClick={() => setShowBranchDropdown(!showBranchDropdown)}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
                       )}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                    {showBranchDropdown && branches.length > 0 && (
+                      <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md">
+                        {branches.map(branch => (
+                          <button
+                            key={branch}
+                            type="button"
+                            onClick={() => {
+                              setBranchInputValue(branch)
+                              handleFieldChange('branch', branch)
+                              setShowBranchDropdown(false)
+                            }}
+                            className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <span>{branch}</span>
+                            {branch === defaultBranch && (
+                              <span className="text-xs text-muted-foreground">
+                                {t('repository.form.default')}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
@@ -626,11 +703,6 @@ export const RepositoryForm: React.FC<RepositoryFormProps> = ({
                     )}
                   </Button>
                 </div>
-                {branches.length > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    {t('repository.form.availableBranches')}: {branches.join(', ')}
-                  </div>
-                )}
               </div>
 
               {/* Git认证 */}

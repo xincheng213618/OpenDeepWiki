@@ -60,7 +60,7 @@ public class DocumentOptions
     /// 精炼并且提高质量
     /// </summary>
     /// <returns></returns>
-    public static bool RefineAndEnhanceQuality { get; set; } = true;
+    public static bool RefineAndEnhanceQuality { get; set; } = false;
 
     /// <summary>
     /// 是否启用仓库提交

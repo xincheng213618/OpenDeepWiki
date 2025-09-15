@@ -68,27 +68,16 @@ export const HomePage = () => {
           }
           response = await warehouseService.uploadAndSubmitWarehouse(formData)
         } else {
-          // URL上传
-          response = await warehouseService.customSubmitWarehouse({
-            organization: values.organizationName!,
-            repositoryName: values.repositoryName!,
-            address: values.address,
-            branch: 'main',
-            gitUserName: values.enableGitAuth ? values.gitUserName : undefined,
-            gitPassword: values.enableGitAuth ? values.gitPassword : undefined,
-            email: values.enableGitAuth ? values.email : undefined
-          })
+          throw new Error('文件上传失败')
         }
       } else {
-        // 普通Git仓库
-        response = await warehouseService.customSubmitWarehouse({
-          organization: values.organizationName!,
-          repositoryName: values.repositoryName!,
+        // URL上传
+        response = await warehouseService.submitWarehouse({
           address: values.address,
           branch: values.branch,
-          gitUserName: values.enableGitAuth ? values.gitUserName : undefined,
-          gitPassword: values.enableGitAuth ? values.gitPassword : undefined,
-          email: values.enableGitAuth ? values.email : undefined
+          gitUserName: values.enableGitAuth ? values.gitUserName : null,
+          gitPassword: values.enableGitAuth ? values.gitPassword : null,
+          email: values.enableGitAuth && values.email ? values.email : null
         })
       }
 
@@ -107,7 +96,7 @@ export const HomePage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-background via-background/95 to-background py-20 px-4">
         <div className="container mx-auto text-center">
@@ -117,7 +106,7 @@ export const HomePage = () => {
           <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
             {t('home.subtitle')}
           </p>
-          
+
           {/* Search Bar */}
           <SearchBar
             value={searchValue}
@@ -127,7 +116,7 @@ export const HomePage = () => {
             size="lg"
             className="max-w-3xl"
           />
-          
+
           {/* Quick Filters */}
           <div className="flex items-center justify-center gap-2 mt-6 flex-wrap">
             <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
@@ -239,8 +228,8 @@ export const HomePage = () => {
       </section>
 
       {/* Sponsors Section */}
-      <SponsorsSection 
-        className="bg-muted/30" 
+      <SponsorsSection
+        className="bg-muted/30"
       />
 
       {/* Footer */}

@@ -28,7 +28,7 @@ import {
 import { userService } from '@/services/userService'
 
 export const ProfileInfo: React.FC = () => {
-  const { user, refreshUser } = useAuth()
+  const { user,  } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [isEditing, setIsEditing] = useState(false)
@@ -59,7 +59,7 @@ export const ProfileInfo: React.FC = () => {
     setLoading(true)
     try {
       await userService.updateProfile(formData)
-      await refreshUser()
+      // await refreshUser()
       setIsEditing(false)
       sonnerToast.success('保存成功', { description: '您的个人资料已更新' })
     } catch (error: any) {

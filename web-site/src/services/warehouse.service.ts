@@ -11,15 +11,12 @@ import type {
  * Repository submission interface
  */
 export interface WarehouseSubmitRequest {
-  address: string
-  type: string
-  branch: string
-  prompt: string
-  model: string
-  openAIKey: string
-  openAIEndpoint: string
+  address: string;
+  branch: string;
+  gitUserName?: string | null;
+  gitPassword?: string | null;
+  email?: string | null;
 }
-
 /**
  * 自定义仓库提交接口
  */
@@ -28,9 +25,9 @@ export interface CustomWarehouseSubmitRequest {
   repositoryName: string
   address: string
   branch?: string
-  gitUserName?: string
-  gitPassword?: string
-  email?: string
+  gitUserName?: string | null
+  gitPassword?: string | null
+  email?: string | null
 }
 
 /**
@@ -138,15 +135,15 @@ class WarehouseService {
    */
   async getBranchList(
     repoUrl: string,
-    username?: string,
-    password?: string
+    username?: string | null,
+    password?: string | null
   ): Promise<BranchListResponse> {
     try {
       // 构建查询参数
       const params = new URLSearchParams({
         address: repoUrl
       })
-      
+
       if (username) {
         params.append('gitUserName', username)
       }
@@ -158,7 +155,7 @@ class WarehouseService {
         `${this.basePath}/BranchList?${params.toString()}`
       )
 
-      if (response.success && response.data) {
+      if (response.code === 200 && response.data) {
         return {
           success: true,
           data: response.data.branches || [],

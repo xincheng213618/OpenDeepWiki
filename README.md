@@ -125,7 +125,7 @@ services:
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis, may affect code quality
       - ENABLE_WAREHOUSE_COMMIT=true # Whether to enable warehouse commit
       - ENABLE_FILE_COMMIT=true # Whether to enable file commit
-      - REFINE_AND_ENHANCE_QUALITY=true # Whether to refine and enhance quality
+      - REFINE_AND_ENHANCE_QUALITY=false # Whether to refine and enhance quality
       - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=true # Whether to enable warehouse function prompt task
       - ENABLE_WAREHOUSE_DESCRIPTION_TASK=true # Whether to enable warehouse description task
       - CATALOGUE_FORMAT=compact # Directory structure format (compact, json, pathlist, unix)

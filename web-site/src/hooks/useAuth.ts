@@ -73,10 +73,10 @@ export const useAuth = () => {
     if (isAuthenticated && token) {
       try {
         // 检查Token是否快要过期（这里简化处理，实际可以解析JWT）
-        const success = await refreshToken()
-        if (!success) {
-          handleLogout()
-        }
+        // const success = await refreshTokenHandle()
+        // if (!success) {
+        //   handleLogout()
+        // }
       } catch (error) {
         console.error('Token refresh failed:', error)
         handleLogout()

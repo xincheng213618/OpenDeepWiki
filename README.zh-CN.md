@@ -124,7 +124,7 @@ services:
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析，可能影响代码质量
       - ENABLE_WAREHOUSE_COMMIT=true # 是否启用仓库提交
       - ENABLE_FILE_COMMIT=true # 是否启用文件提交
-      - REFINE_AND_ENHANCE_QUALITY=true # 是否精炼并提高质量
+      - REFINE_AND_ENHANCE_QUALITY=false # 是否精炼并提高质量
       - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=true # 是否启用仓库功能提示任务
       - ENABLE_WAREHOUSE_DESCRIPTION_TASK=true # 是否启用仓库描述任务
       - CATALOGUE_FORMAT=compact # 目录结构格式 (compact, json, pathlist, unix)

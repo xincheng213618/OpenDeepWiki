@@ -25,7 +25,6 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip'
-import { DocumentNode } from '@/components/repository/DocumentTree'
 import {
   Search,
   ChevronRight,
@@ -34,6 +33,7 @@ import {
   GitBranch,
   Code
 } from 'lucide-react'
+import type { DocumentNode } from '@/components/repository/DocumentTree'
 
 interface MenuItem {
   id: string
@@ -108,7 +108,7 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
     const isExpanded = expandedNodes.has(item.id)
     const isSelected = item.path === selectedPath ||
       item.path === window.location.pathname ||
-      window.location.pathname.includes(item.path)
+      window.location.pathname.includes(item.path + '/')
 
     if (hasChildren) {
       return (
@@ -166,7 +166,7 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
           </div>
           {isExpanded && (
             <div className="space-y-0.5 ml-2">
-              {item.children.map(child => renderMenuItem(child, level + 1))}
+              {item.children?.map(child => renderMenuItem(child, level + 1))}
             </div>
           )}
         </div>

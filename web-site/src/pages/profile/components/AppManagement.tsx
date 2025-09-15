@@ -109,9 +109,9 @@ export const AppManagement: React.FC = () => {
   // 加载仓库列表
   const loadWarehouses = async () => {
     try {
-      const response = await warehouseService.getWarehouseList()
-      if (response.data) {
-        setWarehouses(response.data)
+      const response = await warehouseService.getWarehouseList(1, 100)
+      if (response.items) {
+        setWarehouses(response.items)
       }
     } catch (error) {
       console.error('Failed to load warehouses:', error)

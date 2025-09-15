@@ -6,7 +6,7 @@ import type { LoginResponse, RegisterRequest } from '@/services/auth.service'
 
 interface User {
   id: string
-  name: string  // 后端返回的是 name
+  username: string  // 后端返回的是 name
   email: string
   role?: string  // 后端返回的是单个 role 字符串
   avatar?: string
@@ -25,7 +25,7 @@ interface AuthState {
   login: (username: string, password: string) => Promise<boolean>
   register: (data: RegisterRequest) => Promise<boolean>
   logout: () => void
-  refreshToken: () => Promise<boolean>
+  refreshTokenHandle: () => Promise<boolean>
   getCurrentUser: () => Promise<void>
   setUser: (user: User | null) => void
   clearError: () => void
@@ -171,7 +171,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   // 刷新Token
-  refreshToken: async () => {
+  refreshTokenHandle: async () => {
     const { refreshToken } = get()
     if (!refreshToken) return false
     

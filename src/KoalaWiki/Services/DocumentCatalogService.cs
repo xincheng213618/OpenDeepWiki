@@ -52,7 +52,7 @@ public class DocumentCatalogService(IKoalaWikiContext dbAccess) : FastApi
         var branchs =
             (await dbAccess.Warehouses
                 .Where(x => x.Name == name && x.OrganizationName == organizationName && x.Type == "git" &&
-                            x.Status == WarehouseStatus.Completed)
+                            (x.Status == WarehouseStatus.Completed  || x.Status == WarehouseStatus.Processing))
                 .OrderByDescending(x => x.Status == WarehouseStatus.Completed)
                 .Select(x => x.Branch)
                 .ToArrayAsync());
