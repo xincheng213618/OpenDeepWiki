@@ -31,17 +31,15 @@ public class AuthService(
     /// <summary>
     /// 用户登录
     /// </summary>
-    /// <param name="username">用户名</param>
-    /// <param name="password">密码</param>
+    /// <param name="input">登录输入</param>
     /// <returns>登录结果</returns>
-    public async Task<LoginDto> LoginAsync(
-        string username, string password)
+    public async Task<LoginDto> LoginAsync(LoginInput input)
     {
         try
         {
             // 查询用户
             var user = await dbContext.Users
-                .FirstOrDefaultAsync(u => u.Name == username || u.Email == username);
+                .FirstOrDefaultAsync(u => u.Name == input.Username || u.Email == input.Username);
 
             // 用户不存在
             if (user == null)
@@ -50,7 +48,7 @@ public class AuthService(
             }
 
             // 验证密码
-            if (password != user.Password)
+            if (input.Password != user.Password)
             {
                 return new LoginDto(false, string.Empty, null, null, "密码错误");
             }

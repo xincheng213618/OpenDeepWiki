@@ -16,7 +16,7 @@ namespace KoalaWiki.Provider.MySQL.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("KoalaWiki.Domains.AppConfig", b =>
@@ -1043,6 +1043,12 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Bio")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Company")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)")
                         .HasComment("创建时间");
@@ -1059,6 +1065,9 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                     b.Property<string>("LastLoginIp")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Location")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("varchar(255)")
@@ -1071,6 +1080,9 @@ namespace KoalaWiki.Provider.MySQL.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Website")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 

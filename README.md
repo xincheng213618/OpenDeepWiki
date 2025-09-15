@@ -15,13 +15,6 @@
 
 Our enterprise service offers comprehensive support and flexibility for businesses seeking professional AI solutions.
 
-
-# Sponsor
-
-[![302.AI](https://github.com/user-attachments/assets/b1bcb56e-38cb-47bf-adfe-7a21d83774b4)](https://share.302.ai/jXcaTv)
-
-[302.AI](https://share.302.ai/jXcaTv) is a pay-as-you-go enterprise-level AI application platform that provides an open platform and open-source ecosystem to help AI solve various needs. Click [here](https://share.302.ai/jXcaTv) to get $1 free credit!
-
 ---
 
 # Features

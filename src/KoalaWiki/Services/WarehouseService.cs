@@ -1,4 +1,4 @@
-﻿using System.IO.Compression;
+using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -787,13 +787,13 @@ public class WarehouseService(
     /// <param name="keyword">搜索关键词，用于匹配仓库名称或地址。</param>
     /// <returns>返回一个包含总记录数和当前页仓库数据的分页结果对象。</returns>
     [EndpointSummary("获取仓库列表")]
-    public async Task<PageDto<WarehouseDto>> GetWarehouseListAsync(int page, int pageSize, string keyword)
+    public async Task<PageDto<WarehouseDto>> GetWarehouseListAsync(int page, int pageSize, string? keyword)
     {
         var query = koala.Warehouses
             .AsNoTracking()
             .Where(x => x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing);
 
-        keyword = keyword.Trim().ToLower();
+        keyword = keyword?.Trim().ToLower();
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -1099,7 +1099,7 @@ public class WarehouseService(
         memoryStream.Position = 0;
 
         context.Response.ContentType = "application/zip";
-        context.Response.Headers.Add("Content-Disposition", $"attachment; filename={fileName}");
+        context.Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
 
         // 将zip文件流写入响应
         await memoryStream.CopyToAsync(context.Response.Body);
@@ -1146,5 +1146,221 @@ public class WarehouseService(
         var value = await fileFunction.ReadFileAsync(filePath);
 
         return ResultDto<string>.Success(value);
+    }
+
+    /// <summary>
+    /// 获取Git仓库分支列表
+    /// </summary>
+    /// <param name="address">仓库地址</param>
+    /// <param name="gitUserName">Git用户名（可选）</param>
+    /// <param name="gitPassword">Git密码或Token（可选）</param>
+    /// <returns>分支列表</returns>
+    [EndpointSummary("获取Git仓库分支列表")]
+    public async Task<ResultDto<object>> GetBranchListAsync(string address, string? gitUserName = null, string? gitPassword = null)
+    {
+        try
+        {
+            address = address.Trim().TrimEnd('/');
+            
+            // 移除.git后缀用于API调用
+            var cleanAddress = address.EndsWith(".git") ? address.Substring(0, address.Length - 4) : address;
+            
+            var uri = new Uri(cleanAddress);
+            var pathSegments = uri.Segments.Where(s => !string.IsNullOrWhiteSpace(s) && s != "/").ToArray();
+            
+            if (pathSegments.Length < 2)
+            {
+                return ResultDto<object>.Error("仓库URL格式不正确，至少需要包含组织名和仓库名");
+            }
+            
+            var owner = pathSegments[0].Trim('/');
+            var repo = pathSegments[1].Trim('/').Replace(".git", "");
+            
+            var branches = new List<string>();
+            string? defaultBranch = null;
+            
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "KoalaWiki-App");
+            
+            // 根据不同的Git平台调用相应的API
+            if (uri.Host.Contains("github.com"))
+            {
+                // GitHub API
+                var headers = new Dictionary<string, string>
+                {
+                    { "Accept", "application/vnd.github.v3+json" }
+                };
+                
+                if (!string.IsNullOrEmpty(gitUserName) && !string.IsNullOrEmpty(gitPassword))
+                {
+                    var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{gitUserName}:{gitPassword}"));
+                    headers["Authorization"] = $"Basic {credentials}";
+                }
+                
+                foreach (var header in headers)
+                {
+                    httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                }
+                
+                // 获取仓库信息
+                var repoResponse = await httpClient.GetAsync($"https://api.github.com/repos/{owner}/{repo}");
+                if (repoResponse.IsSuccessStatusCode)
+                {
+                    var repoJson = await repoResponse.Content.ReadAsStringAsync();
+                    var repoData = JsonSerializer.Deserialize<JsonElement>(repoJson);
+                    if (repoData.TryGetProperty("default_branch", out var defaultBranchElement))
+                    {
+                        defaultBranch = defaultBranchElement.GetString();
+                    }
+                }
+                
+                // 获取分支列表
+                var branchesResponse = await httpClient.GetAsync($"https://api.github.com/repos/{owner}/{repo}/branches");
+                if (branchesResponse.IsSuccessStatusCode)
+                {
+                    var branchesJson = await branchesResponse.Content.ReadAsStringAsync();
+                    var branchesData = JsonSerializer.Deserialize<JsonElement>(branchesJson);
+                    if (branchesData.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var branch in branchesData.EnumerateArray())
+                        {
+                            if (branch.TryGetProperty("name", out var nameElement))
+                            {
+                                branches.Add(nameElement.GetString() ?? "");
+                            }
+                        }
+                    }
+                }
+            }
+            else if (uri.Host.Contains("gitee.com"))
+            {
+                // Gitee API
+                var repoUrl = $"https://gitee.com/api/v5/repos/{owner}/{repo}";
+                var branchesUrl = $"https://gitee.com/api/v5/repos/{owner}/{repo}/branches";
+                
+                if (!string.IsNullOrEmpty(gitPassword))
+                {
+                    repoUrl += $"?access_token={gitPassword}";
+                    branchesUrl += $"?access_token={gitPassword}";
+                }
+                
+                // 获取仓库信息
+                var repoResponse = await httpClient.GetAsync(repoUrl);
+                if (repoResponse.IsSuccessStatusCode)
+                {
+                    var repoJson = await repoResponse.Content.ReadAsStringAsync();
+                    var repoData = JsonSerializer.Deserialize<JsonElement>(repoJson);
+                    if (repoData.TryGetProperty("default_branch", out var defaultBranchElement))
+                    {
+                        defaultBranch = defaultBranchElement.GetString();
+                    }
+                }
+                
+                // 获取分支列表
+                var branchesResponse = await httpClient.GetAsync(branchesUrl);
+                if (branchesResponse.IsSuccessStatusCode)
+                {
+                    var branchesJson = await branchesResponse.Content.ReadAsStringAsync();
+                    var branchesData = JsonSerializer.Deserialize<JsonElement>(branchesJson);
+                    if (branchesData.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var branch in branchesData.EnumerateArray())
+                        {
+                            if (branch.TryGetProperty("name", out var nameElement))
+                            {
+                                branches.Add(nameElement.GetString() ?? "");
+                            }
+                        }
+                    }
+                }
+            }
+            else if (uri.Host.Contains("gitlab"))
+            {
+                // GitLab API
+                var apiBaseUrl = $"{uri.Scheme}://{uri.Host}/api/v4";
+                var projectPath = Uri.EscapeDataString($"{owner}/{repo}");
+                
+                var headers = new Dictionary<string, string>();
+                if (!string.IsNullOrEmpty(gitPassword))
+                {
+                    headers["Authorization"] = $"Bearer {gitPassword}";
+                }
+                
+                foreach (var header in headers)
+                {
+                    httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                }
+                
+                // 获取项目信息
+                var repoResponse = await httpClient.GetAsync($"{apiBaseUrl}/projects/{projectPath}");
+                if (repoResponse.IsSuccessStatusCode)
+                {
+                    var repoJson = await repoResponse.Content.ReadAsStringAsync();
+                    var repoData = JsonSerializer.Deserialize<JsonElement>(repoJson);
+                    if (repoData.TryGetProperty("default_branch", out var defaultBranchElement))
+                    {
+                        defaultBranch = defaultBranchElement.GetString();
+                    }
+                }
+                
+                // 获取分支列表
+                var branchesResponse = await httpClient.GetAsync($"{apiBaseUrl}/projects/{projectPath}/repository/branches");
+                if (branchesResponse.IsSuccessStatusCode)
+                {
+                    var branchesJson = await branchesResponse.Content.ReadAsStringAsync();
+                    var branchesData = JsonSerializer.Deserialize<JsonElement>(branchesJson);
+                    if (branchesData.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var branch in branchesData.EnumerateArray())
+                        {
+                            if (branch.TryGetProperty("name", out var nameElement))
+                            {
+                                branches.Add(nameElement.GetString() ?? "");
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // 不支持的Git平台，返回默认分支
+                branches.AddRange(new[] { "main", "master" });
+                defaultBranch = "main";
+            }
+            
+            // 如果没有获取到分支，提供默认值
+            if (!branches.Any())
+            {
+                branches.AddRange(new[] { "main", "master" });
+                defaultBranch = defaultBranch ?? "main";
+            }
+            
+            // 如果没有默认分支，尝试从分支列表中推断
+            if (string.IsNullOrEmpty(defaultBranch) && branches.Any())
+            {
+                if (branches.Contains("main"))
+                {
+                    defaultBranch = "main";
+                }
+                else if (branches.Contains("master"))
+                {
+                    defaultBranch = "master";
+                }
+                else
+                {
+                    defaultBranch = branches.First();
+                }
+            }
+            
+            return ResultDto<object>.Success(new
+            {
+                branches = branches.Distinct().OrderBy(b => b).ToList(),
+                defaultBranch = defaultBranch
+            });
+        }
+        catch (Exception ex)
+        {
+            return ResultDto<object>.Error($"获取分支列表失败: {ex.Message}");
+        }
     }
 }

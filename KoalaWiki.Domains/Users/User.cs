@@ -42,5 +42,25 @@ public class User : Entity<string>
     /// <summary>
     /// 用户最后登录IP
     /// </summary>
-    public string? LastLoginIp { get; set; } 
+    public string? LastLoginIp { get; set; }
+
+    /// <summary>
+    /// 用户简介
+    /// </summary>
+    public string? Bio { get; set; }
+
+    /// <summary>
+    /// 用户位置
+    /// </summary>
+    public string? Location { get; set; }
+
+    /// <summary>
+    /// 用户个人网站
+    /// </summary>
+    public string? Website { get; set; }
+
+    /// <summary>
+    /// 用户公司
+    /// </summary>
+    public string? Company { get; set; }
 }

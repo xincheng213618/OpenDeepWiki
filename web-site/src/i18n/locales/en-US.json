@@ -1,0 +1,351 @@
+{
+  "common": {
+    "search": "Search",
+    "add": "Add",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading...",
+    "refresh": "Refresh",
+    "clear": "Clear",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "prev": "Previous",
+    "total": "Total {{count}} items",
+    "no_data": "No data",
+    "error": "Error",
+    "success": "Success",
+    "failed": "Failed",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "viewOnGithub": "View on GitHub"
+  },
+  "nav": {
+    "home": "Home",
+    "repositories": "Repositories",
+    "docs": "Docs",
+    "about": "About",
+    "login": "Login",
+    "register": "Register",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "home": {
+    "title": "AI-Driven Code Knowledge Base",
+    "subtitle": "AI-driven code knowledge base supporting code analysis, document generation, and knowledge graph creation",
+    "search_placeholder": "Search repository name or address",
+    "add_repository": "Add Repository",
+    "query_last_repo": "Query Latest Repository",
+    "repository_list": {
+      "title": "Repository List",
+      "empty": "No repository data",
+      "empty_description": "Please try adjusting search criteria or try again later",
+      "not_found": "No related repositories found",
+      "loading": "Loading repository data..."
+    },
+    "repository_card": {
+      "recommended": "Recommended",
+      "branch": "Branch",
+      "created": "Created",
+      "updated": "Updated",
+      "status": {
+        "pending": "Pending",
+        "processing": "Processing",
+        "completed": "Completed",
+        "failed": "Failed"
+      }
+    },
+    "sponsors": {
+      "title": "Partners",
+      "thanks": "Thanks to the above partners for supporting the OpenDeepWiki project"
+    }
+  },
+  "footer": {
+    "copyright": "© {{year}} OpenDeepWiki. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "github": "GitHub"
+  },
+  "login": {
+    "title": "Login to KoalaWiki",
+    "subtitle": "Sign in with your account",
+    "form": {
+      "username": "Username/Email",
+      "username_placeholder": "Enter username or email",
+      "password": "Password",
+      "password_placeholder": "Enter password",
+      "remember_me": "Remember me",
+      "forgot_password": "Forgot password?",
+      "login": "Login",
+      "logging_in": "Logging in..."
+    },
+    "oauth": {
+      "github": "Login with GitHub",
+      "google": "Login with Google"
+    },
+    "or_use_credentials": "Or use credentials",
+    "no_account": "Don't have an account?",
+    "register_now": "Register now",
+    "validation": {
+      "required_fields": "Please enter username and password"
+    },
+    "messages": {
+      "success": "Login successful",
+      "failed": "Login failed, please check username and password",
+      "error": "An error occurred during login, please try again"
+    }
+  },
+  "register": {
+    "title": "Register for KoalaWiki",
+    "subtitle": "Create a new account",
+    "form": {
+      "username": "Username",
+      "username_placeholder": "Enter username (at least 4 characters)",
+      "email": "Email",
+      "email_placeholder": "Enter email address",
+      "password": "Password",
+      "password_placeholder": "Enter password (at least 8 characters)",
+      "confirm_password": "Confirm Password",
+      "confirm_password_placeholder": "Enter password again",
+      "agreement": "I have read and agree to the",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "register": "Register",
+      "registering": "Registering..."
+    },
+    "oauth": {
+      "github": "Register with GitHub",
+      "google": "Register with Google"
+    },
+    "or_use_email": "Or register with email",
+    "have_account": "Already have an account?",
+    "login_now": "Login now",
+    "validation": {
+      "username_required": "Please enter username",
+      "username_min_length": "Username must be at least 4 characters",
+      "email_required": "Please enter email address",
+      "email_invalid": "Please enter a valid email address",
+      "password_required": "Please enter password",
+      "password_min_length": "Password must be at least 8 characters",
+      "confirm_password_required": "Please confirm password",
+      "passwords_not_match": "Passwords do not match",
+      "agreement_required": "Please read and agree to the Terms of Service and Privacy Policy"
+    },
+    "messages": {
+      "success": "Registration successful",
+      "failed": "Registration failed",
+      "error": "An error occurred during registration, please try again"
+    }
+  },
+  "repository": {
+    "form": {
+      "title": "Add Repository",
+      "description": "Add a Git repository or upload local files to create a knowledge base",
+      "addRepository": "Add Repository",
+      "gitRepository": "Git Repository",
+      "fileUpload": "File Upload",
+      "customRepository": "Custom Repository",
+      "repositoryAddress": "Repository Address",
+      "customDescription": "Manually specify organization and repository names for special scenarios",
+      "organizationName": "Organization Name",
+      "organizationNamePlaceholder": "e.g., OpenDeepWiki",
+      "repositoryName": "Repository Name",
+      "repositoryNamePlaceholder": "e.g., KoalaWiki",
+      "customAddressPlaceholder": "Enter full repository address",
+      "customBranchPlaceholder": "e.g., main or master",
+      "branch": "Branch",
+      "selectBranch": "Select Branch",
+      "enableAuth": "Enable Authentication",
+      "authDescription": "Private repositories require authentication credentials",
+      "username": "Username",
+      "usernamePlaceholder": "Git username",
+      "password": "Password/Access Token",
+      "passwordPlaceholder": "Password or personal access token",
+      "fileUploadDescription": "Upload files in ZIP, TAR, or TAR.GZ format",
+      "uploadMethod": "Upload Method",
+      "urlUpload": "URL Upload",
+      "localFile": "Local File",
+      "fileUrl": "File URL",
+      "selectFile": "Select File",
+      "selectedFile": "Selected File",
+      "aiSettings": "AI Settings",
+      "optional": "Optional",
+      "model": "Model",
+      "apiKey": "API Key",
+      "endpoint": "API Endpoint",
+      "customPrompt": "Custom Prompt",
+      "promptPlaceholder": "Enter custom prompt (optional)",
+      "submitSuccess": "Repository submitted successfully",
+      "submitFailed": "Failed to submit repository",
+      "validation": {
+        "addressRequired": "Please enter repository address",
+        "branchRequired": "Please select a branch",
+        "fileRequired": "Please select a file to upload",
+        "fileUrlRequired": "Please enter file URL",
+        "organizationNameRequired": "Please enter organization name",
+        "repositoryNameRequired": "Please enter repository name"
+      }
+    },
+    "nav": {
+      "overview": "Overview",
+      "documents": "Documents",
+      "fileTree": "File Tree",
+      "mindmap": "Knowledge Graph",
+      "changelog": "Changelog",
+      "settings": "Settings"
+    },
+    "layout": {
+      "branch": "Branch",
+      "selectBranch": "Select Branch",
+      "documentTree": "Document Tree",
+      "noDocuments": "No documents available",
+      "fetchBranchesError": "Failed to fetch branches",
+      "fetchDocumentsError": "Failed to fetch documents",
+      "loadingDocuments": "Loading documents...",
+      "searchDocuments": "Search documents",
+      "expandAll": "Expand All",
+      "collapseAll": "Collapse All"
+    },
+    "detail": {
+      "cloneCommand": "Clone Command",
+      "statistics": "Statistics",
+      "statisticsDescription": "Repository statistics overview",
+      "documents": "Documents",
+      "commits": "Commits",
+      "contributors": "Contributors",
+      "stars": "Stars",
+      "loadFailed": "Failed to load repository information",
+      "notFound": "Repository not found",
+      "backToHome": "Back to Home",
+      "export": "Export",
+      "tabs": {
+        "overview": "Overview",
+        "documents": "Documents",
+        "mindmap": "Knowledge Graph"
+      },
+      "basicInfo": "Basic Information",
+      "organization": "Organization",
+      "repositoryName": "Repository Name",
+      "status": "Status",
+      "gitInfo": "Git Information",
+      "repositoryUrl": "Repository URL",
+      "branch": "Branch",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "documentList": "Document List",
+      "documentListDescription": "Browse and manage documents in the repository",
+      "documentsComingSoon": "Documents feature coming soon...",
+      "knowledgeGraph": "Knowledge Graph",
+      "knowledgeGraphDescription": "Visualize the knowledge structure of the repository",
+      "mindmapComingSoon": "Knowledge graph feature coming soon..."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account and preferences",
+    "navigation": {
+      "profile": "Account Info",
+      "security": "Security Settings",
+      "preferences": "Preferences"
+    },
+    "profile": {
+      "title": "Account Information",
+      "subtitle": "Manage your personal profile and basic information",
+      "basic_info": "Basic Information",
+      "basic_info_desc": "Manage your profile information",
+      "avatar": {
+        "upload": "Upload Avatar",
+        "remove": "Remove Avatar",
+        "upload_success": "Avatar uploaded successfully",
+        "upload_failed": "Failed to upload avatar",
+        "remove_success": "Avatar removed successfully",
+        "remove_failed": "Failed to remove avatar",
+        "confirm_remove": "Confirm Remove Avatar",
+        "confirm_remove_desc": "Are you sure you want to remove the current avatar? This action cannot be undone.",
+        "format_tip": "Supports JPG, PNG, GIF formats, file size no more than 2MB",
+        "format_error": "Only JPG/PNG/GIF format images can be uploaded!",
+        "size_error": "Image size cannot exceed 2MB!",
+        "verified": "Verified"
+      },
+      "form": {
+        "username": "Username",
+        "username_placeholder": "Enter username",
+        "email": "Email Address",
+        "email_placeholder": "Enter email address",
+        "save_changes": "Save Changes",
+        "saving": "Saving...",
+        "update_success": "Personal information updated successfully",
+        "update_failed": "Update failed, please try again"
+      },
+      "validation": {
+        "username_min": "Username must be at least 2 characters",
+        "email_invalid": "Please enter a valid email address"
+      }
+    },
+    "security": {
+      "title": "Security Settings",
+      "subtitle": "Manage your account security and password settings",
+      "change_password": "Change Password",
+      "change_password_desc": "Regularly changing your password helps protect your account security. Please use a strong password.",
+      "form": {
+        "current_password": "Current Password",
+        "current_password_placeholder": "Enter current password",
+        "new_password": "New Password",
+        "new_password_placeholder": "Enter new password",
+        "confirm_password": "Confirm New Password",
+        "confirm_password_placeholder": "Enter new password again",
+        "password_requirements": "Password must be at least 8 characters and contain uppercase and lowercase letters and numbers",
+        "update_password": "Update Password",
+        "updating": "Updating...",
+        "current_password_error": "Current password is incorrect",
+        "update_success": "Password changed successfully",
+        "update_failed": "Failed to change password, please try again"
+      },
+      "validation": {
+        "current_password_required": "Please enter current password",
+        "new_password_min": "Password must be at least 8 characters",
+        "new_password_pattern": "Password must contain uppercase and lowercase letters and numbers",
+        "passwords_not_match": "Passwords do not match"
+      }
+    },
+    "preferences": {
+      "title": "Preferences",
+      "subtitle": "Customize your app experience and notification preferences",
+      "app_settings": "App Settings",
+      "app_settings_desc": "Manage your app preferences and notification options",
+      "notifications": {
+        "email_notifications": "Email Notifications",
+        "email_notifications_desc": "Receive important updates and notification emails",
+        "desktop_notifications": "Desktop Notifications",
+        "desktop_notifications_desc": "Show real-time notifications on desktop"
+      },
+      "general": {
+        "auto_save": "Auto Save",
+        "auto_save_desc": "Automatically save your work progress",
+        "language": "Interface Language",
+        "language_desc": "Choose your preferred interface language",
+        "language_placeholder": "Select language"
+      },
+      "auto_save_note": "Settings will be saved automatically"
+    },
+    "common": {
+      "back": "Back",
+      "updating": "Updating...",
+      "get_user_info_failed": "Failed to get user information, please login again",
+      "load_user_info_failed": "Failed to load user information"
+    }
+  },
+  "messages": {
+    "network_error": "Network error, please check your connection",
+    "server_error": "Server error, please try again later",
+    "unknown_error": "Unknown error",
+    "operation_success": "Operation successful",
+    "operation_failed": "Operation failed"
+  }
+}

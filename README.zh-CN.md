@@ -14,12 +14,6 @@
 
 我们的企业服务为寻求专业人工智能解决方案的各类企业提供全面的支持和灵活性。
 
-# 赞助商 Sponsor
-
-[![302.AI](https://github.com/user-attachments/assets/b1bcb56e-38cb-47bf-adfe-7a21d83774b4)](https://share.302.ai/jXcaTv)
-
-[302.AI](https://share.302.ai/jXcaTv) 是一个按需付费的一站式企业级AI应用平台，提供开放平台和开源生态，助力AI解决各种需求。点击[这里](https://share.302.ai/jXcaTv)获取1美元免费额度！
-
 ---
 
 # 功能 Features

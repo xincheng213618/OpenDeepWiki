@@ -15,7 +15,7 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.6");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
 
             modelBuilder.Entity("KoalaWiki.Domains.AppConfig", b =>
                 {
@@ -1041,6 +1041,12 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Bio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Company")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT")
                         .HasComment("创建时间");
@@ -1057,6 +1063,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                     b.Property<string>("LastLoginIp")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Location")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -1068,6 +1077,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .HasComment("密码");
 
                     b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Website")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
