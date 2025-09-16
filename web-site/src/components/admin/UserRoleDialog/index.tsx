@@ -62,7 +62,7 @@ const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
 
     try {
       const response = await userService.getUserRoles(user.id)
-      const roleIds = response.data || []
+      const roleIds = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : [])
       setCurrentUserRoleIds(roleIds)
       setSelectedRoleIds([...roleIds])
     } catch (error) {

@@ -208,43 +208,55 @@ const DocumentSettingsTab: React.FC<DocumentSettingsTabProps> = ({
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="maxFileReadCount">{t('settings.document.maxFileReadCount')}</Label>
+                <Label htmlFor="readMaxTokens">{t('settings.document.readMaxTokens')}</Label>
                 <Input
-                  id="maxFileReadCount"
+                  id="readMaxTokens"
                   type="number"
-                  value={getNumberValue('MaxFileReadCount') || ''}
-                  onChange={(e) => onUpdate('MaxFileReadCount', e.target.value)}
-                  placeholder="15"
-                  min={1}
-                  max={1000}
+                  value={getNumberValue('ReadMaxTokens') || ''}
+                  onChange={(e) => onUpdate('ReadMaxTokens', e.target.value)}
+                  placeholder="80000"
+                  min={1000}
+                  max={200000}
                   disabled={loading}
-                  className={validationErrors.MaxFileReadCount ? 'border-destructive' : ''}
+                  className={validationErrors.ReadMaxTokens ? 'border-destructive' : ''}
                 />
-                {validationErrors.MaxFileReadCount ? (
-                  <p className="text-sm text-destructive">{validationErrors.MaxFileReadCount}</p>
+                {validationErrors.ReadMaxTokens ? (
+                  <p className="text-sm text-destructive">{validationErrors.ReadMaxTokens}</p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">{t('settings.document.maxFileReadCountHelp')}</p>
+                  <p className="text-sm text-muted-foreground">{t('settings.document.readMaxTokensHelp')}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="defaultLanguage">{t('settings.document.defaultLanguage')}</Label>
-                <Select
+                <Input
+                  id="defaultLanguage"
                   value={getSettingValue('defaultLanguage')}
-                  onValueChange={(value) => onUpdate('defaultLanguage', value)}
+                  onChange={(e) => onUpdate('defaultLanguage', e.target.value)}
+                  placeholder={t('settings.document.defaultLanguagePlaceholder')}
                   disabled={loading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('settings.document.defaultLanguagePlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {supportedLanguages.map(lang => (
-                      <SelectItem key={lang} value={lang}>
-                        {lang}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">{t('settings.document.defaultLanguageHelp')}</p>
+                  className={validationErrors.defaultLanguage ? 'border-destructive' : ''}
+                />
+                {validationErrors.defaultLanguage ? (
+                  <p className="text-sm text-destructive">{validationErrors.defaultLanguage}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('settings.document.defaultLanguageHelp')}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="proxy">{t('settings.document.proxy')}</Label>
+                <Input
+                  id="proxy"
+                  value={getSettingValue('Proxy')}
+                  onChange={(e) => onUpdate('Proxy', e.target.value)}
+                  placeholder={t('settings.document.proxyPlaceholder')}
+                  disabled={loading}
+                  className={validationErrors.Proxy ? 'border-destructive' : ''}
+                />
+                {validationErrors.Proxy ? (
+                  <p className="text-sm text-destructive">{validationErrors.Proxy}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('settings.document.proxyHelp')}</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -361,6 +373,19 @@ const DocumentSettingsTab: React.FC<DocumentSettingsTabProps> = ({
                   <Switch
                     checked={getBooleanValue('EnableCodeCompression')}
                     onCheckedChange={(checked) => onUpdate('EnableCodeCompression', checked.toString())}
+                    disabled={loading}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{t('settings.document.enableAgentTool')}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t('settings.document.enableAgentToolHelp')}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={getBooleanValue('EnableAgentTool')}
+                    onCheckedChange={(checked) => onUpdate('EnableAgentTool', checked.toString())}
                     disabled={loading}
                   />
                 </div>
@@ -486,29 +511,6 @@ const DocumentSettingsTab: React.FC<DocumentSettingsTabProps> = ({
               </div>
             </CardContent>
           </Card>
-
-          {/* 文档处理统计 */}
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>{t('settings.document.processingStats')}</AlertTitle>
-            <AlertDescription>
-              <p className="mb-3">{t('settings.document.processingStatsDescription')}</p>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                  {t('settings.document.totalRepositories')}: 45
-                </Badge>
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  {t('settings.document.processedFiles')}: 12,350
-                </Badge>
-                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                  {t('settings.document.avgProcessingTime')}: 2.5s
-                </Badge>
-                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                  {t('settings.document.successRate')}: 98.7%
-                </Badge>
-              </div>
-            </AlertDescription>
-          </Alert>
 
           {/* 文档处理优化建议 */}
           <Card>

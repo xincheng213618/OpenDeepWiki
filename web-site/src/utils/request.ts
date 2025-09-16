@@ -17,31 +17,31 @@ const requestInterceptor = (headers: HeadersInit = {}): HeadersInit => {
 
 // 封装请求方法
 export const request = {
-  get: async <T = any>(url: string, params?: Record<string, any>): Promise<T> => {
+  get: async <T = any>(url: string, options?: { params?: Record<string, any>; [key: string]: any }): Promise<T> => {
     return fetchService.get<T>(url, {
-      params,
-      headers: requestInterceptor()
+      ...options,
+      headers: requestInterceptor(options?.headers)
     })
   },
 
-  post: async <T = any>(url: string, data?: any, params?: Record<string, any>): Promise<T> => {
+  post: async <T = any>(url: string, data?: any, options?: { params?: Record<string, any>; [key: string]: any }): Promise<T> => {
     return fetchService.post<T>(url, data, {
-      params,
-      headers: requestInterceptor()
+      ...options,
+      headers: requestInterceptor(options?.headers)
     })
   },
 
-  put: async <T = any>(url: string, data?: any, params?: Record<string, any>): Promise<T> => {
+  put: async <T = any>(url: string, data?: any, options?: { params?: Record<string, any>; [key: string]: any }): Promise<T> => {
     return fetchService.put<T>(url, data, {
-      params,
-      headers: requestInterceptor()
+      ...options,
+      headers: requestInterceptor(options?.headers)
     })
   },
 
-  delete: async <T = any>(url: string, params?: Record<string, any>): Promise<T> => {
+  delete: async <T = any>(url: string, options?: { params?: Record<string, any>; [key: string]: any }): Promise<T> => {
     return fetchService.delete<T>(url, {
-      params,
-      headers: requestInterceptor()
+      ...options,
+      headers: requestInterceptor(options?.headers)
     })
   }
 }

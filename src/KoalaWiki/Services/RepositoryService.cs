@@ -993,7 +993,7 @@ public class RepositoryService(
     /// </summary>
     [HttpGet("DocumentCatalogs")]
     [EndpointSummary("仓库管理：获取仓库文档目录")]
-    public async Task<List<DocumentCatalogDto>> GetDocumentCatalogsAsync(string repositoryId)
+    public async Task<List<TreeNode>> GetDocumentCatalogsAsync(string repositoryId)
     {
         // 检查用户权限
         if (!await CheckWarehouseAccessAsync(repositoryId))
@@ -1007,18 +1007,10 @@ public class RepositoryService(
             .OrderBy(x => x.Order)
             .ToListAsync();
 
-        return catalogs.Select(c => new DocumentCatalogDto
-        {
-            Id = c.Id,
-            Name = c.Name,
-            Url = c.Url,
-            Prompt = c.Prompt,
-            ParentId = c.ParentId,
-            Order = c.Order,
-            WarehouseId = c.WarehouseId,
-            IsCompleted = c.IsCompleted,
-            CreatedAt = c.CreatedAt
-        }).ToList();
+        // 构建树形结构
+        var result = BuildDocumentCatalogTree(catalogs);
+
+        return result;
     }
 
     /// <summary>

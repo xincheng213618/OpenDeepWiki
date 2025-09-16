@@ -227,13 +227,12 @@ export interface UpdateRepositoryDto {
 }
 
 export interface RepositoryStatsDto {
-  totalRepositories: number
-  completedRepositories: number
-  processingRepositories: number
-  pendingRepositories: number
-  failedRepositories: number
-  totalDocuments: number
-  recentGrowth?: string
+  TotalDocuments: number
+  CompletedDocuments: number
+  PendingDocuments: number
+  TotalFiles: number
+  LastSyncTime?: string
+  ProcessingStatus: string
 }
 
 export interface RepositoryPermissionDto {
@@ -322,12 +321,72 @@ export const repositoryService = {
 
   // 获取仓库详情
   getRepositoryDetail: async (id: string) => {
-    return request.get<WarehouseInfo>(`/api/Repository/Repository?id=${id}`)
+    const response = await request.get<{ data: WarehouseInfo }>(`/api/Repository/Repository?id=${id}`)
+    return response.data
   },
 
   // 获取仓库统计信息
   getRepositoryStats: async () => {
     return request.get<RepositoryStatsDto>('/api/Warehouse/Stats')
+  },
+
+  // 获取仓库统计信息(按ID)
+  getRepositoryStatsById: async (id: string) => {
+    return request.get<RepositoryStatsDto>(`/api/Repository/RepositoryStats`, {
+      params: { id }
+    })
+  },
+
+  // 获取仓库文件目录结构
+  getFiles: async (id: string) => {
+    return request.get<TreeNode[]>(`/api/Repository/Files`, {
+      params: { id }
+    })
+  },
+
+  // 获取仓库文档目录
+  getDocumentCatalogs: async (repositoryId: string) =>  {
+    return request.get<DocumentCatalogDto[]>(`/api/Repository/DocumentCatalogs`, {
+      params: { repositoryId }
+    })
+  },
+
+  // 获取文件内容
+  getFileContent: async (catalogId: string) => {
+    return request.get<string>(`/api/Repository/FileContent`, {
+      params: { id: catalogId }
+    })
+  },
+
+  // 保存文件内容
+  saveFileContent: async (catalogId: string, content: string, repositoryId?: string) => {
+    const data = { id: catalogId, content }
+    const params = repositoryId ? { repositoryId } : {}
+    return request.post<boolean>(`/api/Repository/FileContent`, data, { params })
+  },
+
+  // 刷新/重置仓库
+  refreshWarehouse: async (id: string) => {
+    return request.post<boolean>(`/api/Repository/ResetRepository`, null, {
+      params: { id }
+    })
+  },
+
+  // 删除仓库
+  deleteWarehouse: async (id: string) => {
+    return request.delete<boolean>(`/api/Repository/Repository`, {
+      params: { id }
+    })
+  },
+
+  // 导出仓库Markdown
+  exportRepositoryMarkdown: async (id: string) => {
+    // 这个需要根据实际后端API调整
+    const response = await request.get(`/api/Repository/Export`, {
+      params: { id },
+      responseType: 'blob'
+    })
+    return response as Blob
   },
 
   // 创建Git仓库
@@ -367,16 +426,16 @@ export const repositoryService = {
 
   // 获取仓库日志
   getRepositoryLogs: async (
-    id: string,
+    repositoryId: string,
     page: number = 1,
     pageSize: number = 10
   ) => {
     const params = new URLSearchParams({
-      id,
+      repositoryId,
       page: page.toString(),
       pageSize: pageSize.toString()
     })
-    return request.get<PageDto<RepositoryLogDto>>(`/api/Warehouse/GetLogs?${params}`)
+    return request.get<PageDto<RepositoryLogDto>>(`/api/Repository/RepositoryLogs?${params}`)
   },
 
   // 获取Git分支列表
@@ -426,15 +485,12 @@ export const systemSettingsService = {
   // 获取所有系统设置分组
   getSettingGroups: async (): Promise<SystemSettingGroup[]> => {
     try {
-      const response = await request.get<SystemSettingGroup[]>('/api/SystemSetting/groups')
-      // 确保返回的是数组，并且每个组都有正确的结构
-      if (Array.isArray(response)) {
-        return response.map(group => ({
-          group: group.group || '',
-          settings: Array.isArray(group.settings) ? group.settings : []
-        }))
-      }
-      return []
+      const response = await request.get<any>('/api/SystemSetting/groups')
+
+      return response.data.map((group: any) => ({
+        group: group.group || '',
+        settings: Array.isArray(group.settings) ? group.settings : []
+      }))
     } catch (error) {
       console.error('Failed to load setting groups:', error)
       return []

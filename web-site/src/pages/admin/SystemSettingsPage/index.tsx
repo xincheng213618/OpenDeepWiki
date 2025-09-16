@@ -343,7 +343,7 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
             onClick={() => setImportExportVisible(true)}
           >
             <Import className="w-4 h-4 mr-2" />
-            {t('settings.importExport')}
+            {t('settings.importExport.title')}
           </Button>
 
           <Button
@@ -465,7 +465,7 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
       <Dialog open={importExportVisible} onOpenChange={setImportExportVisible}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{t('settings.importExport')}</DialogTitle>
+            <DialogTitle>{t('settings.importExport.title')}</DialogTitle>
           </DialogHeader>
           <SettingsImportExport onClose={() => setImportExportVisible(false)} />
         </DialogContent>

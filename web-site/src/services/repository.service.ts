@@ -48,6 +48,16 @@ class RepositoryService {
   }
 
   /**
+   * 获取仓库文件目录结构
+   */
+  async getFiles(id: string): Promise<any[]> {
+    return fetchService.get<any[]>(
+      `${this.basePath}/Files`,
+      { params: { id } }
+    )
+  }
+
+  /**
    * 创建Git仓库
    */
   async createGitRepository(data: CreateGitRepositoryDto): Promise<RepositoryInfo> {

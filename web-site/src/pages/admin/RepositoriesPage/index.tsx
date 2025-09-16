@@ -98,16 +98,19 @@ const RepositoriesPage: React.FC = () => {
   const loadRepositories = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await repositoryService.getRepositoryList(
+      const { data } = await repositoryService.getRepositoryList(
         currentPage,
         pageSize,
         searchQuery || undefined,
         statusFilter === 'all' ? undefined : statusFilter
-      )
-      // 处理嵌套的data结构
-      const data = response.items || []
-      setRepositories(data)
-      setTotal(data.length || 0)
+      ) as any
+      // 调试日志
+      console.log('API Response:', data)
+      console.log('Response items:', data.items)
+      console.log('Response total:', data.total)
+      // 处理API响应数据结构
+      setRepositories(data.items || [])
+      setTotal(data.total || 0)
       // 清空选中状态
       setSelectedRepositories([])
     } catch (error) {

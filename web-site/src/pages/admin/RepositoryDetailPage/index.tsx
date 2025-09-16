@@ -1,6 +1,6 @@
 // 仓库详情管理页面
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,9 +26,9 @@ import {
 } from '@/components/ui/breadcrumb'
 import {
   ChevronLeft,
+  ChevronDown,
+  ChevronRight,
   File,
-  Folder,
-  FolderOpen,
   Save,
   RefreshCw,
   Settings,
@@ -61,7 +61,7 @@ import {
   History
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { warehouseService, type WarehouseInfo, type RepositoryLogDto } from '@/services/admin.service'
+import { type WarehouseInfo, type RepositoryLogDto, repositoryService } from '@/services/admin.service'
 import { toast } from 'sonner'
 
 interface TreeNode {
@@ -75,7 +75,7 @@ interface TreeNode {
   children?: TreeNode[]
   size?: number
   lastModified?: string
-  content?: string
+  content?: string // 明确定义为字符串类型
   catalog?: DocumentCatalog
 }
 
@@ -144,7 +144,6 @@ const RepositoryDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [stats, setStats] = useState<RepositoryStats | null>(null)
-  const [catalogs, setCatalogs] = useState<DocumentCatalog[]>([])
   const [permissions, setPermissions] = useState<PermissionInfo[]>([])
   const [tasks, setTasks] = useState<TaskInfo[]>([])
   const [logs, setLogs] = useState<RepositoryLogDto[]>([])
@@ -153,6 +152,27 @@ const RepositoryDetailPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [syncDialogOpen, setSyncDialogOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+
+  // 收集所有可展开的节点ID
+  const collectExpandableNodes = useCallback((nodes: any[]): string[] => {
+    const nodeIds: string[] = []
+
+    const traverse = (nodeList: any[]) => {
+      nodeList.forEach(node => {
+        const nodeId = node.key || node.id || ''
+        const isFolder = !node.isLeaf
+        const hasChildren = isFolder && node.children && Array.isArray(node.children) && node.children.length > 0
+
+        if (hasChildren) {
+          nodeIds.push(nodeId)
+          traverse(node.children)
+        }
+      })
+    }
+
+    traverse(nodes)
+    return nodeIds
+  }, [])
 
   // 加载仓库数据
   useEffect(() => {
@@ -163,22 +183,27 @@ const RepositoryDetailPage: React.FC = () => {
         setLoading(true)
 
         // 获取仓库详情
-        const repoResponse = await warehouseService.getWarehouseById(id)
+        const repoResponse = await repositoryService.getRepositoryDetail(id)
         setRepository(repoResponse)
 
-        // 获取文件目录结构
-        const filesResponse = await warehouseService.getFiles(id)
-        setTreeData(filesResponse || [])
+        // 获取文档目录树 - 使用DocumentCatalogs接口
+        const { data } = await repositoryService.getDocumentCatalogs(id) as any
+        if (data && Array.isArray(data)) {
+          // 后端已经返回TreeNode格式的树形结构，直接使用
+          setTreeData(data)
 
-        // 获取文档目录
-        const catalogsResponse = await warehouseService.getDocumentCatalogs(id)
-        setCatalogs(catalogsResponse || [])
+          // 自动展开所有可展开的节点
+          const expandableNodeIds = collectExpandableNodes(data)
+          setExpandedNodes(new Set(expandableNodeIds))
+        } else {
+          setTreeData([])
+        }
 
         // 获取仓库统计信息
-        loadRepositoryStats(id)
+        await loadRepositoryStats(id)
 
         // 获取操作日志
-        loadRepositoryLogs(id)
+        await loadRepositoryLogs(id)
 
       } catch (error) {
         console.error('Failed to load repository data:', error)
@@ -194,14 +219,14 @@ const RepositoryDetailPage: React.FC = () => {
   const loadRepositoryStats = async (repoId: string) => {
     try {
       // 从API获取统计数据
-      const statsResponse = await warehouseService.getRepositoryStatsById(repoId)
+      const statsResponse = await repositoryService.getRepositoryStatsById(repoId)
       const stats: RepositoryStats = {
-        totalDocuments: statsResponse.totalDocuments || 0,
-        totalFiles: statsResponse.totalFiles || 0,
-        lastSyncTime: statsResponse.lastSyncTime ? new Date(statsResponse.lastSyncTime).toISOString() : undefined,
-        processingStatus: statsResponse.processingStatus || 'Pending',
-        completedDocuments: statsResponse.completedDocuments || 0,
-        pendingDocuments: statsResponse.pendingDocuments || 0,
+        totalDocuments: statsResponse.TotalDocuments || 0,
+        totalFiles: statsResponse.TotalFiles || 0,
+        lastSyncTime: statsResponse.LastSyncTime ? new Date(statsResponse.LastSyncTime).toISOString() : undefined,
+        processingStatus: statsResponse.ProcessingStatus || 'Pending',
+        completedDocuments: statsResponse.CompletedDocuments || 0,
+        pendingDocuments: statsResponse.PendingDocuments || 0,
         fileTypes: {},
         syncHistory: []
       }
@@ -223,40 +248,52 @@ const RepositoryDetailPage: React.FC = () => {
 
   const loadRepositoryLogs = async (repoId: string) => {
     try {
-      const response = await warehouseService.getRepositoryLogs(repoId, 1, 20)
+      const response = await repositoryService.getRepositoryLogs(repoId, 1, 20)
       setLogs(response.items || [])
     } catch (error) {
       console.error('Failed to load repository logs:', error)
     }
   }
 
-  const handleNodeClick = (node: TreeNode) => {
-    const nodeId = node.id || node.key || ''
-    const isFolder = node.type === 'folder' || (node.isLeaf === false)
+  const handleNodeClick = useCallback((node: any, isExpandToggle: boolean = false) => {
+    const nodeId = node.key || node.id || ''
+    const isFolder = !node.isLeaf
+
+    // 总是设置选中的节点（无论是文件夹还是文件）
+    setSelectedNode(node)
 
     if (isFolder) {
-      setExpandedNodes(prev => {
-        const newSet = new Set(prev)
-        if (newSet.has(nodeId)) {
-          newSet.delete(nodeId)
-        } else {
-          newSet.add(nodeId)
-        }
-        return newSet
-      })
+      // 只有在点击展开按钮时才切换展开状态
+      if (isExpandToggle) {
+        setExpandedNodes(prev => {
+          const newSet = new Set(prev)
+          if (newSet.has(nodeId)) {
+            newSet.delete(nodeId)
+          } else {
+            newSet.add(nodeId)
+          }
+          return newSet
+        })
+      }
+
+      // 如果文件夹有内容可以加载，也加载内容
+      if (node.catalog?.id) {
+        loadFileContent(node.catalog.id)
+      }
     } else {
-      setSelectedNode(node)
       // 如果是文档目录，加载文件内容
       if (node.catalog?.id) {
         loadFileContent(node.catalog.id)
       }
     }
-  }
+  }, [])
 
   const loadFileContent = async (catalogId: string) => {
     try {
-      const content = await warehouseService.getFileContent(catalogId)
-      setSelectedNode(prev => prev ? {...prev, content} : null)
+      const {data} = await repositoryService.getFileContent(catalogId) as any
+      // 确保content是字符串类型
+      const contentStr = typeof data === 'string' ? data : String(data || '')
+      setSelectedNode(prev => prev ? { ...prev, content: contentStr } : null)
     } catch (error) {
       console.error('Failed to load file content:', error)
     }
@@ -264,17 +301,21 @@ const RepositoryDetailPage: React.FC = () => {
 
   const handleContentChange = (content: string) => {
     if (selectedNode) {
-      setSelectedNode({ ...selectedNode, content })
+      // 确保content是字符串类型
+      const contentStr = typeof content === 'string' ? content : String(content || '')
+      setSelectedNode({ ...selectedNode, content: contentStr })
     }
   }
 
   const handleSave = async () => {
-    if (!selectedNode || !selectedNode.content) return
+    if (!selectedNode || !selectedNode.content || !id) return
 
     setSaving(true)
     try {
-      // 调用API保存内容
-      await warehouseService.saveFileContent(selectedNode.id, selectedNode.content)
+      // 确保content是字符串类型
+      const contentStr = typeof selectedNode.content === 'string' ? selectedNode.content : String(selectedNode.content || '')
+      // 调用API保存内容，传递仓库ID
+      await repositoryService.saveFileContent(selectedNode.id, contentStr, id)
       toast.success(t('admin.repositories.detail.file_save_success'))
     } catch (error) {
       toast.error(t('admin.repositories.detail.file_save_failed'))
@@ -288,7 +329,7 @@ const RepositoryDetailPage: React.FC = () => {
 
     setRefreshing(true)
     try {
-      await warehouseService.refreshWarehouse(id)
+      await repositoryService.refreshWarehouse(id)
       toast.success(t('admin.repositories.detail.repository_refresh_success'))
 
       // 重新加载数据
@@ -306,7 +347,7 @@ const RepositoryDetailPage: React.FC = () => {
     if (!id) return
 
     try {
-      await warehouseService.deleteWarehouse(id)
+      await repositoryService.deleteWarehouse(id)
       toast.success(t('admin.repositories.detail.repository_delete_success'))
       navigate('/admin/repositories')
     } catch (error) {
@@ -318,7 +359,7 @@ const RepositoryDetailPage: React.FC = () => {
     if (!id) return
 
     try {
-      await warehouseService.refreshWarehouse(id)
+      await repositoryService.refreshWarehouse(id)
       toast.success(t('admin.repositories.detail.sync_task_started'))
       setSyncDialogOpen(false)
 
@@ -333,7 +374,7 @@ const RepositoryDetailPage: React.FC = () => {
     if (!id) return
 
     try {
-      const blob = await warehouseService.exportRepositoryMarkdown(id)
+      const blob = await repositoryService.exportRepositoryMarkdown(id)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.style.display = 'none'
@@ -352,6 +393,7 @@ const RepositoryDetailPage: React.FC = () => {
 
   // 获取文件图标
   const getFileIcon = (fileName: string) => {
+    if (!fileName || typeof fileName !== 'string') return <File className="h-4 w-4 text-gray-600" />
     const extension = fileName.split('.').pop()?.toLowerCase()
 
     switch (extension) {
@@ -381,70 +423,162 @@ const RepositoryDetailPage: React.FC = () => {
     }
   }
 
-  // 渲染文件树节点
-  const renderTreeNode = (node: TreeNode, level: number = 0) => {
-    const nodeId = node.id || node.key || ''
-    const nodeName = node.name || node.title || ''
-    const isFolder = node.type === 'folder' || (node.isLeaf === false)
+  // 渲染文件树节点 - 完全参考 FumadocsSidebar 的实现
+  const renderTreeNode = useCallback((node: any, level: number = 0) => {
+    const nodeId = node.key || node.id || ''
+    const nodeName = node.title || node.name || ''
+    const isFolder = !node.isLeaf
     const isExpanded = expandedNodes.has(nodeId)
-    const isSelected = selectedNode?.id === nodeId
+    const isSelected = selectedNode?.key === nodeId || selectedNode?.id === nodeId
+    const hasChildren = isFolder && node.children && Array.isArray(node.children) && node.children.length > 0
+    const hasProgress = typeof node.progress === 'number'
+    const isDisabled = node.disabled || false
 
-    return (
-      <div key={nodeId}>
-        <div
-          className={cn(
-            "flex items-center space-x-2 py-1 px-2 rounded cursor-pointer hover:bg-accent",
-            isSelected && "bg-accent",
-            "transition-colors"
+    // Fumadocs 风格的缩进，增大字体和间距
+    const indent = level * 16 + 16 // 基础16px + 每级16px
+
+    if (hasChildren) {
+      return (
+        <div key={nodeId} className="group">
+          <div className="flex items-center">
+            {/* 展开/折叠按钮 */}
+            <button
+              className={cn(
+                "flex items-center justify-center w-5 h-5 hover:bg-accent/50 rounded transition-all duration-150 flex-shrink-0",
+                !isDisabled && "hover:bg-accent/50",
+                isDisabled && "opacity-50 cursor-not-allowed"
+              )}
+              style={{ marginLeft: `${indent - 20}px` }}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (isDisabled) return
+                handleNodeClick(node, true) // 传递 isExpandToggle = true
+              }}
+              disabled={isDisabled}
+            >
+              {isExpanded ? (
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+              )}
+            </button>
+
+            {/* 主要内容按钮 */}
+            <button
+              className={cn(
+                "flex items-center flex-1 py-2 px-3 text-sm transition-all duration-150 rounded-md relative ml-1",
+                !isDisabled && "hover:bg-accent/50 hover:text-accent-foreground",
+                isSelected && !isDisabled && "bg-accent text-accent-foreground font-medium",
+                isDisabled && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={(e) => {
+                if (isDisabled) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  return
+                }
+                handleNodeClick(node, false) // 传递 isExpandToggle = false
+              }}
+              disabled={isDisabled}
+            >
+              <span className="truncate flex-1 text-left font-normal">{nodeName}</span>
+              {node.catalog?.isCompleted && (
+                <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  完成
+                </span>
+              )}
+            </button>
+          </div>
+          {hasProgress && (
+            <div className="px-4 mt-1 mb-1">
+              <div className="flex items-center gap-2">
+                <Progress value={node.progress || 0} className="h-2 flex-1" />
+                <span className="text-[10px] text-muted-foreground font-mono min-w-[30px]">
+                  {Math.round(node.progress || 0)}%
+                </span>
+              </div>
+              {isDisabled && (
+                <span className="text-[10px] text-muted-foreground">处理中...</span>
+              )}
+            </div>
           )}
-          style={{ paddingLeft: `${level * 20 + 8}px` }}
-          onClick={() => handleNodeClick({...node, id: nodeId, name: nodeName, type: isFolder ? 'folder' : 'file'})}
-        >
-          {isFolder ? (
-            isExpanded ? (
-              <FolderOpen className="h-4 w-4 text-blue-600" />
-            ) : (
-              <Folder className="h-4 w-4 text-blue-600" />
-            )
-          ) : (
-            getFileIcon(nodeName)
-          )}
-          <span className="text-sm">{nodeName}</span>
-          {!isFolder && node.size && (
-            <span className="text-xs text-muted-foreground">
-              ({Math.round(node.size / 1024)}KB)
-            </span>
+          {isExpanded && (
+            <div className="pb-1">
+              {node.children.map((child: any) => renderTreeNode(child, level + 1))}
+            </div>
           )}
         </div>
+      )
+    }
 
-        {isFolder && isExpanded && node.children && Array.isArray(node.children) && (
-          <div>
-            {node.children.map(child => renderTreeNode(child, level + 1))}
+    return (
+      <div key={nodeId} className="relative">
+        <button
+          className={cn(
+            "flex items-center w-full py-2 px-3 text-sm transition-all duration-150 rounded-md group relative",
+            !isDisabled && "hover:bg-accent/50 hover:text-accent-foreground",
+            isSelected && !isDisabled ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground",
+            isDisabled && "opacity-50 cursor-not-allowed"
+          )}
+          style={{ paddingLeft: `${indent + 16}px` }} // 叶节点额外缩进
+          onClick={(e) => {
+            if (isDisabled) {
+              e.preventDefault()
+              e.stopPropagation()
+              return
+            }
+            handleNodeClick(node)
+          }}
+          disabled={isDisabled}
+        >
+          <span className="truncate flex-1 text-left font-normal">{nodeName}</span>
+          {node.catalog?.isCompleted && (
+            <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+              完成
+            </span>
+          )}
+        </button>
+        {hasProgress && (
+          <div className="px-4 mt-1 mb-1" style={{ paddingLeft: `${indent + 32}px` }}>
+            <div className="flex items-center gap-2">
+              <Progress value={node.progress || 0} className="h-2 flex-1" />
+              <span className="text-[10px] text-muted-foreground font-mono min-w-[30px]">
+                {Math.round(node.progress || 0)}%
+              </span>
+            </div>
+            {isDisabled && (
+              <span className="text-[10px] text-muted-foreground">处理中...</span>
+            )}
           </div>
         )}
       </div>
     )
-  }
+  }, [handleNodeClick, expandedNodes, selectedNode])
 
   // 过滤文件树数据
-  const filteredTreeData = (nodes: TreeNode[]): TreeNode[] => {
-    if (!nodes || !Array.isArray(nodes)) return []
-    if (!searchQuery) return nodes
+  const filteredTreeData = useMemo(() => {
+    const filterNodes = (nodes: any[]): any[] => {
+      if (!nodes || !Array.isArray(nodes)) return []
+      if (!searchQuery) return nodes
 
-    return nodes.filter(node => {
-      const nodeName = node.name || node.title || ''
-      if (nodeName.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return true
-      }
-      if (node.children && Array.isArray(node.children)) {
-        const filteredChildren = filteredTreeData(node.children)
-        if (filteredChildren.length > 0) {
+      return nodes.filter(node => {
+        const nodeName = node.title || node.name || ''
+        if (nodeName.toLowerCase().includes(searchQuery.toLowerCase())) {
           return true
         }
-      }
-      return false
-    })
-  }
+        if (node.children && Array.isArray(node.children)) {
+          const filteredChildren = filterNodes(node.children)
+          if (filteredChildren.length > 0) {
+            return true
+          }
+        }
+        return false
+      })
+    }
+
+    return filterNodes
+  }, [searchQuery])
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -615,36 +749,35 @@ const RepositoryDetailPage: React.FC = () => {
             <CardDescription>浏览和管理文档结构</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="p-4 border-b">
+            <div className="px-3 py-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
+                  type="text"
                   placeholder="搜索文档..."
-                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-14 h-8 text-sm bg-accent/30 border-0 focus:bg-accent/50 transition-colors placeholder:text-muted-foreground/60"
                 />
+                <kbd className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border border-border/50 bg-background px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">⌘</span>K
+                </kbd>
               </div>
             </div>
-            <ScrollArea className="h-[calc(100%-4rem)]">
-              <div className="p-4">
-                {catalogs && catalogs.length > 0 ? (
-                  <div className="space-y-2">
-                    {catalogs.map(catalog => (
-                      <div
-                        key={catalog.id}
-                        className="flex items-center justify-between p-2 rounded hover:bg-accent cursor-pointer"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{catalog.name}</span>
-                        </div>
-                        {catalog.isCompleted && (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        )}
-                      </div>
-                    ))}
+            <ScrollArea className="flex-1">
+              <div className="px-2 py-1 space-y-1">
+                {/* 分隔线 */}
+                <div className="h-px bg-border/30 mx-2 my-3" />
+
+                {/* 文档树 */}
+                {treeData && treeData.length > 0 ? (
+                  <div className="space-y-0.5">
+                    {filteredTreeData(treeData).map(node => renderTreeNode(node))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center">暂无文档目录</p>
+                  <p className="text-xs text-muted-foreground/60 text-center py-4 px-6">
+                    暂无文档目录
+                  </p>
                 )}
               </div>
             </ScrollArea>
@@ -654,19 +787,107 @@ const RepositoryDetailPage: React.FC = () => {
 
       {/* 文档内容 */}
       <div className="col-span-8">
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle>文档内容</CardTitle>
-            <CardDescription>查看和编辑文档内容</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[calc(100%-5rem)]">
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <div className="text-center">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>选择一个文档来查看其内容</p>
+        <Card className="h-full flex flex-col">
+          {selectedNode ? (
+            <>
+              {/* 文档头部 */}
+              <CardHeader className="flex-shrink-0 border-b">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {getFileIcon(selectedNode.name || selectedNode.title || '')}
+                    <div>
+                      <CardTitle className="text-lg">{selectedNode.name || selectedNode.title || 'Untitled'}</CardTitle>
+                      <CardDescription className="text-sm">
+                        {selectedNode.path && `${selectedNode.path} • `}
+                        {selectedNode.isLeaf ? '文件' : '文件夹'}
+                        {selectedNode.catalog?.isCompleted && ' • 已完成'}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {selectedNode.catalog?.isCompleted && (
+                      <Badge variant="default" className="text-xs">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        已完成
+                      </Badge>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={saving || !selectedNode.content}
+                      className="flex items-center gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      {saving ? '保存中...' : '保存'}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+
+              {/* 文档内容区域 */}
+              <CardContent className="flex-1 p-0 overflow-hidden">
+                <div className="h-full flex flex-col">
+                  {/* 工具栏 */}
+                  <div className="flex-shrink-0 px-4 py-2 border-b bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <span>内容长度: {selectedNode.content?.length || 0} 字符</span>
+                        {selectedNode.lastModified && (
+                          <>
+                            <Separator orientation="vertical" className="h-4" />
+                            <span>最后修改: {new Date(selectedNode.lastModified).toLocaleString('zh-CN')}</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Button variant="ghost" size="sm" className="h-7 px-2">
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-7 px-2">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-7 px-2">
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 编辑器区域 */}
+                  <div className="flex-1 relative">
+                    <Textarea
+                      value={selectedNode.content || ''}
+                      onChange={(e) => handleContentChange(e.target.value)}
+                      className="h-full w-full resize-none border-0 focus-visible:ring-0 font-mono text-sm leading-relaxed"
+                      placeholder={selectedNode.isLeaf ? "文件内容..." : "文档内容..."}
+                      style={{
+                        minHeight: '100%',
+                        background: 'transparent'
+                      }}
+                    />
+                    {/* 行号指示器 */}
+                    <div className="absolute top-2 right-2 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
+                      {(typeof selectedNode.content === 'string' ? selectedNode.content.split('\n').length : 1) || 1} 行
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </>
+          ) : (
+            <CardContent className="flex-1 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">选择一个文档</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    从左侧目录中选择一个文档来查看或编辑其内容
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
       </div>
     </div>
@@ -749,7 +970,7 @@ const RepositoryDetailPage: React.FC = () => {
                   <div className={cn(
                     "w-3 h-3 rounded-full",
                     sync.status === 'success' ? 'bg-green-500' :
-                    sync.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
+                      sync.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
                   )} />
                   <div>
                     <p className="text-sm font-medium">{sync.message}</p>
@@ -763,10 +984,10 @@ const RepositoryDetailPage: React.FC = () => {
                 </Badge>
               </div>
             )) || (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                暂无同步历史
-              </p>
-            )}
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  暂无同步历史
+                </p>
+              )}
           </div>
         </CardContent>
       </Card>
@@ -870,23 +1091,33 @@ const RepositoryDetailPage: React.FC = () => {
             <CardDescription>浏览和管理仓库内容</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="p-4 border-b">
+            <div className="px-3 py-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
+                  type="text"
                   placeholder="搜索文件..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-9 pr-14 h-8 text-sm bg-accent/30 border-0 focus:bg-accent/50 transition-colors placeholder:text-muted-foreground/60"
                 />
+                <kbd className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border border-border/50 bg-background px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">⌘</span>K
+                </kbd>
               </div>
             </div>
-            <ScrollArea className="h-[calc(100%-4rem)]">
-              <div className="p-2">
+            <ScrollArea className="flex-1">
+              <div className="px-2 py-1 space-y-1">
+                {/* 分隔线 */}
+                <div className="h-px bg-border/30 mx-2 my-3" />
+
+                {/* 文件树 */}
                 {treeData && treeData.length > 0 ? (
-                  filteredTreeData(treeData).map(node => renderTreeNode(node))
+                  <div className="space-y-0.5">
+                    {filteredTreeData(treeData).map(node => renderTreeNode(node))}
+                  </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
+                  <p className="text-xs text-muted-foreground/60 text-center py-4 px-6">
                     暂无文件
                   </p>
                 )}
@@ -898,53 +1129,109 @@ const RepositoryDetailPage: React.FC = () => {
 
       {/* 文件内容编辑器 */}
       <div className="col-span-8">
-        <Card className="h-full">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">
-                  {selectedNode ? (
-                    <div className="flex items-center space-x-2">
-                      {getFileIcon(selectedNode.name)}
-                      <span>{selectedNode.name}</span>
+        <Card className="h-full flex flex-col">
+          {selectedNode ? (
+            <>
+              {/* 文件头部 */}
+              <CardHeader className="flex-shrink-0 border-b">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {getFileIcon(selectedNode.name || selectedNode.title || '')}
+                    <div>
+                      <CardTitle className="text-lg">{selectedNode.name || selectedNode.title || 'Untitled'}</CardTitle>
+                      <CardDescription className="text-sm">
+                        {selectedNode.path && `${selectedNode.path} • `}
+                        {selectedNode.isLeaf ? '文件' : '文件夹'}
+                        {selectedNode.catalog?.isCompleted && ' • 已完成'}
+                      </CardDescription>
                     </div>
-                  ) : (
-                    t('admin.repositories.detail.editor')
-                  )}
-                </CardTitle>
-                {selectedNode && (
-                  <CardDescription>
-                    {selectedNode.path} • {selectedNode.lastModified && `修改于 ${new Date(selectedNode.lastModified).toLocaleDateString('zh-CN')}`}
-                  </CardDescription>
-                )}
-              </div>
-              {selectedNode && (
-                <Button onClick={handleSave} disabled={saving} size="sm">
-                  <Save className="mr-2 h-4 w-4" />
-                  {saving ? '保存中...' : '保存'}
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {selectedNode ? (
-              <div className="h-[calc(100%-5rem)]">
-                <Textarea
-                  value={selectedNode.content || ''}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  className="h-full resize-none border-0 focus-visible:ring-0 font-mono text-sm"
-                  placeholder="文件内容..."
-                />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-[calc(100%-5rem)] text-muted-foreground">
-                <div className="text-center">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>选择一个文件来编辑其内容</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {selectedNode.catalog?.isCompleted && (
+                      <Badge variant="default" className="text-xs">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        已完成
+                      </Badge>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={saving || !selectedNode.content}
+                      className="flex items-center gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      {saving ? '保存中...' : '保存'}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+
+              {/* 文件内容区域 */}
+              <CardContent className="flex-1 p-0 overflow-hidden">
+                <div className="h-full flex flex-col">
+                  {/* 工具栏 */}
+                  <div className="flex-shrink-0 px-4 py-2 border-b bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <span>内容长度: {selectedNode.content?.length || 0} 字符</span>
+                        <Separator orientation="vertical" className="h-4" />
+                        <span>行数: {(typeof selectedNode.content === 'string' ? selectedNode.content.split('\n').length : 1) || 1}</span>
+                        {selectedNode.lastModified && (
+                          <>
+                            <Separator orientation="vertical" className="h-4" />
+                            <span>最后修改: {new Date(selectedNode.lastModified).toLocaleString('zh-CN')}</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Button variant="ghost" size="sm" className="h-7 px-2" title="预览">
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-7 px-2" title="复制">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-7 px-2" title="在新窗口打开">
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 编辑器区域 */}
+                  <div className="flex-1 relative">
+                    <Textarea
+                      value={selectedNode.content || ''}
+                      onChange={(e) => handleContentChange(e.target.value)}
+                      className="h-full w-full resize-none border-0 focus-visible:ring-0 font-mono text-sm leading-relaxed"
+                      placeholder="文件内容..."
+                      style={{
+                        minHeight: '100%',
+                        background: 'transparent'
+                      }}
+                    />
+                    {/* 光标位置指示器 */}
+                    <div className="absolute top-2 right-2 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
+                      {(typeof selectedNode.content === 'string' ? selectedNode.content.split('\n').length : 1) || 1} 行
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </>
+          ) : (
+            <CardContent className="flex-1 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
+                  <Code className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">选择一个文件</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    从左侧文件树中选择一个文件来查看或编辑其内容
+                  </p>
                 </div>
               </div>
-            )}
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
       </div>
     </div>
@@ -978,30 +1265,12 @@ const RepositoryDetailPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 面包屑导航 */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/admin/repositories">{t('admin.repositories.title')}</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{repository.organizationName}/{repository.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* 页面标题和操作 */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {repository.organizationName}/{repository.name}
-            </h1>
+
+          <span className="inline-flex items-center space-x-2">
             {getStatusBadge(repository.status || 'Pending')}
-          </div>
+          </span>
           <p className="text-muted-foreground">
             {repository.description || t('admin.repositories.detail.no_description')}
           </p>
