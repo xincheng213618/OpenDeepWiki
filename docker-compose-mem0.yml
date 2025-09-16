@@ -69,27 +69,6 @@
       - EMBEDDING_MODEL_DIMS=1024 # 对应的嵌入模型维度，注意一旦指定维度则不能更改
       - OPENAI_EMBEDDING_MODEL=Qwen3-Embedding-0.6B # 使用的嵌入模型
   
-  koalawiki-web:
-    image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/koala-wiki-web
-    command: ["/app/start.sh"]
-    networks:
-      - koala_network
-    environment:
-      - NEXT_PUBLIC_API_URL=http://koalawiki:8080 # 用于提供给server的地址
-  
-  nginx: # 需要nginx将前端和后端代理到一个端口
-    image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/nginx:alpine
-    ports:
-      - 8090:80
-    networks:
-      - koala_network
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - koalawiki
-      - koalawiki-web
-
-
   postgres:
     image: ankane/pgvector:v0.5.1
     restart: on-failure
