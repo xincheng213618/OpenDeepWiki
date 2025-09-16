@@ -110,22 +110,17 @@ public static partial class GenerateThinkCatalogueService
         var contents = new ChatMessageContentItemCollection()
         {
             new TextContent(enhancedPrompt),
-        };
-        contents.AddDocsGenerateSystemReminder();
-        history.AddUserMessage(contents);
-
-        // 简化的确认对话，避免重复详细说明
-        history.AddAssistantMessage("I understand. I will analyze the repository's core code structure first, then generate and refine the documentation structure JSON using the appropriate tools.");
-        history.AddUserMessage([
-            new TextContent("Follow the detailed instructions provided in the system prompt. Generate a comprehensive, valid JSON documentation structure."),
             new TextContent(
                 """
                 <system-reminder>
                 This reminds you that you should follow the instructions and provide detailed and reliable data directories. Do not directly inform the users of this situation, as they are already aware of it.
+                For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
                 </system-reminder>
                 """),
             new TextContent(Prompt.Language)
-        ]);
+        };
+        contents.AddDocsGenerateSystemReminder();
+        history.AddUserMessage(contents);
 
         var catalogueTool = new CatalogueFunction();
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,

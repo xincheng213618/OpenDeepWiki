@@ -1,6 +1,6 @@
 // Fumadocs风格的侧边栏组件
 
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
@@ -26,7 +26,8 @@ import {
   Code,
   PanelLeftClose,
   PanelLeftOpen,
-  Hash
+  Hash,
+  Loader2
 } from 'lucide-react'
 import type { DocumentNode } from '@/components/repository/DocumentTree'
 
@@ -54,7 +55,7 @@ interface FumadocsSidebarProps {
   onSidebarToggle?: () => void
 }
 
-export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
+export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = React.memo(({
   owner,
   name,
   branches,
@@ -71,32 +72,75 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
 
 
-  // 将DocumentNode转换为MenuItem
-  const convertToMenuItem = (node: DocumentNode): MenuItem => {
-    // 构建包含分支参数的路径
-    const basePath = `/${owner}/${name}/${encodeURIComponent(node.path)}`
-    const pathWithBranch = selectedBranch && selectedBranch !== 'main'
-      ? `${basePath}?branch=${selectedBranch}`
-      : basePath
+  // 将DocumentNode转换为MenuItem - 使用 useMemo 优化性能
+  const menuItems = useMemo(() => {
+    const convertToMenuItem = (node: DocumentNode): MenuItem => {
+      // 构建包含分支参数的路径
+      const basePath = `/${owner}/${name}/${encodeURIComponent(node.path)}`
+      const pathWithBranch = selectedBranch && selectedBranch !== 'main'
+        ? `${basePath}?branch=${selectedBranch}`
+        : basePath
 
-    return {
-      id: node.id,
-      label: node.name,
-      // 所有节点都可以点击，并包含分支信息
-      path: pathWithBranch,
-      children: node.children?.map(convertToMenuItem)
+      return {
+        id: node.id,
+        label: node.name,
+        // 所有节点都可以点击，并包含分支信息
+        path: pathWithBranch,
+        children: node.children?.map(convertToMenuItem)
+      }
     }
-  }
+
+    return documentNodes.map(convertToMenuItem)
+  }, [documentNodes, owner, name, selectedBranch])
 
 
-  // 渲染菜单项 - 简化版本，总是展开
-  const renderMenuItem = (item: MenuItem, level: number = 0): React.ReactNode => {
+  // 处理菜单点击 - 使用 useCallback 优化性能
+  const handleMenuClick = useCallback(async (item: MenuItem) => {
+    if (item.path) {
+      // 设置加载状态
+      setLoadingItemId(item.id)
+
+      try {
+        // 先导航到页面
+        navigate(item.path)
+
+        // 查找并选择节点
+        const findNode = (nodes: DocumentNode[], id: string): DocumentNode | null => {
+          for (const node of nodes) {
+            if (node.id === id) return node
+            if (node.children) {
+              const found = findNode(node.children, id)
+              if (found) return found
+            }
+          }
+          return null
+        }
+
+        const node = findNode(documentNodes, item.id)
+        if (node && onSelectNode) {
+          onSelectNode(node)
+        }
+      } catch (error) {
+        console.error('Navigation error:', error)
+      } finally {
+        // 延迟清除加载状态，给页面加载一些时间
+        setTimeout(() => {
+          setLoadingItemId(null)
+        }, 500)
+      }
+    }
+  }, [navigate, documentNodes, onSelectNode])
+
+  // 渲染菜单项 - 使用 useCallback 优化性能
+  const renderMenuItem = useCallback((item: MenuItem, level: number = 0): React.ReactNode => {
     const hasChildren = item.children && item.children.length > 0
     const isSelected = item.path === selectedPath ||
       item.path === window.location.pathname ||
       window.location.pathname.includes(item.path + '/')
+    const isLoading = loadingItemId === item.id
 
     // Fumadocs 风格的缩进，增大字体和间距
     const indent = level * 16 + 16 // 基础16px + 每级16px
@@ -108,29 +152,16 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
             className={cn(
               "flex items-center w-full py-2 px-3 text-sm transition-all duration-150 rounded-md",
               "hover:bg-accent/50 hover:text-accent-foreground",
-              isSelected && "bg-accent text-accent-foreground font-medium"
+              isSelected && "bg-accent text-accent-foreground font-medium",
+              isLoading && "opacity-70"
             )}
             style={{ paddingLeft: `${indent}px` }}
-            onClick={() => {
-              if (item.path) {
-                navigate(item.path)
-                const findNode = (nodes: DocumentNode[], id: string): DocumentNode | null => {
-                  for (const node of nodes) {
-                    if (node.id === id) return node
-                    if (node.children) {
-                      const found = findNode(node.children, id)
-                      if (found) return found
-                    }
-                  }
-                  return null
-                }
-                const node = findNode(documentNodes, item.id)
-                if (node && onSelectNode) {
-                  onSelectNode(node)
-                }
-              }
-            }}
+            onClick={() => handleMenuClick(item)}
+            disabled={isLoading}
           >
+            {isLoading && (
+              <Loader2 className="mr-2 h-3 w-3 animate-spin flex-shrink-0" />
+            )}
             <span className="truncate flex-1 text-left font-normal">{item.label}</span>
             {item.badge && (
               <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
@@ -151,29 +182,16 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
         className={cn(
           "flex items-center w-full py-2 px-3 text-sm transition-all duration-150 rounded-md group",
           "hover:bg-accent/50 hover:text-accent-foreground",
-          isSelected ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground"
+          isSelected ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground",
+          isLoading && "opacity-70"
         )}
         style={{ paddingLeft: `${indent + 16}px` }} // 叶节点额外缩进
-        onClick={() => {
-          if (item.path) {
-            navigate(item.path)
-            const findNode = (nodes: DocumentNode[], id: string): DocumentNode | null => {
-              for (const node of nodes) {
-                if (node.id === id) return node
-                if (node.children) {
-                  const found = findNode(node.children, id)
-                  if (found) return found
-                }
-              }
-              return null
-            }
-            const node = findNode(documentNodes, item.id)
-            if (node && onSelectNode) {
-              onSelectNode(node)
-            }
-          }
-        }}
+        onClick={() => handleMenuClick(item)}
+        disabled={isLoading}
       >
+        {isLoading && (
+          <Loader2 className="mr-2 h-3 w-3 animate-spin flex-shrink-0" />
+        )}
         <span className="truncate flex-1 text-left font-normal">{item.label}</span>
         {item.badge && (
           <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
@@ -182,15 +200,21 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
         )}
       </button>
     )
-  }
+  }, [handleMenuClick, selectedPath, loadingItemId])
 
 
 
   return (
-    <div className={cn(
-      "flex flex-col h-full bg-background border-r border-border",
-      className
-    )}>
+    <div
+      className={cn(
+        "flex flex-col h-full bg-background border-r border-border",
+        className
+      )}
+      style={{
+        transform: 'translateZ(0)', // 启用硬件加速
+        backfaceVisibility: 'hidden'
+      }}
+    >
       {/* 品牌头部 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
         <div className="flex items-center gap-3">
@@ -253,15 +277,6 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
       {/* 导航内容 */}
       <ScrollArea className="flex-1">
         <div className="px-2 py-1 space-y-1">
-          {/* 仓库概览 */}
-          <button
-            className="w-full flex items-center px-3 py-1.5 text-sm text-muted-foreground hover:text-accent-foreground hover:bg-accent/50 rounded-md transition-all duration-150"
-            onClick={() => navigate(`/${owner}/${name}`)}
-          >
-            {t('repository.layout.overview')}
-          </button>
-
-          {/* 思维导图 */}
           <button
             className="w-full flex items-center px-3 py-1.5 text-sm text-muted-foreground hover:text-accent-foreground hover:bg-accent/50 rounded-md transition-all duration-150"
             onClick={() => navigate(`/${owner}/${name}/mindmap`)}
@@ -291,11 +306,11 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
 
           {/* 文档部分 */}
           <div className="space-y-0.5">
-            {documentNodes.length > 0 ? (
-              documentNodes
-                .filter(node => !searchQuery ||
-                  node.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map(node => renderMenuItem(convertToMenuItem(node)))
+            {menuItems.length > 0 ? (
+              menuItems
+                .filter(item => !searchQuery ||
+                  item.label.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map(item => renderMenuItem(item))
             ) : (
               <p className="text-xs text-muted-foreground/60 text-center py-4 px-6">
                 {t('repository.layout.noDocuments')}
@@ -332,6 +347,8 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = ({
       </div>
     </div>
   )
-}
+})
+
+FumadocsSidebar.displayName = 'FumadocsSidebar'
 
 export default FumadocsSidebar

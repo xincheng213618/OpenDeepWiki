@@ -34,7 +34,6 @@ const RepositoryDetailPage = () => {
     documentNodes,
     error,
     setRepository,
-    fetchRepositoryInfo,
     fetchDocumentCatalog,
     clearError
   } = useRepositoryDetailStore()
@@ -50,9 +49,6 @@ const RepositoryDetailPage = () => {
     try {
       // 设置仓库信息
       setRepository(owner, name)
-
-      // 获取仓库概览信息
-      await fetchRepositoryInfo()
 
       // 获取文档目录（这会同时获取分支列表）
       await fetchDocumentCatalog()

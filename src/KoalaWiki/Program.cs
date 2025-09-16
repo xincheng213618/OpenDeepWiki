@@ -50,6 +50,8 @@ builder.WebHost.UseKestrel((options =>
     options.Limits.MaxRequestBodySize = 1024 * 1024 * OpenAIOptions.MaxFileLimit; // 10MB
 }));
 
+builder.Services.AddResponseCompression();
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddKoalaMcp();
 builder.Services.AddSerilog(Log.Logger);
@@ -168,7 +170,7 @@ builder.Services.AddHttpClient("KoalaWiki", client =>
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
-
+app.UseResponseCompression();
 // 添加自动迁移代码
 using (var scope = app.Services.CreateScope())
 {

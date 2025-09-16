@@ -16,35 +16,43 @@ public partial class GenerateThinkCatalogueService
                 ["language"] = Prompt.Language
             }, OpenAIOptions.AnalysisModel);
 
-        var toolUsage = "\n\n## COMPREHENSIVE WORKFLOW INSTRUCTIONS:\n\n" +
-                        "### PHASE 1: REPOSITORY ANALYSIS (MANDATORY FIRST STEP)\n" +
-                        "- CRITICAL: Analyze core code structure BEFORE any catalogue generation\n" +
-                        "- Use File.Glob to identify key files: entry points, configuration/DI setup, services, controllers, models, routes, build scripts\n" +
-                        "- Use PARALLEL File.Read operations to inspect MULTIPLE files simultaneously in a SINGLE message for maximum efficiency\n" +
-                        "- DO NOT read files sequentially - batch multiple File.Read calls together\n" +
-                        "- Understand project architecture, technology stack, and component relationships\n\n" +
-                        "### PHASE 2: JSON GENERATION\n" +
-                        "- Create initial documentation_structure JSON with proper schema compliance\n" +
-                        "- Use Catalogue.Write to persist the initial structure\n" +
-                        "- JSON requirements: valid syntax, items/children schema, kebab-case titles\n" +
-                        "- Structure: top-level 'getting-started' section, then 'deep-dive' section\n" +
-                        "- Do NOT wrap JSON with code fences, XML/HTML tags, or print in chat\n\n" +
-                        "### PHASE 3: ITERATIVE REFINEMENT (MAX 3 EDIT OPERATIONS)\n" +
-                        "- Perform 2-3 refinement passes using Catalogue.Read + editing tools\n" +
-                        "- PREFER Catalogue.MultiEdit for multiple changes in one operation (more efficient)\n" +
-                        "- Add Level 2/3 subsections for core components, features, data models, integrations\n" +
-                        "- Maintain consistent naming and ordering conventions\n" +
-                        "- Enrich each section's 'prompt' field with actionable, specific writing guidance\n" +
-                        "- For major restructuring, use Catalogue.Write for complete rewrite instead of multiple edits";
+        var toolUsage = """
+                        ## COMPREHENSIVE WORKFLOW INSTRUCTIONS:
+                        
+                        ### PHASE 1: REPOSITORY ANALYSIS (MANDATORY FIRST STEP)
+                        - CRITICAL: Analyze core code structure BEFORE any catalogue generation
+                        - MUST prioritize extracting repository structure directly from <code_files> context — AVOID using File.Glob
+                        - Directly inspect identified files from <code_files> to find:
+                          entry points, configuration/DI setup, services, controllers, models, routes, build scripts
+                        - Use PARALLEL File.Read operations to inspect MULTIPLE files simultaneously in a SINGLE message for maximum efficiency
+                        - DO NOT read files sequentially — batch multiple File.Read calls together
+                        - Understand project architecture, technology stack, and component relationships
+                        
+                        ### PHASE 2: JSON GENERATION
+                        - Create initial documentation_structure JSON with proper schema compliance
+                        - Use Catalogue.Write ONCE to persist the initial structure (Write must be used only a single time in the entire workflow)
+                        - JSON requirements: valid syntax, items/children schema, kebab-case titles
+                        - Structure: top-level 'getting-started' section, then 'deep-dive' section
+                        - Do NOT wrap JSON with code fences, XML/HTML tags, or print in chat
+                        
+                        ### PHASE 3: ITERATIVE REFINEMENT (MAX 3 EDIT OPERATIONS)
+                        - All adjustments after the first write MUST use Catalogue.MultiEdit (no more Catalogue.Write allowed in this phase)
+                        - Perform up to 3 refinement passes using Catalogue.Read + Catalogue.MultiEdit
+                        - Add Level 2/3 subsections for core components, features, data models, integrations
+                        - Maintain consistent naming and ordering conventions
+                        - Enrich each section's 'prompt' field with actionable, specific writing guidance
+                        - For major restructuring, fit within planned MultiEdit passes (no rewrite via Write after PHASE 2)
+                        
+                        """;
 
         // Attempt-based enhancement focusing on specific quality improvements
         var enhancementLevel = Math.Min(attemptNumber, 3);
         var enhancement = enhancementLevel switch
         {
-            0 => "\n\n🎯 ATTEMPT 1 FOCUS: Prioritize thorough code analysis and solid JSON foundation.",
-            1 => "\n\n🎯 ATTEMPT 2 FOCUS: Emphasize structural depth and component relationships.",
-            2 => "\n\n🎯 ATTEMPT 3 FOCUS: Optimize prompt specificity and actionable guidance.",
-            _ => "\n\n🎯 FINAL ATTEMPT: Address any remaining gaps and ensure completeness."
+            0 => "\n\nATTEMPT 1 FOCUS: Prioritize thorough code analysis and solid JSON foundation.",
+            1 => "\n\nATTEMPT 2 FOCUS: Emphasize structural depth and component relationships.",
+            2 => "\n\nATTEMPT 3 FOCUS: Optimize prompt specificity and actionable guidance.",
+            _ => "\n\nFINAL ATTEMPT: Address any remaining gaps and ensure completeness."
         };
 
         return toolUsage + basePrompt + enhancement;

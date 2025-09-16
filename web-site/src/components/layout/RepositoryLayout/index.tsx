@@ -6,7 +6,11 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { FumadocsSidebar } from '@/components/layout/FumadocsSidebar'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { useRepositoryDetailStore } from '@/stores/repositoryDetail.store'
+import { warehouseService } from '@/services/warehouse.service'
+import { toast } from 'sonner'
+import { useAuth } from '@/hooks/useAuth'
 import {
   Github,
   Home,
@@ -35,6 +39,7 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
 
   // 使用store
   const {
+    repository,
     branches,
     selectedBranch,
     loadingBranches,
@@ -54,6 +59,9 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
     reset
   } = useRepositoryDetailStore()
 
+  const { isAuthenticated } = useAuth()
+  const [isDownloading, setIsDownloading] = useState(false)
+
   // 处理节点选择
   const handleNodeSelect = (node: any) => {
     selectNode(node)
@@ -68,6 +76,31 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
     // 移动端关闭菜单
     if (window.innerWidth < 1024) {
       setMobileMenuOpen(false)
+    }
+  }
+
+  // 处理下载功能
+  const handleDownload = async () => {
+    if (!isAuthenticated) {
+      toast.error(t('repository.layout.loginRequired'))
+      navigate('/login')
+      return
+    }
+
+    if (!repository?.id) {
+      toast.error(t('repository.layout.downloadError'))
+      return
+    }
+
+    setIsDownloading(true)
+    try {
+      await warehouseService.exportMarkdownZip(repository.id)
+      toast.success(t('repository.layout.downloadSuccess'))
+    } catch (error: any) {
+      console.error('Download failed:', error)
+      toast.error(error.message || t('repository.layout.downloadFailed'))
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -203,10 +236,17 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
               variant="ghost"
               size="sm"
               className="h-8 px-2"
-              disabled
+              onClick={handleDownload}
+              disabled={isDownloading || !repository}
+              title={t('repository.layout.downloadTooltip')}
             >
-              <Download className="h-4 w-4" />
+              {isDownloading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
             </Button>
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"
@@ -219,36 +259,37 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
         </div>
       </header>
 
-      <div className="flex">
-        {/* 侧边栏 - 桌面端 */}
+      <div className="flex relative">
+        {/* 侧边栏 - 桌面端 - 优化性能 */}
         <aside
           className={cn(
-            "hidden lg:block min-h-[calc(100vh-4rem)]",
-            "transition-all duration-300 ease-in-out",
-            sidebarOpen ? "w-72" : "w-0 overflow-hidden"
+            "hidden lg:block min-h-[calc(100vh-4rem)] fixed left-0 z-10",
+            "w-72 bg-background border-r border-border", // 固定宽度，避免布局重排
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
           )}
+          style={{
+            transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform',
+            backfaceVisibility: 'hidden',
+            perspective: '1000px'
+          }}
         >
-          <div className={cn(
-            "w-72 transition-opacity duration-300 ease-in-out",
-            sidebarOpen ? "opacity-100" : "opacity-0"
-          )}>
-            {owner && name && (
-              <FumadocsSidebar
-                owner={owner}
-                name={name}
-                branches={branches}
-                selectedBranch={selectedBranch}
-                onBranchChange={selectBranch}
-                documentNodes={documentNodes}
-                selectedPath={selectedNode?.path}
-                onSelectNode={handleNodeSelect}
-                loading={loadingBranches || loadingDocuments}
-                className="h-[calc(100vh-4rem)]"
-                sidebarOpen={sidebarOpen}
-                onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
-              />
-            )}
-          </div>
+          {owner && name && (
+            <FumadocsSidebar
+              owner={owner}
+              name={name}
+              branches={branches}
+              selectedBranch={selectedBranch}
+              onBranchChange={selectBranch}
+              documentNodes={documentNodes}
+              selectedPath={selectedNode?.path}
+              onSelectNode={handleNodeSelect}
+              loading={loadingBranches || loadingDocuments}
+              className="h-[calc(100vh-4rem)]"
+              sidebarOpen={sidebarOpen}
+              onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+            />
+          )}
         </aside>
 
         {/* 侧边栏 - 移动端 */}
@@ -279,20 +320,33 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
           </>
         )}
 
-        {/* 主内容区 */}
-        <main className="flex-1 h-[calc(100vh-4rem)] relative flex flex-col">
-          {/* 悬浮的侧边栏切换按钮 */}
+        {/* 主内容区 - 优化布局 */}
+        <main
+          className={cn(
+            "h-[calc(100vh-4rem)] relative flex flex-col w-full",
+            sidebarOpen ? "lg:ml-72" : "lg:ml-0"
+          )}
+          style={{
+            transition: 'margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'margin-left'
+          }}
+        >
+          {/* 悬浮的侧边栏切换按钮 - 优化动画 */}
           <Button
             variant="outline"
             size="icon"
             onClick={() => setSidebarOpen(true)}
             className={cn(
-              "fixed left-4 top-24 z-30 shadow-lg transition-all duration-300 ease-in-out",
+              "fixed left-4 top-24 z-30 shadow-lg",
               "bg-background/95 backdrop-blur-sm border-border/50",
               "hover:bg-accent hover:text-accent-foreground",
               "hidden lg:flex h-8 w-8",
-              sidebarOpen ? "opacity-0 pointer-events-none translate-x-[-100%]" : "opacity-100 pointer-events-auto translate-x-0"
+              sidebarOpen ? "opacity-0 pointer-events-none -translate-x-16" : "opacity-100 pointer-events-auto translate-x-0"
             )}
+            style={{
+              transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform, opacity'
+            }}
           >
             <PanelLeftOpen className="h-4 w-4" />
           </Button>

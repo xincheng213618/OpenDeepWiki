@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 
 namespace KoalaWiki.Services;
 
@@ -16,7 +18,7 @@ namespace KoalaWiki.Services;
 /// 用户管理服务
 /// </summary>
 [Tags("用户管理")]
-[Route("/api/user")]
+[FastService.Route("/api/user")]
 [Filter(typeof(ResultFilter))]
 public class UserService(
     IKoalaWikiContext dbContext,
@@ -32,6 +34,7 @@ public class UserService(
     /// <returns>用户列表</returns>
     [Authorize(Roles = "admin")]
     [EndpointSummary("获取用户列表")]
+    [HttpGet("UserList")]
     public async Task<PageDto<UserInfoDto>> GetUserListAsync(int page, int pageSize, string? keyword)
     {
         var query = dbContext.Users.AsNoTracking();
@@ -54,8 +57,28 @@ public class UserService(
             .Take(pageSize)
             .ToListAsync();
 
-        // 将实体映射为DTO
-        var userDtos = users.Select(u => u.Adapt<UserInfoDto>()).ToList();
+        // 获取用户ID列表
+        var userIds = users.Select(u => u.Id).ToList();
+
+        // 批量获取所有用户的角色信息
+        var userRoles = await (from ur in dbContext.UserInRoles
+                              join r in dbContext.Roles on ur.RoleId equals r.Id
+                              where userIds.Contains(ur.UserId)
+                              select new { ur.UserId, RoleName = r.Name })
+                              .ToListAsync();
+
+        // 按用户ID分组角色
+        var userRoleDict = userRoles
+            .GroupBy(ur => ur.UserId)
+            .ToDictionary(g => g.Key, g => string.Join(',', g.Select(x => x.RoleName)));
+
+        // 将实体映射为DTO并分配角色
+        var userDtos = users.Select(u =>
+        {
+            var userDto = u.Adapt<UserInfoDto>();
+            userDto.Role = userRoleDict.GetValueOrDefault(u.Id, string.Empty);
+            return userDto;
+        }).ToList();
 
         return new PageDto<UserInfoDto>(total, userDtos);
     }
@@ -67,6 +90,7 @@ public class UserService(
     /// <returns>用户详情</returns>
     [Authorize(Roles = "admin")]
     [EndpointSummary("获取用户详情")]
+    [HttpGet("User")]
     public async Task<ResultDto<UserInfoDto>> GetUserAsync(string id)
     {
         var user = await dbContext.Users
@@ -75,11 +99,24 @@ public class UserService(
 
         if (user == null)
         {
-            throw new UnauthorizedAccessException();
+            return ResultDto<UserInfoDto>.Error("用户不存在");
         }
 
         // 将实体映射为DTO
         var userDto = user.Adapt<UserInfoDto>();
+
+        // 获取用户角色
+        var roleIds = await dbContext.UserInRoles
+            .Where(ur => ur.UserId == id)
+            .Select(ur => ur.RoleId)
+            .ToListAsync();
+
+        var roles = await dbContext.Roles
+            .Where(r => roleIds.Contains(r.Id))
+            .Select(r => r.Name)
+            .ToListAsync();
+
+        userDto.Role = string.Join(',', roles);
 
         return ResultDto<UserInfoDto>.Success(userDto);
     }
@@ -90,6 +127,7 @@ public class UserService(
     /// <returns>当前用户信息</returns>
     [Authorize]
     [EndpointSummary("获取当前用户信息")]
+    [HttpGet("profile")]
     public async Task<ResultDto<UserInfoDto>> GetCurrentUserAsync()
     {
         var userId = userContext.CurrentUserId;
@@ -131,6 +169,7 @@ public class UserService(
     /// <returns>更新结果</returns>
     [Authorize]
     [EndpointSummary("更新用户资料")]
+    [HttpPut("profile")]
     public async Task<ResultDto<UserInfoDto>> UpdateProfileAsync(UpdateProfileDto updateProfileDto)
     {
         try
@@ -198,6 +237,7 @@ public class UserService(
     /// <returns>验证结果</returns>
     [Authorize]
     [EndpointSummary("验证当前密码")]
+    [HttpPost("verify-password")]
     public async Task<ResultDto> VerifyPasswordAsync(VerifyPasswordDto verifyPasswordDto)
     {
         try
@@ -237,6 +277,7 @@ public class UserService(
     /// <returns>修改结果</returns>
     [Authorize]
     [EndpointSummary("修改密码")]
+    [HttpPut("change-password")]
     public async Task<ResultDto> ChangePasswordAsync(ChangePasswordDto changePasswordDto)
     {
         try
@@ -281,10 +322,11 @@ public class UserService(
     /// <summary>
     /// 上传头像
     /// </summary>
-    /// <param name="file">头像文件</param>
+    /// <param name="context">HTTP上下文</param>
     /// <returns>头像URL</returns>
     [Authorize]
     [EndpointSummary("上传头像")]
+    [HttpPost("upload-avatar")]
     public async Task<ResultDto<string>> UploadAvatarAsync(HttpContext context)
     {
         try
@@ -379,6 +421,7 @@ public class UserService(
     /// <returns>创建结果</returns>
     [Authorize(Roles = "admin")]
     [EndpointSummary("创建用户")]
+    [HttpPost("CreateUser")]
     public async Task<ResultDto<UserInfoDto>> CreateUserAsync(CreateUserDto createUserDto)
     {
         try
@@ -443,6 +486,7 @@ public class UserService(
     /// <returns>更新结果</returns>
     [Authorize(Roles = "admin")]
     [EndpointSummary("更新用户")]
+    [HttpPost("UpdateUser")]
     public async Task<ResultDto<UserInfoDto>> UpdateUserAsync(string id, UpdateUserDto updateUserDto)
     {
         try
@@ -504,8 +548,11 @@ public class UserService(
     /// <summary>
     /// 删除用户
     /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <returns>删除结果</returns>
     [Authorize(Roles = "admin")]
     [EndpointSummary("删除用户")]
+    [HttpPost("DeleteUser")]
     public async Task<ResultDto> DeleteUserAsync(string id)
     {
         try
@@ -514,6 +561,13 @@ public class UserService(
             if (user == null)
             {
                 return ResultDto.Error("用户不存在");
+            }
+
+            // 删除用户角色关联
+            var userRoles = await dbContext.UserInRoles.Where(ur => ur.UserId == id).ToListAsync();
+            if (userRoles.Any())
+            {
+                dbContext.UserInRoles.RemoveRange(userRoles);
             }
 
             // 删除用户
@@ -526,6 +580,178 @@ public class UserService(
         {
             logger.LogError(ex, "删除用户失败");
             return ResultDto.Error("删除用户失败，请稍后再试");
+        }
+    }
+
+    /// <summary>
+    /// 重置用户密码
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <param name="resetPasswordDto">重置密码信息</param>
+    /// <returns>重置结果</returns>
+    [Authorize(Roles = "admin")]
+    [EndpointSummary("重置用户密码")]
+    [HttpPost("ResetPassword")]
+    public async Task<ResultDto> ResetUserPasswordAsync(string id, ResetPasswordDto resetPasswordDto)
+    {
+        try
+        {
+            var user = await dbContext.Users.FindAsync(id);
+            if (user == null)
+            {
+                return ResultDto.Error("用户不存在");
+            }
+
+            // 更新密码
+            user.Password = resetPasswordDto.NewPassword;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            dbContext.Users.Update(user);
+            await dbContext.SaveChangesAsync();
+
+            logger.LogInformation("管理员重置用户密码成功: UserId={UserId}, AdminId={AdminId}", id, userContext.CurrentUserId);
+
+            return ResultDto.Success(true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "重置用户密码失败");
+            return ResultDto.Error("重置用户密码失败，请稍后再试");
+        }
+    }
+
+    /// <summary>
+    /// 为用户分配角色
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <param name="assignRoleDto">角色分配信息</param>
+    /// <returns>分配结果</returns>
+    [Authorize(Roles = "admin")]
+    [EndpointSummary("为用户分配角色")]
+    [HttpPost("AssignRoles")]
+    public async Task<ResultDto> AssignUserRolesAsync(string id, AssignUserRoleDto assignRoleDto)
+    {
+        try
+        {
+            var user = await dbContext.Users.FindAsync(id);
+            if (user == null)
+            {
+                return ResultDto.Error("用户不存在");
+            }
+
+            // 验证角色是否存在
+            var existingRoles = await dbContext.Roles
+                .Where(r => assignRoleDto.RoleIds.Contains(r.Id))
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            if (existingRoles.Count != assignRoleDto.RoleIds.Count)
+            {
+                return ResultDto.Error("部分角色不存在");
+            }
+
+            // 删除现有角色分配
+            var currentUserRoles = await dbContext.UserInRoles.Where(ur => ur.UserId == id).ToListAsync();
+            dbContext.UserInRoles.RemoveRange(currentUserRoles);
+
+            // 添加新的角色分配
+            var newUserRoles = assignRoleDto.RoleIds.Select(roleId => new UserInRole
+            {
+                UserId = id,
+                RoleId = roleId
+            }).ToList();
+
+            await dbContext.UserInRoles.AddRangeAsync(newUserRoles);
+            await dbContext.SaveChangesAsync();
+
+            logger.LogInformation("为用户分配角色成功: UserId={UserId}, RoleIds={RoleIds}, AdminId={AdminId}",
+                id, string.Join(",", assignRoleDto.RoleIds), userContext.CurrentUserId);
+
+            return ResultDto.Success(true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "为用户分配角色失败");
+            return ResultDto.Error("为用户分配角色失败，请稍后再试");
+        }
+    }
+
+    /// <summary>
+    /// 获取用户角色
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <returns>用户角色列表</returns>
+    [Authorize(Roles = "admin")]
+    [EndpointSummary("获取用户角色")]
+    [HttpGet("UserRoles")]
+    public async Task<ResultDto<List<string>>> GetUserRolesAsync(string id)
+    {
+        try
+        {
+            var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null)
+            {
+                return ResultDto<List<string>>.Error("用户不存在");
+            }
+
+            var roleIds = await dbContext.UserInRoles
+                .Where(ur => ur.UserId == id)
+                .Select(ur => ur.RoleId)
+                .ToListAsync();
+
+            return ResultDto<List<string>>.Success(roleIds);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "获取用户角色失败");
+            return ResultDto<List<string>>.Error("获取用户角色失败，请稍后再试");
+        }
+    }
+
+    /// <summary>
+    /// 批量删除用户
+    /// </summary>
+    /// <param name="batchDeleteDto">批量删除信息</param>
+    /// <returns>删除结果</returns>
+    [Authorize(Roles = "admin")]
+    [EndpointSummary("批量删除用户")]
+    [HttpPost("BatchDelete")]
+    public async Task<ResultDto> BatchDeleteUsersAsync(BatchDeleteUserDto batchDeleteDto)
+    {
+        try
+        {
+            var users = await dbContext.Users.Where(u => batchDeleteDto.UserIds.Contains(u.Id)).ToListAsync();
+            if (users.Count != batchDeleteDto.UserIds.Count)
+            {
+                return ResultDto.Error("部分用户不存在");
+            }
+
+            // 检查是否尝试删除当前用户
+            if (batchDeleteDto.UserIds.Contains(userContext.CurrentUserId))
+            {
+                return ResultDto.Error("不能删除当前登录用户");
+            }
+
+            // 删除用户角色关联
+            var userRoles = await dbContext.UserInRoles.Where(ur => batchDeleteDto.UserIds.Contains(ur.UserId)).ToListAsync();
+            if (userRoles.Any())
+            {
+                dbContext.UserInRoles.RemoveRange(userRoles);
+            }
+
+            // 删除用户
+            dbContext.Users.RemoveRange(users);
+            await dbContext.SaveChangesAsync();
+
+            logger.LogInformation("批量删除用户成功: UserIds={UserIds}, AdminId={AdminId}",
+                string.Join(",", batchDeleteDto.UserIds), userContext.CurrentUserId);
+
+            return ResultDto.Success(true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "批量删除用户失败");
+            return ResultDto.Error("批量删除用户失败，请稍后再试");
         }
     }
 }

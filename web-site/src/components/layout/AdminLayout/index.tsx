@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ThemeToggle } from '@/components/theme-toggle'
 import {
   BarChart3,
   Users,
@@ -113,6 +114,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
           {/* 右侧操作区 */}
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild>
               <Link to="/">
                 <ChevronLeft className="mr-2 h-4 w-4" />

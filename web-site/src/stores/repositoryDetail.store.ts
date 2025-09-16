@@ -48,7 +48,6 @@ interface RepositoryDetailState {
 
   // Actions
   setRepository: (owner: string, name: string) => void
-  fetchRepositoryInfo: () => Promise<void>
   fetchBranches: () => Promise<void>
   fetchDocumentCatalog: (branch?: string) => Promise<void>
   fetchDocumentContent: (path: string) => Promise<void>
@@ -83,18 +82,6 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
 
   setRepository: (owner: string, name: string) => {
     set({ owner, name })
-  },
-
-  fetchRepositoryInfo: async () => {
-    const { owner, name, selectedBranch } = get()
-    if (!owner || !name) return
-
-    try {
-      const response = await warehouseService.getWarehouseOverview(owner, name, selectedBranch)
-      set({ repository: response, error: null })
-    } catch (error: any) {
-      set({ error: error?.message || 'Failed to fetch repository info' })
-    }
   },
 
   fetchBranches: async () => {
@@ -190,7 +177,8 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
         const nodes = convertToTreeNodes(response.items)
         set({
           documentNodes: nodes,
-          loadingDocuments: false
+          loadingDocuments: false,
+          error: null // 成功时清除错误状态
         })
 
         // 自动选择第一个文件节点
@@ -203,7 +191,8 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
       } else {
         set({
           documentNodes: [],
-          loadingDocuments: false
+          loadingDocuments: false,
+          error: null // 成功时清除错误状态
         })
       }
     } catch (error: any) {
@@ -211,6 +200,7 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
       set({
         documentNodes: [],
         loadingDocuments: false,
+        error: error?.message || 'Failed to fetch document catalog'
       })
     }
   },
@@ -226,6 +216,7 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
       set({
         documentContent: response?.content || '',
         loadingContent: false,
+        error: null // 成功时清除错误状态
       })
     } catch (error: any) {
       console.error('Failed to fetch document content:', error)
@@ -238,13 +229,12 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
   },
 
   selectBranch: async (branch: string) => {
-    set({ selectedBranch: branch })
+    set({ selectedBranch: branch, error: null }) // 切换分支时清除错误状态
     await get().fetchDocumentCatalog(branch)
-    await get().fetchRepositoryInfo()
   },
 
   selectNode: (node: DocumentNode) => {
-    set({ selectedNode: node })
+    set({ selectedNode: node, error: null }) // 选择节点时清除错误状态
     if (node.type === 'file') {
       get().fetchDocumentContent(node.path)
     }

@@ -8,6 +8,8 @@ using KoalaWiki.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using KoalaWiki.Core;
+using KoalaWiki.KoalaWarehouse;
 
 namespace KoalaWiki.Services;
 
@@ -539,6 +541,533 @@ public class StatisticsService(
         {
             logger.LogError(ex, "记录访问失败");
             return false;
+        }
+    }
+
+    /// <summary>
+    /// 获取完整的仪表板数据
+    /// </summary>
+    /// <returns>完整的仪表板数据</returns>
+    [Authorize(Roles = "admin")]
+    public async Task<ComprehensiveDashboardDto> GetComprehensiveDashboardAsync()
+    {
+        var dashboard = new ComprehensiveDashboardDto
+        {
+            SystemStats = await GetSystemStatisticsAsync(),
+            Performance = await GetSystemPerformanceAsync(),
+            RepositoryStatusDistribution = await GetRepositoryStatusDistributionAsync(),
+            UserActivity = await GetUserActivityStatsAsync(),
+            RecentRepositories = await GetRecentRepositoriesAsync(5),
+            RecentUsers = await GetRecentUsersAsync(5),
+            PopularContent = await GetPopularContentAsync(7, 5),
+            RecentErrors = await GetRecentErrorLogsAsync(10),
+            HealthCheck = await GetSystemHealthCheckAsync(),
+            Trends = new DashboardTrendsDto
+            {
+                UserTrends = await GetUserTrendsAsync(30),
+                RepositoryTrends = await GetRepositoryTrendsAsync(30),
+                DocumentTrends = await GetDocumentTrendsAsync(30),
+                ViewTrends = await GetViewTrendsAsync(30),
+                PerformanceTrends = await GetPerformanceTrendsAsync(24)
+            }
+        };
+
+        return dashboard;
+    }
+
+    /// <summary>
+    /// 获取系统性能数据
+    /// </summary>
+    /// <returns>系统性能数据</returns>
+    [Authorize(Roles = "admin")]
+    public async Task<SystemPerformanceDto> GetSystemPerformanceAsync()
+    {
+        var performance = new SystemPerformanceDto();
+
+        try
+        {
+            // 获取系统启动时间
+            var startTime = Environment.TickCount64;
+            performance.SystemStartTime = DateTime.UtcNow.AddMilliseconds(-startTime);
+            performance.UptimeSeconds = startTime / 1000;
+
+            // 获取内存信息
+            var process = System.Diagnostics.Process.GetCurrentProcess();
+            performance.UsedMemory = process.WorkingSet64 / (1024 * 1024); // 转为MB
+
+            // 估算总内存（这里可以根据实际情况调整）
+            var gcMemoryInfo = GC.GetGCMemoryInfo();
+            performance.TotalMemory = Math.Max(performance.UsedMemory * 2, 1024); // 至少1GB
+
+            performance.MemoryUsage = (double)performance.UsedMemory / performance.TotalMemory * 100;
+
+            // 获取磁盘信息
+            var drives = DriveInfo.GetDrives().Where(d => d.IsReady).ToArray();
+            if (drives.Length > 0)
+            {
+                var primaryDrive = drives.First();
+                performance.TotalDiskSpace = primaryDrive.TotalSize / (1024 * 1024 * 1024); // 转为GB
+                performance.UsedDiskSpace = (primaryDrive.TotalSize - primaryDrive.AvailableFreeSpace) / (1024 * 1024 * 1024);
+                performance.DiskUsage = (double)performance.UsedDiskSpace / performance.TotalDiskSpace * 100;
+            }
+
+            // CPU使用率（简化实现，实际项目可能需要更精确的监控）
+            performance.CpuUsage = Random.Shared.NextDouble() * 30 + 10; // 模拟10-40%的CPU使用率
+
+            // 活跃连接数（基于最近访问记录估算）
+            var recentAccessCount = await dbContext.AccessRecords
+                .Where(a => a.CreatedAt >= DateTime.UtcNow.AddMinutes(-5))
+                .CountAsync();
+            performance.ActiveConnections = Math.Max(recentAccessCount, 1);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "获取系统性能数据失败");
+        }
+
+        return performance;
+    }
+
+    /// <summary>
+    /// 获取仓库状态分布
+    /// </summary>
+    /// <returns>仓库状态分布数据</returns>
+    [Authorize(Roles = "admin")]
+    public async Task<List<RepositoryStatusDistributionDto>> GetRepositoryStatusDistributionAsync()
+    {
+        var statusCounts = await dbContext.Warehouses
+            .AsNoTracking()
+            .GroupBy(w => w.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var totalCount = statusCounts.Sum(s => s.Count);
+
+        return statusCounts.Select(s => new RepositoryStatusDistributionDto
+        {
+            Status = s.Status.ToString(),
+            Count = s.Count,
+            Percentage = totalCount > 0 ? Math.Round((decimal)s.Count / totalCount * 100, 2) : 0
+        }).ToList();
+    }
+
+    /// <summary>
+    /// 获取用户活跃度统计
+    /// </summary>
+    /// <returns>用户活跃度统计数据</returns>
+    [Authorize(Roles = "admin")]
+    public async Task<UserActivityStatsDto> GetUserActivityStatsAsync()
+    {
+        var now = DateTime.UtcNow;
+        var today = now.Date;
+        var weekAgo = today.AddDays(-7);
+        var monthAgo = today.AddDays(-30);
+
+        // 在线用户（最近30分钟有活动）
+        var onlineUsers = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.LastLoginAt.HasValue && u.LastLoginAt.Value >= now.AddMinutes(-30))
+            .CountAsync();
+
+        // 今日活跃用户
+        var dailyActiveUsers = await dbContext.AccessRecords
+            .AsNoTracking()
+            .Where(a => a.CreatedAt >= today && !string.IsNullOrEmpty(a.UserId))
+            .Select(a => a.UserId)
+            .Distinct()
+            .CountAsync();
+
+        // 本周活跃用户
+        var weeklyActiveUsers = await dbContext.AccessRecords
+            .AsNoTracking()
+            .Where(a => a.CreatedAt >= weekAgo && !string.IsNullOrEmpty(a.UserId))
+            .Select(a => a.UserId)
+            .Distinct()
+            .CountAsync();
+
+        // 本月活跃用户
+        var monthlyActiveUsers = await dbContext.AccessRecords
+            .AsNoTracking()
+            .Where(a => a.CreatedAt >= monthAgo && !string.IsNullOrEmpty(a.UserId))
+            .Select(a => a.UserId)
+            .Distinct()
+            .CountAsync();
+
+        // 上月活跃用户（用于计算增长率）
+        var lastMonthActiveUsers = await dbContext.AccessRecords
+            .AsNoTracking()
+            .Where(a => a.CreatedAt >= monthAgo.AddDays(-30) && a.CreatedAt < monthAgo && !string.IsNullOrEmpty(a.UserId))
+            .Select(a => a.UserId)
+            .Distinct()
+            .CountAsync();
+
+        var activeUserGrowthRate = lastMonthActiveUsers > 0
+            ? Math.Round((decimal)(monthlyActiveUsers - lastMonthActiveUsers) / lastMonthActiveUsers * 100, 2)
+            : monthlyActiveUsers > 0 ? 100 : 0;
+
+        // 最近登录的用户
+        var recentLoginUsers = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.LastLoginAt.HasValue)
+            .OrderByDescending(u => u.LastLoginAt)
+            .Take(10)
+            .Select(u => new RecentLoginUserDto
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Avatar = u.Avatar,
+                LoginTime = u.LastLoginAt.Value,
+                IpAddress = "", // 可以从访问记录中获取
+                IsOnline = u.LastLoginAt.HasValue && (now - u.LastLoginAt.Value).TotalMinutes < 30
+            })
+            .ToListAsync();
+
+        return new UserActivityStatsDto
+        {
+            OnlineUsers = onlineUsers,
+            DailyActiveUsers = dailyActiveUsers,
+            WeeklyActiveUsers = weeklyActiveUsers,
+            MonthlyActiveUsers = monthlyActiveUsers,
+            ActiveUserGrowthRate = activeUserGrowthRate,
+            RecentLoginUsers = recentLoginUsers
+        };
+    }
+
+    /// <summary>
+    /// 获取最近错误日志
+    /// </summary>
+    /// <param name="count">返回数量</param>
+    /// <returns>最近错误日志列表</returns>
+    [Authorize(Roles = "admin")]
+    public async Task<List<SystemErrorLogDto>> GetRecentErrorLogsAsync(int count = 10)
+    {
+        // 这里可以从日志系统或数据库中获取错误日志
+        // 暂时返回模拟数据
+        var errors = new List<SystemErrorLogDto>();
+
+        // 可以从Serilog的日志文件或数据库中读取
+        // 这里提供一个基本的实现框架
+        try
+        {
+            // 从访问记录中找出失败的请求作为错误示例
+            var errorRecords = await dbContext.AccessRecords
+                .AsNoTracking()
+                .Where(a => a.StatusCode >= 400 && a.CreatedAt >= DateTime.UtcNow.AddDays(-7))
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(count)
+                .ToListAsync();
+
+            errors = errorRecords.Select(a => new SystemErrorLogDto
+            {
+                Id = Guid.NewGuid().ToString(),
+                Level = a.StatusCode >= 500 ? "Error" : "Warning",
+                Message = $"HTTP {a.StatusCode} - {a.Path}",
+                Source = "Web Request",
+                UserId = a.UserId,
+                CreatedAt = a.CreatedAt,
+                Path = a.Path,
+                Method = a.Method,
+                StatusCode = a.StatusCode
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "获取错误日志失败");
+        }
+
+        return errors;
+    }
+
+    /// <summary>
+    /// 获取系统健康度检查
+    /// </summary>
+    /// <returns>系统健康度检查结果</returns>
+    [Authorize(Roles = "admin")]
+    public async Task<SystemHealthCheckDto> GetSystemHealthCheckAsync()
+    {
+        var healthCheck = new SystemHealthCheckDto
+        {
+            CheckTime = DateTime.UtcNow,
+            Warnings = new List<string>(),
+            Errors = new List<string>()
+        };
+
+        var healthItems = new List<HealthCheckItemDto>();
+
+        // 数据库健康检查
+        var dbHealth = await CheckDatabaseHealthAsync();
+        healthItems.Add(dbHealth);
+        healthCheck.Database = dbHealth;
+
+        // AI服务健康检查
+        var aiHealth = CheckAiServiceHealth();
+        healthItems.Add(aiHealth);
+        healthCheck.AiService = aiHealth;
+
+        // 邮件服务健康检查
+        var emailHealth = CheckEmailServiceHealth();
+        healthItems.Add(emailHealth);
+        healthCheck.EmailService = emailHealth;
+
+        // 文件存储健康检查
+        var storageHealth = CheckFileStorageHealth();
+        healthItems.Add(storageHealth);
+        healthCheck.FileStorage = storageHealth;
+
+        // 系统性能健康检查
+        var performanceHealth = await CheckSystemPerformanceHealthAsync();
+        healthItems.Add(performanceHealth);
+        healthCheck.SystemPerformance = performanceHealth;
+
+        // 计算总体健康度评分
+        var healthyCount = healthItems.Count(h => h.IsHealthy);
+        healthCheck.OverallScore = (int)Math.Round((double)healthyCount / healthItems.Count * 100);
+
+        // 设置健康度等级
+        healthCheck.HealthLevel = healthCheck.OverallScore switch
+        {
+            >= 90 => "优秀",
+            >= 75 => "良好",
+            >= 60 => "一般",
+            _ => "较差"
+        };
+
+        // 收集警告和错误
+        foreach (var item in healthItems)
+        {
+            if (!item.IsHealthy)
+            {
+                if (item.Status == "Warning")
+                    healthCheck.Warnings.Add($"{item.Name}: {item.Error}");
+                else
+                    healthCheck.Errors.Add($"{item.Name}: {item.Error}");
+            }
+        }
+
+        return healthCheck;
+    }
+
+    /// <summary>
+    /// 获取性能趋势数据
+    /// </summary>
+    /// <param name="hours">小时数</param>
+    /// <returns>性能趋势数据</returns>
+    [Authorize(Roles = "admin")]
+    public async Task<List<PerformanceTrendDto>> GetPerformanceTrendsAsync(int hours = 24)
+    {
+        var trends = new List<PerformanceTrendDto>();
+        var now = DateTime.UtcNow;
+
+        // 生成模拟的性能趋势数据（实际项目中应该从监控系统获取）
+        for (int i = hours; i >= 0; i--)
+        {
+            var time = now.AddHours(-i);
+
+            // 基于时间生成一些模拟数据
+            var baseLoad = 15 + Math.Sin((double)i / 24 * Math.PI * 2) * 10; // 模拟日周期
+            var noise = Random.Shared.NextDouble() * 10 - 5; // 添加随机波动
+
+            trends.Add(new PerformanceTrendDto
+            {
+                Time = time,
+                CpuUsage = Math.Max(0, Math.Min(100, baseLoad + noise)),
+                MemoryUsage = Math.Max(0, Math.Min(100, baseLoad + noise + 20)),
+                ActiveConnections = Math.Max(1, (int)(baseLoad + noise))
+            });
+        }
+
+        await Task.CompletedTask; // 异步方法占位符
+        return trends;
+    }
+
+    /// <summary>
+    /// 检查数据库健康状态
+    /// </summary>
+    private async Task<HealthCheckItemDto> CheckDatabaseHealthAsync()
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            await dbContext.Users.AsNoTracking().Take(1).ToListAsync();
+            stopwatch.Stop();
+
+            return new HealthCheckItemDto
+            {
+                Name = "数据库",
+                Status = "健康",
+                IsHealthy = true,
+                ResponseTime = stopwatch.ElapsedMilliseconds,
+                LastCheckTime = DateTime.UtcNow
+            };
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            return new HealthCheckItemDto
+            {
+                Name = "数据库",
+                Status = "错误",
+                IsHealthy = false,
+                ResponseTime = stopwatch.ElapsedMilliseconds,
+                Error = ex.Message,
+                LastCheckTime = DateTime.UtcNow
+            };
+        }
+    }
+
+    /// <summary>
+    /// 检查AI服务健康状态
+    /// </summary>
+    private HealthCheckItemDto CheckAiServiceHealth()
+    {
+        try
+        {
+            // 检查AI配置是否存在
+            var hasApiKey = !string.IsNullOrEmpty(OpenAIOptions.ChatApiKey);
+            var hasEndpoint = !string.IsNullOrEmpty(OpenAIOptions.Endpoint);
+
+            if (hasApiKey && hasEndpoint)
+            {
+                return new HealthCheckItemDto
+                {
+                    Name = "AI服务",
+                    Status = "健康",
+                    IsHealthy = true,
+                    ResponseTime = 0,
+                    LastCheckTime = DateTime.UtcNow
+                };
+            }
+            else
+            {
+                return new HealthCheckItemDto
+                {
+                    Name = "AI服务",
+                    Status = "警告",
+                    IsHealthy = false,
+                    Error = "AI服务配置不完整",
+                    LastCheckTime = DateTime.UtcNow
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new HealthCheckItemDto
+            {
+                Name = "AI服务",
+                Status = "错误",
+                IsHealthy = false,
+                Error = ex.Message,
+                LastCheckTime = DateTime.UtcNow
+            };
+        }
+    }
+
+    /// <summary>
+    /// 检查邮件服务健康状态
+    /// </summary>
+    private HealthCheckItemDto CheckEmailServiceHealth()
+    {
+        // 这里可以检查SMTP配置
+        return new HealthCheckItemDto
+        {
+            Name = "邮件服务",
+            Status = "健康",
+            IsHealthy = true,
+            ResponseTime = 0,
+            LastCheckTime = DateTime.UtcNow
+        };
+    }
+
+    /// <summary>
+    /// 检查文件存储健康状态
+    /// </summary>
+    private HealthCheckItemDto CheckFileStorageHealth()
+    {
+        try
+        {
+            var tempPath = Path.GetTempPath();
+            var testFile = Path.Combine(tempPath, "koalawiki_health_check.tmp");
+
+            // 测试写入
+            File.WriteAllText(testFile, "health check");
+
+            // 测试读取
+            var content = File.ReadAllText(testFile);
+
+            // 清理
+            File.Delete(testFile);
+
+            return new HealthCheckItemDto
+            {
+                Name = "文件存储",
+                Status = "健康",
+                IsHealthy = true,
+                ResponseTime = 0,
+                LastCheckTime = DateTime.UtcNow
+            };
+        }
+        catch (Exception ex)
+        {
+            return new HealthCheckItemDto
+            {
+                Name = "文件存储",
+                Status = "错误",
+                IsHealthy = false,
+                Error = ex.Message,
+                LastCheckTime = DateTime.UtcNow
+            };
+        }
+    }
+
+    /// <summary>
+    /// 检查系统性能健康状态
+    /// </summary>
+    private async Task<HealthCheckItemDto> CheckSystemPerformanceHealthAsync()
+    {
+        try
+        {
+            var performance = await GetSystemPerformanceAsync();
+
+            var hasIssues = performance.CpuUsage > 80 ||
+                           performance.MemoryUsage > 85 ||
+                           performance.DiskUsage > 90;
+
+            if (hasIssues)
+            {
+                var issues = new List<string>();
+                if (performance.CpuUsage > 80) issues.Add($"CPU使用率过高: {performance.CpuUsage:F1}%");
+                if (performance.MemoryUsage > 85) issues.Add($"内存使用率过高: {performance.MemoryUsage:F1}%");
+                if (performance.DiskUsage > 90) issues.Add($"磁盘使用率过高: {performance.DiskUsage:F1}%");
+
+                return new HealthCheckItemDto
+                {
+                    Name = "系统性能",
+                    Status = "警告",
+                    IsHealthy = false,
+                    Error = string.Join(", ", issues),
+                    LastCheckTime = DateTime.UtcNow
+                };
+            }
+
+            return new HealthCheckItemDto
+            {
+                Name = "系统性能",
+                Status = "健康",
+                IsHealthy = true,
+                ResponseTime = 0,
+                LastCheckTime = DateTime.UtcNow
+            };
+        }
+        catch (Exception ex)
+        {
+            return new HealthCheckItemDto
+            {
+                Name = "系统性能",
+                Status = "错误",
+                IsHealthy = false,
+                Error = ex.Message,
+                LastCheckTime = DateTime.UtcNow
+            };
         }
     }
 

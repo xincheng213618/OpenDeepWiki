@@ -73,25 +73,6 @@ class WarehouseService {
   }
 
   /**
-   * 获取仓库概览信息
-   */
-  async getWarehouseOverview(
-    owner: string,
-    name: string,
-    branch?: string
-  ): Promise<any> {
-    const params: any = { owner, name }
-    if (branch) {
-      params.branch = branch
-    }
-
-    return fetchService.get<any>(
-      `${this.basePath}/WarehouseOverview`,
-      { params }
-    )
-  }
-
-  /**
    * 获取文档目录
    */
   async getDocumentCatalog(
@@ -181,35 +162,6 @@ class WarehouseService {
   }
 
   /**
-   * 获取仓库分支列表 - 通过组织名和仓库名
-   */
-  async getRepositoryBranches(
-    owner: string,
-    name: string
-  ): Promise<BranchListResponse> {
-    // 先获取仓库信息来获取仓库地址
-    try {
-      const overview = await this.getWarehouseOverview(owner, name)
-      if (overview && overview.address) {
-        return this.getBranchList(overview.address)
-      }
-      return {
-        success: false,
-        data: ['main', 'master'],
-        defaultBranch: 'main',
-        error: 'Failed to get repository address'
-      }
-    } catch (error) {
-      return {
-        success: false,
-        data: ['main', 'master'],
-        defaultBranch: 'main',
-        error: 'Failed to get branches'
-      }
-    }
-  }
-
-  /**
    * 获取最近的仓库信息
    */
   async getLastWarehouse(address: string): Promise<any> {
@@ -274,12 +226,48 @@ class WarehouseService {
   /**
    * 导出仓库的Markdown文件为ZIP
    */
-  async exportMarkdownZip(warehouseId: string): Promise<any> {
-    return fetchService.post<any>(
-      `${this.basePath}/ExportMarkdownZip`,
-      null,
-      { params: { warehouseId } }
-    )
+  async exportMarkdownZip(warehouseId: string): Promise<void> {
+    // 获取认证token
+    const token = localStorage.getItem('auth_token')
+
+    // 构建URL
+    const url = `/api/Warehouse/ExportMarkdownZip?warehouseId=${encodeURIComponent(warehouseId)}`
+
+    // 发起请求获取文件流
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || '下载失败')
+    }
+
+    // 从响应头获取文件名
+    const contentDisposition = response.headers.get('content-disposition')
+    let filename = 'repository.zip'
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '')
+      }
+    }
+
+    // 创建 Blob 并下载
+    const blob = await response.blob()
+    const downloadUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+
+    // 释放 URL 对象
+    window.URL.revokeObjectURL(downloadUrl)
   }
 
   /**

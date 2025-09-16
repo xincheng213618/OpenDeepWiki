@@ -237,6 +237,8 @@ public partial class DocumentPendingService
         var contents = new ChatMessageContentItemCollection
         {
             new TextContent(prompt),
+            new TextContent(
+                "For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially."),
             new TextContent(Prompt.Language)
         };
 
@@ -253,9 +255,9 @@ public partial class DocumentPendingService
 
         int count = 1;
 
-    reset:
+        reset:
 
-        await chat.GetChatMessageContentAsync(history, settings, documentKernel);
+        await chat.GetChatMessageContentsAsync(history, settings, documentKernel);
 
         if (string.IsNullOrEmpty(docs.Content) && count < 5)
         {
@@ -264,7 +266,7 @@ public partial class DocumentPendingService
         }
 
 
-        if (DocumentOptions.RefineAndEnhanceQuality )
+        if (DocumentOptions.RefineAndEnhanceQuality)
         {
             try
             {
@@ -327,7 +329,7 @@ public partial class DocumentPendingService
 
                 var refinedContent = new StringBuilder();
                 int reset1 = 1;
-            reset1:
+                reset1:
 
                 await chat.GetChatMessageContentAsync(history, settings, documentKernel);
 

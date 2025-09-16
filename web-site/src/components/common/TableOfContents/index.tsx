@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 
 interface TocItem {
@@ -45,22 +45,24 @@ export default function TableOfContents({ className, onItemClick }: TableOfConte
     return elementRect.top - containerRect.top + container.scrollTop
   }, [])
 
+  // 使用 useMemo 优化标题选择器
+  const headingSelectors = useMemo(() => [
+    '.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6',
+    'article h1, article h2, article h3, article h4, article h5, article h6',
+    'main h1, main h2, main h3, main h4, main h5, main h6',
+    '.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6',
+    'h1, h2, h3, h4, h5, h6'
+  ], [])
+
   useEffect(() => {
     // 定时检查DOM变化并更新标题
     const updateHeadings = () => {
-      // 扩展选择器，支持多种容器和直接选择
-      const selectors = [
-        '.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6',
-        'article h1, article h2, article h3, article h4, article h5, article h6',
-        'main h1, main h2, main h3, main h4, main h5, main h6',
-        '.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6',
-        'h1, h2, h3, h4, h5, h6' // 最后的兜底选择器
-      ]
+      // 使用预定义的选择器
 
       let elements: HTMLElement[] = []
 
       // 按优先级尝试选择器
-      for (const selector of selectors) {
+      for (const selector of headingSelectors) {
         elements = Array.from(document.querySelectorAll(selector)) as HTMLElement[]
         if (elements.length > 0) break
       }
@@ -156,7 +158,7 @@ export default function TableOfContents({ className, onItemClick }: TableOfConte
     return () => {
       observer.disconnect()
     }
-  }, [])
+  }, [headingSelectors])
 
   // 防抖函数
   const debounce = useCallback((func: Function, wait: number) => {
@@ -210,15 +212,17 @@ export default function TableOfContents({ className, onItemClick }: TableOfConte
     [updateIndicatorPosition, debounce]
   )
 
-  // 节流函数
+  // 节流函数 - 优化性能
   const throttle = useCallback((func: Function, limit: number) => {
     let inThrottle: boolean
+    let lastResult: any
     return (...args: any[]) => {
       if (!inThrottle) {
-        func.apply(null, args)
+        lastResult = func.apply(null, args)
         inThrottle = true
         setTimeout(() => inThrottle = false, limit)
       }
+      return lastResult
     }
   }, [])
 
@@ -233,14 +237,20 @@ export default function TableOfContents({ className, onItemClick }: TableOfConte
 
       let activeIndex = -1
 
-      // 找到当前最接近的标题
-      for (let i = headings.length - 1; i >= 0; i--) {
-        const heading = headings[i]
+      // 优化：使用二分查找提高性能
+      let left = 0
+      let right = headings.length - 1
+
+      while (left <= right) {
+        const mid = Math.floor((left + right) / 2)
+        const heading = headings[mid]
         const elementTop = getElementTop(heading.element, container)
 
-        if (elementTop - offset <= scrollTop + 10) { // 10px容错
-          activeIndex = i
-          break
+        if (elementTop - offset <= scrollTop + 10) {
+          activeIndex = mid
+          left = mid + 1
+        } else {
+          right = mid - 1
         }
       }
 
@@ -254,7 +264,7 @@ export default function TableOfContents({ className, onItemClick }: TableOfConte
       if (newActiveId !== activeId) {
         setActiveId(newActiveId)
       }
-    }, 16) // 约60fps
+    }, 32) // 减少到约30fps，降低CPU使用
 
     const container = getScrollContainer()
 
@@ -277,11 +287,36 @@ export default function TableOfContents({ className, onItemClick }: TableOfConte
     }
   }, [headings, activeId, getScrollContainer, getScrollPosition, getElementTop, throttle])
 
-  // 监听activeId变化，更新指示器位置
+  // 监听activeId变化，更新指示器位置并滚动到可见区域
   useEffect(() => {
-    if (activeId) {
+    if (activeId && tocRef.current) {
       // 首次设置立即更新，后续使用防抖
       updateIndicatorPosition(activeId, true)
+
+      // 自动滚动 TOC 到当前激活项
+      const activeLink = tocRef.current.querySelector(`[href="#${activeId}"]`) as HTMLElement
+      if (activeLink) {
+        const tocContainer = tocRef.current
+        const containerRect = tocContainer.getBoundingClientRect()
+        const linkRect = activeLink.getBoundingClientRect()
+
+        // 计算元素相对于容器的位置
+        const relativeTop = linkRect.top - containerRect.top
+        const relativeBottom = linkRect.bottom - containerRect.top
+
+        // 检查元素是否在可见区域内
+        const isAboveViewport = relativeTop < 0
+        const isBelowViewport = relativeBottom > containerRect.height
+
+        if (isAboveViewport || isBelowViewport) {
+          // 滚动到元素位置，居中显示
+          const scrollTop = tocContainer.scrollTop + relativeTop - containerRect.height / 2 + linkRect.height / 2
+          tocContainer.scrollTo({
+            top: Math.max(0, scrollTop),
+            behavior: 'smooth'
+          })
+        }
+      }
     }
   }, [activeId, updateIndicatorPosition])
 
@@ -322,7 +357,8 @@ export default function TableOfContents({ className, onItemClick }: TableOfConte
   // 获取基础级别（最小的标题级别）
   const baseLevel = headings.length > 0 ? Math.min(...headings.map(h => h.level)) : 1
 
-  if (headings.length === 0) {
+  // 如果标题数量太少（少于2个），不显示TOC
+  if (headings.length < 2) {
     return null
   }
 
@@ -372,9 +408,9 @@ export default function TableOfContents({ className, onItemClick }: TableOfConte
                     onClick={(e) => handleClick(e, heading.id)}
                     className={cn(
                       "block py-2.5 pr-3 text-sm leading-6 transition-all duration-200 relative",
-                      "hover:text-foreground rounded-r-md",
+                      "hover:text-foreground rounded-lg mr-2",
                       isActive
-                        ? "text-foreground font-medium bg-primary/5"
+                        ? "text-foreground font-medium bg-primary/10"
                         : "text-muted-foreground hover:bg-muted/30",
                       // 根据级别调整样式
                       relativeLevel === 0 && "font-semibold text-[13px]",

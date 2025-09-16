@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import rehypeHighlight from 'rehype-highlight'
+import rehypeRaw from 'rehype-raw'
 import { cn } from '@/lib/utils'
 import 'katex/dist/katex.min.css'
 import 'highlight.js/styles/github.css'
@@ -84,6 +85,7 @@ const languageMap: Record<string, string> = {
 }
 
 const MermaidBlock = lazy(() => import('../MermaidBlock'))
+const MermaidEnhanced = lazy(() => import('../MermaidBlock/MermaidEnhanced'))
 
 // 脚注悬停卡片组件
 const FootnoteHoverCard = ({
@@ -281,12 +283,15 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
     setHoveredFootnote(null)
   }
 
-  // 页面加载后添加全局脚注检测
+  // 页面加载后添加全局脚注检测（优化性能）
   useEffect(() => {
     const addFootnoteHandlers = () => {
-      // 查找所有可能的脚注元素和文本节点
+      // 只在 markdown 内容区域查找脚注，而不是整个页面
+      const markdownContainer = document.querySelector('.markdown-content')
+      if (!markdownContainer) return
+
       const walker = document.createTreeWalker(
-        document.body,
+        markdownContainer,
         NodeFilter.SHOW_TEXT,
         {
           acceptNode: (node) => {
@@ -354,8 +359,8 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
         }
       })
 
-      // 原有的sup元素检测
-      const elements = document.querySelectorAll('sup:not([data-footnote-processed])')
+      // 原有的sup元素检测（限制在 markdown 容器内）
+      const elements = markdownContainer.querySelectorAll('sup:not([data-footnote-processed])')
       elements.forEach((element) => {
         const text = element.textContent || ''
         const footnoteMatch = text.match(/\^?(\d+)/)
@@ -403,9 +408,12 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
       })
     }
 
-    // 清理之前的事件监听器
+    // 清理之前的事件监听器（限制在 markdown 容器内）
     const cleanupPrevious = () => {
-      const elements = document.querySelectorAll('[data-footnote-processed]')
+      const markdownContainer = document.querySelector('.markdown-content')
+      if (!markdownContainer) return
+
+      const elements = markdownContainer.querySelectorAll('[data-footnote-processed]')
       elements.forEach((element: any) => {
         if (element._footnoteCleanup) {
           element._footnoteCleanup()
@@ -415,8 +423,8 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
 
     cleanupPrevious()
 
-    // 延迟执行以确保DOM已渲染
-    const timer = setTimeout(addFootnoteHandlers, 500)
+    // 减少延迟时间，优化性能
+    const timer = setTimeout(addFootnoteHandlers, 200)
     return () => {
       clearTimeout(timer)
       cleanupPrevious()
@@ -455,6 +463,7 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
         <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[
+          rehypeRaw,
           rehypeKatex,
           [rehypeHighlight, {
             subset: false,
@@ -633,7 +642,7 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
               console.log('Mermaid code detected in code component:', code.substring(0, 100))
               return (
                 <Suspense fallback={<div className="flex justify-center p-8"><span className="text-muted-foreground">加载图表...</span></div>}>
-                  <MermaidBlock chart={code} />
+                  <MermaidEnhanced code={code} />
                 </Suspense>
               )
             }
@@ -709,7 +718,7 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
               console.log('Mermaid code detected in pre:', code.substring(0, 100))
               return (
                 <Suspense fallback={<div className="flex justify-center p-8"><span className="text-muted-foreground">加载图表...</span></div>}>
-                  <MermaidBlock chart={code} />
+                  <MermaidEnhanced code={code} />
                 </Suspense>
               )
             }
@@ -791,12 +800,13 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
           ),
           // 自定义图片
           img: ({ src, alt, ...props }) => (
-            <figure className="my-8 group">
-              <div className="overflow-hidden rounded-xl border border-border shadow-lg transition-transform duration-200 hover:scale-[1.02]">
+            <figure className="my-8 max-w-full overflow-hidden">
+              <div className="inline-block max-w-full overflow-hidden rounded-xl border border-border shadow-lg">
                 <img
                   src={src}
                   alt={alt}
-                  className="w-full h-auto"
+                  className="block w-full max-w-[800px] h-auto mx-auto"
+                  style={{ maxWidth: '100%' }}
                   loading="lazy"
                   {...props}
                 />

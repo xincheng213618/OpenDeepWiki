@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Loader2, List, X } from 'lucide-react'
+import { Loader2, List, X, Eye, EyeOff } from 'lucide-react'
 import { documentService, DocumentResponse } from '@/services/documentService'
 import { useRepositoryDetailStore } from '@/stores/repositoryDetail.store'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,8 @@ export default function DocumentPage({ className, branch }: DocumentPageProps) {
   const [error, setError] = useState<string>('')
   const [isMobileTocOpen, setIsMobileTocOpen] = useState(false)
   const [showMobileTocButton, setShowMobileTocButton] = useState(true)
+  const [hasTocContent, setHasTocContent] = useState(false)
+  const [forceShowToc, setForceShowToc] = useState(false)
 
   useEffect(() => {
     if (!owner || !name || !path) return
@@ -61,6 +63,20 @@ export default function DocumentPage({ className, branch }: DocumentPageProps) {
 
     fetchDocument()
   }, [owner, name, path, branch, selectedBranch, searchParams, i18n.language])
+
+  // 检测页面是否有足够的标题来显示 TOC
+  useEffect(() => {
+    // 延迟检测，确保 markdown 已经渲染
+    const checkTocContent = () => {
+      const headings = document.querySelectorAll('.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6')
+      setHasTocContent(headings.length >= 2)
+    }
+
+    if (documentData?.content) {
+      // 延迟检测以确保 markdown 已经渲染
+      setTimeout(checkTocContent, 500)
+    }
+  }, [documentData?.content])
 
   // 监听滚动以智能显示/隐藏 TOC 按钮
   useEffect(() => {
@@ -190,26 +206,73 @@ export default function DocumentPage({ className, branch }: DocumentPageProps) {
         </article>
       </div>
 
-      {/* 桌面端 TOC */}
-      <aside className="w-64 border-l border-border/40 px-4 py-8 overflow-y-auto hidden lg:block">
-        <TableOfContents />
-      </aside>
+      {/* 桌面端 TOC - 自适应显示 */}
+      {(hasTocContent || forceShowToc) && (
+        <aside className="w-64 border-l border-border/40 px-4 py-8 overflow-y-auto hidden lg:block">
+          {/* TOC 手动控制按钮 - 仅在内容不足时显示 */}
+          {!hasTocContent && (
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">
+                {t('repository.document.tableOfContents')}
+              </h3>
+              <Button
+                onClick={() => setForceShowToc(false)}
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 hover:bg-muted"
+                title={t('repository.document.hideToc')}
+              >
+                <EyeOff className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          <TableOfContents />
+        </aside>
+      )}
 
-      {/* 移动端 TOC 按钮 */}
-      <Button
-        onClick={() => setIsMobileTocOpen(true)}
-        className={cn(
-          "fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg lg:hidden z-40 p-0 transition-all duration-300",
-          showMobileTocButton ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0 pointer-events-none"
-        )}
-        size="icon"
-        aria-label="Open Table of Contents"
-      >
-        <List className="h-5 w-5" />
-      </Button>
+      {/* 桌面端 TOC 显示按钮 - 仅在内容不足且未强制显示时显示 */}
+      {!hasTocContent && !forceShowToc && (
+        <Button
+          onClick={() => setForceShowToc(true)}
+          className="fixed top-24 right-6 h-10 px-3 rounded-full shadow-lg hidden lg:flex items-center gap-2 z-40"
+          variant="outline"
+          title={t('repository.document.showToc')}
+        >
+          <Eye className="h-4 w-4" />
+          <span className="text-sm">{t('repository.document.tableOfContents')}</span>
+        </Button>
+      )}
 
-      {/* 移动端 TOC 抽屉 */}
-      {isMobileTocOpen && (
+      {/* 移动端 TOC 按钮 - 自适应显示 */}
+      {(hasTocContent || forceShowToc) && (
+        <Button
+          onClick={() => setIsMobileTocOpen(true)}
+          className={cn(
+            "fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg lg:hidden z-40 p-0 transition-all duration-300",
+            showMobileTocButton ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0 pointer-events-none"
+          )}
+          size="icon"
+          aria-label="Open Table of Contents"
+        >
+          <List className="h-5 w-5" />
+        </Button>
+      )}
+
+      {/* 移动端 TOC 显示按钮 - 仅在内容不足且未强制显示时显示 */}
+      {!hasTocContent && !forceShowToc && (
+        <Button
+          onClick={() => setForceShowToc(true)}
+          className="fixed bottom-6 right-6 h-12 px-4 rounded-full shadow-lg lg:hidden z-40 flex items-center gap-2"
+          variant="outline"
+          aria-label="Show Table of Contents"
+        >
+          <Eye className="h-4 w-4" />
+          <span className="text-sm">TOC</span>
+        </Button>
+      )}
+
+      {/* 移动端 TOC 抽屉 - 自适应显示 */}
+      {(hasTocContent || forceShowToc) && isMobileTocOpen && (
         <>
           {/* 遮罩层 */}
           <div
@@ -235,6 +298,16 @@ export default function DocumentPage({ className, branch }: DocumentPageProps) {
 
               {/* TOC 内容 */}
               <div className="flex-1 overflow-y-auto p-4">
+                {/* 手动显示提示 - 仅在内容不足时显示 */}
+                {!hasTocContent && (
+                  <div className="mb-4 p-3 bg-muted/30 rounded-lg border text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Eye className="h-4 w-4" />
+                      <span className="font-medium">{t('repository.document.manualTocMode')}</span>
+                    </div>
+                    <p>{t('repository.document.manualTocDescription')}</p>
+                  </div>
+                )}
                 <TableOfContents
                   className="max-h-none"
                   onItemClick={() => setIsMobileTocOpen(false)}

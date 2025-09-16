@@ -6,7 +6,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 var api = builder.AddProject<Projects.KoalaWiki>("koalawiki");
 
 // 添加前端项目
-var frontend = builder.AddNpmApp("frontend", "../../web", "dev")
+var frontend = builder.AddNpmApp("frontend", "../../web-site", "dev")
     .WithReference(api)
     .WithHttpEndpoint(env: "PORT", targetPort: 3000, port: 31000);
 

@@ -235,6 +235,36 @@
     color: oklch(0.985 0 0) !important;
   }
 
+  /* Markdown 图片样式优化 */
+  .markdown-content img,
+  .prose img {
+    @apply max-w-full rounded-lg border border-border shadow-sm;
+    max-width: 800px;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+
+  /* 确保 figure 中的图片也遵循最大宽度限制 */
+  .markdown-content figure img,
+  .prose figure img {
+    @apply max-w-full rounded-lg border border-border shadow-sm;
+    max-width: 800px;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+
+  /* 响应式图片 - 在小屏幕上适配 */
+  @media (max-width: 768px) {
+    .markdown-content img,
+    .prose img,
+    .markdown-content figure img,
+    .prose figure img {
+      max-width: 100%;
+    }
+  }
+
   /* 简约风格滚动条 */
   ::-webkit-scrollbar {
     width: 6px;

@@ -1,6 +1,7 @@
 // 用户相关API服务
 
 import { fetchService } from './fetch'
+import type { PageDto } from '@/types/repository'
 
 // 用户信息接口
 export interface UserInfo {
@@ -33,6 +34,24 @@ export interface ApiResponse<T> {
   data: T
   message?: string
   success?: boolean
+}
+
+export interface AdminUserInfo {
+  id: string
+  name: string
+  email: string
+  role: string
+  avatar?: string
+  createdAt: string
+  updatedAt?: string
+  lastLoginAt?: string
+  lastLoginIp?: string
+}
+
+export interface UserListParams {
+  page?: number
+  pageSize?: number
+  keyword?: string
 }
 
 class UserService {
@@ -70,6 +89,22 @@ class UserService {
   async changePassword(data: ChangePasswordRequest): Promise<ApiResponse<boolean>> {
     const response = await fetchService.put<ApiResponse<boolean>>(`${this.basePath}/change-password`, data)
     return response
+  }
+
+  /**
+   * 获取用户列表（管理员）
+   */
+  async getUserList(params: UserListParams = {}): Promise<PageDto<AdminUserInfo>> {
+    const { page = 1, pageSize = 20, keyword } = params
+    const query: Record<string, string | number> = { page, pageSize }
+
+    if (keyword && keyword.trim()) {
+      query.keyword = keyword.trim()
+    }
+
+    return fetchService.get<PageDto<AdminUserInfo>>(`${this.basePath}/UserList`, {
+      params: query,
+    })
   }
 
   /**
@@ -141,6 +176,7 @@ export const changePassword = userService.changePassword.bind(userService)
 export const uploadAvatar = userService.uploadAvatar.bind(userService)
 export const getUserSettings = userService.getUserSettings.bind(userService)
 export const updateUserSettings = userService.updateUserSettings.bind(userService)
+export const getUserList = userService.getUserList.bind(userService)
 
 // 添加 removeAvatar 方法
 export const removeAvatar = async (): Promise<ApiResponse<boolean>> => {

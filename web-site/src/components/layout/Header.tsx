@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { 
@@ -128,6 +129,9 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
 
             {/* Language Selector */}
             <LanguageSwitcher variant="ghost" size="sm" className="hidden sm:flex" />
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* User Menu */}
             {isAuthenticated ? (

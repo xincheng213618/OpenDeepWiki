@@ -1,12 +1,13 @@
 // 仓库管理页面
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -23,123 +24,271 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Search, MoreHorizontal, Edit, Trash2, ExternalLink, FileText, Database } from 'lucide-react'
-
-interface Repository {
-  id: string
-  name: string
-  organization: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  documentsCount: number
-  createdAt: string
-  updatedAt: string
-  gitUrl?: string
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import {
+  Search,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  ExternalLink,
+  FileText,
+  Database,
+  RefreshCw,
+  Plus,
+  Filter,
+  Download,
+  Settings,
+  Eye,
+  GitBranch,
+  Star,
+  GitFork,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Loader2
+} from 'lucide-react'
+import { warehouseService, WarehouseInfo, CreateGitRepositoryDto, UpdateRepositoryDto } from '@/services/admin.service'
+import { toast } from 'sonner'
 
 const RepositoriesPage: React.FC = () => {
   const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
-  const [repositories, setRepositories] = useState<Repository[]>([])
+  const [repositories, setRepositories] = useState<WarehouseInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [total, setTotal] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [selectedRepositories, setSelectedRepositories] = useState<string[]>([])
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editingRepository, setEditingRepository] = useState<WarehouseInfo | null>(null)
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false)
+  const [repositoryToDelete, setRepositoryToDelete] = useState<WarehouseInfo | null>(null)
+  const [batchLoading, setBatchLoading] = useState(false)
 
-  // 模拟仓库数据
-  useEffect(() => {
-    const mockRepositories: Repository[] = [
-      {
-        id: '1',
-        name: 'OpenDeepWiki',
-        organization: 'AIDotNet',
-        status: 'completed',
-        documentsCount: 42,
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-16',
-        gitUrl: 'https://github.com/AIDotNet/OpenDeepWiki'
-      },
-      {
-        id: '2',
-        name: 'KoalaWiki',
-        organization: 'OpenDeepWiki',
-        status: 'processing',
-        documentsCount: 18,
-        createdAt: '2024-01-14',
-        updatedAt: '2024-01-16',
-        gitUrl: 'https://github.com/OpenDeepWiki/KoalaWiki'
-      },
-      {
-        id: '3',
-        name: 'react-admin',
-        organization: 'marmelab',
-        status: 'completed',
-        documentsCount: 156,
-        createdAt: '2024-01-13',
-        updatedAt: '2024-01-15',
-        gitUrl: 'https://github.com/marmelab/react-admin'
-      },
-      {
-        id: '4',
-        name: 'next.js',
-        organization: 'vercel',
-        status: 'failed',
-        documentsCount: 0,
-        createdAt: '2024-01-12',
-        updatedAt: '2024-01-12',
-        gitUrl: 'https://github.com/vercel/next.js'
-      },
-      {
-        id: '5',
-        name: 'vue',
-        organization: 'vuejs',
-        status: 'pending',
-        documentsCount: 0,
-        createdAt: '2024-01-16',
-        updatedAt: '2024-01-16',
-        gitUrl: 'https://github.com/vuejs/vue'
-      }
-    ]
-
-    setTimeout(() => {
-      setRepositories(mockRepositories)
+  // 加载仓库数据
+  const loadRepositories = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await warehouseService.getWarehouseList(
+        currentPage,
+        pageSize,
+        searchQuery || undefined,
+        statusFilter === 'all' ? undefined : statusFilter
+      )
+      // 处理嵌套的data结构
+      const data = response.data || response
+      setRepositories(data.items || [])
+      setTotal(data.total || 0)
+      // 清空选中状态
+      setSelectedRepositories([])
+    } catch (error) {
+      console.error('Failed to load repositories:', error)
+      toast.error('加载失败', {
+        description: '无法加载仓库列表'
+      })
+    } finally {
       setLoading(false)
-    }, 1000)
-  }, [])
+    }
+  }, [currentPage, pageSize, searchQuery, statusFilter])
 
-  const filteredRepositories = repositories.filter(repo =>
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.organization.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  useEffect(() => {
+    loadRepositories()
+  }, [loadRepositories])
 
-  const getStatusBadge = (status: Repository['status']) => {
-    const variants = {
-      pending: { variant: 'secondary' as const, text: '待处理', color: 'text-gray-600' },
-      processing: { variant: 'default' as const, text: '处理中', color: 'text-blue-600' },
-      completed: { variant: 'default' as const, text: '已完成', color: 'text-green-600' },
-      failed: { variant: 'destructive' as const, text: '失败', color: 'text-red-600' }
+  // 搜索和筛选防抖
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage === 1) {
+        loadRepositories()
+      } else {
+        setCurrentPage(1)
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // 状态筛选立即生效
+  useEffect(() => {
+    if (currentPage === 1) {
+      loadRepositories()
+    } else {
+      setCurrentPage(1)
+    }
+  }, [statusFilter])
+
+  const getStatusBadge = (status?: string) => {
+    const statusConfig = {
+      'Pending': {
+        variant: 'secondary' as const,
+        text: '待处理',
+        color: 'text-gray-600 bg-gray-100',
+        icon: Clock
+      },
+      'Processing': {
+        variant: 'default' as const,
+        text: '处理中',
+        color: 'text-blue-600 bg-blue-100',
+        icon: Loader2
+      },
+      'Completed': {
+        variant: 'default' as const,
+        text: '已完成',
+        color: 'text-green-600 bg-green-100',
+        icon: CheckCircle
+      },
+      'Failed': {
+        variant: 'destructive' as const,
+        text: '失败',
+        color: 'text-red-600 bg-red-100',
+        icon: AlertCircle
+      }
     }
 
-    const config = variants[status]
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.Pending
+    const Icon = config.icon
+
     return (
-      <Badge variant={config.variant} className={config.color}>
+      <Badge variant={config.variant} className={`${config.color} flex items-center gap-1`}>
+        <Icon className={`h-3 w-3 ${status === 'Processing' ? 'animate-spin' : ''}`} />
         {config.text}
       </Badge>
     )
   }
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return '未知'
     return new Date(dateString).toLocaleDateString('zh-CN')
   }
 
+  // 选择操作
+  const handleSelectRepository = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedRepositories(prev => [...prev, id])
+    } else {
+      setSelectedRepositories(prev => prev.filter(item => item !== id))
+    }
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedRepositories(repositories.map(repo => repo.id))
+    } else {
+      setSelectedRepositories([])
+    }
+  }
+
+  // 删除操作
+  const handleDeleteRepository = async (repository: WarehouseInfo) => {
+    setRepositoryToDelete(repository)
+    setShowDeleteAlert(true)
+  }
+
+  const confirmDeleteRepository = async () => {
+    if (!repositoryToDelete) return
+
+    try {
+      await warehouseService.deleteWarehouse(repositoryToDelete.id)
+      toast.success('删除成功', {
+        description: `仓库 "${repositoryToDelete.name}" 已被删除`
+      })
+      loadRepositories()
+    } catch (error) {
+      toast.error('删除失败', {
+        description: '无法删除仓库'
+      })
+    } finally {
+      setShowDeleteAlert(false)
+      setRepositoryToDelete(null)
+    }
+  }
+
+  // 刷新操作
+  const handleRefreshRepository = async (id: string, name: string) => {
+    try {
+      await warehouseService.refreshWarehouse(id)
+      toast.success('刷新成功', {
+        description: `仓库 "${name}" 已开始刷新`
+      })
+      loadRepositories()
+    } catch (error) {
+      toast.error('刷新失败', {
+        description: '无法刷新仓库'
+      })
+    }
+  }
+
+  // 编辑操作
+  const handleEditRepository = (repository: WarehouseInfo) => {
+    setEditingRepository(repository)
+    setShowEditDialog(true)
+  }
+
+  // 批量操作
+  const handleBatchOperation = async (operation: string) => {
+    if (selectedRepositories.length === 0) {
+      toast.error('请选择要操作的仓库')
+      return
+    }
+
+    setBatchLoading(true)
+    try {
+      await warehouseService.batchOperateRepositories({
+        ids: selectedRepositories,
+        operation: operation as any
+      })
+      toast.success('批量操作成功')
+      loadRepositories()
+    } catch (error) {
+      toast.error('批量操作失败')
+    } finally {
+      setBatchLoading(false)
+    }
+  }
+
+  // 计算统计数据
   const getStatusStats = () => {
     const stats = repositories.reduce((acc, repo) => {
-      acc[repo.status] = (acc[repo.status] || 0) + 1
+      const status = repo.status || 'Pending'
+      acc[status] = (acc[status] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
     return {
-      total: repositories.length,
-      completed: stats.completed || 0,
-      processing: stats.processing || 0,
-      pending: stats.pending || 0,
-      failed: stats.failed || 0
+      total: total,
+      completed: stats.Completed || 0,
+      processing: stats.Processing || 0,
+      pending: stats.Pending || 0,
+      failed: stats.Failed || 0
     }
   }
 
@@ -153,12 +302,40 @@ const RepositoriesPage: React.FC = () => {
           <h1 className="text-3xl font-bold tracking-tight">{t('admin.repositories.title')}</h1>
           <p className="text-muted-foreground">{t('admin.repositories.subtitle')}</p>
         </div>
-        <Button asChild>
-          <Link to="/">
-            <ExternalLink className="mr-2 h-4 w-4" />
-            添加仓库
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {selectedRepositories.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={batchLoading}>
+                  {batchLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  批量操作 ({selectedRepositories.length})
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleBatchOperation('refresh')}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  批量刷新
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBatchOperation('delete')} className="text-red-600">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  批量删除
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                添加仓库
+              </Button>
+            </DialogTrigger>
+            <CreateRepositoryDialog onSuccess={() => {
+              setShowCreateDialog(false)
+              loadRepositories()
+            }} />
+          </Dialog>
+        </div>
       </div>
 
       {/* 仓库统计卡片 */}
@@ -212,7 +389,7 @@ const RepositoriesPage: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>仓库列表</CardTitle>
-          <CardDescription>管理系统中的所有代码仓库</CardDescription>
+          <CardDescription>共 {total} 个仓库</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-4 mb-4">
@@ -225,9 +402,19 @@ const RepositoriesPage: React.FC = () => {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">
-              筛选
-            </Button>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="筛选状态" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部状态</SelectItem>
+                <SelectItem value="Pending">待处理</SelectItem>
+                <SelectItem value="Processing">处理中</SelectItem>
+                <SelectItem value="Completed">已完成</SelectItem>
+                <SelectItem value="Failed">失败</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* 仓库表格 */}
@@ -235,12 +422,17 @@ const RepositoriesPage: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]">
+                    <Checkbox
+                      checked={selectedRepositories.length === repositories.length && repositories.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>{t('admin.repositories.table.name')}</TableHead>
                   <TableHead>{t('admin.repositories.table.organization')}</TableHead>
                   <TableHead>{t('admin.repositories.table.status')}</TableHead>
-                  <TableHead className="text-center">{t('admin.repositories.table.documents')}</TableHead>
+                  <TableHead className="text-center">统计信息</TableHead>
                   <TableHead>{t('admin.repositories.table.created_at')}</TableHead>
-                  <TableHead>{t('admin.repositories.table.updated_at')}</TableHead>
                   <TableHead className="text-right">{t('admin.repositories.table.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -251,41 +443,95 @@ const RepositoriesPage: React.FC = () => {
                       {t('admin.messages.loading')}
                     </TableCell>
                   </TableRow>
-                ) : filteredRepositories.length === 0 ? (
+                ) : repositories.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
                       {t('admin.messages.no_data')}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRepositories.map((repo) => (
-                    <TableRow key={repo.id}>
+                  repositories.map((repo) => (
+                    <TableRow key={repo.id} className={selectedRepositories.includes(repo.id) ? 'bg-muted/50' : ''}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedRepositories.includes(repo.id)}
+                          onCheckedChange={(checked) => handleSelectRepository(repo.id, checked as boolean)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium">{repo.name}</div>
-                          {repo.gitUrl && (
-                            <a
-                              href={repo.gitUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:underline flex items-center"
-                            >
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              GitHub
-                            </a>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{repo.name}</span>
+                            {repo.isRecommended && (
+                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            )}
+                          </div>
+                          {repo.address && (
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={repo.address.replace('.git', '')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:underline flex items-center"
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                {repo.address.includes('github.com') ? 'GitHub' :
+                                 repo.address.includes('gitee.com') ? 'Gitee' : 'Git'}
+                              </a>
+                              {repo.branch && (
+                                <div className="text-xs text-muted-foreground flex items-center">
+                                  <GitBranch className="h-3 w-3 mr-1" />
+                                  {repo.branch}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {repo.description && (
+                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                              {repo.description}
+                            </p>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{repo.organization}</TableCell>
+                      <TableCell>{repo.organizationName}</TableCell>
                       <TableCell>{getStatusBadge(repo.status)}</TableCell>
                       <TableCell className="text-center">
-                        <div className="flex items-center justify-center space-x-1">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span>{repo.documentsCount}</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center space-x-1">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{repo.documentCount || 0}</span>
+                          </div>
+                          {(repo.stars || repo.forks) && (
+                            <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground">
+                              {repo.stars && repo.stars > 0 && (
+                                <div className="flex items-center">
+                                  <Star className="h-3 w-3 mr-1" />
+                                  {repo.stars}
+                                </div>
+                              )}
+                              {repo.forks && repo.forks > 0 && (
+                                <div className="flex items-center">
+                                  <GitFork className="h-3 w-3 mr-1" />
+                                  {repo.forks}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {repo.language && (
+                            <div className="text-xs text-muted-foreground">
+                              {repo.language}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell>{formatDate(repo.createdAt)}</TableCell>
-                      <TableCell>{formatDate(repo.updatedAt)}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">{formatDate(repo.createdAt)}</div>
+                        {repo.version && (
+                          <div className="text-xs text-muted-foreground">
+                            v{repo.version}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -298,19 +544,34 @@ const RepositoriesPage: React.FC = () => {
                             <DropdownMenuLabel>操作</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
-                              <Link to={`/admin/repositories/${repo.id}`}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                管理内容
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link to={`/${repo.organization}/${repo.name}`}>
-                                <ExternalLink className="mr-2 h-4 w-4" />
+                              <Link to={`/${repo.organizationName}/${repo.name}`}>
+                                <Eye className="mr-2 h-4 w-4" />
                                 查看仓库
                               </Link>
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditRepository(repo)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              编辑信息
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/admin/repositories/${repo.id}`}>
+                                <Settings className="mr-2 h-4 w-4" />
+                                管理内容
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleRefreshRepository(repo.id, repo.name)}>
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              刷新仓库
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Download className="mr-2 h-4 w-4" />
+                              导出Markdown
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDeleteRepository(repo)}
+                            >
                               <Trash2 className="mr-2 h-4 w-4" />
                               删除仓库
                             </DropdownMenuItem>
@@ -323,9 +584,313 @@ const RepositoriesPage: React.FC = () => {
               </TableBody>
             </Table>
           </div>
+
+          {/* 分页 */}
+          {total > pageSize && (
+            <div className="flex items-center justify-end space-x-2 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                上一页
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                第 {currentPage} 页 / 共 {Math.ceil(total / pageSize)} 页
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                disabled={currentPage >= Math.ceil(total / pageSize)}
+              >
+                下一页
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* 编辑仓库对话框 */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <EditRepositoryDialog
+            repository={editingRepository}
+            onSuccess={() => {
+              setShowEditDialog(false)
+              setEditingRepository(null)
+              loadRepositories()
+            }}
+            onCancel={() => {
+              setShowEditDialog(false)
+              setEditingRepository(null)
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除仓库</AlertDialogTitle>
+            <AlertDialogDescription>
+              您确定要删除仓库 "{repositoryToDelete?.name}" 吗？
+              <br />
+              <span className="text-red-600 font-medium">
+                此操作不可逆转，将删除仓库及其所有文档数据。
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteRepository} className="bg-red-600 hover:bg-red-700">
+              确认删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  )
+}
+
+// 创建仓库对话框组件
+const CreateRepositoryDialog: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
+  const [formData, setFormData] = useState<CreateGitRepositoryDto>({
+    address: '',
+    branch: 'main',
+    gitUserName: '',
+    gitPassword: '',
+    email: ''
+  })
+  const [loading, setLoading] = useState(false)
+  const [branches, setBranches] = useState<string[]>([])
+  const [loadingBranches, setLoadingBranches] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.address) {
+      toast.error('请输入仓库地址')
+      return
+    }
+
+    setLoading(true)
+    try {
+      await warehouseService.createGitRepository(formData)
+      toast.success('仓库创建成功')
+      onSuccess()
+    } catch (error: any) {
+      toast.error('创建失败', {
+        description: error.message || '创建仓库时发生错误'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadBranches = async () => {
+    if (!formData.address) return
+
+    setLoadingBranches(true)
+    try {
+      const result = await warehouseService.getGitBranches(
+        formData.address,
+        formData.gitUserName,
+        formData.gitPassword
+      )
+      setBranches(result.branches || [])
+      if (result.defaultBranch) {
+        setFormData(prev => ({ ...prev, branch: result.defaultBranch }))
+      }
+    } catch (error) {
+      toast.error('获取分支列表失败')
+    } finally {
+      setLoadingBranches(false)
+    }
+  }
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>添加Git仓库</DialogTitle>
+        <DialogDescription>
+          请输入Git仓库信息，系统将自动克隆并分析仓库内容。
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="address">仓库地址 *</Label>
+          <Input
+            id="address"
+            type="url"
+            placeholder="https://github.com/owner/repo.git"
+            value={formData.address}
+            onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+            onBlur={loadBranches}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="branch">分支</Label>
+          <div className="flex gap-2">
+            <Select
+              value={formData.branch}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, branch: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="选择分支" />
+              </SelectTrigger>
+              <SelectContent>
+                {branches.map(branch => (
+                  <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={loadBranches}
+              disabled={loadingBranches || !formData.address}
+            >
+              {loadingBranches ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="gitUserName">用户名（可选）</Label>
+            <Input
+              id="gitUserName"
+              placeholder="Git用户名"
+              value={formData.gitUserName}
+              onChange={(e) => setFormData(prev => ({ ...prev, gitUserName: e.target.value }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="gitPassword">密码/Token（可选）</Label>
+            <Input
+              id="gitPassword"
+              type="password"
+              placeholder="Git密码或Token"
+              value={formData.gitPassword}
+              onChange={(e) => setFormData(prev => ({ ...prev, gitPassword: e.target.value }))}
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="email">邮箱（可选）</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="git@example.com"
+            value={formData.email}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+          />
+        </div>
+        <DialogFooter>
+          <Button type="submit" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            创建仓库
+          </Button>
+        </DialogFooter>
+      </form>
+    </>
+  )
+}
+
+// 编辑仓库对话框组件
+const EditRepositoryDialog: React.FC<{
+  repository: WarehouseInfo | null
+  onSuccess: () => void
+  onCancel: () => void
+}> = ({ repository, onSuccess, onCancel }) => {
+  const [formData, setFormData] = useState<UpdateRepositoryDto>({
+    description: '',
+    isRecommended: false,
+    prompt: ''
+  })
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (repository) {
+      setFormData({
+        description: repository.description || '',
+        isRecommended: repository.isRecommended || false,
+        prompt: ''
+      })
+    }
+  }, [repository])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!repository) return
+
+    setLoading(true)
+    try {
+      await warehouseService.updateRepository(repository.id, formData)
+      toast.success('仓库信息更新成功')
+      onSuccess()
+    } catch (error: any) {
+      toast.error('更新失败', {
+        description: error.message || '更新仓库信息时发生错误'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!repository) return null
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>编辑仓库信息</DialogTitle>
+        <DialogDescription>
+          编辑 {repository.organizationName}/{repository.name} 的信息
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="description">仓库描述</Label>
+          <Textarea
+            id="description"
+            placeholder="请输入仓库描述..."
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            rows={3}
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="isRecommended"
+            checked={formData.isRecommended}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isRecommended: checked }))}
+          />
+          <Label htmlFor="isRecommended">推荐仓库</Label>
+        </div>
+        <div>
+          <Label htmlFor="prompt">自定义提示词（可选）</Label>
+          <Textarea
+            id="prompt"
+            placeholder="请输入自定义提示词..."
+            value={formData.prompt}
+            onChange={(e) => setFormData(prev => ({ ...prev, prompt: e.target.value }))}
+            rows={3}
+          />
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onCancel}>
+            取消
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            保存更改
+          </Button>
+        </DialogFooter>
+      </form>
+    </>
   )
 }
 
