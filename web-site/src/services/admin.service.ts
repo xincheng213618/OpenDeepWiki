@@ -345,7 +345,7 @@ export const repositoryService = {
   },
 
   // 获取仓库文档目录
-  getDocumentCatalogs: async (repositoryId: string) =>  {
+  getDocumentCatalogs: async (repositoryId: string) => {
     return request.get<DocumentCatalogDto[]>(`/api/Repository/DocumentCatalogs`, {
       params: { repositoryId }
     })
@@ -359,10 +359,9 @@ export const repositoryService = {
   },
 
   // 保存文件内容
-  saveFileContent: async (catalogId: string, content: string, repositoryId?: string) => {
+  saveFileContent: async (catalogId: string, content: string) => {
     const data = { id: catalogId, content }
-    const params = repositoryId ? { repositoryId } : {}
-    return request.post<boolean>(`/api/Repository/FileContent`, data, { params })
+    return request.post<boolean>(`/api/Repository/FileContent`,data)
   },
 
   // 刷新/重置仓库
@@ -787,5 +786,63 @@ export const statsService = {
         topRepositories: []
       }
     }
+  }
+}
+
+// 上传图片文件（仅管理员可用）
+export const uploadImage = async (file: File): Promise<{ url: string; fileName: string; message: string }> => {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await api.post('/api/FileStorage/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return response.data.data
+  } catch (error) {
+    console.error('Upload image failed:', error)
+    throw error
+  }
+}
+
+// 批量上传图片（仅管理员可用）
+export const uploadImages = async (files: File[]): Promise<{
+  images: Array<{ url: string; fileName: string; originalName: string; size: number }>
+  errors: string[]
+  successCount: number
+  errorCount: number
+  message: string
+}> => {
+  try {
+    const formData = new FormData()
+    files.forEach(file => {
+      formData.append('files', file)
+    })
+
+    const response = await api.post('/api/FileStorage/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return response.data.data
+  } catch (error) {
+    console.error('Upload images failed:', error)
+    throw error
+  }
+}
+
+// 删除图片（仅管理员可用）
+export const deleteImage = async (imageUrl: string): Promise<void> => {
+  try {
+    await api.delete('/api/FileStorage/image', {
+      params: { imageUrl },
+    })
+  } catch (error) {
+    console.error('Delete image failed:', error)
+    throw error
   }
 }

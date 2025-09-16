@@ -1033,7 +1033,8 @@ public class RepositoryService(
                 key = item.Url ?? item.Id, // 使用URL作为key，如果为空则使用ID
                 isLeaf = catalogs.All(x => x.ParentId != item.Id), // 如果没有子节点，则为叶子节点
                 children = new List<TreeNode>(),
-                Catalog = item
+                catalog = item,
+                
             };
 
             // 递归添加子节点
@@ -1069,7 +1070,7 @@ public class RepositoryService(
                 key = child.Url ?? child.Id, // 使用URL作为key，如果为空则使用ID
                 isLeaf = !hasChildren, // 如果没有子节点，则为叶子节点
                 children = hasChildren ? new List<TreeNode>() : null,
-                Catalog = child
+                catalog = child
             };
 
             // 递归添加子节点
@@ -1110,5 +1111,5 @@ public class TreeNode
     /// </summary>
     public List<TreeNode> children { get; set; }
 
-    public DocumentCatalog Catalog { get; set; }
+    public DocumentCatalog catalog { get; set; }
 }

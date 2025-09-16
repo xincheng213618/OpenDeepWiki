@@ -1,6 +1,6 @@
 // 仓库详情管理页面
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -63,6 +63,9 @@ import {
 import { cn } from '@/lib/utils'
 import { type WarehouseInfo, type RepositoryLogDto, repositoryService } from '@/services/admin.service'
 import { toast } from 'sonner'
+
+// 延迟加载 MarkdownEditor 组件
+const MarkdownEditor = lazy(() => import('@/components/MarkdownEditor'))
 
 interface TreeNode {
   id: string
@@ -315,7 +318,7 @@ const RepositoryDetailPage: React.FC = () => {
       // 确保content是字符串类型
       const contentStr = typeof selectedNode.content === 'string' ? selectedNode.content : String(selectedNode.content || '')
       // 调用API保存内容，传递仓库ID
-      await repositoryService.saveFileContent(selectedNode.id, contentStr, id)
+      await repositoryService.saveFileContent(selectedNode.catalog!.id, contentStr)
       toast.success(t('admin.repositories.detail.file_save_success'))
     } catch (error) {
       toast.error(t('admin.repositories.detail.file_save_failed'))
@@ -855,20 +858,31 @@ const RepositoryDetailPage: React.FC = () => {
 
                   {/* 编辑器区域 */}
                   <div className="flex-1 relative">
-                    <Textarea
-                      value={selectedNode.content || ''}
-                      onChange={(e) => handleContentChange(e.target.value)}
-                      className="h-full w-full resize-none border-0 focus-visible:ring-0 font-mono text-sm leading-relaxed"
-                      placeholder={selectedNode.isLeaf ? "文件内容..." : "文档内容..."}
-                      style={{
-                        minHeight: '100%',
-                        background: 'transparent'
-                      }}
-                    />
-                    {/* 行号指示器 */}
-                    <div className="absolute top-2 right-2 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
-                      {(typeof selectedNode.content === 'string' ? selectedNode.content.split('\n').length : 1) || 1} 行
-                    </div>
+                    <Suspense fallback={
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                          <p>加载编辑器...</p>
+                        </div>
+                      </div>
+                    }>
+                      <MarkdownEditor
+                        value={selectedNode.content || ''}
+                        onChange={handleContentChange}
+                        placeholder={selectedNode.isLeaf ? "文件内容..." : "文档内容..."}
+                        height="100%"
+                        theme="light"
+                        language="zh-CN"
+                        onSave={(value, html) => {
+                          handleSave()
+                          toast.success('文档保存成功')
+                        }}
+                        onError={(error) => {
+                          console.error('Editor error:', error)
+                          toast.error(`编辑器错误: ${error.message}`)
+                        }}
+                      />
+                    </Suspense>
                   </div>
                 </div>
               </CardContent>
@@ -1199,20 +1213,31 @@ const RepositoryDetailPage: React.FC = () => {
 
                   {/* 编辑器区域 */}
                   <div className="flex-1 relative">
-                    <Textarea
-                      value={selectedNode.content || ''}
-                      onChange={(e) => handleContentChange(e.target.value)}
-                      className="h-full w-full resize-none border-0 focus-visible:ring-0 font-mono text-sm leading-relaxed"
-                      placeholder="文件内容..."
-                      style={{
-                        minHeight: '100%',
-                        background: 'transparent'
-                      }}
-                    />
-                    {/* 光标位置指示器 */}
-                    <div className="absolute top-2 right-2 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
-                      {(typeof selectedNode.content === 'string' ? selectedNode.content.split('\n').length : 1) || 1} 行
-                    </div>
+                    <Suspense fallback={
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                          <p>加载编辑器...</p>
+                        </div>
+                      </div>
+                    }>
+                      <MarkdownEditor
+                        value={selectedNode.content || ''}
+                        onChange={handleContentChange}
+                        placeholder="文件内容..."
+                        height="100%"
+                        theme="light"
+                        language="zh-CN"
+                        onSave={(value, html) => {
+                          handleSave()
+                          toast.success('文件保存成功')
+                        }}
+                        onError={(error) => {
+                          console.error('Editor error:', error)
+                          toast.error(`编辑器错误: ${error.message}`)
+                        }}
+                      />
+                    </Suspense>
                   </div>
                 </div>
               </CardContent>
