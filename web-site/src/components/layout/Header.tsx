@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useAuth } from '@/hooks/useAuth'
+import { usePermissions } from '@/hooks/usePermissions'
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -14,14 +15,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { 
-  Github, 
-  Star, 
-  Settings, 
-  LogOut, 
+import {
+  Github,
+  Star,
+  Settings,
+  LogOut,
   User,
   Menu,
-  X
+  X,
+  Shield
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -40,6 +42,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ className }) => {
   const { t } = useTranslation()
   const { user, isAuthenticated, logout } = useAuth()
+  const { canAccessAdmin } = usePermissions()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
   // 获取GitHub star数据
@@ -150,10 +153,23 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                       <span>{t('nav.profile')}</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>{t('nav.settings')}</span>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>{t('nav.settings')}</span>
+                    </Link>
                   </DropdownMenuItem>
+                  {canAccessAdmin() && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin">
+                          <Shield className="mr-2 h-4 w-4" />
+                          <span>{t('nav.admin_console')}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-red-600" onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />

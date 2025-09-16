@@ -35,6 +35,7 @@
     "register": "注册",
     "profile": "个人资料",
     "settings": "设置",
+    "admin_console": "管理控制台",
     "logout": "退出登录"
   },
   "home": {
@@ -396,5 +397,132 @@
     "unknown_error": "未知错误",
     "operation_success": "操作成功",
     "operation_failed": "操作失败"
+  },
+  "admin": {
+    "title": "管理控制台",
+    "subtitle": "管理用户、角色、仓库和系统设置",
+    "nav": {
+      "dashboard": "仪表板",
+      "users": "用户管理",
+      "roles": "角色管理",
+      "repositories": "仓库管理",
+      "settings": "系统设置"
+    },
+    "dashboard": {
+      "title": "仪表板",
+      "overview": "系统概览",
+      "stats": {
+        "total_users": "用户总数",
+        "total_repos": "仓库总数",
+        "total_roles": "角色总数",
+        "active_sessions": "活跃会话"
+      },
+      "charts": {
+        "user_growth": "用户增长",
+        "repo_activity": "仓库活动",
+        "role_distribution": "角色分布"
+      }
+    },
+    "users": {
+      "title": "用户管理",
+      "subtitle": "管理系统用户及其信息",
+      "create": "创建用户",
+      "edit": "编辑用户",
+      "delete": "删除用户",
+      "assign_roles": "分配角色",
+      "search_placeholder": "按用户名或邮箱搜索",
+      "table": {
+        "username": "用户名",
+        "email": "邮箱",
+        "role": "角色",
+        "status": "状态",
+        "created_at": "创建时间",
+        "last_login": "最后登录",
+        "actions": "操作"
+      },
+      "form": {
+        "username": "用户名",
+        "email": "邮箱",
+        "password": "密码",
+        "confirm_password": "确认密码",
+        "role": "角色",
+        "avatar": "头像"
+      },
+      "status": {
+        "active": "活跃",
+        "inactive": "非活跃",
+        "suspended": "已暂停"
+      }
+    },
+    "roles": {
+      "title": "角色管理",
+      "subtitle": "管理角色和权限",
+      "create": "创建角色",
+      "edit": "编辑角色",
+      "delete": "删除角色",
+      "permissions": "权限",
+      "search_placeholder": "按角色名称搜索",
+      "table": {
+        "name": "角色名称",
+        "description": "描述",
+        "users_count": "用户数",
+        "permissions_count": "权限数",
+        "status": "状态",
+        "created_at": "创建时间",
+        "actions": "操作"
+      },
+      "form": {
+        "name": "角色名称",
+        "description": "描述",
+        "status": "状态"
+      }
+    },
+    "repositories": {
+      "title": "仓库管理",
+      "subtitle": "管理仓库和内容",
+      "search_placeholder": "按仓库名称搜索",
+      "table": {
+        "name": "仓库名称",
+        "organization": "组织",
+        "status": "状态",
+        "documents": "文档数",
+        "created_at": "创建时间",
+        "updated_at": "更新时间",
+        "actions": "操作"
+      },
+      "detail": {
+        "title": "仓库详情",
+        "tree": "内容树",
+        "editor": "内容编辑器",
+        "properties": "属性",
+        "permissions": "权限"
+      }
+    },
+    "common": {
+      "save": "保存",
+      "cancel": "取消",
+      "delete": "删除",
+      "edit": "编辑",
+      "create": "创建",
+      "search": "搜索",
+      "filter": "筛选",
+      "export": "导出",
+      "import": "导入",
+      "refresh": "刷新",
+      "back": "返回",
+      "confirm": "确认",
+      "yes": "是",
+      "no": "否"
+    },
+    "messages": {
+      "create_success": "创建成功",
+      "update_success": "更新成功",
+      "delete_success": "删除成功",
+      "delete_confirm": "确定要删除此项吗？",
+      "operation_failed": "操作失败",
+      "no_permission": "您没有权限访问此页面",
+      "loading": "加载中...",
+      "no_data": "暂无数据"
+    }
   }
 }

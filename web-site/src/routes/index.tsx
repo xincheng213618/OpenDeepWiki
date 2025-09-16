@@ -14,6 +14,14 @@ const RepositoryDetailPage = lazy(() => import('@/pages/repository/RepositoryDet
 const DocumentPage = lazy(() => import('@/pages/repository/DocumentPage/index'))
 const MindMapPage = lazy(() => import('@/pages/repository/MindMapPage/index'))
 
+// 管理员控制台组件
+const AdminLayout = lazy(() => import('@/components/layout/AdminLayout/index'))
+const AdminDashboard = lazy(() => import('@/pages/admin/index'))
+const AdminUsers = lazy(() => import('@/pages/admin/UsersPage/index'))
+const AdminRoles = lazy(() => import('@/pages/admin/RolesPage/index'))
+const AdminRepositories = lazy(() => import('@/pages/admin/RepositoriesPage/index'))
+const AdminRepositoryDetail = lazy(() => import('@/pages/admin/RepositoryDetailPage/index'))
+
 // 加载组件
 const Loading = () => (
   <div className="flex items-center justify-center h-screen">
@@ -99,6 +107,56 @@ const routes = [
         element: (
           <Suspense fallback={<Loading />}>
             <DocumentPage />
+          </Suspense>
+        ),
+      },
+    ]
+  },
+  {
+    path: "/admin",
+    element: (
+      <Suspense fallback={<Loading />}>
+        <AdminLayout />
+      </Suspense>
+    ),
+    children: [
+      {
+        index: true,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <AdminDashboard />
+          </Suspense>
+        ),
+      },
+      {
+        path: "users",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <AdminUsers />
+          </Suspense>
+        ),
+      },
+      {
+        path: "roles",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <AdminRoles />
+          </Suspense>
+        ),
+      },
+      {
+        path: "repositories",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <AdminRepositories />
+          </Suspense>
+        ),
+      },
+      {
+        path: "repositories/:id",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <AdminRepositoryDetail />
           </Suspense>
         ),
       },
