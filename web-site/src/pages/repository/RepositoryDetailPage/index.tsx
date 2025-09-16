@@ -11,9 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useRepositoryDetailStore } from '@/stores/repositoryDetail.store'
 import { WarehouseStatus } from '@/types/repository'
 import {
-  Github,
   GitBranch,
-  Clock,
   AlertCircle,
   RefreshCw,
   ExternalLink,
@@ -30,12 +28,9 @@ const RepositoryDetailPage = () => {
   // 使用store
   const {
     repository,
-    selectedBranch,
-    documentNodes,
     error,
     setRepository,
     fetchDocumentCatalog,
-    clearError
   } = useRepositoryDetailStore()
 
   const [loading, setLoading] = useState(true)

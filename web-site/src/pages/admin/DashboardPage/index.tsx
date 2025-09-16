@@ -5,12 +5,14 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import {
   Users,
   Database,
+  Shield,
   RefreshCw,
   TrendingUp,
   TrendingDown,
@@ -78,14 +80,16 @@ const DashboardPage: React.FC = () => {
   }
 
   // 格式化数字显示
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M'
+  const formatNumber = (num?: number | null) => {
+    const value = typeof num === 'number' && !Number.isNaN(num) ? num : 0
+
+    if (value >= 1000000) {
+      return (value / 1000000).toFixed(1) + 'M'
     }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K'
+    if (value >= 1000) {
+      return (value / 1000).toFixed(1) + 'K'
     }
-    return num.toString()
+    return value.toString()
   }
 
   // 格式化百分比显示
@@ -161,7 +165,7 @@ const DashboardPage: React.FC = () => {
 
   // 安全的默认值
   const safeData = {
-    systemStats: dashboardData.systemStats || {
+    systemStats: {
       totalUsers: 0,
       userGrowthRate: 0,
       monthlyNewUsers: 0,
@@ -171,18 +175,20 @@ const DashboardPage: React.FC = () => {
       totalDocuments: 0,
       documentGrowthRate: 0,
       monthlyNewDocuments: 0,
-      totalViews: 0
+      totalViews: 0,
+      ...(dashboardData.systemStats ?? {})
     },
-    userActivity: dashboardData.userActivity || {
+    userActivity: {
       onlineUsers: 0,
       dailyActiveUsers: 0,
       weeklyActiveUsers: 0,
       monthlyActiveUsers: 0,
-      activeUserGrowthRate: 0
+      activeUserGrowthRate: 0,
+      ...(dashboardData.userActivity ?? {})
     },
-    recentUsers: dashboardData.recentUsers || [],
-    recentRepositories: dashboardData.recentRepositories || [],
-    recentErrors: dashboardData.recentErrors || []
+    recentUsers: dashboardData.recentUsers ?? [],
+    recentRepositories: dashboardData.recentRepositories ?? [],
+    recentErrors: dashboardData.recentErrors ?? []
   }
 
 

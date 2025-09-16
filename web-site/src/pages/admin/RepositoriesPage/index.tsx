@@ -62,7 +62,6 @@ import {
   FileText,
   Database,
   RefreshCw,
-  Plus,
   Filter,
   Download,
   Settings,
@@ -75,7 +74,7 @@ import {
   Clock,
   Loader2
 } from 'lucide-react'
-import { warehouseService, WarehouseInfo, CreateGitRepositoryDto, UpdateRepositoryDto } from '@/services/admin.service'
+import { type WarehouseInfo, type UpdateRepositoryDto, repositoryService, warehouseService } from '@/services/admin.service'
 import { toast } from 'sonner'
 
 const RepositoriesPage: React.FC = () => {
@@ -88,7 +87,7 @@ const RepositoriesPage: React.FC = () => {
   const [pageSize] = useState(10)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [selectedRepositories, setSelectedRepositories] = useState<string[]>([])
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
+
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [editingRepository, setEditingRepository] = useState<WarehouseInfo | null>(null)
   const [showDeleteAlert, setShowDeleteAlert] = useState(false)
@@ -99,16 +98,16 @@ const RepositoriesPage: React.FC = () => {
   const loadRepositories = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await warehouseService.getWarehouseList(
+      const response = await repositoryService.getRepositoryList(
         currentPage,
         pageSize,
         searchQuery || undefined,
         statusFilter === 'all' ? undefined : statusFilter
       )
       // 处理嵌套的data结构
-      const data = response.data || response
-      setRepositories(data.items || [])
-      setTotal(data.total || 0)
+      const data = response.items || []
+      setRepositories(data)
+      setTotal(data.length || 0)
       // 清空选中状态
       setSelectedRepositories([])
     } catch (error) {
@@ -217,7 +216,7 @@ const RepositoriesPage: React.FC = () => {
     if (!repositoryToDelete) return
 
     try {
-      await warehouseService.deleteWarehouse(repositoryToDelete.id)
+      await repositoryService.deleteRepository(repositoryToDelete.id)
       toast.success('删除成功', {
         description: `仓库 "${repositoryToDelete.name}" 已被删除`
       })
@@ -235,9 +234,9 @@ const RepositoriesPage: React.FC = () => {
   // 刷新操作
   const handleRefreshRepository = async (id: string, name: string) => {
     try {
-      await warehouseService.refreshWarehouse(id)
+      await repositoryService.refreshRepository(id)
       toast.success('刷新成功', {
-        description: `仓库 "${name}" 已开始刷新`
+        description: `仓库 "${name}" 已开始重新处理`
       })
       loadRepositories()
     } catch (error) {
@@ -253,27 +252,6 @@ const RepositoriesPage: React.FC = () => {
     setShowEditDialog(true)
   }
 
-  // 批量操作
-  const handleBatchOperation = async (operation: string) => {
-    if (selectedRepositories.length === 0) {
-      toast.error('请选择要操作的仓库')
-      return
-    }
-
-    setBatchLoading(true)
-    try {
-      await warehouseService.batchOperateRepositories({
-        ids: selectedRepositories,
-        operation: operation as any
-      })
-      toast.success('批量操作成功')
-      loadRepositories()
-    } catch (error) {
-      toast.error('批量操作失败')
-    } finally {
-      setBatchLoading(false)
-    }
-  }
 
   // 计算统计数据
   const getStatusStats = () => {
@@ -311,30 +289,8 @@ const RepositoriesPage: React.FC = () => {
                   批量操作 ({selectedRepositories.length})
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => handleBatchOperation('refresh')}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  批量刷新
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBatchOperation('delete')} className="text-red-600">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  批量删除
-                </DropdownMenuItem>
-              </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                添加仓库
-              </Button>
-            </DialogTrigger>
-            <CreateRepositoryDialog onSuccess={() => {
-              setShowCreateDialog(false)
-              loadRepositories()
-            }} />
-          </Dialog>
         </div>
       </div>
 
@@ -476,7 +432,7 @@ const RepositoriesPage: React.FC = () => {
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
                                 {repo.address.includes('github.com') ? 'GitHub' :
-                                 repo.address.includes('gitee.com') ? 'Gitee' : 'Git'}
+                                  repo.address.includes('gitee.com') ? 'Gitee' : 'Git'}
                               </a>
                               {repo.branch && (
                                 <div className="text-xs text-muted-foreground flex items-center">
@@ -561,7 +517,7 @@ const RepositoriesPage: React.FC = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleRefreshRepository(repo.id, repo.name)}>
                               <RefreshCw className="mr-2 h-4 w-4" />
-                              刷新仓库
+                              重新处理仓库
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Download className="mr-2 h-4 w-4" />
@@ -655,150 +611,7 @@ const RepositoriesPage: React.FC = () => {
   )
 }
 
-// 创建仓库对话框组件
-const CreateRepositoryDialog: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
-  const [formData, setFormData] = useState<CreateGitRepositoryDto>({
-    address: '',
-    branch: 'main',
-    gitUserName: '',
-    gitPassword: '',
-    email: ''
-  })
-  const [loading, setLoading] = useState(false)
-  const [branches, setBranches] = useState<string[]>([])
-  const [loadingBranches, setLoadingBranches] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.address) {
-      toast.error('请输入仓库地址')
-      return
-    }
-
-    setLoading(true)
-    try {
-      await warehouseService.createGitRepository(formData)
-      toast.success('仓库创建成功')
-      onSuccess()
-    } catch (error: any) {
-      toast.error('创建失败', {
-        description: error.message || '创建仓库时发生错误'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadBranches = async () => {
-    if (!formData.address) return
-
-    setLoadingBranches(true)
-    try {
-      const result = await warehouseService.getGitBranches(
-        formData.address,
-        formData.gitUserName,
-        formData.gitPassword
-      )
-      setBranches(result.branches || [])
-      if (result.defaultBranch) {
-        setFormData(prev => ({ ...prev, branch: result.defaultBranch }))
-      }
-    } catch (error) {
-      toast.error('获取分支列表失败')
-    } finally {
-      setLoadingBranches(false)
-    }
-  }
-
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle>添加Git仓库</DialogTitle>
-        <DialogDescription>
-          请输入Git仓库信息，系统将自动克隆并分析仓库内容。
-        </DialogDescription>
-      </DialogHeader>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="address">仓库地址 *</Label>
-          <Input
-            id="address"
-            type="url"
-            placeholder="https://github.com/owner/repo.git"
-            value={formData.address}
-            onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-            onBlur={loadBranches}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="branch">分支</Label>
-          <div className="flex gap-2">
-            <Select
-              value={formData.branch}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, branch: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="选择分支" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map(branch => (
-                  <SelectItem key={branch} value={branch}>{branch}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={loadBranches}
-              disabled={loadingBranches || !formData.address}
-            >
-              {loadingBranches ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="gitUserName">用户名（可选）</Label>
-            <Input
-              id="gitUserName"
-              placeholder="Git用户名"
-              value={formData.gitUserName}
-              onChange={(e) => setFormData(prev => ({ ...prev, gitUserName: e.target.value }))}
-            />
-          </div>
-          <div>
-            <Label htmlFor="gitPassword">密码/Token（可选）</Label>
-            <Input
-              id="gitPassword"
-              type="password"
-              placeholder="Git密码或Token"
-              value={formData.gitPassword}
-              onChange={(e) => setFormData(prev => ({ ...prev, gitPassword: e.target.value }))}
-            />
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="email">邮箱（可选）</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="git@example.com"
-            value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-          />
-        </div>
-        <DialogFooter>
-          <Button type="submit" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            创建仓库
-          </Button>
-        </DialogFooter>
-      </form>
-    </>
-  )
-}
 
 // 编辑仓库对话框组件
 const EditRepositoryDialog: React.FC<{
@@ -829,7 +642,7 @@ const EditRepositoryDialog: React.FC<{
 
     setLoading(true)
     try {
-      await warehouseService.updateRepository(repository.id, formData)
+      await repositoryService.updateRepository(repository.id, formData)
       toast.success('仓库信息更新成功')
       onSuccess()
     } catch (error: any) {

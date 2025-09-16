@@ -28,14 +28,11 @@
     build:
       context: .
       dockerfile: src/KoalaWiki/Dockerfile
-      
-  nginx: # 需要nginx将前端和后端代理到一个端口
-    image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/nginx:alpine
-    ports:
-      - 8090:80
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - koalawiki
-      - koalawiki-web
   
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard
+    container_name: aspire-dashboard
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+      - Dashboard:ApplicationName=Aspire

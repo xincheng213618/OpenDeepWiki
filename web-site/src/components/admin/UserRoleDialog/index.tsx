@@ -43,7 +43,9 @@ const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
     try {
       setLoading(true)
       const response = await roleService.getAllRoles()
-      setRoles(response || [])
+      // 确保 response 是数组
+      const rolesData = Array.isArray(response) ? response : (response?.data || [])
+      setRoles(rolesData)
     } catch (error) {
       console.error('Failed to load roles:', error)
       toast.error('加载失败', {
@@ -179,7 +181,7 @@ const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {roles.map((role) => {
+              {Array.isArray(roles) && roles.map((role) => {
                 const isSelected = selectedRoleIds.includes(role.id)
                 const changeStatus = getRoleChangeStatus(role.id)
 

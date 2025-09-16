@@ -19,6 +19,8 @@ export interface DocumentNode {
   level?: number
   description?: string
   lastUpdate?: string
+  disabled?: boolean  // 是否禁用（正在生成中）
+  progress?: number   // 生成进度 (0-100)
 }
 
 interface DocumentTreeProps {

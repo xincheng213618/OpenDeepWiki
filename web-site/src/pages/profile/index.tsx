@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 
 export const ProfilePage: React.FC = () => {
   const navigate = useNavigate()
-  const { user, isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
 
   // 如果未登录，重定向到登录页

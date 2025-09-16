@@ -30,7 +30,7 @@ import {
   Folder,
   FolderOpen,
   Save,
-  Refresh,
+  RefreshCw,
   Settings,
   FileText,
   Code,
@@ -51,7 +51,6 @@ import {
   Info,
   Download,
   Upload,
-  Sync,
   Shield,
   Cog,
   FileType,
@@ -68,12 +67,16 @@ import { toast } from 'sonner'
 interface TreeNode {
   id: string
   name: string
-  type: 'file' | 'folder'
-  path: string
+  title?: string
+  key?: string
+  isLeaf?: boolean
+  type?: 'file' | 'folder'
+  path?: string
   children?: TreeNode[]
   size?: number
   lastModified?: string
   content?: string
+  catalog?: DocumentCatalog
 }
 
 interface DocumentCatalog {
@@ -161,11 +164,15 @@ const RepositoryDetailPage: React.FC = () => {
 
         // 获取仓库详情
         const repoResponse = await warehouseService.getWarehouseById(id)
-        setRepository(repoResponse.data)
+        setRepository(repoResponse)
 
         // 获取文件目录结构
-        // const filesResponse = await warehouseService.getFiles(id)
-        // setTreeData(filesResponse.data || [])
+        const filesResponse = await warehouseService.getFiles(id)
+        setTreeData(filesResponse || [])
+
+        // 获取文档目录
+        const catalogsResponse = await warehouseService.getDocumentCatalogs(id)
+        setCatalogs(catalogsResponse || [])
 
         // 获取仓库统计信息
         loadRepositoryStats(id)
@@ -186,42 +193,31 @@ const RepositoryDetailPage: React.FC = () => {
 
   const loadRepositoryStats = async (repoId: string) => {
     try {
-      // 模拟统计数据，实际应从API获取
-      const mockStats: RepositoryStats = {
-        totalDocuments: 42,
-        totalFiles: 156,
-        lastSyncTime: new Date().toISOString(),
-        processingStatus: 'completed',
-        completedDocuments: 38,
-        pendingDocuments: 4,
-        fileTypes: {
-          'markdown': 25,
-          'typescript': 45,
-          'javascript': 32,
-          'json': 18,
-          'css': 12,
-          'other': 24
-        },
-        syncHistory: [
-          {
-            id: '1',
-            timestamp: new Date().toISOString(),
-            status: 'success',
-            message: '同步完成，更新了12个文件',
-            filesChanged: 12
-          },
-          {
-            id: '2',
-            timestamp: new Date(Date.now() - 86400000).toISOString(),
-            status: 'success',
-            message: '同步完成，更新了5个文件',
-            filesChanged: 5
-          }
-        ]
+      // 从API获取统计数据
+      const statsResponse = await warehouseService.getRepositoryStatsById(repoId)
+      const stats: RepositoryStats = {
+        totalDocuments: statsResponse.totalDocuments || 0,
+        totalFiles: statsResponse.totalFiles || 0,
+        lastSyncTime: statsResponse.lastSyncTime ? new Date(statsResponse.lastSyncTime).toISOString() : undefined,
+        processingStatus: statsResponse.processingStatus || 'Pending',
+        completedDocuments: statsResponse.completedDocuments || 0,
+        pendingDocuments: statsResponse.pendingDocuments || 0,
+        fileTypes: {},
+        syncHistory: []
       }
-      setStats(mockStats)
+      setStats(stats)
     } catch (error) {
       console.error('Failed to load repository stats:', error)
+      // 设置默认值
+      setStats({
+        totalDocuments: 0,
+        totalFiles: 0,
+        processingStatus: 'Pending',
+        completedDocuments: 0,
+        pendingDocuments: 0,
+        fileTypes: {},
+        syncHistory: []
+      })
     }
   }
 
@@ -235,18 +231,34 @@ const RepositoryDetailPage: React.FC = () => {
   }
 
   const handleNodeClick = (node: TreeNode) => {
-    if (node.type === 'folder') {
+    const nodeId = node.id || node.key || ''
+    const isFolder = node.type === 'folder' || (node.isLeaf === false)
+
+    if (isFolder) {
       setExpandedNodes(prev => {
         const newSet = new Set(prev)
-        if (newSet.has(node.id)) {
-          newSet.delete(node.id)
+        if (newSet.has(nodeId)) {
+          newSet.delete(nodeId)
         } else {
-          newSet.add(node.id)
+          newSet.add(nodeId)
         }
         return newSet
       })
     } else {
       setSelectedNode(node)
+      // 如果是文档目录，加载文件内容
+      if (node.catalog?.id) {
+        loadFileContent(node.catalog.id)
+      }
+    }
+  }
+
+  const loadFileContent = async (catalogId: string) => {
+    try {
+      const content = await warehouseService.getFileContent(catalogId)
+      setSelectedNode(prev => prev ? {...prev, content} : null)
+    } catch (error) {
+      console.error('Failed to load file content:', error)
     }
   }
 
@@ -261,8 +273,8 @@ const RepositoryDetailPage: React.FC = () => {
 
     setSaving(true)
     try {
-      // 这里应该调用API保存内容
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // 调用API保存内容
+      await warehouseService.saveFileContent(selectedNode.id, selectedNode.content)
       toast.success(t('admin.repositories.detail.file_save_success'))
     } catch (error) {
       toast.error(t('admin.repositories.detail.file_save_failed'))
@@ -337,29 +349,6 @@ const RepositoryDetailPage: React.FC = () => {
     }
   }
 
-  // 处理文件树节点点击
-  const handleNodeClick = (node: TreeNode) => {
-    if (node.type === 'folder') {
-      setExpandedNodes(prev => {
-        const newSet = new Set(prev)
-        if (newSet.has(node.id)) {
-          newSet.delete(node.id)
-        } else {
-          newSet.add(node.id)
-        }
-        return newSet
-      })
-    } else {
-      setSelectedNode(node)
-    }
-  }
-
-  // 处理内容变更
-  const handleContentChange = (content: string) => {
-    if (selectedNode) {
-      setSelectedNode({ ...selectedNode, content })
-    }
-  }
 
   // 获取文件图标
   const getFileIcon = (fileName: string) => {
@@ -394,11 +383,14 @@ const RepositoryDetailPage: React.FC = () => {
 
   // 渲染文件树节点
   const renderTreeNode = (node: TreeNode, level: number = 0) => {
-    const isExpanded = expandedNodes.has(node.id)
-    const isSelected = selectedNode?.id === node.id
+    const nodeId = node.id || node.key || ''
+    const nodeName = node.name || node.title || ''
+    const isFolder = node.type === 'folder' || (node.isLeaf === false)
+    const isExpanded = expandedNodes.has(nodeId)
+    const isSelected = selectedNode?.id === nodeId
 
     return (
-      <div key={node.id}>
+      <div key={nodeId}>
         <div
           className={cn(
             "flex items-center space-x-2 py-1 px-2 rounded cursor-pointer hover:bg-accent",
@@ -406,26 +398,26 @@ const RepositoryDetailPage: React.FC = () => {
             "transition-colors"
           )}
           style={{ paddingLeft: `${level * 20 + 8}px` }}
-          onClick={() => handleNodeClick(node)}
+          onClick={() => handleNodeClick({...node, id: nodeId, name: nodeName, type: isFolder ? 'folder' : 'file'})}
         >
-          {node.type === 'folder' ? (
+          {isFolder ? (
             isExpanded ? (
               <FolderOpen className="h-4 w-4 text-blue-600" />
             ) : (
               <Folder className="h-4 w-4 text-blue-600" />
             )
           ) : (
-            getFileIcon(node.name)
+            getFileIcon(nodeName)
           )}
-          <span className="text-sm">{node.name}</span>
-          {node.type === 'file' && node.size && (
+          <span className="text-sm">{nodeName}</span>
+          {!isFolder && node.size && (
             <span className="text-xs text-muted-foreground">
               ({Math.round(node.size / 1024)}KB)
             </span>
           )}
         </div>
 
-        {node.type === 'folder' && isExpanded && node.children && (
+        {isFolder && isExpanded && node.children && Array.isArray(node.children) && (
           <div>
             {node.children.map(child => renderTreeNode(child, level + 1))}
           </div>
@@ -436,13 +428,15 @@ const RepositoryDetailPage: React.FC = () => {
 
   // 过滤文件树数据
   const filteredTreeData = (nodes: TreeNode[]): TreeNode[] => {
+    if (!nodes || !Array.isArray(nodes)) return []
     if (!searchQuery) return nodes
 
     return nodes.filter(node => {
-      if (node.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      const nodeName = node.name || node.title || ''
+      if (nodeName.toLowerCase().includes(searchQuery.toLowerCase())) {
         return true
       }
-      if (node.children) {
+      if (node.children && Array.isArray(node.children)) {
         const filteredChildren = filteredTreeData(node.children)
         if (filteredChildren.length > 0) {
           return true
@@ -450,18 +444,6 @@ const RepositoryDetailPage: React.FC = () => {
       }
       return false
     })
-  }
-
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>{t('admin.messages.loading')}</p>
-        </div>
-      </div>
-    )
   }
 
   const getStatusBadge = (status: string) => {
@@ -483,175 +465,7 @@ const RepositoryDetailPage: React.FC = () => {
     )
   }
 
-  if (!repository) {
-    return (
-      <div className="text-center py-8">
-        <p>{t('admin.repositories.detail.repository_not_found')}</p>
-        <Button asChild className="mt-4">
-          <Link to="/admin/repositories">
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            {t('admin.repositories.detail.return_to_repository_list')}
-          </Link>
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* 面包屑导航 */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/admin/repositories">{t('admin.repositories.title')}</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{repository.organizationName}/{repository.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* 页面标题和操作 */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {repository.organizationName}/{repository.name}
-            </h1>
-            {getStatusBadge(repository.status || 'Pending')}
-          </div>
-          <p className="text-muted-foreground">
-            {repository.description || t('admin.repositories.detail.no_description')}
-          </p>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <GitBranch className="h-4 w-4" />
-              {repository.branch || 'main'}
-            </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              {t('admin.repositories.detail.created_at')} {new Date(repository.createdAt).toLocaleDateString('zh-CN')}
-            </div>
-            {repository.updatedAt && (
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {t('admin.repositories.detail.updated_at')} {new Date(repository.updatedAt).toLocaleDateString('zh-CN')}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            <Refresh className={cn("mr-2 h-4 w-4", refreshing && "animate-spin")} />
-            {refreshing ? t('admin.repositories.detail.refreshing') : t('admin.repositories.detail.refresh')}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {t('admin.repositories.detail.export')}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setEditMode(!editMode)}
-          >
-            <Edit3 className="mr-2 h-4 w-4" />
-            {t('admin.repositories.detail.edit')}
-          </Button>
-          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('admin.repositories.detail.delete')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t('admin.repositories.detail.confirm_delete_repository')}</DialogTitle>
-                <DialogDescription>
-                  {t('admin.repositories.detail.delete_repository_warning')}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                  {t('admin.repositories.detail.cancel')}
-                </Button>
-                <Button variant="destructive" onClick={handleDelete}>
-                  {t('admin.repositories.detail.confirm_delete')}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* 主要内容区域 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="overview">{t('admin.repositories.detail.overview')}</TabsTrigger>
-          <TabsTrigger value="documents">{t('admin.repositories.detail.documents')}</TabsTrigger>
-          <TabsTrigger value="sync">{t('admin.repositories.detail.sync')}</TabsTrigger>
-          <TabsTrigger value="permissions">{t('admin.repositories.detail.permissions')}</TabsTrigger>
-          <TabsTrigger value="config">{t('admin.repositories.detail.config')}</TabsTrigger>
-          <TabsTrigger value="tasks">{t('admin.repositories.detail.tasks')}</TabsTrigger>
-          <TabsTrigger value="logs">{t('admin.repositories.detail.logs')}</TabsTrigger>
-          <TabsTrigger value="files">{t('admin.repositories.detail.files')}</TabsTrigger>
-        </TabsList>
-
-        {/* 概览标签页 */}
-        <TabsContent value="overview" className="space-y-6">
-          {renderOverviewTab()}
-        </TabsContent>
-
-        {/* 文档管理标签页 */}
-        <TabsContent value="documents" className="space-y-6">
-          {renderDocumentsTab()}
-        </TabsContent>
-
-        {/* 同步管理标签页 */}
-        <TabsContent value="sync" className="space-y-6">
-          {renderSyncTab()}
-        </TabsContent>
-
-        {/* 权限管理标签页 */}
-        <TabsContent value="permissions" className="space-y-6">
-          {renderPermissionsTab()}
-        </TabsContent>
-
-        {/* 配置管理标签页 */}
-        <TabsContent value="config" className="space-y-6">
-          {renderConfigTab()}
-        </TabsContent>
-
-        {/* 任务管理标签页 */}
-        <TabsContent value="tasks" className="space-y-6">
-          {renderTasksTab()}
-        </TabsContent>
-
-        {/* 操作日志标签页 */}
-        <TabsContent value="logs" className="space-y-6">
-          {renderLogsTab()}
-        </TabsContent>
-
-        {/* 文件浏览标签页 */}
-        <TabsContent value="files" className="space-y-6">
-          {renderFilesTab()}
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
-  // 渲染概览标签页
+  // 所有render函数
   const renderOverviewTab = () => (
     <div className="grid grid-cols-12 gap-6">
       {/* 基本信息卡片 */}
@@ -791,7 +605,6 @@ const RepositoryDetailPage: React.FC = () => {
     </div>
   )
 
-  // 渲染文档管理标签页
   const renderDocumentsTab = () => (
     <div className="grid grid-cols-12 gap-6 h-[calc(100vh-16rem)]">
       {/* 文档目录树 */}
@@ -813,7 +626,26 @@ const RepositoryDetailPage: React.FC = () => {
             </div>
             <ScrollArea className="h-[calc(100%-4rem)]">
               <div className="p-4">
-                <p className="text-sm text-muted-foreground">文档目录加载中...</p>
+                {catalogs && catalogs.length > 0 ? (
+                  <div className="space-y-2">
+                    {catalogs.map(catalog => (
+                      <div
+                        key={catalog.id}
+                        className="flex items-center justify-between p-2 rounded hover:bg-accent cursor-pointer"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{catalog.name}</span>
+                        </div>
+                        {catalog.isCompleted && (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center">暂无文档目录</p>
+                )}
               </div>
             </ScrollArea>
           </CardContent>
@@ -840,7 +672,6 @@ const RepositoryDetailPage: React.FC = () => {
     </div>
   )
 
-  // 渲染同步管理标签页
   const renderSyncTab = () => (
     <div className="space-y-6">
       {/* 同步操作 */}
@@ -855,7 +686,7 @@ const RepositoryDetailPage: React.FC = () => {
               <Dialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
-                    <Sync className="mr-2 h-4 w-4" />
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     手动同步
                   </Button>
                 </DialogTrigger>
@@ -942,7 +773,6 @@ const RepositoryDetailPage: React.FC = () => {
     </div>
   )
 
-  // 渲染权限管理标签页
   const renderPermissionsTab = () => (
     <Card>
       <CardHeader>
@@ -958,7 +788,6 @@ const RepositoryDetailPage: React.FC = () => {
     </Card>
   )
 
-  // 渲染配置管理标签页
   const renderConfigTab = () => (
     <Card>
       <CardHeader>
@@ -974,7 +803,6 @@ const RepositoryDetailPage: React.FC = () => {
     </Card>
   )
 
-  // 渲染任务管理标签页
   const renderTasksTab = () => (
     <Card>
       <CardHeader>
@@ -990,7 +818,6 @@ const RepositoryDetailPage: React.FC = () => {
     </Card>
   )
 
-  // 渲染操作日志标签页
   const renderLogsTab = () => (
     <Card>
       <CardHeader>
@@ -1033,7 +860,6 @@ const RepositoryDetailPage: React.FC = () => {
     </Card>
   )
 
-  // 渲染文件浏览标签页
   const renderFilesTab = () => (
     <div className="grid grid-cols-12 gap-6 h-[calc(100vh-16rem)]">
       {/* 文件树 */}
@@ -1057,7 +883,13 @@ const RepositoryDetailPage: React.FC = () => {
             </div>
             <ScrollArea className="h-[calc(100%-4rem)]">
               <div className="p-2">
-                {filteredTreeData(treeData).map(node => renderTreeNode(node))}
+                {treeData && treeData.length > 0 ? (
+                  filteredTreeData(treeData).map(node => renderTreeNode(node))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    暂无文件
+                  </p>
+                )}
               </div>
             </ScrollArea>
           </CardContent>
@@ -1115,6 +947,187 @@ const RepositoryDetailPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+    </div>
+  )
+
+  // 加载状态处理
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>{t('admin.messages.loading')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!repository) {
+    return (
+      <div className="text-center py-8">
+        <p>{t('admin.repositories.detail.repository_not_found')}</p>
+        <Button asChild className="mt-4">
+          <Link to="/admin/repositories">
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            {t('admin.repositories.detail.return_to_repository_list')}
+          </Link>
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* 面包屑导航 */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/admin/repositories">{t('admin.repositories.title')}</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{repository.organizationName}/{repository.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      {/* 页面标题和操作 */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold tracking-tight">
+              {repository.organizationName}/{repository.name}
+            </h1>
+            {getStatusBadge(repository.status || 'Pending')}
+          </div>
+          <p className="text-muted-foreground">
+            {repository.description || t('admin.repositories.detail.no_description')}
+          </p>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <GitBranch className="h-4 w-4" />
+              {repository.branch || 'main'}
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              {t('admin.repositories.detail.created_at')} {new Date(repository.createdAt).toLocaleDateString('zh-CN')}
+            </div>
+            {repository.updatedAt && (
+              <div className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                {t('admin.repositories.detail.updated_at')} {new Date(repository.updatedAt).toLocaleDateString('zh-CN')}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn("mr-2 h-4 w-4", refreshing && "animate-spin")} />
+            {refreshing ? t('admin.repositories.detail.refreshing') : t('admin.repositories.detail.refresh')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {t('admin.repositories.detail.export')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setEditMode(!editMode)}
+          >
+            <Edit3 className="mr-2 h-4 w-4" />
+            {t('admin.repositories.detail.edit')}
+          </Button>
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t('admin.repositories.detail.delete')}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t('admin.repositories.detail.confirm_delete_repository')}</DialogTitle>
+                <DialogDescription>
+                  {t('admin.repositories.detail.delete_repository_warning')}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                  {t('admin.repositories.detail.cancel')}
+                </Button>
+                <Button variant="destructive" onClick={handleDelete}>
+                  {t('admin.repositories.detail.confirm_delete')}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* 主要内容区域 */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="overview">{t('admin.repositories.detail.overview')}</TabsTrigger>
+          <TabsTrigger value="documents">{t('admin.repositories.detail.documents')}</TabsTrigger>
+          <TabsTrigger value="sync">{t('admin.repositories.detail.sync')}</TabsTrigger>
+          <TabsTrigger value="permissions">{t('admin.repositories.detail.permissions')}</TabsTrigger>
+          <TabsTrigger value="config">{t('admin.repositories.detail.config')}</TabsTrigger>
+          <TabsTrigger value="tasks">{t('admin.repositories.detail.tasks')}</TabsTrigger>
+          <TabsTrigger value="logs">{t('admin.repositories.detail.logs')}</TabsTrigger>
+          <TabsTrigger value="files">{t('admin.repositories.detail.files')}</TabsTrigger>
+        </TabsList>
+
+        {/* 概览标签页 */}
+        <TabsContent value="overview" className="space-y-6">
+          {renderOverviewTab()}
+        </TabsContent>
+
+        {/* 文档管理标签页 */}
+        <TabsContent value="documents" className="space-y-6">
+          {renderDocumentsTab()}
+        </TabsContent>
+
+        {/* 同步管理标签页 */}
+        <TabsContent value="sync" className="space-y-6">
+          {renderSyncTab()}
+        </TabsContent>
+
+        {/* 权限管理标签页 */}
+        <TabsContent value="permissions" className="space-y-6">
+          {renderPermissionsTab()}
+        </TabsContent>
+
+        {/* 配置管理标签页 */}
+        <TabsContent value="config" className="space-y-6">
+          {renderConfigTab()}
+        </TabsContent>
+
+        {/* 任务管理标签页 */}
+        <TabsContent value="tasks" className="space-y-6">
+          {renderTasksTab()}
+        </TabsContent>
+
+        {/* 操作日志标签页 */}
+        <TabsContent value="logs" className="space-y-6">
+          {renderLogsTab()}
+        </TabsContent>
+
+        {/* 文件浏览标签页 */}
+        <TabsContent value="files" className="space-y-6">
+          {renderFilesTab()}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

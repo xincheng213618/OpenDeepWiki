@@ -27,8 +27,10 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Hash,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
 import type { DocumentNode } from '@/components/repository/DocumentTree'
 
 interface MenuItem {
@@ -38,6 +40,8 @@ interface MenuItem {
   path?: string
   children?: MenuItem[]
   badge?: string
+  disabled?: boolean  // 是否禁用
+  progress?: number   // 生成进度
 }
 
 interface FumadocsSidebarProps {
@@ -89,6 +93,8 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = React.memo(({
         label: node.name,
         // 所有节点都可以点击，并包含分支信息
         path: pathWithBranch,
+        disabled: node.disabled,  // 传递禁用状态
+        progress: node.progress,  // 传递进度
         children: node.children?.map(convertToMenuItem)
       }
     }
@@ -98,7 +104,15 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = React.memo(({
 
 
   // 处理菜单点击 - 使用 useCallback 优化性能
-  const handleMenuClick = useCallback(async (item: MenuItem) => {
+  const handleMenuClick = useCallback(async (item: MenuItem, event?: React.MouseEvent) => {
+    // 如果菜单项被禁用，不处理点击
+    if (item.disabled) {
+      console.log('Menu item is disabled:', item.label, item)
+      event?.preventDefault()
+      event?.stopPropagation()
+      return
+    }
+
     if (item.path) {
       // 设置加载状态
       setLoadingItemId(item.id)
@@ -141,6 +155,8 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = React.memo(({
       item.path === window.location.pathname ||
       window.location.pathname.includes(item.path + '/')
     const isLoading = loadingItemId === item.id
+    const isDisabled = item.disabled || false
+    const hasProgress = typeof item.progress === 'number'
 
     // Fumadocs 风格的缩进，增大字体和间距
     const indent = level * 16 + 16 // 基础16px + 每级16px
@@ -150,17 +166,29 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = React.memo(({
         <div key={item.id} className="group">
           <button
             className={cn(
-              "flex items-center w-full py-2 px-3 text-sm transition-all duration-150 rounded-md",
-              "hover:bg-accent/50 hover:text-accent-foreground",
-              isSelected && "bg-accent text-accent-foreground font-medium",
-              isLoading && "opacity-70"
+              "flex items-center w-full py-2 px-3 text-sm transition-all duration-150 rounded-md relative",
+              !isDisabled && "hover:bg-accent/50 hover:text-accent-foreground",
+              isSelected && !isDisabled && "bg-accent text-accent-foreground font-medium",
+              isLoading && "opacity-70",
+              isDisabled && "opacity-50 cursor-not-allowed"
             )}
             style={{ paddingLeft: `${indent}px` }}
-            onClick={() => handleMenuClick(item)}
-            disabled={isLoading}
+            onClick={(e) => {
+              if (isDisabled || isLoading) {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('Button click prevented - disabled:', isDisabled, 'loading:', isLoading)
+                return
+              }
+              handleMenuClick(item, e)
+            }}
+            disabled={isDisabled || isLoading}
           >
             {isLoading && (
               <Loader2 className="mr-2 h-3 w-3 animate-spin flex-shrink-0" />
+            )}
+            {isDisabled && !isLoading && (
+              <Lock className="mr-2 h-3 w-3 flex-shrink-0 text-muted-foreground" />
             )}
             <span className="truncate flex-1 text-left font-normal">{item.label}</span>
             {item.badge && (
@@ -169,6 +197,19 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = React.memo(({
               </span>
             )}
           </button>
+          {hasProgress && (
+            <div className="px-4 mt-1 mb-1">
+              <div className="flex items-center gap-2">
+                <Progress value={item.progress || 0} className="h-2 flex-1" />
+                <span className="text-[10px] text-muted-foreground font-mono min-w-[30px]">
+                  {Math.round(item.progress || 0)}%
+                </span>
+              </div>
+              {isDisabled && (
+                <span className="text-[10px] text-muted-foreground">生成中...</span>
+              )}
+            </div>
+          )}
           <div className="pb-1">
             {item.children?.map(child => renderMenuItem(child, level + 1))}
           </div>
@@ -177,28 +218,54 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = React.memo(({
     }
 
     return (
-      <button
-        key={item.id}
-        className={cn(
-          "flex items-center w-full py-2 px-3 text-sm transition-all duration-150 rounded-md group",
-          "hover:bg-accent/50 hover:text-accent-foreground",
-          isSelected ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground",
-          isLoading && "opacity-70"
+      <div key={item.id} className="relative">
+        <button
+          className={cn(
+            "flex items-center w-full py-2 px-3 text-sm transition-all duration-150 rounded-md group relative",
+            !isDisabled && "hover:bg-accent/50 hover:text-accent-foreground",
+            isSelected && !isDisabled ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground",
+            isLoading && "opacity-70",
+            isDisabled && "opacity-50 cursor-not-allowed"
+          )}
+          style={{ paddingLeft: `${indent + 16}px` }} // 叶节点额外缩进
+          onClick={(e) => {
+            if (isDisabled || isLoading) {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('Leaf button click prevented - disabled:', isDisabled, 'loading:', isLoading, 'item:', item)
+              return
+            }
+            handleMenuClick(item, e)
+          }}
+          disabled={isDisabled || isLoading}
+        >
+          {isLoading && (
+            <Loader2 className="mr-2 h-3 w-3 animate-spin flex-shrink-0" />
+          )}
+          {isDisabled && !isLoading && (
+            <Lock className="mr-2 h-3 w-3 flex-shrink-0 text-muted-foreground" />
+          )}
+          <span className="truncate flex-1 text-left font-normal">{item.label}</span>
+          {item.badge && (
+            <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+              {item.badge}
+            </span>
+          )}
+        </button>
+        {hasProgress && (
+          <div className="px-4 mt-1 mb-1" style={{ paddingLeft: `${indent + 32}px` }}>
+            <div className="flex items-center gap-2">
+              <Progress value={item.progress || 0} className="h-2 flex-1" />
+              <span className="text-[10px] text-muted-foreground font-mono min-w-[30px]">
+                {Math.round(item.progress || 0)}%
+              </span>
+            </div>
+            {isDisabled && (
+              <span className="text-[10px] text-muted-foreground">生成中...</span>
+            )}
+          </div>
         )}
-        style={{ paddingLeft: `${indent + 16}px` }} // 叶节点额外缩进
-        onClick={() => handleMenuClick(item)}
-        disabled={isLoading}
-      >
-        {isLoading && (
-          <Loader2 className="mr-2 h-3 w-3 animate-spin flex-shrink-0" />
-        )}
-        <span className="truncate flex-1 text-left font-normal">{item.label}</span>
-        {item.badge && (
-          <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
-            {item.badge}
-          </span>
-        )}
-      </button>
+      </div>
     )
   }, [handleMenuClick, selectedPath, loadingItemId])
 

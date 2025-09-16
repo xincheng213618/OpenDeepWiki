@@ -112,6 +112,7 @@ public class RepositoryService(
     /// <param name="pageSize">每页数量</param>
     /// <param name="keyword">搜索关键词</param>
     /// <returns>仓库列表</returns>
+    [HttpGet("RepositoryList")]
     public async Task<PageDto<RepositoryInfoDto>> GetRepositoryListAsync(int page, int pageSize, string? keyword)
     {
         var query = dbContext.Warehouses.AsNoTracking();
@@ -212,6 +213,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="id">仓库ID</param>
     /// <returns>仓库详情</returns>
+    [HttpGet("/Repository")]
     public async Task<ResultDto<RepositoryInfoDto>> GetRepositoryAsync(string id)
     {
         var repository = await dbContext.Warehouses
@@ -241,6 +243,7 @@ public class RepositoryService(
     /// <param name="name">仓库名称</param>
     /// <param name="branch">分支名称（可选）</param>
     /// <returns>仓库详情</returns>
+    [HttpGet("RepositoryByOwnerAndName")]
     public async Task<RepositoryInfoDto> GetRepositoryByOwnerAndNameAsync(string owner, string name,
         string? branch = null)
     {
@@ -279,6 +282,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="createDto">仓库信息</param>
     /// <returns>创建结果</returns>
+    [HttpPost("GitRepository")]
     public async Task<RepositoryInfoDto> CreateGitRepositoryAsync(CreateGitRepositoryDto createDto)
     {
         // 只有管理员可以创建新仓库
@@ -381,6 +385,7 @@ public class RepositoryService(
     /// <param name="id">仓库ID</param>
     /// <param name="updateDto">更新信息</param>
     /// <returns>更新结果</returns>
+    [HttpPost("Repository")]
     public async Task<RepositoryInfoDto> UpdateRepositoryAsync(string id, UpdateRepositoryDto updateDto)
     {
         // 检查管理权限
@@ -426,6 +431,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="id">仓库ID</param>
     /// <returns>删除结果</returns>
+    [HttpDelete("Repository")]
     [EndpointSummary("仓库管理：删除仓库")]
     public async Task<bool> DeleteRepositoryAsync(string id)
     {
@@ -471,6 +477,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="id">仓库ID</param>
     /// <returns>处理结果</returns>
+    [HttpPost("ResetRepository")]
     [EndpointSummary("仓库管理：重新处理仓库")]
     public async Task<bool> ResetRepositoryAsync(string id)
     {
@@ -503,6 +510,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="id">仓库ID</param>
     /// <returns>文件目录结构</returns>
+    [HttpGet("Files")]
     [EndpointSummary("仓库管理：获取仓库文件目录结构")]
     public async Task<List<TreeNode>> GetFilesAsync(string id)
     {
@@ -525,6 +533,7 @@ public class RepositoryService(
     /// <summary>
     /// 重命名目录
     /// </summary>
+    [HttpPost("RenameCatalog")]
     [EndpointSummary("仓库管理：重命名目录")]
     public async Task<bool> RenameCatalogAsync(string id, string newName)
     {
@@ -587,6 +596,7 @@ public class RepositoryService(
         return true;
     }
 
+    [HttpPost("CreateCatalog")]
     [EndpointSummary("仓库管理：新建目录，并且实时生成文档")]
     public async Task<bool> CreateCatalogAsync(CreateCatalogInput input)
     {
@@ -697,6 +707,7 @@ public class RepositoryService(
     /// AI智能生成文件内容
     /// </summary>
     /// <returns></returns>
+    [HttpPost("GenerateFileContent")]
     public async Task<bool> GenerateFileContentAsync(GenerateFileContentInput input)
     {
         // 使用memoryCache增加缓存，避免重复处理同一目录
@@ -805,6 +816,7 @@ public class RepositoryService(
     /// <param name="id"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
+    [HttpGet("FileContent")]
     [EndpointSummary("仓库管理：获取文件内容")]
     public async Task<string> GetFileContentAsync(string id)
     {
@@ -834,6 +846,7 @@ public class RepositoryService(
     /// <summary>
     /// 仓库管理：保存文件内容
     /// </summary>
+    [HttpPost("FileContent")]
     [EndpointSummary("仓库管理：保存文件内容")]
     public async Task<bool> FileContentAsync(SaveFileContentInput input)
     {
@@ -874,6 +887,138 @@ public class RepositoryService(
         await dbContext.SaveChangesAsync();
 
         return true;
+    }
+
+    /// <summary>
+    /// 获取仓库统计信息
+    /// </summary>
+    [HttpGet("RepositoryStats")]
+    [EndpointSummary("仓库管理：获取仓库统计信息")]
+    public async Task<RepositoryStatsDto> GetRepositoryStatsAsync(string id)
+    {
+        // 检查用户权限
+        if (!await CheckWarehouseAccessAsync(id))
+        {
+            throw new UnauthorizedAccessException("您没有权限访问此仓库");
+        }
+
+        var repository = await dbContext.Warehouses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (repository == null)
+        {
+            throw new ArgumentException("仓库不存在");
+        }
+
+        // 获取文档统计
+        var documentCount = await dbContext.DocumentCatalogs
+            .Where(x => x.WarehouseId == id && !x.IsDeleted)
+            .CountAsync();
+
+        var completedDocumentCount = await dbContext.DocumentCatalogs
+            .Where(x => x.WarehouseId == id && !x.IsDeleted && x.IsCompleted)
+            .CountAsync();
+
+        var fileCount = await dbContext.DocumentFileItems
+            .Where(x => dbContext.DocumentCatalogs
+                .Where(c => c.WarehouseId == id && !c.IsDeleted)
+                .Select(c => c.Id)
+                .Contains(x.DocumentCatalogId))
+            .CountAsync();
+
+        return new RepositoryStatsDto
+        {
+            TotalDocuments = documentCount,
+            CompletedDocuments = completedDocumentCount,
+            PendingDocuments = documentCount - completedDocumentCount,
+            TotalFiles = fileCount,
+            LastSyncTime = repository.CreatedAt,
+            ProcessingStatus = repository.Status.ToString()
+        };
+    }
+
+    /// <summary>
+    /// 获取仓库操作日志
+    /// </summary>
+    [HttpGet("RepositoryLogs")]
+    [EndpointSummary("仓库管理：获取仓库操作日志")]
+    public async Task<PageDto<RepositoryLogDto>> GetRepositoryLogsAsync(string repositoryId, int page = 1, int pageSize = 20)
+    {
+        // 检查用户权限
+        if (!await CheckWarehouseAccessAsync(repositoryId))
+        {
+            throw new UnauthorizedAccessException("您没有权限访问此仓库");
+        }
+
+        // 这里暂时返回空数据，实际应该从日志表查询
+        var logs = new List<RepositoryLogDto>();
+
+        return new PageDto<RepositoryLogDto>(0, logs);
+    }
+
+    /// <summary>
+    /// 批量操作仓库
+    /// </summary>
+    [HttpPost("BatchOperate")]
+    [EndpointSummary("仓库管理：批量操作仓库")]
+    public async Task<bool> BatchOperateRepositoriesAsync(BatchOperationDto data)
+    {
+        var isAdmin = httpContextAccessor.HttpContext?.User?.IsInRole("admin") ?? false;
+        if (!isAdmin)
+        {
+            throw new UnauthorizedAccessException("只有管理员可以执行批量操作");
+        }
+
+        foreach (var id in data.Ids)
+        {
+            switch (data.Operation.ToLower())
+            {
+                case "refresh":
+                    await ResetRepositoryAsync(id);
+                    break;
+                case "delete":
+                    await DeleteRepositoryAsync(id);
+                    break;
+                default:
+                    throw new ArgumentException($"不支持的操作: {data.Operation}");
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 获取仓库文档目录
+    /// </summary>
+    [HttpGet("DocumentCatalogs")]
+    [EndpointSummary("仓库管理：获取仓库文档目录")]
+    public async Task<List<DocumentCatalogDto>> GetDocumentCatalogsAsync(string repositoryId)
+    {
+        // 检查用户权限
+        if (!await CheckWarehouseAccessAsync(repositoryId))
+        {
+            throw new UnauthorizedAccessException("您没有权限访问此仓库");
+        }
+
+        var catalogs = await dbContext.DocumentCatalogs
+            .AsNoTracking()
+            .Where(x => x.WarehouseId == repositoryId && !x.IsDeleted)
+            .OrderBy(x => x.Order)
+            .ToListAsync();
+
+        return catalogs.Select(c => new DocumentCatalogDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Url = c.Url,
+            Prompt = c.Prompt,
+            ParentId = c.ParentId,
+            Order = c.Order,
+            WarehouseId = c.WarehouseId,
+            IsCompleted = c.IsCompleted,
+            CreatedAt = c.CreatedAt
+        }).ToList();
     }
 
     /// <summary>

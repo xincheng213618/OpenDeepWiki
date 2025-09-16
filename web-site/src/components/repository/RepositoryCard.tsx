@@ -1,5 +1,6 @@
 // 仓库卡片组件
 
+import React, { useCallback, useMemo } from 'react'
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -21,19 +22,37 @@ const statusConfig: Record<WarehouseStatus, { label: string; variant: 'default' 
   [WarehouseStatus.Unauthorized]: { label: '未授权', variant: 'destructive' },
 }
 
-export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository, onClick }) => {
-  const statusInfo = statusConfig[repository.status]
-  
+export const RepositoryCard: React.FC<RepositoryCardProps> = React.memo(({ repository, onClick }) => {
+  // 缓存状态信息
+  const statusInfo = useMemo(() => statusConfig[repository.status], [repository.status])
+
+  // 缓存头像显示文本
+  const avatarText = useMemo(() =>
+    repository.organizationName.substring(0, 2).toUpperCase(),
+    [repository.organizationName]
+  )
+
+  // 缓存时间格式化
+  const formattedTime = useMemo(() =>
+    formatDistanceToNow(repository.createdAt),
+    [repository.createdAt]
+  )
+
+  // 缓存点击处理器
+  const handleClick = useCallback(() => {
+    onClick?.(repository)
+  }, [onClick, repository])
+
   return (
-    <Card 
+    <Card
       className="hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col"
-      onClick={() => onClick?.(repository)}
+      onClick={handleClick}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
-              <AvatarFallback>{repository.organizationName.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{avatarText}</AvatarFallback>
             </Avatar>
             <div>
               <h3 className="font-semibold text-lg line-clamp-1">
@@ -93,12 +112,14 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository, onCl
           
           <div className="flex items-center">
             <Calendar className="h-4 w-4 mr-1" />
-            <span>{formatDistanceToNow(repository.createdAt)}</span>
+            <span>{formattedTime}</span>
           </div>
         </div>
       </CardFooter>
     </Card>
   )
-}
+})
+
+RepositoryCard.displayName = 'RepositoryCard'
 
 export default RepositoryCard

@@ -81,7 +81,9 @@ const UsersPage: React.FC = () => {
   const loadRoles = async () => {
     try {
       const response = await roleService.getAllRoles()
-      setRoles(response || [])
+      // 确保 response 是数组
+      const rolesData = Array.isArray(response) ? response : (response?.data || [])
+      setRoles(rolesData)
     } catch (error) {
       console.error('Failed to load roles:', error)
     }
@@ -274,7 +276,7 @@ const UsersPage: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">所有角色</SelectItem>
-                {roles.map((role) => (
+                {Array.isArray(roles) && roles.map((role) => (
                   <SelectItem key={role.id} value={role.name}>
                     {role.name}
                   </SelectItem>

@@ -1,27 +1,18 @@
 import React from 'react'
 import {
-  Form,
-  Input,
   Upload,
-  Button,
-  Space,
-  Row,
-  Col,
-  Card,
-  Typography,
-  Image,
-  message
-} from 'antd'
-import {
-  UploadOutlined,
-  DeleteOutlined,
-  EyeOutlined
-} from '@ant-design/icons'
+  Trash2,
+  Eye
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SystemSetting, ValidationErrors } from '@/types/systemSettings'
 
-const { TextArea } = Input
-const { Title, Text } = Typography
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent } from '@/components/ui/card'
+import { useToast } from '@/hooks/useToast'
 
 interface BasicSettingsTabProps {
   settings: SystemSetting[]
@@ -37,284 +28,334 @@ const BasicSettingsTab: React.FC<BasicSettingsTabProps> = ({
   loading = false
 }) => {
   const { t } = useTranslation()
+  const { toast } = useToast()
 
-  // 获取设置值的辅助函数
   const getSettingValue = (key: string) => {
     const setting = settings.find(s => s.key === key)
     return setting?.value || setting?.defaultValue || ''
   }
 
-  // 处理文件上传
-  const handleFileUpload = (key: string, info: any) => {
-    if (info.file.status === 'done') {
-      // 这里应该处理文件上传成功后的逻辑
-      // 通常会返回文件的URL或路径
-      const fileUrl = info.file.response?.url || info.file.response?.data?.url
-      if (fileUrl) {
-        onUpdate(key, fileUrl)
-        message.success(t('settings.uploadSuccess'))
+  const handleFileUpload = async (key: string, file: File) => {
+    const isImage = file.type.startsWith('image/')
+    if (!isImage) {
+      toast({
+        title: t('settings.onlyImageAllowed'),
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const isLt2M = file.size / 1024 / 1024 < 2
+    if (!isLt2M) {
+      toast({
+        title: t('settings.imageTooLarge'),
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const fileUrl = data?.url || data?.data?.url
+        if (fileUrl) {
+          onUpdate(key, fileUrl)
+          toast({
+            title: t('settings.uploadSuccess'),
+          })
+        }
+      } else {
+        throw new Error('Upload failed')
       }
-    } else if (info.file.status === 'error') {
-      message.error(t('settings.uploadFailed'))
+    } catch (error) {
+      toast({
+        title: t('settings.uploadFailed'),
+        variant: 'destructive',
+      })
     }
   }
 
-  // 获取上传属性
-  const getUploadProps = (key: string) => ({
-    name: 'file',
-    action: '/api/upload/image', // 假设的上传接口
-    showUploadList: false,
-    accept: 'image/*',
-    onChange: (info: any) => handleFileUpload(key, info),
-    beforeUpload: (file: File) => {
-      const isImage = file.type.startsWith('image/')
-      if (!isImage) {
-        message.error(t('settings.onlyImageAllowed'))
-        return false
-      }
-      const isLt2M = file.size / 1024 / 1024 < 2
-      if (!isLt2M) {
-        message.error(t('settings.imageTooLarge'))
-        return false
-      }
-      return true
-    }
-  })
-
   return (
-    <div style={{ maxWidth: '800px' }}>
-      <Title level={4} style={{ marginBottom: '24px' }}>
-        {t('settings.groups.basic')}
-      </Title>
-      <Text type="secondary" style={{ display: 'block', marginBottom: '24px' }}>
-        {t('settings.basicDescription')}
-      </Text>
+    <div className="max-w-4xl space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold">{t('settings.groups.basic')}</h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          {t('settings.basicDescription')}
+        </p>
+      </div>
 
-      <Form layout="vertical" disabled={loading}>
-        <Row gutter={[24, 16]}>
-          {/* 站点名称 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.basic.siteName')}
-              validateStatus={validationErrors.siteName ? 'error' : ''}
-              help={validationErrors.siteName}
-            >
-              <Input
-                value={getSettingValue('siteName')}
-                onChange={(e) => onUpdate('siteName', e.target.value)}
-                placeholder={t('settings.basic.siteNamePlaceholder')}
-                size="large"
-              />
-            </Form.Item>
-          </Col>
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="siteName">{t('settings.basic.siteName')}</Label>
+          <Input
+            id="siteName"
+            value={getSettingValue('siteName')}
+            onChange={(e) => onUpdate('siteName', e.target.value)}
+            placeholder={t('settings.basic.siteNamePlaceholder')}
+            disabled={loading}
+            className={validationErrors.siteName ? 'border-destructive' : ''}
+          />
+          {validationErrors.siteName && (
+            <p className="text-sm text-destructive">{validationErrors.siteName}</p>
+          )}
+        </div>
 
-          {/* 站点描述 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.basic.siteDescription')}
-              validateStatus={validationErrors.siteDescription ? 'error' : ''}
-              help={validationErrors.siteDescription}
-            >
-              <Input
-                value={getSettingValue('siteDescription')}
-                onChange={(e) => onUpdate('siteDescription', e.target.value)}
-                placeholder={t('settings.basic.siteDescriptionPlaceholder')}
-                size="large"
-              />
-            </Form.Item>
-          </Col>
+        <div className="space-y-2">
+          <Label htmlFor="siteDescription">{t('settings.basic.siteDescription')}</Label>
+          <Input
+            id="siteDescription"
+            value={getSettingValue('siteDescription')}
+            onChange={(e) => onUpdate('siteDescription', e.target.value)}
+            placeholder={t('settings.basic.siteDescriptionPlaceholder')}
+            disabled={loading}
+            className={validationErrors.siteDescription ? 'border-destructive' : ''}
+          />
+          {validationErrors.siteDescription && (
+            <p className="text-sm text-destructive">{validationErrors.siteDescription}</p>
+          )}
+        </div>
 
-          {/* 站点Logo */}
-          <Col span={24}>
-            <Form.Item
-              label={t('settings.basic.siteLogo')}
-              validateStatus={validationErrors.siteLogo ? 'error' : ''}
-              help={validationErrors.siteLogo}
-            >
-              <Card size="small" style={{ background: '#fafafa' }}>
-                <Row gutter={16} align="middle">
-                  <Col flex="auto">
-                    <Input
-                      value={getSettingValue('siteLogo')}
-                      onChange={(e) => onUpdate('siteLogo', e.target.value)}
-                      placeholder={t('settings.basic.siteLogoPlaceholder')}
-                      addonBefore={t('settings.basic.logoUrl')}
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="siteLogo">{t('settings.basic.siteLogo')}</Label>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Input
+                    id="siteLogo"
+                    value={getSettingValue('siteLogo')}
+                    onChange={(e) => onUpdate('siteLogo', e.target.value)}
+                    placeholder={t('settings.basic.siteLogoPlaceholder')}
+                    disabled={loading}
+                    className={validationErrors.siteLogo ? 'border-destructive' : ''}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Label htmlFor="logo-upload" className="cursor-pointer">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      disabled={loading}
+                    >
+                      <span>
+                        <Upload className="w-4 h-4 mr-2" />
+                        {t('common.upload')}
+                      </span>
+                    </Button>
+                    <input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleFileUpload('siteLogo', file)
+                      }}
                     />
-                  </Col>
-                  <Col>
-                    <Space>
-                      <Upload {...getUploadProps('siteLogo')}>
-                        <Button icon={<UploadOutlined />}>
-                          {t('common.upload')}
-                        </Button>
-                      </Upload>
-                      {getSettingValue('siteLogo') && (
-                        <>
-                          <Button
-                            icon={<EyeOutlined />}
-                            onClick={() => {
-                              // 预览图片
-                              Image.PreviewGroup._currentPreview = {
-                                current: 0,
-                                urls: [getSettingValue('siteLogo')]
-                              }
-                            }}
-                          />
-                          <Button
-                            icon={<DeleteOutlined />}
-                            danger
-                            onClick={() => onUpdate('siteLogo', '')}
-                          />
-                        </>
-                      )}
-                    </Space>
-                  </Col>
-                </Row>
-                {getSettingValue('siteLogo') && (
-                  <div style={{ marginTop: '12px' }}>
-                    <Image
-                      src={getSettingValue('siteLogo')}
-                      alt="Site Logo"
-                      style={{ maxHeight: '80px', maxWidth: '200px' }}
-                      fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RUG8M+Y4CiiFUIwQxjWgfxVYFYIMQzKFwOvI++wlWZbAUMiEQxB3iDEFfhPf0W1TbmXf2Zqo1TpfO9V3+nX91fV+9D53rve6/YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPz/tX/+888/d9///d+/7f5+9/f9/b+/vf/2t7/9/ub3Hz+7///z8+/v/n7//fe/D7s/vvn733//7f2f33333e8/ffddAAAAAADwOru/b/7Y/fHN7v/7mz9+/PHHP3/99de/Bvyf6R/++eOPP370+z//+U8AAAAAeLl3f/78899++213F8zHB+/e3QUEY1x0BQZ5/H7z13/9OsRlGPz++9e77z//6Y/fh8Pvj8+BAAAAAHiDu0A+DAXjYv/wYdx9GD+8/+YuOFgOg8P7d7u/7+4+kNefDYFDfnb/WQAAAAAAPLd79+5+KbAYAofHD9zuP5TjQ3kb7BgLj98P+7//7t1dd4hNHHJMxCK/d//nAAAAAMBrmx7hg/8QLNznw//x+5vffts9H7fhP7eLzfBh3xfk9/fB8LDfY0ze9wcJ8e6vuyvOxSfD4eNjy89Gh7y9//5/vbvaJfcbIUZ/+8Mn3f2HfGqP6GQIHD6d/f8xqd1/6J/+Nf3vf//7N/3Nn3/1/f6QlIbH03jk/w8AAADwvOxJ3P/5x+Mv9/K+3V0/fxf0r4v8u7/TuLj/0D8EBN988803H72P7Wf7gA8BwdBVnz8vj8/L53/4kO8/l8fn33/+8fPu//Xm7u7u7u5u9/k8fv99PrbPy+d/+JDvP5fH599/Ph4f8vX//OeHu7u7u7vdfV4en3//4Y//2P0PPv7n+9/97//v+HjJv/eQFzjIcxznq+fnPjdWD8fl8c/J4+vlOUz7vHA/57zdxSLjcHGMRe4HhOdp7Pdj//3t7de7uo/d973vX//6169+d/e/8Lz9X+T7w/8vr5fXH78v///8vr/+eXz+EJc8Pp/fP/L4fu4/++/u3n/+7//dfc8fl+f04/jdff4vX+s+7xcjBUAAICJD1NL0Pff9zf03v3/99ddf3Px1ew9jtBGDJhL43qzGIP7j2T9vW0rDYgj5/OWTfT/f7G+/dF8c+e9VB+7kKe77DvoNJOgfDfE39xX/5r/0xTNwT8r+WP2t/bOfx+P3ef369xGOmVF8rKqP/2Pf/OlPH/XZPl4/rHeb/3c/LrQfbGEwzZBZnZhqIYGiPiQ9Df4w/x8xeQCQpwNPAWTALjRTZOOd54Zx8bTlXb/m6lqL8L1+2vhh/+2X89QFINp/AV8dShtZMJ4zLr8oTQQgFrB9SQ9Lj8LMQ13R13++O8zjl/PTlkfnBdLJJpqTEYj6qJR/H3eI0xEo+9/fK/2p93O9/iOQJ0f7Z+Zd7bPG8QFAAA4a9JsZJBFZaEqfBCUPPe9Xe4P09u3ycxr+Vf4P/ub/9dc9v///O3vbzz/9+Lf//Xtu3n+Duf7n3/G6d//L96v3/1/3/39+//98Mu/v3n7p3y//3n3cf+9+5vEd+z9k7++/1J/P9z1xZ1+p6P2L/m5+7+/g7+37A+Bl/S6n7vz6xFzYH12eA1Zyf+/xb//9b//6v/8Pjn/d7r7/1f/75f+9++d1/rvXt7e9z9v8Cfw3/P8+8/+bwD7LkgP77xP//vfbvaf3f/39bvf/P2++/c/PQpjnzz7/7f7fp78vfPr8P3/x/X73L97d/3pGHnz+7j7PL/5/P0u//+7+Vfz2+3dz+fn7fH/9/8f/c+fPv/v7v///t8f/xfw==)"
-                    />
-                  </div>
-                )}
-              </Card>
-            </Form.Item>
-          </Col>
+                  </Label>
+                  {getSettingValue('siteLogo') && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(getSettingValue('siteLogo'), '_blank')}
+                        disabled={loading}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => onUpdate('siteLogo', '')}
+                        disabled={loading}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+              {getSettingValue('siteLogo') && (
+                <div className="mt-4">
+                  <img
+                    src={getSettingValue('siteLogo')}
+                    alt="Site Logo"
+                    className="max-h-20 max-w-[200px] object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjgwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iODAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5Ij5Mb2dvPC90ZXh0Pjwvc3ZnPg=='
+                    }}
+                  />
+                </div>
+              )}
+              {validationErrors.siteLogo && (
+                <p className="text-sm text-destructive mt-2">{validationErrors.siteLogo}</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* 网站图标 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.basic.favicon')}
-              validateStatus={validationErrors.favicon ? 'error' : ''}
-              help={validationErrors.favicon}
-            >
-              <Input
-                value={getSettingValue('favicon')}
-                onChange={(e) => onUpdate('favicon', e.target.value)}
-                placeholder={t('settings.basic.faviconPlaceholder')}
-                addonAfter={
-                  <Upload {...getUploadProps('favicon')}>
-                    <Button icon={<UploadOutlined />} size="small" />
-                  </Upload>
-                }
+        <div className="space-y-2">
+          <Label htmlFor="favicon">{t('settings.basic.favicon')}</Label>
+          <div className="flex gap-2">
+            <Input
+              id="favicon"
+              value={getSettingValue('favicon')}
+              onChange={(e) => onUpdate('favicon', e.target.value)}
+              placeholder={t('settings.basic.faviconPlaceholder')}
+              disabled={loading}
+              className={validationErrors.favicon ? 'border-destructive' : ''}
+            />
+            <Label htmlFor="favicon-upload" className="cursor-pointer">
+              <Button
+                variant="outline"
+                size="icon"
+                asChild
+                disabled={loading}
+              >
+                <span>
+                  <Upload className="w-4 h-4" />
+                </span>
+              </Button>
+              <input
+                id="favicon-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleFileUpload('favicon', file)
+                }}
               />
-            </Form.Item>
-          </Col>
+            </Label>
+          </div>
+          {validationErrors.favicon && (
+            <p className="text-sm text-destructive">{validationErrors.favicon}</p>
+          )}
+        </div>
 
-          {/* 版权信息 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.basic.copyright')}
-              validateStatus={validationErrors.copyRight ? 'error' : ''}
-              help={validationErrors.copyRight}
-            >
-              <Input
-                value={getSettingValue('copyRight')}
-                onChange={(e) => onUpdate('copyRight', e.target.value)}
-                placeholder={t('settings.basic.copyrightPlaceholder')}
-              />
-            </Form.Item>
-          </Col>
+        <div className="space-y-2">
+          <Label htmlFor="copyRight">{t('settings.basic.copyright')}</Label>
+          <Input
+            id="copyRight"
+            value={getSettingValue('copyRight')}
+            onChange={(e) => onUpdate('copyRight', e.target.value)}
+            placeholder={t('settings.basic.copyrightPlaceholder')}
+            disabled={loading}
+            className={validationErrors.copyRight ? 'border-destructive' : ''}
+          />
+          {validationErrors.copyRight && (
+            <p className="text-sm text-destructive">{validationErrors.copyRight}</p>
+          )}
+        </div>
 
-          {/* 关键词 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.basic.keywords')}
-              validateStatus={validationErrors.siteKeywords ? 'error' : ''}
-              help={validationErrors.siteKeywords}
-            >
-              <Input
-                value={getSettingValue('siteKeywords')}
-                onChange={(e) => onUpdate('siteKeywords', e.target.value)}
-                placeholder={t('settings.basic.keywordsPlaceholder')}
-              />
-            </Form.Item>
-          </Col>
+        <div className="space-y-2">
+          <Label htmlFor="siteKeywords">{t('settings.basic.keywords')}</Label>
+          <Input
+            id="siteKeywords"
+            value={getSettingValue('siteKeywords')}
+            onChange={(e) => onUpdate('siteKeywords', e.target.value)}
+            placeholder={t('settings.basic.keywordsPlaceholder')}
+            disabled={loading}
+            className={validationErrors.siteKeywords ? 'border-destructive' : ''}
+          />
+          {validationErrors.siteKeywords && (
+            <p className="text-sm text-destructive">{validationErrors.siteKeywords}</p>
+          )}
+        </div>
 
-          {/* 联系邮箱 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.basic.contactEmail')}
-              validateStatus={validationErrors.contactEmail ? 'error' : ''}
-              help={validationErrors.contactEmail}
-            >
-              <Input
-                type="email"
-                value={getSettingValue('contactEmail')}
-                onChange={(e) => onUpdate('contactEmail', e.target.value)}
-                placeholder={t('settings.basic.contactEmailPlaceholder')}
-              />
-            </Form.Item>
-          </Col>
+        <div className="space-y-2">
+          <Label htmlFor="contactEmail">{t('settings.basic.contactEmail')}</Label>
+          <Input
+            id="contactEmail"
+            type="email"
+            value={getSettingValue('contactEmail')}
+            onChange={(e) => onUpdate('contactEmail', e.target.value)}
+            placeholder={t('settings.basic.contactEmailPlaceholder')}
+            disabled={loading}
+            className={validationErrors.contactEmail ? 'border-destructive' : ''}
+          />
+          {validationErrors.contactEmail && (
+            <p className="text-sm text-destructive">{validationErrors.contactEmail}</p>
+          )}
+        </div>
 
-          {/* 支持URL */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.basic.supportUrl')}
-              validateStatus={validationErrors.supportUrl ? 'error' : ''}
-              help={validationErrors.supportUrl}
-            >
-              <Input
-                type="url"
-                value={getSettingValue('supportUrl')}
-                onChange={(e) => onUpdate('supportUrl', e.target.value)}
-                placeholder={t('settings.basic.supportUrlPlaceholder')}
-              />
-            </Form.Item>
-          </Col>
+        <div className="space-y-2">
+          <Label htmlFor="supportUrl">{t('settings.basic.supportUrl')}</Label>
+          <Input
+            id="supportUrl"
+            type="url"
+            value={getSettingValue('supportUrl')}
+            onChange={(e) => onUpdate('supportUrl', e.target.value)}
+            placeholder={t('settings.basic.supportUrlPlaceholder')}
+            disabled={loading}
+            className={validationErrors.supportUrl ? 'border-destructive' : ''}
+          />
+          {validationErrors.supportUrl && (
+            <p className="text-sm text-destructive">{validationErrors.supportUrl}</p>
+          )}
+        </div>
 
-          {/* 隐私政策URL */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.basic.privacyPolicyUrl')}
-              validateStatus={validationErrors.privacyPolicyUrl ? 'error' : ''}
-              help={validationErrors.privacyPolicyUrl}
-            >
-              <Input
-                type="url"
-                value={getSettingValue('privacyPolicyUrl')}
-                onChange={(e) => onUpdate('privacyPolicyUrl', e.target.value)}
-                placeholder={t('settings.basic.privacyPolicyUrlPlaceholder')}
-              />
-            </Form.Item>
-          </Col>
+        <div className="space-y-2">
+          <Label htmlFor="privacyPolicyUrl">{t('settings.basic.privacyPolicyUrl')}</Label>
+          <Input
+            id="privacyPolicyUrl"
+            type="url"
+            value={getSettingValue('privacyPolicyUrl')}
+            onChange={(e) => onUpdate('privacyPolicyUrl', e.target.value)}
+            placeholder={t('settings.basic.privacyPolicyUrlPlaceholder')}
+            disabled={loading}
+            className={validationErrors.privacyPolicyUrl ? 'border-destructive' : ''}
+          />
+          {validationErrors.privacyPolicyUrl && (
+            <p className="text-sm text-destructive">{validationErrors.privacyPolicyUrl}</p>
+          )}
+        </div>
 
-          {/* 服务条款URL */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.basic.termsOfServiceUrl')}
-              validateStatus={validationErrors.termsOfServiceUrl ? 'error' : ''}
-              help={validationErrors.termsOfServiceUrl}
-            >
-              <Input
-                type="url"
-                value={getSettingValue('termsOfServiceUrl')}
-                onChange={(e) => onUpdate('termsOfServiceUrl', e.target.value)}
-                placeholder={t('settings.basic.termsOfServiceUrlPlaceholder')}
-              />
-            </Form.Item>
-          </Col>
+        <div className="space-y-2">
+          <Label htmlFor="termsOfServiceUrl">{t('settings.basic.termsOfServiceUrl')}</Label>
+          <Input
+            id="termsOfServiceUrl"
+            type="url"
+            value={getSettingValue('termsOfServiceUrl')}
+            onChange={(e) => onUpdate('termsOfServiceUrl', e.target.value)}
+            placeholder={t('settings.basic.termsOfServiceUrlPlaceholder')}
+            disabled={loading}
+            className={validationErrors.termsOfServiceUrl ? 'border-destructive' : ''}
+          />
+          {validationErrors.termsOfServiceUrl && (
+            <p className="text-sm text-destructive">{validationErrors.termsOfServiceUrl}</p>
+          )}
+        </div>
 
-          {/* 统计代码 */}
-          <Col span={24}>
-            <Form.Item
-              label={t('settings.basic.analyticsCode')}
-              validateStatus={validationErrors.analyticsCode ? 'error' : ''}
-              help={validationErrors.analyticsCode || t('settings.basic.analyticsCodeHelp')}
-            >
-              <TextArea
-                rows={6}
-                value={getSettingValue('analyticsCode')}
-                onChange={(e) => onUpdate('analyticsCode', e.target.value)}
-                placeholder={t('settings.basic.analyticsCodePlaceholder')}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="analyticsCode">{t('settings.basic.analyticsCode')}</Label>
+          <Textarea
+            id="analyticsCode"
+            rows={6}
+            value={getSettingValue('analyticsCode')}
+            onChange={(e) => onUpdate('analyticsCode', e.target.value)}
+            placeholder={t('settings.basic.analyticsCodePlaceholder')}
+            disabled={loading}
+            className={validationErrors.analyticsCode ? 'border-destructive' : ''}
+          />
+          <p className="text-sm text-muted-foreground">
+            {t('settings.basic.analyticsCodeHelp')}
+          </p>
+          {validationErrors.analyticsCode && (
+            <p className="text-sm text-destructive">{validationErrors.analyticsCode}</p>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

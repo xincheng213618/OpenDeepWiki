@@ -1,61 +1,119 @@
 import React from 'react'
 import {
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Progress,
-  Tag,
-  Typography,
-  Space,
-  Tooltip,
-  Badge,
-  Divider
-} from 'antd'
-import {
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  CloseCircleOutlined,
-  InfoCircleOutlined,
-  DatabaseOutlined,
-  CloudServerOutlined,
-  SafetyOutlined,
-  ToolOutlined,
-  ClockCircleOutlined,
-  WarningOutlined
-} from '@ant-design/icons'
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Database,
+  Server,
+  Clock,
+  Wrench,
+  AlertTriangleIcon
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SystemStatus } from '@/types/systemSettings'
 
-const { Text, Title } = Typography
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface SystemStatusCardProps {
-  status: SystemStatus
+  status: SystemStatus | null
   restartRequired: string[]
-  style?: React.CSSProperties
+  className?: string
 }
 
-const SystemStatusCard: React.FC<SystemStatusCardProps> = ({
-  status,
-  restartRequired,
-  style
-}) => {
+interface CircularProgressProps {
+  value: number
+  label: string
+  sublabel: string
+  thresholds: {
+    high: number
+    medium: number
+  }
+}
+
+const CircularProgress: React.FC<CircularProgressProps> = ({ value, label, sublabel, thresholds }) => {
+  const radius = 40
+  const strokeWidth = 8
+  const circumference = 2 * Math.PI * radius
+  const safeValue = value || 0
+  const offset = circumference - (safeValue / 100) * circumference
+
+  const getColor = () => {
+    if (safeValue > thresholds.high) return '#ef4444'
+    if (safeValue > thresholds.medium) return '#f97316'
+    return '#22c55e'
+  }
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width="100" height="100" className="transform -rotate-90">
+        <circle
+          cx="50"
+          cy="50"
+          r={radius}
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          fill="none"
+          className="text-muted-foreground/20"
+        />
+        <circle
+          cx="50"
+          cy="50"
+          r={radius}
+          stroke={getColor()}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-500 ease-in-out"
+        />
+      </svg>
+      <div className="text-center mt-2">
+        <div className="text-2xl font-bold">{safeValue}%</div>
+        <div className="text-sm text-muted-foreground">{label}</div>
+        <div className="text-xs text-muted-foreground">{sublabel}</div>
+      </div>
+    </div>
+  )
+}
+
+const SystemStatusCard: React.FC<SystemStatusCardProps> = ({ status, restartRequired, className }) => {
   const { t } = useTranslation()
 
-  // 获取状态颜色和图标
-  const getStatusIndicator = (configured: boolean, hasIssue?: boolean) => {
-    if (hasIssue) {
-      return { color: 'error', icon: <CloseCircleOutlined />, text: t('common.error') }
-    }
-    if (configured) {
-      return { color: 'success', icon: <CheckCircleOutlined />, text: t('common.configured') }
-    }
-    return { color: 'warning', icon: <ExclamationCircleOutlined />, text: t('common.notConfigured') }
+  // 如果没有状态数据，显示加载或错误状态
+  if (!status) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="w-5 h-5" />
+            {t('settings.systemStatus.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertTriangleIcon className="h-4 w-4" />
+            <AlertDescription>
+              {t('settings.systemStatus.noData')}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    )
   }
 
   // 格式化运行时间
   const formatUptime = (uptime: string) => {
-    // 假设uptime是类似 "2d 5h 30m" 的格式
     return uptime || t('common.unknown')
   }
 
@@ -65,264 +123,25 @@ const SystemStatusCard: React.FC<SystemStatusCardProps> = ({
     return new Date(lastRestart).toLocaleString()
   }
 
-  return (
-    <Card
-      title={
-        <Space>
-          <DatabaseOutlined />
-          {t('settings.systemStatus.title')}
-          {restartRequired.length > 0 && (
-            <Badge
-              count={restartRequired.length}
-              size="small"
-              title={t('settings.systemStatus.restartRequiredCount', { count: restartRequired.length })}
-            />
-          )}
-        </Space>
-      }
-      style={style}
-    >
-      <Row gutter={[24, 16]}>
-        {/* 系统信息 */}
-        <Col span={6}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <Statistic
-              title={t('settings.systemStatus.version')}
-              value={status.systemInfo.version}
-              prefix={<ToolOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <Statistic
-              title={t('settings.systemStatus.environment')}
-              value={status.systemInfo.environment}
-              prefix={<CloudServerOutlined />}
-              valueStyle={{
-                color: status.systemInfo.environment === 'Production' ? '#cf1322' : '#1890ff'
-              }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <Tooltip title={formatLastRestart(status.systemInfo.lastRestart)}>
-              <Statistic
-                title={t('settings.systemStatus.uptime')}
-                value={formatUptime(status.systemInfo.uptime)}
-                prefix={<ClockCircleOutlined />}
-              />
-            </Tooltip>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <Statistic
-              title={t('settings.systemStatus.activeConnections')}
-              value={status.performance.activeConnections}
-              prefix={<CloudServerOutlined />}
-            />
-          </Card>
-        </Col>
-
-        {/* 性能指标 */}
-        <Col span={24}>
-          <Divider orientation="left">{t('settings.systemStatus.performance')}</Divider>
-        </Col>
-        <Col span={8}>
-          <Card size="small">
-            <div style={{ textAlign: 'center' }}>
-              <Text strong>{t('settings.systemStatus.cpuUsage')}</Text>
-              <Progress
-                type="circle"
-                percent={status.performance.cpuUsage}
-                size={80}
-                status={status.performance.cpuUsage > 80 ? 'exception' : 'normal'}
-                style={{ marginTop: '8px' }}
-              />
-            </div>
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card size="small">
-            <div style={{ textAlign: 'center' }}>
-              <Text strong>{t('settings.systemStatus.memoryUsage')}</Text>
-              <Progress
-                type="circle"
-                percent={status.performance.memoryUsage}
-                size={80}
-                status={status.performance.memoryUsage > 90 ? 'exception' : 'normal'}
-                style={{ marginTop: '8px' }}
-              />
-            </div>
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card size="small">
-            <div style={{ textAlign: 'center' }}>
-              <Text strong>{t('settings.systemStatus.diskUsage')}</Text>
-              <Progress
-                type="circle"
-                percent={status.performance.diskUsage}
-                size={80}
-                status={status.performance.diskUsage > 85 ? 'exception' : 'normal'}
-                style={{ marginTop: '8px' }}
-              />
-            </div>
-          </Card>
-        </Col>
-
-        {/* 功能模块状态 */}
-        <Col span={24}>
-          <Divider orientation="left">{t('settings.systemStatus.features')}</Divider>
-        </Col>
-        <Col span={6}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ marginBottom: '8px' }}>
-              {React.createElement(
-                getStatusIndicator(status.features.emailConfigured).icon,
-                { style: { fontSize: '24px', color: getStatusIndicator(status.features.emailConfigured).color === 'success' ? '#52c41a' : getStatusIndicator(status.features.emailConfigured).color === 'error' ? '#ff4d4f' : '#faad14' } }
-              )}
-            </div>
-            <Text strong>{t('settings.systemStatus.emailService')}</Text>
-            <div>
-              <Tag color={getStatusIndicator(status.features.emailConfigured).color}>
-                {getStatusIndicator(status.features.emailConfigured).text}
-              </Tag>
-            </div>
-          </div>
-        </Col>
-        <Col span={6}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ marginBottom: '8px' }}>
-              {React.createElement(
-                getStatusIndicator(status.features.aiConfigured).icon,
-                { style: { fontSize: '24px', color: getStatusIndicator(status.features.aiConfigured).color === 'success' ? '#52c41a' : getStatusIndicator(status.features.aiConfigured).color === 'error' ? '#ff4d4f' : '#faad14' } }
-              )}
-            </div>
-            <Text strong>{t('settings.systemStatus.aiService')}</Text>
-            <div>
-              <Tag color={getStatusIndicator(status.features.aiConfigured).color}>
-                {getStatusIndicator(status.features.aiConfigured).text}
-              </Tag>
-            </div>
-          </div>
-        </Col>
-        <Col span={6}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ marginBottom: '8px' }}>
-              {React.createElement(
-                getStatusIndicator(status.features.backupConfigured).icon,
-                { style: { fontSize: '24px', color: getStatusIndicator(status.features.backupConfigured).color === 'success' ? '#52c41a' : getStatusIndicator(status.features.backupConfigured).color === 'error' ? '#ff4d4f' : '#faad14' } }
-              )}
-            </div>
-            <Text strong>{t('settings.systemStatus.backupService')}</Text>
-            <div>
-              <Tag color={getStatusIndicator(status.features.backupConfigured).color}>
-                {getStatusIndicator(status.features.backupConfigured).text}
-              </Tag>
-            </div>
-          </div>
-        </Col>
-        <Col span={6}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ marginBottom: '8px' }}>
-              {React.createElement(
-                getStatusIndicator(status.features.securityConfigured).icon,
-                { style: { fontSize: '24px', color: getStatusIndicator(status.features.securityConfigured).color === 'success' ? '#52c41a' : getStatusIndicator(status.features.securityConfigured).color === 'error' ? '#ff4d4f' : '#faad14' } }
-              )}
-            </div>
-            <Text strong>{t('settings.systemStatus.securityService')}</Text>
-            <div>
-              <Tag color={getStatusIndicator(status.features.securityConfigured).color}>
-                {getStatusIndicator(status.features.securityConfigured).text}
-              </Tag>
-            </div>
-          </div>
-        </Col>
-
-        {/* 重启提醒 */}
-        {restartRequired.length > 0 && (
-          <Col span={24}>
-            <Card
-              size="small"
-              style={{
-                border: '1px solid #faad14',
-                backgroundColor: '#fffbf0'
-              }}
-            >
-              <Space>
-                <WarningOutlined style={{ color: '#faad14' }} />
-                <Text strong>{t('settings.systemStatus.restartRequired')}</Text>
-                <Text type="secondary">
-                  {t('settings.systemStatus.restartRequiredDescription', { count: restartRequired.length })}
-                </Text>
-              </Space>
-              <div style={{ marginTop: '8px' }}>
-                {restartRequired.slice(0, 5).map(key => (
-                  <Tag key={key} color="warning" style={{ marginBottom: '4px' }}>
-                    {key}
-                  </Tag>
-                ))}
-                {restartRequired.length > 5 && (
-                  <Tag color="default">
-                    +{restartRequired.length - 5} {t('common.more')}
-                  </Tag>
-                )}
-              </div>
-            </Card>
-          </Col>
-        )}
-
-        {/* 系统健康度评分 */}
-        <Col span={24}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <Title level={4} style={{ margin: 0 }}>
-              {t('settings.systemStatus.healthScore')}
-            </Title>
-            <div style={{ marginTop: '16px' }}>
-              <Progress
-                type="dashboard"
-                percent={calculateHealthScore(status, restartRequired)}
-                gapDegree={30}
-                size={120}
-                strokeColor={{
-                  '0%': '#ff4d4f',
-                  '30%': '#faad14',
-                  '70%': '#52c41a',
-                  '100%': '#52c41a'
-                }}
-              />
-            </div>
-            <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>
-              {getHealthDescription(calculateHealthScore(status, restartRequired))}
-            </Text>
-          </Card>
-        </Col>
-      </Row>
-    </Card>
-  )
-
   // 计算系统健康度评分
-  function calculateHealthScore(status: SystemStatus, restartRequired: string[]): number {
+  const calculateHealthScore = (status: SystemStatus, restartRequired: string[]): number => {
     let score = 100
 
     // 性能指标扣分
-    if (status.performance.cpuUsage > 80) score -= 20
-    else if (status.performance.cpuUsage > 60) score -= 10
+    if (status.performance?.cpuUsage > 80) score -= 20
+    else if (status.performance?.cpuUsage > 60) score -= 10
 
-    if (status.performance.memoryUsage > 90) score -= 20
-    else if (status.performance.memoryUsage > 70) score -= 10
+    if (status.performance?.memoryUsage > 90) score -= 20
+    else if (status.performance?.memoryUsage > 70) score -= 10
 
-    if (status.performance.diskUsage > 85) score -= 15
-    else if (status.performance.diskUsage > 70) score -= 5
+    if (status.performance?.diskUsage > 85) score -= 15
+    else if (status.performance?.diskUsage > 70) score -= 5
 
     // 功能模块配置扣分
-    if (!status.features.emailConfigured) score -= 10
-    if (!status.features.aiConfigured) score -= 15
-    if (!status.features.backupConfigured) score -= 10
-    if (!status.features.securityConfigured) score -= 15
+    if (!status.features?.emailConfigured) score -= 10
+    if (!status.features?.aiConfigured) score -= 15
+    if (!status.features?.backupConfigured) score -= 10
+    if (!status.features?.securityConfigured) score -= 15
 
     // 重启需求扣分
     if (restartRequired.length > 0) score -= Math.min(restartRequired.length * 5, 20)
@@ -331,12 +150,189 @@ const SystemStatusCard: React.FC<SystemStatusCardProps> = ({
   }
 
   // 获取健康度描述
-  function getHealthDescription(score: number): string {
+  const getHealthDescription = (score: number): string => {
     if (score >= 90) return t('settings.systemStatus.healthExcellent')
     if (score >= 70) return t('settings.systemStatus.healthGood')
     if (score >= 50) return t('settings.systemStatus.healthFair')
     return t('settings.systemStatus.healthPoor')
   }
+
+  // 获取进度条颜色
+  const getProgressColor = (value: number, highThreshold: number, mediumThreshold: number) => {
+    if (value > highThreshold) return 'bg-destructive'
+    if (value > mediumThreshold) return 'bg-orange-500'
+    return 'bg-green-500'
+  }
+
+  const healthScore = calculateHealthScore(status, restartRequired)
+
+  return (
+    <TooltipProvider>
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="w-5 h-5" />
+            {t('settings.systemStatus.title')}
+            {restartRequired.length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {restartRequired.length}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* 系统信息 */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Wrench className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                <div className="text-sm font-medium">{t('settings.systemStatus.version')}</div>
+                <div className="text-lg font-bold">{status.systemInfo?.version || t('common.unknown')}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Server className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                <div className="text-sm font-medium">{t('settings.systemStatus.environment')}</div>
+                <div className={`text-lg font-bold ${
+                  status.systemInfo?.environment === 'Production' ? 'text-destructive' : 'text-blue-600'
+                }`}>
+                  {status.systemInfo?.environment || t('common.unknown')}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="cursor-help">
+                      <Clock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                      <div className="text-sm font-medium">{t('settings.systemStatus.uptime')}</div>
+                      <div className="text-lg font-bold">{formatUptime(status.systemInfo?.uptime)}</div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{formatLastRestart(status.systemInfo?.lastRestart)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Server className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                <div className="text-sm font-medium">{t('settings.systemStatus.activeConnections')}</div>
+                <div className="text-lg font-bold">{status.performance?.activeConnections || 0}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Separator />
+
+          {/* 性能指标 */}
+          <div>
+            <h4 className="text-sm font-medium mb-4">{t('settings.systemStatus.performance')}</h4>
+            <div className="grid gap-4 md:grid-cols-3">
+              <CircularProgress
+                value={status.performance?.cpuUsage || 0}
+                label="CPU"
+                sublabel={`${status.performance?.cpuCores || 0} ${t('settings.systemStatus.cores')}`}
+                thresholds={{ high: 80, medium: 60 }}
+              />
+              <CircularProgress
+                value={status.performance?.memoryUsage || 0}
+                label={t('settings.systemStatus.memory')}
+                sublabel={`${status.performance?.totalMemory || 0} GB`}
+                thresholds={{ high: 90, medium: 70 }}
+              />
+              <CircularProgress
+                value={status.performance?.diskUsage || 0}
+                label={t('settings.systemStatus.disk')}
+                sublabel={`${status.performance?.totalDisk || 0} GB`}
+                thresholds={{ high: 85, medium: 70 }}
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* 功能状态 */}
+          <div>
+            <h4 className="text-sm font-medium mb-4">{t('settings.systemStatus.features')}</h4>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <span className="text-sm">{t('settings.systemStatus.emailService')}</span>
+                {status.features?.emailConfigured ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-destructive" />
+                )}
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <span className="text-sm">{t('settings.systemStatus.aiService')}</span>
+                {status.features?.aiConfigured ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-destructive" />
+                )}
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <span className="text-sm">{t('settings.systemStatus.backupService')}</span>
+                {status.features?.backupConfigured ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-destructive" />
+                )}
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <span className="text-sm">{t('settings.systemStatus.securityFeatures')}</span>
+                {status.features?.securityConfigured ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-destructive" />
+                )}
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* 系统健康度 */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium">{t('settings.systemStatus.systemHealth')}</h4>
+              <span className={`text-sm font-medium ${
+                healthScore >= 70 ? 'text-green-500' : healthScore >= 50 ? 'text-orange-500' : 'text-destructive'
+              }`}>
+                {getHealthDescription(healthScore)}
+              </span>
+            </div>
+            <Progress
+              value={healthScore}
+              className="h-2"
+            />
+            <div className="flex justify-between mt-1">
+              <span className="text-xs text-muted-foreground">0%</span>
+              <span className="text-xs font-medium">{healthScore}%</span>
+              <span className="text-xs text-muted-foreground">100%</span>
+            </div>
+          </div>
+
+          {/* 警告信息 */}
+          {restartRequired.length > 0 && (
+            <>
+              <Separator />
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  {t('settings.systemStatus.restartRequiredInfo', { count: restartRequired.length })}
+                </AlertDescription>
+              </Alert>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </TooltipProvider>
+  )
 }
 
 export default SystemStatusCard

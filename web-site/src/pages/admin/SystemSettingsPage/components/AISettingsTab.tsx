@@ -1,36 +1,34 @@
 import React, { useState } from 'react'
 import {
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Switch,
-  Button,
-  Space,
-  Row,
-  Col,
-  Card,
-  Typography,
-  message,
-  Modal,
-  Alert,
-  Slider,
-  Tooltip
-} from 'antd'
-import {
-  RobotOutlined,
-  ApiOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  InfoCircleOutlined,
-  QuestionCircleOutlined
-} from '@ant-design/icons'
+  Bot,
+  Zap,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  HelpCircle
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { systemSettingsService } from '@/services/admin.service'
 import type { SystemSetting, ValidationErrors, APITestParams } from '@/types/systemSettings'
 
-const { Title, Text, Paragraph } = Typography
-const { Option } = Select
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useToast } from '@/hooks/useToast'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface AISettingsTabProps {
   settings: SystemSetting[]
@@ -46,6 +44,7 @@ const AISettingsTab: React.FC<AISettingsTabProps> = ({
   loading = false
 }) => {
   const { t } = useTranslation()
+  const { toast } = useToast()
   const [testModalVisible, setTestModalVisible] = useState(false)
   const [testing, setTesting] = useState(false)
 
@@ -80,7 +79,10 @@ const AISettingsTab: React.FC<AISettingsTabProps> = ({
     const model = getSettingValue('ChatModel')
 
     if (!endpoint || !apiKey) {
-      message.warning(t('settings.ai.testRequiredFields'))
+      toast({
+        title: t('settings.ai.testRequiredFields'),
+        variant: 'destructive',
+      })
       return
     }
 
@@ -96,14 +98,22 @@ const AISettingsTab: React.FC<AISettingsTabProps> = ({
       const result = await systemSettingsService.testAISettings(params)
 
       if (result.success) {
-        message.success(t('settings.ai.testSuccess'))
+        toast({
+          title: t('settings.ai.testSuccess'),
+        })
         setTestModalVisible(false)
       } else {
-        message.error(result.message || t('settings.ai.testFailed'))
+        toast({
+          title: result.message || t('settings.ai.testFailed'),
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('AI API test failed:', error)
-      message.error(t('settings.ai.testFailed'))
+      toast({
+        title: t('settings.ai.testFailed'),
+        variant: 'destructive',
+      })
     } finally {
       setTesting(false)
     }
@@ -141,438 +151,482 @@ const AISettingsTab: React.FC<AISettingsTabProps> = ({
   const providerModels = commonModels[currentProvider as keyof typeof commonModels] || []
 
   return (
-    <div style={{ maxWidth: '800px' }}>
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <Title level={4} style={{ marginBottom: '8px' }}>
-            {t('settings.groups.ai')}
-          </Title>
-          <Text type="secondary">
-            {t('settings.aiDescription')}
-          </Text>
-        </div>
-        <Button
-          type="primary"
-          icon={<ApiOutlined />}
-          onClick={() => setTestModalVisible(true)}
-          disabled={loading}
-        >
-          {t('settings.ai.testConnection')}
-        </Button>
-      </div>
-
-      <Alert
-        message={t('settings.ai.apiKeyNote')}
-        description={t('settings.ai.apiKeyNoteDescription')}
-        type="warning"
-        showIcon
-        icon={<ExclamationCircleOutlined />}
-        style={{ marginBottom: '24px' }}
-      />
-
-      <Form layout="vertical" disabled={loading}>
-        <Row gutter={[24, 16]}>
-          {/* 模型提供商 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.ai.modelProvider')}
-              validateStatus={validationErrors.ModelProvider ? 'error' : ''}
-              help={validationErrors.ModelProvider}
-              required
-            >
-              <Select
-                value={getSettingValue('ModelProvider')}
-                onChange={(value) => onUpdate('ModelProvider', value)}
-                placeholder={t('settings.ai.modelProviderPlaceholder')}
-                size="large"
-              >
-                {modelProviders.map(provider => (
-                  <Option key={provider.value} value={provider.value}>
-                    {provider.label}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-
-          {/* API端点 */}
-          <Col span={12}>
-            <Form.Item
-              label={
-                <Space>
-                  {t('settings.ai.endpoint')}
-                  <Tooltip title={t('settings.ai.endpointHelp')}>
-                    <QuestionCircleOutlined />
-                  </Tooltip>
-                </Space>
-              }
-              validateStatus={validationErrors.Endpoint ? 'error' : ''}
-              help={validationErrors.Endpoint}
-              required
-            >
-              <Input
-                value={getSettingValue('Endpoint')}
-                onChange={(e) => onUpdate('Endpoint', e.target.value)}
-                placeholder={t('settings.ai.endpointPlaceholder')}
-                size="large"
-              />
-            </Form.Item>
-          </Col>
-
-          {/* API密钥 */}
-          <Col span={24}>
-            <Form.Item
-              label={t('settings.ai.apiKey')}
-              validateStatus={validationErrors.ChatApiKey ? 'error' : ''}
-              help={validationErrors.ChatApiKey}
-              required
-            >
-              <Input.Password
-                value={getSettingValue('ChatApiKey')}
-                onChange={(e) => onUpdate('ChatApiKey', e.target.value)}
-                placeholder={t('settings.ai.apiKeyPlaceholder')}
-                size="large"
-              />
-            </Form.Item>
-          </Col>
-
-          {/* 模型配置 */}
-          <Col span={24}>
-            <Card size="small" title={t('settings.ai.modelConfiguration')}>
-              <Row gutter={[24, 16]}>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.ai.chatModel')}
-                    validateStatus={validationErrors.ChatModel ? 'error' : ''}
-                    help={validationErrors.ChatModel}
-                  >
-                    <Select
-                      value={getSettingValue('ChatModel')}
-                      onChange={(value) => onUpdate('ChatModel', value)}
-                      placeholder={t('settings.ai.chatModelPlaceholder')}
-                      showSearch
-                      allowClear
-                      mode="combobox"
-                    >
-                      {providerModels.map(model => (
-                        <Option key={model} value={model}>
-                          {model}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.ai.analysisModel')}
-                    validateStatus={validationErrors.AnalysisModel ? 'error' : ''}
-                    help={validationErrors.AnalysisModel}
-                  >
-                    <Select
-                      value={getSettingValue('AnalysisModel')}
-                      onChange={(value) => onUpdate('AnalysisModel', value)}
-                      placeholder={t('settings.ai.analysisModelPlaceholder')}
-                      showSearch
-                      allowClear
-                      mode="combobox"
-                    >
-                      {providerModels.map(model => (
-                        <Option key={model} value={model}>
-                          {model}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.ai.deepResearchModel')}
-                    validateStatus={validationErrors.DeepResearchModel ? 'error' : ''}
-                    help={validationErrors.DeepResearchModel}
-                  >
-                    <Select
-                      value={getSettingValue('DeepResearchModel')}
-                      onChange={(value) => onUpdate('DeepResearchModel', value)}
-                      placeholder={t('settings.ai.deepResearchModelPlaceholder')}
-                      showSearch
-                      allowClear
-                      mode="combobox"
-                    >
-                      {providerModels.map(model => (
-                        <Option key={model} value={model}>
-                          {model}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.ai.maxFileLimit')}
-                    validateStatus={validationErrors.MaxFileLimit ? 'error' : ''}
-                    help={validationErrors.MaxFileLimit}
-                  >
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      value={getIntValue('MaxFileLimit')}
-                      onChange={(value) => onUpdate('MaxFileLimit', value?.toString() || '')}
-                      placeholder="10"
-                      min={1}
-                      max={100}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-
-          {/* 模型参数配置 */}
-          <Col span={24}>
-            <Card size="small" title={t('settings.ai.modelParameters')}>
-              <Row gutter={[24, 16]}>
-                <Col span={12}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        {t('settings.ai.temperature')}
-                        <Tooltip title={t('settings.ai.temperatureHelp')}>
-                          <QuestionCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    validateStatus={validationErrors.Temperature ? 'error' : ''}
-                    help={validationErrors.Temperature}
-                  >
-                    <Slider
-                      value={getNumberValue('Temperature') || 0.7}
-                      onChange={(value) => onUpdate('Temperature', value.toString())}
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      marks={{
-                        0: '0',
-                        0.7: '0.7',
-                        1: '1',
-                        2: '2'
-                      }}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        {t('settings.ai.topP')}
-                        <Tooltip title={t('settings.ai.topPHelp')}>
-                          <QuestionCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    validateStatus={validationErrors.TopP ? 'error' : ''}
-                    help={validationErrors.TopP}
-                  >
-                    <Slider
-                      value={getNumberValue('TopP') || 1.0}
-                      onChange={(value) => onUpdate('TopP', value.toString())}
-                      min={0}
-                      max={1}
-                      step={0.1}
-                      marks={{
-                        0: '0',
-                        0.5: '0.5',
-                        1: '1'
-                      }}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.ai.maxTokens')}
-                    validateStatus={validationErrors.MaxTokens ? 'error' : ''}
-                    help={validationErrors.MaxTokens}
-                  >
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      value={getIntValue('MaxTokens')}
-                      onChange={(value) => onUpdate('MaxTokens', value?.toString() || '')}
-                      placeholder="4000"
-                      min={100}
-                      max={100000}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        {t('settings.ai.frequencyPenalty')}
-                        <Tooltip title={t('settings.ai.frequencyPenaltyHelp')}>
-                          <QuestionCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    validateStatus={validationErrors.FrequencyPenalty ? 'error' : ''}
-                    help={validationErrors.FrequencyPenalty}
-                  >
-                    <Slider
-                      value={getNumberValue('FrequencyPenalty') || 0.0}
-                      onChange={(value) => onUpdate('FrequencyPenalty', value.toString())}
-                      min={-2}
-                      max={2}
-                      step={0.1}
-                      marks={{
-                        '-2': '-2',
-                        0: '0',
-                        2: '2'
-                      }}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        {t('settings.ai.presencePenalty')}
-                        <Tooltip title={t('settings.ai.presencePenaltyHelp')}>
-                          <QuestionCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    validateStatus={validationErrors.PresencePenalty ? 'error' : ''}
-                    help={validationErrors.PresencePenalty}
-                  >
-                    <Slider
-                      value={getNumberValue('PresencePenalty') || 0.0}
-                      onChange={(value) => onUpdate('PresencePenalty', value.toString())}
-                      min={-2}
-                      max={2}
-                      step={0.1}
-                      marks={{
-                        '-2': '-2',
-                        0: '0',
-                        2: '2'
-                      }}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-
-          {/* Mem0配置 */}
-          <Col span={24}>
-            <Card
-              size="small"
-              title={
-                <Space>
-                  {t('settings.ai.mem0Configuration')}
-                  <Tooltip title={t('settings.ai.mem0Help')}>
-                    <QuestionCircleOutlined />
-                  </Tooltip>
-                </Space>
-              }
-            >
-              <Row gutter={[24, 16]}>
-                <Col span={24}>
-                  <Form.Item label={t('settings.ai.enableMem0')}>
-                    <Switch
-                      checked={getBooleanValue('EnableMem0')}
-                      onChange={(checked) => onUpdate('EnableMem0', checked.toString())}
-                    />
-                  </Form.Item>
-                </Col>
-                {getBooleanValue('EnableMem0') && (
-                  <>
-                    <Col span={12}>
-                      <Form.Item
-                        label={t('settings.ai.mem0ApiKey')}
-                        validateStatus={validationErrors.Mem0ApiKey ? 'error' : ''}
-                        help={validationErrors.Mem0ApiKey}
-                      >
-                        <Input.Password
-                          value={getSettingValue('Mem0ApiKey')}
-                          onChange={(e) => onUpdate('Mem0ApiKey', e.target.value)}
-                          placeholder={t('settings.ai.mem0ApiKeyPlaceholder')}
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                      <Form.Item
-                        label={t('settings.ai.mem0Endpoint')}
-                        validateStatus={validationErrors.Mem0Endpoint ? 'error' : ''}
-                        help={validationErrors.Mem0Endpoint}
-                      >
-                        <Input
-                          value={getSettingValue('Mem0Endpoint')}
-                          onChange={(e) => onUpdate('Mem0Endpoint', e.target.value)}
-                          placeholder={t('settings.ai.mem0EndpointPlaceholder')}
-                        />
-                      </Form.Item>
-                    </Col>
-                  </>
-                )}
-              </Row>
-            </Card>
-          </Col>
-        </Row>
-      </Form>
-
-      {/* 测试API连接弹窗 */}
-      <Modal
-        title={
-          <Space>
-            <RobotOutlined />
-            {t('settings.ai.testAPIConnection')}
-          </Space>
-        }
-        open={testModalVisible}
-        onCancel={() => setTestModalVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setTestModalVisible(false)}>
-            {t('common.cancel')}
-          </Button>,
+    <TooltipProvider>
+      <div className="max-w-4xl space-y-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-lg font-semibold">{t('settings.groups.ai')}</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              {t('settings.aiDescription')}
+            </p>
+          </div>
           <Button
-            key="test"
-            type="primary"
-            icon={<ApiOutlined />}
-            loading={testing}
-            onClick={testAIConnection}
+            onClick={() => setTestModalVisible(true)}
+            disabled={loading}
           >
+            <Zap className="w-4 h-4 mr-2" />
             {t('settings.ai.testConnection')}
           </Button>
-        ]}
-        width={600}
-      >
-        <div>
-          <Paragraph>
-            {t('settings.ai.testDescription')}
-          </Paragraph>
+        </div>
 
-          <div style={{ background: '#f5f5f5', padding: '16px', borderRadius: '6px', marginBottom: '16px' }}>
-            <Text strong>{t('settings.ai.currentConfiguration')}:</Text>
-            <div style={{ marginTop: '8px' }}>
-              <Text type="secondary">{t('settings.ai.endpoint')}: </Text>
-              <Text code>{getSettingValue('Endpoint') || t('common.notSet')}</Text>
-            </div>
-            <div>
-              <Text type="secondary">{t('settings.ai.model')}: </Text>
-              <Text code>{getSettingValue('ChatModel') || t('common.notSet')}</Text>
-            </div>
-            <div>
-              <Text type="secondary">{t('settings.ai.apiKey')}: </Text>
-              <Text code>{getSettingValue('ChatApiKey') ? '***' + getSettingValue('ChatApiKey').slice(-4) : t('common.notSet')}</Text>
-            </div>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>{t('settings.ai.apiKeyNote')}</AlertTitle>
+          <AlertDescription>
+            {t('settings.ai.apiKeyNoteDescription')}
+          </AlertDescription>
+        </Alert>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* 模型提供商 */}
+          <div className="space-y-2">
+            <Label htmlFor="modelProvider">{t('settings.ai.modelProvider')} *</Label>
+            <Select
+              value={getSettingValue('ModelProvider')}
+              onValueChange={(value) => onUpdate('ModelProvider', value)}
+              disabled={loading}
+            >
+              <SelectTrigger className={validationErrors.ModelProvider ? 'border-destructive' : ''}>
+                <SelectValue placeholder={t('settings.ai.modelProviderPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {modelProviders.map(provider => (
+                  <SelectItem key={provider.value} value={provider.value}>
+                    {provider.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {validationErrors.ModelProvider && (
+              <p className="text-sm text-destructive">{validationErrors.ModelProvider}</p>
+            )}
           </div>
 
-          <Alert
-            message={t('settings.ai.testNote')}
-            description={t('settings.ai.testNoteDescription')}
-            type="info"
-            showIcon
-          />
+          {/* API端点 */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="endpoint">{t('settings.ai.endpoint')} *</Label>
+              <Tooltip>
+                <TooltipTrigger>
+                  <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('settings.ai.endpointHelp')}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <Input
+              id="endpoint"
+              value={getSettingValue('Endpoint')}
+              onChange={(e) => onUpdate('Endpoint', e.target.value)}
+              placeholder={t('settings.ai.endpointPlaceholder')}
+              disabled={loading}
+              className={validationErrors.Endpoint ? 'border-destructive' : ''}
+            />
+            {validationErrors.Endpoint && (
+              <p className="text-sm text-destructive">{validationErrors.Endpoint}</p>
+            )}
+          </div>
+
+          {/* API密钥 */}
+          <div className="md:col-span-2 space-y-2">
+            <Label htmlFor="apiKey">{t('settings.ai.apiKey')} *</Label>
+            <Input
+              id="apiKey"
+              type="password"
+              value={getSettingValue('ChatApiKey')}
+              onChange={(e) => onUpdate('ChatApiKey', e.target.value)}
+              placeholder={t('settings.ai.apiKeyPlaceholder')}
+              disabled={loading}
+              className={validationErrors.ChatApiKey ? 'border-destructive' : ''}
+            />
+            {validationErrors.ChatApiKey && (
+              <p className="text-sm text-destructive">{validationErrors.ChatApiKey}</p>
+            )}
+          </div>
+
+          {/* 模型配置 */}
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">{t('settings.ai.modelConfiguration')}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="chatModel">{t('settings.ai.chatModel')}</Label>
+                  <Select
+                    value={getSettingValue('ChatModel')}
+                    onValueChange={(value) => onUpdate('ChatModel', value)}
+                    disabled={loading}
+                  >
+                    <SelectTrigger className={validationErrors.ChatModel ? 'border-destructive' : ''}>
+                      <SelectValue placeholder={t('settings.ai.chatModelPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {providerModels.map(model => (
+                        <SelectItem key={model} value={model}>
+                          {model}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {validationErrors.ChatModel && (
+                    <p className="text-sm text-destructive">{validationErrors.ChatModel}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="analysisModel">{t('settings.ai.analysisModel')}</Label>
+                  <Select
+                    value={getSettingValue('AnalysisModel')}
+                    onValueChange={(value) => onUpdate('AnalysisModel', value)}
+                    disabled={loading}
+                  >
+                    <SelectTrigger className={validationErrors.AnalysisModel ? 'border-destructive' : ''}>
+                      <SelectValue placeholder={t('settings.ai.analysisModelPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {providerModels.map(model => (
+                        <SelectItem key={model} value={model}>
+                          {model}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {validationErrors.AnalysisModel && (
+                    <p className="text-sm text-destructive">{validationErrors.AnalysisModel}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deepResearchModel">{t('settings.ai.deepResearchModel')}</Label>
+                  <Select
+                    value={getSettingValue('DeepResearchModel')}
+                    onValueChange={(value) => onUpdate('DeepResearchModel', value)}
+                    disabled={loading}
+                  >
+                    <SelectTrigger className={validationErrors.DeepResearchModel ? 'border-destructive' : ''}>
+                      <SelectValue placeholder={t('settings.ai.deepResearchModelPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {providerModels.map(model => (
+                        <SelectItem key={model} value={model}>
+                          {model}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {validationErrors.DeepResearchModel && (
+                    <p className="text-sm text-destructive">{validationErrors.DeepResearchModel}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxFileLimit">{t('settings.ai.maxFileLimit')}</Label>
+                  <Input
+                    id="maxFileLimit"
+                    type="number"
+                    value={getIntValue('MaxFileLimit') || ''}
+                    onChange={(e) => onUpdate('MaxFileLimit', e.target.value)}
+                    placeholder="10"
+                    min={1}
+                    max={100}
+                    disabled={loading}
+                    className={validationErrors.MaxFileLimit ? 'border-destructive' : ''}
+                  />
+                  {validationErrors.MaxFileLimit && (
+                    <p className="text-sm text-destructive">{validationErrors.MaxFileLimit}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 模型参数配置 */}
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">{t('settings.ai.modelParameters')}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Label>{t('settings.ai.temperature')}</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t('settings.ai.temperatureHelp')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Slider
+                    value={[getNumberValue('Temperature') || 0.7]}
+                    onValueChange={(value) => onUpdate('Temperature', value[0].toString())}
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    disabled={loading}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>0</span>
+                    <span>0.7</span>
+                    <span>1</span>
+                    <span>2</span>
+                  </div>
+                  {validationErrors.Temperature && (
+                    <p className="text-sm text-destructive">{validationErrors.Temperature}</p>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Label>{t('settings.ai.topP')}</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t('settings.ai.topPHelp')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Slider
+                    value={[getNumberValue('TopP') || 1.0]}
+                    onValueChange={(value) => onUpdate('TopP', value[0].toString())}
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    disabled={loading}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>0</span>
+                    <span>0.5</span>
+                    <span>1</span>
+                  </div>
+                  {validationErrors.TopP && (
+                    <p className="text-sm text-destructive">{validationErrors.TopP}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxTokens">{t('settings.ai.maxTokens')}</Label>
+                  <Input
+                    id="maxTokens"
+                    type="number"
+                    value={getIntValue('MaxTokens') || ''}
+                    onChange={(e) => onUpdate('MaxTokens', e.target.value)}
+                    placeholder="4000"
+                    min={100}
+                    max={100000}
+                    disabled={loading}
+                    className={validationErrors.MaxTokens ? 'border-destructive' : ''}
+                  />
+                  {validationErrors.MaxTokens && (
+                    <p className="text-sm text-destructive">{validationErrors.MaxTokens}</p>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Label>{t('settings.ai.frequencyPenalty')}</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t('settings.ai.frequencyPenaltyHelp')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Slider
+                    value={[getNumberValue('FrequencyPenalty') || 0.0]}
+                    onValueChange={(value) => onUpdate('FrequencyPenalty', value[0].toString())}
+                    min={-2}
+                    max={2}
+                    step={0.1}
+                    disabled={loading}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>-2</span>
+                    <span>0</span>
+                    <span>2</span>
+                  </div>
+                  {validationErrors.FrequencyPenalty && (
+                    <p className="text-sm text-destructive">{validationErrors.FrequencyPenalty}</p>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Label>{t('settings.ai.presencePenalty')}</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t('settings.ai.presencePenaltyHelp')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Slider
+                    value={[getNumberValue('PresencePenalty') || 0.0]}
+                    onValueChange={(value) => onUpdate('PresencePenalty', value[0].toString())}
+                    min={-2}
+                    max={2}
+                    step={0.1}
+                    disabled={loading}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>-2</span>
+                    <span>0</span>
+                    <span>2</span>
+                  </div>
+                  {validationErrors.PresencePenalty && (
+                    <p className="text-sm text-destructive">{validationErrors.PresencePenalty}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mem0配置 */}
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  {t('settings.ai.mem0Configuration')}
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('settings.ai.mem0Help')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>{t('settings.ai.enableMem0')}</Label>
+                  <Switch
+                    checked={getBooleanValue('EnableMem0')}
+                    onCheckedChange={(checked) => onUpdate('EnableMem0', checked.toString())}
+                    disabled={loading}
+                  />
+                </div>
+                {getBooleanValue('EnableMem0') && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="mem0ApiKey">{t('settings.ai.mem0ApiKey')}</Label>
+                      <Input
+                        id="mem0ApiKey"
+                        type="password"
+                        value={getSettingValue('Mem0ApiKey')}
+                        onChange={(e) => onUpdate('Mem0ApiKey', e.target.value)}
+                        placeholder={t('settings.ai.mem0ApiKeyPlaceholder')}
+                        disabled={loading}
+                        className={validationErrors.Mem0ApiKey ? 'border-destructive' : ''}
+                      />
+                      {validationErrors.Mem0ApiKey && (
+                        <p className="text-sm text-destructive">{validationErrors.Mem0ApiKey}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="mem0Endpoint">{t('settings.ai.mem0Endpoint')}</Label>
+                      <Input
+                        id="mem0Endpoint"
+                        value={getSettingValue('Mem0Endpoint')}
+                        onChange={(e) => onUpdate('Mem0Endpoint', e.target.value)}
+                        placeholder={t('settings.ai.mem0EndpointPlaceholder')}
+                        disabled={loading}
+                        className={validationErrors.Mem0Endpoint ? 'border-destructive' : ''}
+                      />
+                      {validationErrors.Mem0Endpoint && (
+                        <p className="text-sm text-destructive">{validationErrors.Mem0Endpoint}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </Modal>
-    </div>
+
+        {/* 测试API连接弹窗 */}
+        <Dialog open={testModalVisible} onOpenChange={setTestModalVisible}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Bot className="w-5 h-5" />
+                {t('settings.ai.testAPIConnection')}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                {t('settings.ai.testDescription')}
+              </p>
+
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <p className="font-medium">{t('settings.ai.currentConfiguration')}:</p>
+                <div className="space-y-1 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">{t('settings.ai.endpoint')}: </span>
+                    <code className="bg-background px-1 py-0.5 rounded text-xs">
+                      {getSettingValue('Endpoint') || t('common.notSet')}
+                    </code>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('settings.ai.model')}: </span>
+                    <code className="bg-background px-1 py-0.5 rounded text-xs">
+                      {getSettingValue('ChatModel') || t('common.notSet')}
+                    </code>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('settings.ai.apiKey')}: </span>
+                    <code className="bg-background px-1 py-0.5 rounded text-xs">
+                      {getSettingValue('ChatApiKey') ? '***' + getSettingValue('ChatApiKey').slice(-4) : t('common.notSet')}
+                    </code>
+                  </div>
+                </div>
+              </div>
+
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>{t('settings.ai.testNote')}</AlertTitle>
+                <AlertDescription>
+                  {t('settings.ai.testNoteDescription')}
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setTestModalVisible(false)}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={testAIConnection}
+                disabled={testing}
+              >
+                {testing ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    {t('settings.ai.testing')}
+                  </div>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    {t('settings.ai.testConnection')}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   )
 }
 

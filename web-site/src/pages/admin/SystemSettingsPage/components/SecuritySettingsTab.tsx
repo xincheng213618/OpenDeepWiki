@@ -1,40 +1,28 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Switch,
-  Button,
-  Space,
-  Row,
-  Col,
-  Card,
-  Typography,
-  Alert,
-  Tag,
-  Divider,
-  Tooltip,
-  List
-} from 'antd'
-import {
-  SecurityScanOutlined,
-  LockOutlined,
-  UserOutlined,
-  GlobalOutlined,
-  ShieldOutlined,
-  WarningOutlined,
-  InfoCircleOutlined,
-  QuestionCircleOutlined,
-  PlusOutlined,
-  DeleteOutlined
-} from '@ant-design/icons'
+  Shield,
+  Lock,
+  User,
+  Globe,
+  AlertTriangle,
+  Info,
+  HelpCircle,
+  Plus,
+  X
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SystemSetting, ValidationErrors } from '@/types/systemSettings'
 
-const { Title, Text, Paragraph } = Typography
-const { Option } = Select
-const { TextArea } = Input
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Badge } from '@/components/ui/badge'
 
 interface SecuritySettingsTabProps {
   settings: SystemSetting[]
@@ -93,12 +81,16 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
   ]
 
   // IP地址输入组件
-  const IPAddressList = ({ value = [], onChange, placeholder }: {
+  const IPAddressList = ({
+    value = [],
+    onChange,
+    placeholder
+  }: {
     value?: string[]
     onChange?: (value: string[]) => void
     placeholder?: string
   }) => {
-    const [inputValue, setInputValue] = React.useState('')
+    const [inputValue, setInputValue] = useState('')
 
     const addIP = () => {
       if (inputValue && !value.includes(inputValue)) {
@@ -112,35 +104,40 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
     }
 
     return (
-      <div>
-        <Space.Compact style={{ display: 'flex', marginBottom: '8px' }}>
+      <div className="space-y-3">
+        <div className="flex gap-2">
           <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={placeholder}
-            onPressEnter={addIP}
+            onKeyDown={(e) => e.key === 'Enter' && addIP()}
+            className="flex-1"
           />
           <Button
-            type="primary"
-            icon={<PlusOutlined />}
+            type="button"
             onClick={addIP}
-            disabled={!inputValue}
+            disabled={!inputValue || value.includes(inputValue)}
+            size="sm"
           >
+            <Plus className="w-4 h-4 mr-1" />
             {t('common.add')}
           </Button>
-        </Space.Compact>
+        </div>
         {value.length > 0 && (
-          <div style={{ border: '1px solid #d9d9d9', borderRadius: '6px', padding: '8px', maxHeight: '120px', overflowY: 'auto' }}>
-            {value.map((ip, index) => (
-              <Tag
-                key={index}
-                closable
-                onClose={() => removeIP(ip)}
-                style={{ marginBottom: '4px' }}
-              >
-                {ip}
-              </Tag>
-            ))}
+          <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
+            <div className="flex flex-wrap gap-1">
+              {value.map((ip, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="cursor-pointer"
+                  onClick={() => removeIP(ip)}
+                >
+                  {ip}
+                  <X className="w-3 h-3 ml-1" />
+                </Badge>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -148,346 +145,363 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
   }
 
   return (
-    <div style={{ maxWidth: '800px' }}>
-      <Title level={4} style={{ marginBottom: '8px' }}>
-        {t('settings.groups.security')}
-      </Title>
-      <Text type="secondary" style={{ display: 'block', marginBottom: '24px' }}>
-        {t('settings.securityDescription')}
-      </Text>
+    <TooltipProvider>
+      <div className="max-w-4xl space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold">{t('settings.groups.security')}</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            {t('settings.securityDescription')}
+          </p>
+        </div>
 
-      <Alert
-        message={t('settings.security.securityNote')}
-        description={t('settings.security.securityNoteDescription')}
-        type="warning"
-        showIcon
-        icon={<WarningOutlined />}
-        style={{ marginBottom: '24px' }}
-      />
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>{t('settings.security.securityNote')}</AlertTitle>
+          <AlertDescription>
+            {t('settings.security.securityNoteDescription')}
+          </AlertDescription>
+        </Alert>
 
-      <Form layout="vertical" disabled={loading}>
-        <Row gutter={[24, 16]}>
+        <div className="space-y-6">
           {/* 密码策略 */}
-          <Col span={24}>
-            <Card
-              size="small"
-              title={
-                <Space>
-                  <LockOutlined />
-                  {t('settings.security.passwordPolicy')}
-                </Space>
-              }
-            >
-              <Row gutter={[24, 16]}>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.security.passwordMinLength')}
-                    validateStatus={validationErrors.passwordMinLength ? 'error' : ''}
-                    help={validationErrors.passwordMinLength}
-                  >
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      value={getNumberValue('passwordMinLength')}
-                      onChange={(value) => onUpdate('passwordMinLength', value?.toString() || '')}
-                      placeholder="8"
-                      min={6}
-                      max={128}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                {t('settings.security.passwordPolicy')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="passwordMinLength">{t('settings.security.passwordMinLength')}</Label>
+                  <Input
+                    id="passwordMinLength"
+                    type="number"
+                    value={getNumberValue('passwordMinLength') || ''}
+                    onChange={(e) => onUpdate('passwordMinLength', e.target.value)}
+                    placeholder="8"
+                    min={6}
+                    max={128}
+                    disabled={loading}
+                    className={validationErrors.passwordMinLength ? 'border-destructive' : ''}
+                  />
+                  {validationErrors.passwordMinLength && (
+                    <p className="text-sm text-destructive">{validationErrors.passwordMinLength}</p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between">
+                    <Label>{t('settings.security.requireNumbers')}</Label>
+                    <Switch
+                      checked={getBooleanValue('passwordRequireNumbers')}
+                      onCheckedChange={(checked) => onUpdate('passwordRequireNumbers', checked.toString())}
+                      disabled={loading}
                     />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <Form.Item label={t('settings.security.requireNumbers')}>
-                      <Switch
-                        checked={getBooleanValue('passwordRequireNumbers')}
-                        onChange={(checked) => onUpdate('passwordRequireNumbers', checked.toString())}
-                      />
-                    </Form.Item>
-                    <Form.Item label={t('settings.security.requireSymbols')}>
-                      <Switch
-                        checked={getBooleanValue('passwordRequireSymbols')}
-                        onChange={(checked) => onUpdate('passwordRequireSymbols', checked.toString())}
-                      />
-                    </Form.Item>
-                    <Form.Item label={t('settings.security.requireUppercase')}>
-                      <Switch
-                        checked={getBooleanValue('passwordRequireUppercase')}
-                        onChange={(checked) => onUpdate('passwordRequireUppercase', checked.toString())}
-                      />
-                    </Form.Item>
-                    <Form.Item label={t('settings.security.requireLowercase')}>
-                      <Switch
-                        checked={getBooleanValue('passwordRequireLowercase')}
-                        onChange={(checked) => onUpdate('passwordRequireLowercase', checked.toString())}
-                      />
-                    </Form.Item>
                   </div>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
+                  <div className="flex items-center justify-between">
+                    <Label>{t('settings.security.requireSymbols')}</Label>
+                    <Switch
+                      checked={getBooleanValue('passwordRequireSymbols')}
+                      onCheckedChange={(checked) => onUpdate('passwordRequireSymbols', checked.toString())}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>{t('settings.security.requireUppercase')}</Label>
+                    <Switch
+                      checked={getBooleanValue('passwordRequireUppercase')}
+                      onCheckedChange={(checked) => onUpdate('passwordRequireUppercase', checked.toString())}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>{t('settings.security.requireLowercase')}</Label>
+                    <Switch
+                      checked={getBooleanValue('passwordRequireLowercase')}
+                      onCheckedChange={(checked) => onUpdate('passwordRequireLowercase', checked.toString())}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* 会话管理 */}
-          <Col span={24}>
-            <Card
-              size="small"
-              title={
-                <Space>
-                  <UserOutlined />
-                  {t('settings.security.sessionManagement')}
-                </Space>
-              }
-            >
-              <Row gutter={[24, 16]}>
-                <Col span={8}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        {t('settings.security.sessionTimeout')}
-                        <Tooltip title={t('settings.security.sessionTimeoutHelp')}>
-                          <QuestionCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    validateStatus={validationErrors.sessionTimeoutMinutes ? 'error' : ''}
-                    help={validationErrors.sessionTimeoutMinutes}
-                  >
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      value={getNumberValue('sessionTimeoutMinutes')}
-                      onChange={(value) => onUpdate('sessionTimeoutMinutes', value?.toString() || '')}
-                      placeholder="1440"
-                      min={5}
-                      max={43200}
-                      addonAfter={t('common.minutes')}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    label={t('settings.security.maxLoginAttempts')}
-                    validateStatus={validationErrors.maxLoginAttempts ? 'error' : ''}
-                    help={validationErrors.maxLoginAttempts}
-                  >
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      value={getNumberValue('maxLoginAttempts')}
-                      onChange={(value) => onUpdate('maxLoginAttempts', value?.toString() || '')}
-                      placeholder="5"
-                      min={1}
-                      max={20}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    label={t('settings.security.lockoutDuration')}
-                    validateStatus={validationErrors.lockoutDurationMinutes ? 'error' : ''}
-                    help={validationErrors.lockoutDurationMinutes}
-                  >
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      value={getNumberValue('lockoutDurationMinutes')}
-                      onChange={(value) => onUpdate('lockoutDurationMinutes', value?.toString() || '')}
-                      placeholder="30"
-                      min={1}
-                      max={1440}
-                      addonAfter={t('common.minutes')}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <User className="w-4 h-4" />
+                {t('settings.security.sessionManagement')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="sessionTimeout">{t('settings.security.sessionTimeout')}</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('settings.security.sessionTimeoutHelp')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="flex">
+                  <Input
+                    id="sessionTimeout"
+                    type="number"
+                    value={getNumberValue('sessionTimeoutMinutes') || ''}
+                    onChange={(e) => onUpdate('sessionTimeoutMinutes', e.target.value)}
+                    placeholder="1440"
+                    min={5}
+                    max={43200}
+                    disabled={loading}
+                    className={`rounded-r-none ${validationErrors.sessionTimeoutMinutes ? 'border-destructive' : ''}`}
+                  />
+                  <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-input bg-muted text-muted-foreground text-sm">
+                    {t('common.minutes')}
+                  </span>
+                </div>
+                {validationErrors.sessionTimeoutMinutes && (
+                  <p className="text-sm text-destructive">{validationErrors.sessionTimeoutMinutes}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxLoginAttempts">{t('settings.security.maxLoginAttempts')}</Label>
+                <Input
+                  id="maxLoginAttempts"
+                  type="number"
+                  value={getNumberValue('maxLoginAttempts') || ''}
+                  onChange={(e) => onUpdate('maxLoginAttempts', e.target.value)}
+                  placeholder="5"
+                  min={1}
+                  max={20}
+                  disabled={loading}
+                  className={validationErrors.maxLoginAttempts ? 'border-destructive' : ''}
+                />
+                {validationErrors.maxLoginAttempts && (
+                  <p className="text-sm text-destructive">{validationErrors.maxLoginAttempts}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lockoutDuration">{t('settings.security.lockoutDuration')}</Label>
+                <div className="flex">
+                  <Input
+                    id="lockoutDuration"
+                    type="number"
+                    value={getNumberValue('lockoutDurationMinutes') || ''}
+                    onChange={(e) => onUpdate('lockoutDurationMinutes', e.target.value)}
+                    placeholder="30"
+                    min={1}
+                    max={1440}
+                    disabled={loading}
+                    className={`rounded-r-none ${validationErrors.lockoutDurationMinutes ? 'border-destructive' : ''}`}
+                  />
+                  <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-input bg-muted text-muted-foreground text-sm">
+                    {t('common.minutes')}
+                  </span>
+                </div>
+                {validationErrors.lockoutDurationMinutes && (
+                  <p className="text-sm text-destructive">{validationErrors.lockoutDurationMinutes}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* 双因素认证 */}
-          <Col span={24}>
-            <Card
-              size="small"
-              title={
-                <Space>
-                  <ShieldOutlined />
-                  {t('settings.security.twoFactorAuth')}
-                </Space>
-              }
-            >
-              <Row gutter={[24, 16]}>
-                <Col span={24}>
-                  <Form.Item
-                    label={t('settings.security.enableTwoFactorAuth')}
-                    help={t('settings.security.twoFactorAuthHelp')}
-                  >
-                    <Switch
-                      checked={getBooleanValue('enableTwoFactorAuth')}
-                      onChange={(checked) => onUpdate('enableTwoFactorAuth', checked.toString())}
-                    />
-                  </Form.Item>
-                </Col>
-                {getBooleanValue('enableTwoFactorAuth') && (
-                  <Col span={24}>
-                    <Alert
-                      message={t('settings.security.twoFactorAuthEnabled')}
-                      description={t('settings.security.twoFactorAuthEnabledDescription')}
-                      type="info"
-                      showIcon
-                    />
-                  </Col>
-                )}
-              </Row>
-            </Card>
-          </Col>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                {t('settings.security.twoFactorAuth')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t('settings.security.enableTwoFactorAuth')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('settings.security.twoFactorAuthHelp')}
+                  </p>
+                </div>
+                <Switch
+                  checked={getBooleanValue('enableTwoFactorAuth')}
+                  onCheckedChange={(checked) => onUpdate('enableTwoFactorAuth', checked.toString())}
+                  disabled={loading}
+                />
+              </div>
+              {getBooleanValue('enableTwoFactorAuth') && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>{t('settings.security.twoFactorAuthEnabled')}</AlertTitle>
+                  <AlertDescription>
+                    {t('settings.security.twoFactorAuthEnabledDescription')}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
 
           {/* IP访问控制 */}
-          <Col span={24}>
-            <Card
-              size="small"
-              title={
-                <Space>
-                  <GlobalOutlined />
-                  {t('settings.security.ipAccessControl')}
-                </Space>
-              }
-            >
-              <Row gutter={[24, 16]}>
-                <Col span={12}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        {t('settings.security.allowedIpAddresses')}
-                        <Tooltip title={t('settings.security.allowedIpHelp')}>
-                          <QuestionCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    help={t('settings.security.allowedIpDescription')}
-                  >
-                    <IPAddressList
-                      value={getArrayValue('allowedIpAddresses')}
-                      onChange={(value) => updateArrayValue('allowedIpAddresses', value)}
-                      placeholder={t('settings.security.ipAddressPlaceholder')}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        {t('settings.security.blockedIpAddresses')}
-                        <Tooltip title={t('settings.security.blockedIpHelp')}>
-                          <QuestionCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    help={t('settings.security.blockedIpDescription')}
-                  >
-                    <IPAddressList
-                      value={getArrayValue('blockedIpAddresses')}
-                      onChange={(value) => updateArrayValue('blockedIpAddresses', value)}
-                      placeholder={t('settings.security.ipAddressPlaceholder')}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                {t('settings.security.ipAccessControl')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>{t('settings.security.allowedIpAddresses')}</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('settings.security.allowedIpHelp')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <IPAddressList
+                  value={getArrayValue('allowedIpAddresses')}
+                  onChange={(value) => updateArrayValue('allowedIpAddresses', value)}
+                  placeholder={t('settings.security.ipAddressPlaceholder')}
+                />
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.security.allowedIpDescription')}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>{t('settings.security.blockedIpAddresses')}</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('settings.security.blockedIpHelp')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <IPAddressList
+                  value={getArrayValue('blockedIpAddresses')}
+                  onChange={(value) => updateArrayValue('blockedIpAddresses', value)}
+                  placeholder={t('settings.security.ipAddressPlaceholder')}
+                />
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.security.blockedIpDescription')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* 验证码设置 */}
-          <Col span={24}>
-            <Card
-              size="small"
-              title={
-                <Space>
-                  <SecurityScanOutlined />
-                  {t('settings.security.captchaSettings')}
-                </Space>
-              }
-            >
-              <Row gutter={[24, 16]}>
-                <Col span={8}>
-                  <Form.Item label={t('settings.security.enableCaptcha')}>
-                    <Switch
-                      checked={getBooleanValue('enableCaptcha')}
-                      onChange={(checked) => onUpdate('enableCaptcha', checked.toString())}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                {t('settings.security.captchaSettings')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>{t('settings.security.enableCaptcha')}</Label>
+                <Switch
+                  checked={getBooleanValue('enableCaptcha')}
+                  onCheckedChange={(checked) => onUpdate('enableCaptcha', checked.toString())}
+                  disabled={loading}
+                />
+              </div>
+              {getBooleanValue('enableCaptcha') && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="captchaProvider">{t('settings.security.captchaProvider')}</Label>
+                    <Select
+                      value={getSettingValue('captchaProvider')}
+                      onValueChange={(value) => onUpdate('captchaProvider', value)}
+                      disabled={loading}
+                    >
+                      <SelectTrigger className={validationErrors.captchaProvider ? 'border-destructive' : ''}>
+                        <SelectValue placeholder={t('settings.security.captchaProviderPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {captchaProviders.map(provider => (
+                          <SelectItem key={provider.value} value={provider.value}>
+                            {provider.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {validationErrors.captchaProvider && (
+                      <p className="text-sm text-destructive">{validationErrors.captchaProvider}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="captchaConfig">{t('settings.security.captchaConfig')}</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{t('settings.security.captchaConfigHelp')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Textarea
+                      id="captchaConfig"
+                      rows={4}
+                      value={getSettingValue('captchaConfig')}
+                      onChange={(e) => onUpdate('captchaConfig', e.target.value)}
+                      placeholder={t('settings.security.captchaConfigPlaceholder')}
+                      disabled={loading}
+                      className={validationErrors.captchaConfig ? 'border-destructive' : ''}
                     />
-                  </Form.Item>
-                </Col>
-                {getBooleanValue('enableCaptcha') && (
-                  <>
-                    <Col span={16}>
-                      <Form.Item
-                        label={t('settings.security.captchaProvider')}
-                        validateStatus={validationErrors.captchaProvider ? 'error' : ''}
-                        help={validationErrors.captchaProvider}
-                      >
-                        <Select
-                          value={getSettingValue('captchaProvider')}
-                          onChange={(value) => onUpdate('captchaProvider', value)}
-                          placeholder={t('settings.security.captchaProviderPlaceholder')}
-                        >
-                          {captchaProviders.map(provider => (
-                            <Option key={provider.value} value={provider.value}>
-                              {provider.label}
-                            </Option>
-                          ))}
-                        </Select>
-                      </Form.Item>
-                    </Col>
-                    <Col span={24}>
-                      <Form.Item
-                        label={
-                          <Space>
-                            {t('settings.security.captchaConfig')}
-                            <Tooltip title={t('settings.security.captchaConfigHelp')}>
-                              <QuestionCircleOutlined />
-                            </Tooltip>
-                          </Space>
-                        }
-                        validateStatus={validationErrors.captchaConfig ? 'error' : ''}
-                        help={validationErrors.captchaConfig}
-                      >
-                        <TextArea
-                          rows={4}
-                          value={getSettingValue('captchaConfig')}
-                          onChange={(e) => onUpdate('captchaConfig', e.target.value)}
-                          placeholder={t('settings.security.captchaConfigPlaceholder')}
-                        />
-                      </Form.Item>
-                    </Col>
-                  </>
-                )}
-              </Row>
-            </Card>
-          </Col>
+                    {validationErrors.captchaConfig && (
+                      <p className="text-sm text-destructive">{validationErrors.captchaConfig}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* 安全建议 */}
-          <Col span={24}>
-            <Alert
-              message={t('settings.security.securityTips')}
-              description={
-                <List
-                  size="small"
-                  dataSource={[
-                    t('settings.security.tip1'),
-                    t('settings.security.tip2'),
-                    t('settings.security.tip3'),
-                    t('settings.security.tip4'),
-                    t('settings.security.tip5')
-                  ]}
-                  renderItem={(item) => (
-                    <List.Item style={{ border: 'none', padding: '4px 0' }}>
-                      <Text>{item}</Text>
-                    </List.Item>
-                  )}
-                />
-              }
-              type="info"
-              showIcon
-              icon={<InfoCircleOutlined />}
-            />
-          </Col>
-        </Row>
-      </Form>
-    </div>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>{t('settings.security.securityTips')}</AlertTitle>
+            <AlertDescription>
+              <ul className="space-y-1 text-sm mt-2">
+                <li className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>{t('settings.security.tip1')}</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>{t('settings.security.tip2')}</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>{t('settings.security.tip3')}</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>{t('settings.security.tip4')}</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>{t('settings.security.tip5')}</span>
+                </li>
+              </ul>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    </TooltipProvider>
   )
 }
 

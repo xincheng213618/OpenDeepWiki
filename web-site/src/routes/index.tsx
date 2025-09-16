@@ -21,6 +21,7 @@ const AdminUsers = lazy(() => import('@/pages/admin/UsersPage/index'))
 const AdminRoles = lazy(() => import('@/pages/admin/RolesPage/index'))
 const AdminRepositories = lazy(() => import('@/pages/admin/RepositoriesPage/index'))
 const AdminRepositoryDetail = lazy(() => import('@/pages/admin/RepositoryDetailPage/index'))
+const AdminSystemSettings = lazy(() => import('@/pages/admin/SystemSettingsPage/index'))
 
 // 加载组件
 const Loading = () => (
@@ -157,6 +158,14 @@ const routes = [
         element: (
           <Suspense fallback={<Loading />}>
             <AdminRepositoryDetail />
+          </Suspense>
+        ),
+      },
+      {
+        path: "settings",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <AdminSystemSettings />
           </Suspense>
         ),
       },

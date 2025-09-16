@@ -22,13 +22,12 @@ import {
   Save,
   Edit,
   X,
-  Loader2,
-  Upload
+  Loader2
 } from 'lucide-react'
 import { userService } from '@/services/userService'
 
 export const ProfileInfo: React.FC = () => {
-  const { user,  } = useAuth()
+  const { user, } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [isEditing, setIsEditing] = useState(false)
@@ -40,10 +39,10 @@ export const ProfileInfo: React.FC = () => {
   const [formData, setFormData] = useState({
     username: user?.username || '',
     email: user?.email || '',
-    bio: user?.bio || '',
-    location: user?.location || '',
-    website: user?.website || '',
-    company: user?.company || ''
+    bio: '',
+    location: '',
+    website: '',
+    company: ''
   })
 
   // 处理表单输入变化
@@ -74,10 +73,10 @@ export const ProfileInfo: React.FC = () => {
     setFormData({
       username: user?.username || '',
       email: user?.email || '',
-      bio: user?.bio || '',
-      location: user?.location || '',
-      website: user?.website || '',
-      company: user?.company || ''
+      bio: '',
+      location: '',
+      website: '',
+      company: ''
     })
     setIsEditing(false)
   }
@@ -106,7 +105,6 @@ export const ProfileInfo: React.FC = () => {
       formData.append('avatar', file)
 
       await userService.uploadAvatar(formData)
-      await refreshUser()
 
       sonnerToast.success('上传成功', { description: '头像已更新' })
     } catch (error: any) {
@@ -123,7 +121,6 @@ export const ProfileInfo: React.FC = () => {
   const handleDeleteAvatar = async () => {
     try {
       await userService.deleteAvatar()
-      await refreshUser()
       setShowDeleteDialog(false)
       sonnerToast.success('删除成功', { description: '头像已删除' })
     } catch (error: any) {
@@ -182,9 +179,6 @@ export const ProfileInfo: React.FC = () => {
         <div className="flex-1">
           <h2 className="text-2xl font-semibold">{user?.username}</h2>
           <p className="text-muted-foreground">{user?.email}</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            注册时间: {new Date(user?.createdAt || '').toLocaleDateString('zh-CN')}
-          </p>
         </div>
 
         {/* 编辑按钮 */}

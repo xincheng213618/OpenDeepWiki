@@ -1,37 +1,29 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
-  Form,
-  Input,
-  InputNumber,
-  Switch,
-  Button,
-  Space,
-  Row,
-  Col,
-  Card,
-  Typography,
-  Alert,
-  Tag,
-  Divider,
-  Tooltip,
-  Select
-} from 'antd'
-import {
-  GithubOutlined,
-  GitlabOutlined,
-  UserOutlined,
-  LinkOutlined,
-  SyncOutlined,
-  InfoCircleOutlined,
-  QuestionCircleOutlined,
-  KeyOutlined,
-  GlobalOutlined
-} from '@ant-design/icons'
+  Github,
+  GitBranch,
+  User,
+  Link,
+  RotateCw,
+  Info,
+  HelpCircle,
+  Key,
+  Globe,
+  Plus,
+  X
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SystemSetting, ValidationErrors, SettingGroupType } from '@/types/systemSettings'
 
-const { Title, Text, Paragraph } = Typography
-const { Option } = Select
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Badge } from '@/components/ui/badge'
 
 interface ThirdPartySettingsTabProps {
   settings: SystemSetting[]
@@ -58,7 +50,7 @@ const ThirdPartySettingsTab: React.FC<ThirdPartySettingsTabProps> = ({
 
   // 获取布尔值设置
   const getBooleanValue = (key: string) => {
-    const value = getSettingValue(key)
+    const value = getSettingValue(key) as any
     return value === 'true' || value === true
   }
 
@@ -89,8 +81,8 @@ const ThirdPartySettingsTab: React.FC<ThirdPartySettingsTabProps> = ({
       case 'GitHub':
         return {
           title: t('settings.groups.github'),
-          icon: <GithubOutlined />,
-          color: '#24292e',
+          icon: <Github className="w-4 h-4" />,
+          color: 'text-gray-900',
           keyPrefix: 'GitHub.',
           fields: [
             { key: 'ClientId', label: t('settings.github.clientId'), required: true, sensitive: false },
@@ -104,8 +96,8 @@ const ThirdPartySettingsTab: React.FC<ThirdPartySettingsTabProps> = ({
       case 'Gitee':
         return {
           title: t('settings.groups.gitee'),
-          icon: <GitlabOutlined />,
-          color: '#c71d23',
+          icon: <GitBranch className="w-4 h-4" />,
+          color: 'text-red-600',
           keyPrefix: 'Gitee.',
           fields: [
             { key: 'ClientId', label: t('settings.gitee.clientId'), required: true, sensitive: false },
@@ -135,286 +127,343 @@ const ThirdPartySettingsTab: React.FC<ThirdPartySettingsTabProps> = ({
     { value: 1440, label: t('settings.thirdParty.everyDay') }
   ]
 
-  return (
-    <div style={{ maxWidth: '800px' }}>
-      <Title level={4} style={{ marginBottom: '8px', color: config.color }}>
-        <Space>
-          {config.icon}
-          {config.title}
-        </Space>
-      </Title>
-      <Text type="secondary" style={{ display: 'block', marginBottom: '24px' }}>
-        {t('settings.thirdPartyDescription', { platform: config.title })}
-      </Text>
+  // 组织标签列表组件
+  const OrganizationsList = ({
+    value = [],
+    onChange
+  }: {
+    value?: string[]
+    onChange?: (value: string[]) => void
+  }) => {
+    const [inputValue, setInputValue] = useState('')
 
-      <Alert
-        message={t('settings.thirdParty.setupNote')}
-        description={
-          <div>
-            <Paragraph>
-              {t('settings.thirdParty.setupNoteDescription', { platform: config.title })}
-            </Paragraph>
-            <Space>
-              <Button
-                type="link"
-                icon={<LinkOutlined />}
-                href={config.oauthUrl}
-                target="_blank"
+    const addOrganization = () => {
+      if (inputValue && !value.includes(inputValue)) {
+        onChange?.([...value, inputValue])
+        setInputValue('')
+      }
+    }
+
+    const removeOrganization = (org: string) => {
+      onChange?.(value.filter(item => item !== org))
+    }
+
+    return (
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <Input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={t('settings.thirdParty.allowedOrganizationsPlaceholder')}
+            onKeyDown={(e) => e.key === 'Enter' && addOrganization()}
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            onClick={addOrganization}
+            disabled={!inputValue || value.includes(inputValue)}
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            {t('common.add')}
+          </Button>
+        </div>
+        {value.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {value.map((org, index) => (
+              <Badge
+                key={index}
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => removeOrganization(org)}
               >
-                {t('settings.thirdParty.createApp')}
-              </Button>
-              <Button
-                type="link"
-                icon={<InfoCircleOutlined />}
-                href={config.docsUrl}
-                target="_blank"
-              >
-                {t('settings.thirdParty.viewDocs')}
-              </Button>
-            </Space>
+                {org}
+                <X className="w-3 h-3 ml-1" />
+              </Badge>
+            ))}
           </div>
-        }
-        type="info"
-        showIcon
-        style={{ marginBottom: '24px' }}
-      />
+        )}
+      </div>
+    )
+  }
 
-      <Form layout="vertical" disabled={loading}>
-        <Row gutter={[24, 16]}>
+  return (
+    <TooltipProvider>
+      <div className="max-w-4xl space-y-6">
+        <div>
+          <h3 className={`text-lg font-semibold flex items-center gap-2 ${config.color}`}>
+            {config.icon}
+            {config.title}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            {t('settings.thirdPartyDescription', { platform: config.title })}
+          </p>
+        </div>
+
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>{t('settings.thirdParty.setupNote')}</AlertTitle>
+          <AlertDescription>
+            <div className="space-y-3">
+              <p>{t('settings.thirdParty.setupNoteDescription', { platform: config.title })}</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                >
+                  <a href={config.oauthUrl} target="_blank" rel="noopener noreferrer">
+                    <Link className="w-4 h-4 mr-2" />
+                    {t('settings.thirdParty.createApp')}
+                  </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                >
+                  <a href={config.docsUrl} target="_blank" rel="noopener noreferrer">
+                    <Info className="w-4 h-4 mr-2" />
+                    {t('settings.thirdParty.viewDocs')}
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+
+        <div className="space-y-6">
           {/* OAuth 配置 */}
-          <Col span={24}>
-            <Card
-              size="small"
-              title={
-                <Space>
-                  <UserOutlined />
-                  {t('settings.thirdParty.oauthConfiguration')}
-                </Space>
-              }
-            >
-              <Row gutter={[24, 16]}>
-                {config.fields.map(field => (
-                  <Col span={12} key={field.key}>
-                    <Form.Item
-                      label={
-                        <Space>
-                          {field.sensitive && <KeyOutlined />}
-                          {field.label}
-                          {field.required && <Text type="danger">*</Text>}
-                        </Space>
-                      }
-                      validateStatus={validationErrors[config.keyPrefix + field.key] ? 'error' : ''}
-                      help={validationErrors[config.keyPrefix + field.key]}
-                      required={field.required}
-                    >
-                      {field.sensitive ? (
-                        <Input.Password
-                          value={getSettingValue(config.keyPrefix + field.key)}
-                          onChange={(e) => onUpdate(config.keyPrefix + field.key, e.target.value)}
-                          placeholder={t('settings.thirdParty.inputPlaceholder', { field: field.label })}
-                          size="large"
-                        />
-                      ) : (
-                        <Input
-                          value={getSettingValue(config.keyPrefix + field.key)}
-                          onChange={(e) => onUpdate(config.keyPrefix + field.key, e.target.value)}
-                          placeholder={t('settings.thirdParty.inputPlaceholder', { field: field.label })}
-                          size="large"
-                        />
-                      )}
-                    </Form.Item>
-                  </Col>
-                ))}
-              </Row>
-            </Card>
-          </Col>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <User className="w-4 h-4" />
+                {t('settings.thirdParty.oauthConfiguration')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              {config.fields.map(field => (
+                <div key={field.key} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    {field.sensitive && <Key className="w-4 h-4 text-muted-foreground" />}
+                    <Label htmlFor={field.key}>
+                      {field.label}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                  </div>
+                  <Input
+                    id={field.key}
+                    type={field.sensitive ? 'password' : 'text'}
+                    value={getSettingValue(config.keyPrefix + field.key)}
+                    onChange={(e) => onUpdate(config.keyPrefix + field.key, e.target.value)}
+                    placeholder={t('settings.thirdParty.inputPlaceholder', { field: field.label })}
+                    disabled={loading}
+                    className={validationErrors[config.keyPrefix + field.key] ? 'border-destructive' : ''}
+                  />
+                  {validationErrors[config.keyPrefix + field.key] && (
+                    <p className="text-sm text-destructive">{validationErrors[config.keyPrefix + field.key]}</p>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
 
           {/* OAuth 设置 */}
-          <Col span={24}>
-            <Card
-              size="small"
-              title={
-                <Space>
-                  <GlobalOutlined />
-                  {t('settings.thirdParty.oauthSettings')}
-                </Space>
-              }
-            >
-              <Row gutter={[24, 16]}>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.thirdParty.enableOAuth')}
-                    help={t('settings.thirdParty.enableOAuthHelp', { platform: config.title })}
-                  >
-                    <Switch
-                      checked={getBooleanValue('enableOAuth')}
-                      onChange={(checked) => onUpdate('enableOAuth', checked.toString())}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        {t('settings.thirdParty.allowedOrganizations')}
-                        <Tooltip title={t('settings.thirdParty.allowedOrganizationsHelp')}>
-                          <QuestionCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    help={t('settings.thirdParty.allowedOrganizationsDescription')}
-                  >
-                    <Select
-                      mode="tags"
-                      value={getArrayValue('allowedOrganizations')}
-                      onChange={(value) => updateArrayValue('allowedOrganizations', value)}
-                      placeholder={t('settings.thirdParty.allowedOrganizationsPlaceholder')}
-                      tokenSeparators={[',']}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                {t('settings.thirdParty.oauthSettings')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t('settings.thirdParty.enableOAuth')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('settings.thirdParty.enableOAuthHelp', { platform: config.title })}
+                  </p>
+                </div>
+                <Switch
+                  checked={getBooleanValue('enableOAuth')}
+                  onCheckedChange={(checked) => onUpdate('enableOAuth', checked.toString())}
+                  disabled={loading}
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>{t('settings.thirdParty.allowedOrganizations')}</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('settings.thirdParty.allowedOrganizationsHelp')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <OrganizationsList
+                  value={getArrayValue('allowedOrganizations')}
+                  onChange={(value) => updateArrayValue('allowedOrganizations', value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.thirdParty.allowedOrganizationsDescription')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* 仓库同步设置 */}
-          <Col span={24}>
-            <Card
-              size="small"
-              title={
-                <Space>
-                  <SyncOutlined />
-                  {t('settings.thirdParty.repositorySync')}
-                </Space>
-              }
-            >
-              <Row gutter={[24, 16]}>
-                <Col span={8}>
-                  <Form.Item
-                    label={t('settings.thirdParty.enableAutoSync')}
-                    help={t('settings.thirdParty.enableAutoSyncHelp')}
-                  >
-                    <Switch
-                      checked={getBooleanValue('enableAutoSync')}
-                      onChange={(checked) => onUpdate('enableAutoSync', checked.toString())}
-                    />
-                  </Form.Item>
-                </Col>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <RotateCw className="w-4 h-4" />
+                {t('settings.thirdParty.repositorySync')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{t('settings.thirdParty.enableAutoSync')}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t('settings.thirdParty.enableAutoSyncHelp')}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={getBooleanValue('enableAutoSync')}
+                    onCheckedChange={(checked) => onUpdate('enableAutoSync', checked.toString())}
+                    disabled={loading}
+                  />
+                </div>
                 {getBooleanValue('enableAutoSync') && (
-                  <Col span={16}>
-                    <Form.Item
-                      label={t('settings.thirdParty.syncInterval')}
-                      validateStatus={validationErrors.syncInterval ? 'error' : ''}
-                      help={validationErrors.syncInterval}
+                  <div className="md:col-span-2 space-y-2">
+                    <Label htmlFor="syncInterval">{t('settings.thirdParty.syncInterval')}</Label>
+                    <Select
+                      value={getNumberValue('syncInterval')?.toString()}
+                      onValueChange={(value) => onUpdate('syncInterval', value)}
+                      disabled={loading}
                     >
-                      <Select
-                        value={getNumberValue('syncInterval')}
-                        onChange={(value) => onUpdate('syncInterval', value?.toString() || '')}
-                        placeholder={t('settings.thirdParty.syncIntervalPlaceholder')}
-                      >
+                      <SelectTrigger className={validationErrors.syncInterval ? 'border-destructive' : ''}>
+                        <SelectValue placeholder={t('settings.thirdParty.syncIntervalPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
                         {syncIntervalOptions.map(option => (
-                          <Option key={option.value} value={option.value}>
+                          <SelectItem key={option.value} value={option.value.toString()}>
                             {option.label}
-                          </Option>
+                          </SelectItem>
                         ))}
-                      </Select>
-                    </Form.Item>
-                  </Col>
+                      </SelectContent>
+                    </Select>
+                    {validationErrors.syncInterval && (
+                      <p className="text-sm text-destructive">{validationErrors.syncInterval}</p>
+                    )}
+                  </div>
                 )}
-                <Col span={24}>
-                  <Form.Item
-                    label={t('settings.thirdParty.defaultRepository')}
-                    validateStatus={validationErrors.defaultRepository ? 'error' : ''}
-                    help={validationErrors.defaultRepository || t('settings.thirdParty.defaultRepositoryHelp')}
-                  >
-                    <Input
-                      value={getSettingValue('defaultRepository')}
-                      onChange={(e) => onUpdate('defaultRepository', e.target.value)}
-                      placeholder={t('settings.thirdParty.defaultRepositoryPlaceholder')}
-                      addonBefore={group === 'GitHub' ? 'github.com/' : 'gitee.com/'}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="defaultRepository">{t('settings.thirdParty.defaultRepository')}</Label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                    {group === 'GitHub' ? 'github.com/' : 'gitee.com/'}
+                  </span>
+                  <Input
+                    id="defaultRepository"
+                    value={getSettingValue('defaultRepository')}
+                    onChange={(e) => onUpdate('defaultRepository', e.target.value)}
+                    placeholder={t('settings.thirdParty.defaultRepositoryPlaceholder')}
+                    disabled={loading}
+                    className={`rounded-l-none ${validationErrors.defaultRepository ? 'border-destructive' : ''}`}
+                  />
+                </div>
+                {validationErrors.defaultRepository ? (
+                  <p className="text-sm text-destructive">{validationErrors.defaultRepository}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('settings.thirdParty.defaultRepositoryHelp')}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* 回调URL信息 */}
-          <Col span={24}>
-            <Alert
-              message={t('settings.thirdParty.callbackUrls')}
-              description={
-                <div>
-                  <Paragraph>
-                    {t('settings.thirdParty.callbackUrlsDescription')}
-                  </Paragraph>
-                  <div style={{ background: '#f5f5f5', padding: '12px', borderRadius: '6px', fontFamily: 'monospace' }}>
-                    <div><strong>OAuth Callback URL:</strong></div>
-                    <div>https://yourdomain.com/api/auth/{group.toLowerCase()}/callback</div>
-                    <div style={{ marginTop: '8px' }}><strong>Webhook URL:</strong></div>
-                    <div>https://yourdomain.com/api/webhooks/{group.toLowerCase()}</div>
-                  </div>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>{t('settings.thirdParty.callbackUrls')}</AlertTitle>
+            <AlertDescription>
+              <div className="space-y-3">
+                <p>{t('settings.thirdParty.callbackUrlsDescription')}</p>
+                <div className="bg-muted p-3 rounded-md font-mono text-sm">
+                  <div className="font-semibold">OAuth Callback URL:</div>
+                  <div className="text-muted-foreground">https://yourdomain.com/api/auth/{group.toLowerCase()}/callback</div>
+                  <div className="font-semibold mt-2">Webhook URL:</div>
+                  <div className="text-muted-foreground">https://yourdomain.com/api/webhooks/{group.toLowerCase()}</div>
                 </div>
-              }
-              type="info"
-              showIcon
-              icon={<InfoCircleOutlined />}
-            />
-          </Col>
+              </div>
+            </AlertDescription>
+          </Alert>
 
           {/* 连接状态 */}
-          <Col span={24}>
-            <Card size="small" title={t('settings.thirdParty.connectionStatus')}>
-              <Row gutter={[16, 16]}>
-                <Col span={8}>
-                  <div style={{ textAlign: 'center' }}>
-                    <Tag color={getSettingValue(config.keyPrefix + 'ClientId') ? 'green' : 'red'}>
-                      {getSettingValue(config.keyPrefix + 'ClientId') ? t('common.configured') : t('common.notConfigured')}
-                    </Tag>
-                    <div style={{ marginTop: '4px', fontSize: '12px' }}>
-                      {t('settings.thirdParty.oauthStatus')}
-                    </div>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div style={{ textAlign: 'center' }}>
-                    <Tag color={getSettingValue(config.keyPrefix + 'Token') ? 'green' : 'orange'}>
-                      {getSettingValue(config.keyPrefix + 'Token') ? t('common.configured') : t('common.optional')}
-                    </Tag>
-                    <div style={{ marginTop: '4px', fontSize: '12px' }}>
-                      {t('settings.thirdParty.apiTokenStatus')}
-                    </div>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div style={{ textAlign: 'center' }}>
-                    <Tag color={getBooleanValue('enableAutoSync') ? 'blue' : 'default'}>
-                      {getBooleanValue('enableAutoSync') ? t('common.enabled') : t('common.disabled')}
-                    </Tag>
-                    <div style={{ marginTop: '4px', fontSize: '12px' }}>
-                      {t('settings.thirdParty.autoSyncStatus')}
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t('settings.thirdParty.connectionStatus')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="text-center space-y-2">
+                  <Badge
+                    variant={getSettingValue(config.keyPrefix + 'ClientId') ? 'default' : 'destructive'}
+                    className={getSettingValue(config.keyPrefix + 'ClientId') ? 'bg-green-100 text-green-800 border-green-200' : ''}
+                  >
+                    {getSettingValue(config.keyPrefix + 'ClientId') ? t('common.configured') : t('common.notConfigured')}
+                  </Badge>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.thirdParty.oauthStatus')}
+                  </p>
+                </div>
+                <div className="text-center space-y-2">
+                  <Badge
+                    variant={getSettingValue(config.keyPrefix + 'Token') ? 'default' : 'secondary'}
+                    className={getSettingValue(config.keyPrefix + 'Token') ? 'bg-green-100 text-green-800 border-green-200' : 'bg-orange-100 text-orange-800 border-orange-200'}
+                  >
+                    {getSettingValue(config.keyPrefix + 'Token') ? t('common.configured') : t('common.optional')}
+                  </Badge>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.thirdParty.apiTokenStatus')}
+                  </p>
+                </div>
+                <div className="text-center space-y-2">
+                  <Badge
+                    variant={getBooleanValue('enableAutoSync') ? 'default' : 'secondary'}
+                    className={getBooleanValue('enableAutoSync') ? 'bg-blue-100 text-blue-800 border-blue-200' : ''}
+                  >
+                    {getBooleanValue('enableAutoSync') ? t('common.enabled') : t('common.disabled')}
+                  </Badge>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.thirdParty.autoSyncStatus')}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* 配置指南 */}
-          <Col span={24}>
-            <Card size="small" title={t('settings.thirdParty.configurationGuide')}>
-              <ol style={{ marginBottom: 0, paddingLeft: '20px' }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t('settings.thirdParty.configurationGuide')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
                 <li>{t('settings.thirdParty.step1', { platform: config.title })}</li>
                 <li>{t('settings.thirdParty.step2')}</li>
                 <li>{t('settings.thirdParty.step3')}</li>
                 <li>{t('settings.thirdParty.step4')}</li>
                 <li>{t('settings.thirdParty.step5')}</li>
               </ol>
-            </Card>
-          </Col>
-        </Row>
-      </Form>
-    </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </TooltipProvider>
   )
 }
 

@@ -1,40 +1,48 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  Card,
-  Tabs,
-  message,
-  Button,
-  Space,
-  Modal,
-  Spin,
-  Alert,
-  Badge,
-  Typography,
-  Tooltip,
-  Divider
-} from 'antd'
-import {
-  SettingOutlined,
-  SaveOutlined,
-  ReloadOutlined,
-  ExportOutlined,
-  ImportOutlined,
-  WarningOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  InfoCircleOutlined
-} from '@ant-design/icons'
+  Settings,
+  Save,
+  RefreshCw,
+  Import,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Info
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { systemSettingsService } from '@/services/admin.service'
 import type {
   SystemSettingGroup,
   SystemSetting,
   SettingGroupType,
-  ValidationErrors,
-  SystemStatus
+  ValidationErrors
 } from '@/types/systemSettings'
 
-// 导入各个设置组件
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { useToast } from '@/hooks/useToast'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+
 import BasicSettingsTab from './components/BasicSettingsTab'
 import EmailSettingsTab from './components/EmailSettingsTab'
 import AISettingsTab from './components/AISettingsTab'
@@ -42,16 +50,13 @@ import StorageSettingsTab from './components/StorageSettingsTab'
 import SecuritySettingsTab from './components/SecuritySettingsTab'
 import ThirdPartySettingsTab from './components/ThirdPartySettingsTab'
 import DocumentSettingsTab from './components/DocumentSettingsTab'
-import SystemStatusCard from './components/SystemStatusCard'
 import SettingsImportExport from './components/SettingsImportExport'
-
-const { TabPane } = Tabs
-const { Title, Text } = Typography
 
 interface SystemSettingsPageProps {}
 
 const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
   const { t } = useTranslation()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<string>('basic')
@@ -60,58 +65,56 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [restartRequired, setRestartRequired] = useState<string[]>([])
-  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null)
   const [importExportVisible, setImportExportVisible] = useState(false)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+  const [restartDialogOpen, setRestartDialogOpen] = useState(false)
 
-  // 加载设置组
   const loadSettingGroups = useCallback(async () => {
     try {
       setLoading(true)
       const response = await systemSettingsService.getSettingGroups()
-      setSettingGroups(response)
 
-      // 为每个组创建设置映射
+      // 确保 response 是数组
+      const groups = Array.isArray(response) ? response : []
+      setSettingGroups(groups)
+
       const settingsMap: Record<string, SystemSetting[]> = {}
-      response.forEach(group => {
-        settingsMap[group.group] = group.settings
+      groups.forEach(group => {
+        if (group && group.group && Array.isArray(group.settings)) {
+          settingsMap[group.group] = group.settings
+        }
       })
       setSettings(settingsMap)
     } catch (error) {
       console.error('Failed to load setting groups:', error)
-      message.error(t('settings.loadFailed'))
+      toast({
+        title: t('settings.loadFailed'),
+        variant: 'destructive',
+      })
+      // 设置默认空数组以防止错误
+      setSettingGroups([])
+      setSettings({})
     } finally {
       setLoading(false)
     }
-  }, [t])
+  }, [t, toast])
 
-  // 加载需要重启的设置
   const loadRestartRequired = useCallback(async () => {
     try {
       const response = await systemSettingsService.getRestartRequiredSettings()
-      setRestartRequired(response)
+      // 确保 response 是数组
+      setRestartRequired(Array.isArray(response) ? response : [])
     } catch (error) {
       console.error('Failed to load restart required settings:', error)
+      setRestartRequired([])
     }
   }, [])
 
-  // 加载系统状态
-  const loadSystemStatus = useCallback(async () => {
-    try {
-      const response = await systemSettingsService.getSystemStatus()
-      setSystemStatus(response)
-    } catch (error) {
-      console.error('Failed to load system status:', error)
-    }
-  }, [])
-
-  // 初始化加载
   useEffect(() => {
     loadSettingGroups()
     loadRestartRequired()
-    loadSystemStatus()
-  }, [loadSettingGroups, loadRestartRequired, loadSystemStatus])
+  }, [loadSettingGroups, loadRestartRequired])
 
-  // 监听页面离开事件
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
@@ -124,7 +127,6 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [hasUnsavedChanges])
 
-  // 更新设置值
   const updateSetting = useCallback((group: string, key: string, value: any) => {
     setSettings(prev => {
       const newSettings = { ...prev }
@@ -137,7 +139,6 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
     })
     setHasUnsavedChanges(true)
 
-    // 清除该字段的验证错误
     if (validationErrors[key]) {
       setValidationErrors(prev => {
         const newErrors = { ...prev }
@@ -147,12 +148,10 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
     }
   }, [validationErrors])
 
-  // 保存所有更改
   const saveAllSettings = useCallback(async () => {
     try {
       setSaving(true)
 
-      // 准备批量更新数据
       const updateItems = Object.values(settings)
         .flat()
         .map(setting => ({
@@ -160,94 +159,99 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
           value: setting.value
         }))
 
-      // 先验证设置
       const errors = await systemSettingsService.validateSettings({ settings: updateItems })
       if (Object.keys(errors).length > 0) {
         setValidationErrors(errors)
-        message.error(t('settings.validationFailed'))
+        toast({
+          title: t('settings.validationFailed'),
+          variant: 'destructive',
+        })
         return
       }
 
-      // 保存设置
       await systemSettingsService.batchUpdateSettings({ settings: updateItems })
 
-      message.success(t('settings.saveSuccess'))
+      toast({
+        title: t('settings.saveSuccess'),
+      })
       setHasUnsavedChanges(false)
       setValidationErrors({})
 
-      // 重新加载需要重启的设置
       await loadRestartRequired()
 
-      // 如果有需要重启的设置，显示提示
       if (restartRequired.length > 0) {
-        Modal.confirm({
-          title: t('settings.restartRequired'),
-          content: t('settings.restartRequiredMessage'),
-          okText: t('common.restart'),
-          cancelText: t('common.later'),
-          onOk: async () => {
-            try {
-              await systemSettingsService.restartSystem()
-              message.info(t('settings.restartInitiated'))
-            } catch (error) {
-              message.error(t('settings.restartFailed'))
-            }
-          }
-        })
+        setRestartDialogOpen(true)
       }
     } catch (error) {
       console.error('Failed to save settings:', error)
-      message.error(t('settings.saveFailed'))
+      toast({
+        title: t('settings.saveFailed'),
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }
-  }, [settings, t, loadRestartRequired, restartRequired.length])
+  }, [settings, t, toast, loadRestartRequired, restartRequired.length])
 
-  // 重置当前组的设置
   const resetCurrentGroup = useCallback(async () => {
     const currentGroupSettings = settings[activeTab]
     if (!currentGroupSettings) return
 
-    Modal.confirm({
-      title: t('settings.resetGroup'),
-      content: t('settings.resetGroupConfirm'),
-      okText: t('common.reset'),
-      okType: 'danger',
-      cancelText: t('common.cancel'),
-      onOk: async () => {
-        try {
-          setLoading(true)
+    setResetDialogOpen(false)
 
-          // 重置每个设置到默认值
-          for (const setting of currentGroupSettings) {
-            await systemSettingsService.resetSetting(setting.key)
-          }
+    try {
+      setLoading(true)
 
-          message.success(t('settings.resetSuccess'))
-          await loadSettingGroups()
-          setHasUnsavedChanges(false)
-        } catch (error) {
-          console.error('Failed to reset settings:', error)
-          message.error(t('settings.resetFailed'))
-        } finally {
-          setLoading(false)
-        }
+      for (const setting of currentGroupSettings) {
+        await systemSettingsService.resetSetting(setting.key)
       }
-    })
-  }, [activeTab, settings, t, loadSettingGroups])
 
-  // 清空缓存
+      toast({
+        title: t('settings.resetSuccess'),
+      })
+      await loadSettingGroups()
+      setHasUnsavedChanges(false)
+    } catch (error) {
+      console.error('Failed to reset settings:', error)
+      toast({
+        title: t('settings.resetFailed'),
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [activeTab, settings, t, toast, loadSettingGroups])
+
   const clearCache = useCallback(async () => {
     try {
       await systemSettingsService.clearCache()
-      message.success(t('settings.cacheCleared'))
+      toast({
+        title: t('settings.cacheCleared'),
+      })
     } catch (error) {
       console.error('Failed to clear cache:', error)
-      message.error(t('settings.cacheClearFailed'))
+      toast({
+        title: t('settings.cacheClearFailed'),
+        variant: 'destructive',
+      })
     }
-  }, [t])
+  }, [t, toast])
 
-  // 渲染设置标签页
+  const handleRestart = async () => {
+    try {
+      await systemSettingsService.restartSystem()
+      toast({
+        title: t('settings.restartInitiated'),
+      })
+    } catch (error) {
+      toast({
+        title: t('settings.restartFailed'),
+        variant: 'destructive',
+      })
+    }
+    setRestartDialogOpen(false)
+  }
+
   const renderTabContent = (group: SettingGroupType) => {
     const groupSettings = settings[group] || []
     const commonProps = {
@@ -278,23 +282,21 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
     }
   }
 
-  // 获取标签页标题和图标
   const getTabInfo = (group: SettingGroupType) => {
     const baseInfo = {
-      Basic: { title: t('settings.groups.basic'), icon: <SettingOutlined /> },
-      Email: { title: t('settings.groups.email'), icon: <SettingOutlined /> },
-      OpenAI: { title: t('settings.groups.ai'), icon: <SettingOutlined /> },
-      Storage: { title: t('settings.groups.storage'), icon: <SettingOutlined /> },
-      Security: { title: t('settings.groups.security'), icon: <SettingOutlined /> },
-      GitHub: { title: t('settings.groups.github'), icon: <SettingOutlined /> },
-      Gitee: { title: t('settings.groups.gitee'), icon: <SettingOutlined /> },
-      Document: { title: t('settings.groups.document'), icon: <SettingOutlined /> },
-      JWT: { title: t('settings.groups.jwt'), icon: <SettingOutlined /> },
-      Backup: { title: t('settings.groups.backup'), icon: <SettingOutlined /> },
-      Logging: { title: t('settings.groups.logging'), icon: <SettingOutlined /> }
-    }[group] || { title: group, icon: <SettingOutlined /> }
+      Basic: { title: t('settings.groups.basic'), icon: <Settings className="w-4 h-4" /> },
+      Email: { title: t('settings.groups.email'), icon: <Settings className="w-4 h-4" /> },
+      OpenAI: { title: t('settings.groups.ai'), icon: <Settings className="w-4 h-4" /> },
+      Storage: { title: t('settings.groups.storage'), icon: <Settings className="w-4 h-4" /> },
+      Security: { title: t('settings.groups.security'), icon: <Settings className="w-4 h-4" /> },
+      GitHub: { title: t('settings.groups.github'), icon: <Settings className="w-4 h-4" /> },
+      Gitee: { title: t('settings.groups.gitee'), icon: <Settings className="w-4 h-4" /> },
+      Document: { title: t('settings.groups.document'), icon: <Settings className="w-4 h-4" /> },
+      JWT: { title: t('settings.groups.jwt'), icon: <Settings className="w-4 h-4" /> },
+      Backup: { title: t('settings.groups.backup'), icon: <Settings className="w-4 h-4" /> },
+      Logging: { title: t('settings.groups.logging'), icon: <Settings className="w-4 h-4" /> }
+    }[group] || { title: group, icon: <Settings className="w-4 h-4" /> }
 
-    // 检查是否有需要重启的设置
     const groupSettings = settings[group] || []
     const hasRestartRequired = groupSettings.some(setting =>
       setting.requiresRestart && restartRequired.includes(setting.key)
@@ -307,156 +309,167 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="p-6">
+      <div className="mb-6 flex justify-between items-center">
         <div>
-          <Title level={2} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <SettingOutlined />
+          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Settings className="w-8 h-8" />
             {t('settings.title')}
-          </Title>
-          <Text type="secondary" style={{ marginTop: '8px', display: 'block' }}>
+          </h2>
+          <p className="text-muted-foreground mt-2">
             {t('settings.description')}
-          </Text>
+          </p>
         </div>
 
-        <Space>
+        <div className="flex items-center gap-4">
           {hasUnsavedChanges && (
-            <Alert
-              message={t('settings.unsavedChanges')}
-              type="warning"
-              showIcon
-              style={{ marginRight: '16px' }}
-            />
+            <Alert className="w-auto py-2 px-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{t('settings.unsavedChanges')}</AlertDescription>
+            </Alert>
           )}
 
           <Button
-            icon={<ReloadOutlined />}
+            variant="outline"
             onClick={clearCache}
-            title={t('settings.clearCache')}
+            disabled={loading}
           >
+            <RefreshCw className="w-4 h-4 mr-2" />
             {t('settings.clearCache')}
           </Button>
 
           <Button
-            icon={<ImportOutlined />}
+            variant="outline"
             onClick={() => setImportExportVisible(true)}
           >
+            <Import className="w-4 h-4 mr-2" />
             {t('settings.importExport')}
           </Button>
 
           <Button
-            icon={<ReloadOutlined />}
-            onClick={resetCurrentGroup}
+            variant="outline"
+            onClick={() => setResetDialogOpen(true)}
             disabled={loading}
           >
+            <RefreshCw className="w-4 h-4 mr-2" />
             {t('settings.resetGroup')}
           </Button>
 
           <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            loading={saving}
-            disabled={!hasUnsavedChanges || loading}
             onClick={saveAllSettings}
+            disabled={!hasUnsavedChanges || loading}
           >
+            <Save className="w-4 h-4 mr-2" />
             {t('settings.saveAll')}
           </Button>
-        </Space>
+        </div>
       </div>
 
-      {/* 系统状态卡片 */}
-      {systemStatus && (
-        <SystemStatusCard
-          status={systemStatus}
-          restartRequired={restartRequired}
-          style={{ marginBottom: '24px' }}
-        />
-      )}
-
-      {/* 重启提醒 */}
       {restartRequired.length > 0 && (
-        <Alert
-          message={t('settings.restartRequired')}
-          description={t('settings.restartRequiredMessage')}
-          type="warning"
-          showIcon
-          icon={<WarningOutlined />}
-          style={{ marginBottom: '24px' }}
-          action={
+        <Alert className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>{t('settings.restartRequired')}</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>{t('settings.restartRequiredMessage')}</span>
             <Button
-              size="small"
-              type="primary"
-              danger
-              onClick={async () => {
-                Modal.confirm({
-                  title: t('settings.restartConfirm'),
-                  content: t('settings.restartConfirmMessage'),
-                  okText: t('common.restart'),
-                  okType: 'danger',
-                  cancelText: t('common.cancel'),
-                  onOk: async () => {
-                    try {
-                      await systemSettingsService.restartSystem()
-                      message.info(t('settings.restartInitiated'))
-                    } catch (error) {
-                      message.error(t('settings.restartFailed'))
-                    }
-                  }
-                })
-              }}
+              size="sm"
+              variant="destructive"
+              onClick={() => setRestartDialogOpen(true)}
+              className="ml-4"
             >
               {t('common.restart')}
             </Button>
-          }
-        />
+          </AlertDescription>
+        </Alert>
       )}
 
       <Card>
-        <Spin spinning={loading}>
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            type="card"
-            size="large"
-          >
-            {settingGroups.map(group => {
-              const tabInfo = getTabInfo(group.group as SettingGroupType)
-              return (
-                <TabPane
-                  key={group.group}
-                  tab={
-                    <span>
-                      {tabInfo.icon}
-                      <span style={{ marginLeft: '8px' }}>{tabInfo.title}</span>
-                      {tabInfo.badge && (
-                        <Badge
-                          dot
-                          status="warning"
-                          style={{ marginLeft: '8px' }}
-                          title={t('settings.requiresRestart')}
-                        />
-                      )}
-                    </span>
-                  }
-                >
-                  {renderTabContent(group.group as SettingGroupType)}
-                </TabPane>
-              )
-            })}
-          </Tabs>
-        </Spin>
+        <CardContent className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              {settingGroups.length > 0 ? (
+                <>
+                  <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 mb-6">
+                    {settingGroups.map(group => {
+                      const tabInfo = getTabInfo(group.group as SettingGroupType)
+                      return (
+                        <TabsTrigger
+                          key={group.group}
+                          value={group.group}
+                          className="relative flex items-center gap-2"
+                        >
+                          {tabInfo.icon}
+                          <span>{tabInfo.title}</span>
+                          {tabInfo.badge && (
+                            <Badge variant="destructive" className="ml-2 h-2 w-2 p-0 rounded-full" />
+                          )}
+                        </TabsTrigger>
+                      )
+                    })}
+                  </TabsList>
+
+                  {settingGroups.map(group => (
+                    <TabsContent key={group.group} value={group.group}>
+                      {renderTabContent(group.group as SettingGroupType)}
+                    </TabsContent>
+                  ))}
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  {t('settings.noSettingsAvailable')}
+                </div>
+              )}
+            </Tabs>
+          )}
+        </CardContent>
       </Card>
 
-      {/* 导入导出弹窗 */}
-      <Modal
-        title={t('settings.importExport')}
-        open={importExportVisible}
-        onCancel={() => setImportExportVisible(false)}
-        footer={null}
-        width={600}
-      >
-        <SettingsImportExport onClose={() => setImportExportVisible(false)} />
-      </Modal>
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('settings.resetGroup')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('settings.resetGroupConfirm')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={resetCurrentGroup} className="bg-destructive text-destructive-foreground">
+              {t('common.reset')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={restartDialogOpen} onOpenChange={setRestartDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('settings.restartRequired')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('settings.restartRequiredMessage')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.later')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestart} className="bg-destructive text-destructive-foreground">
+              {t('common.restart')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={importExportVisible} onOpenChange={setImportExportVisible}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('settings.importExport')}</DialogTitle>
+          </DialogHeader>
+          <SettingsImportExport onClose={() => setImportExportVisible(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

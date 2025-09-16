@@ -1,8 +1,7 @@
 import { request } from '@/utils/request'
-import {
+import type {
   SystemSetting,
   SystemSettingGroup,
-  SystemSettingUpdateItem,
   BatchUpdateSystemSettings,
   SystemSettingInput,
   ValidationErrors,
@@ -10,8 +9,6 @@ import {
   EmailTestParams,
   APITestParams,
   SystemStatus,
-  SettingsExport,
-  SettingsImport,
   SettingChangeHistory
 } from '@/types/systemSettings'
 
@@ -274,506 +271,465 @@ export interface GitBranchListDto {
   defaultBranch: string
 }
 
+export interface DocumentCatalogDto {
+  id: string
+  name: string
+  url?: string
+  prompt?: string
+  parentId?: string
+  order: number
+  warehouseId: string
+  isCompleted: boolean
+  createdAt: string
+}
+
+export interface CreateCatalogInput {
+  warehouseId: string
+  name: string
+  url: string
+  prompt: string
+  parentId?: string
+  order: number
+}
+
+export interface TreeNode {
+  title: string
+  key: string
+  isLeaf?: boolean
+  children?: TreeNode[]
+}
+
 // 仓库管理API
-export const warehouseService = {
+export const repositoryService = {
   // 获取仓库列表
-  getWarehouseList: async (page: number = 1, pageSize: number = 10, keyword?: string, status?: string) => {
+  getRepositoryList: async (
+    page: number = 1,
+    pageSize: number = 10,
+    keyword?: string,
+    status?: string,
+    type?: string
+  ) => {
     const params = new URLSearchParams({
       page: page.toString(),
       pageSize: pageSize.toString()
     })
-    if (keyword) {
-      params.append('keyword', keyword)
-    }
-    if (status) {
-      params.append('status', status)
-    }
-    return request.get<PageDto<WarehouseInfo>>(`/api/Warehouse/WarehouseList?${params}`)
+    if (keyword) params.append('keyword', keyword)
+    if (status) params.append('status', status)
+    if (type) params.append('type', type)
+
+    return request.get<PageDto<WarehouseInfo>>(`/api/Repository/RepositoryList?${params}`)
   },
 
   // 获取仓库详情
-  getWarehouse: async (organizationName: string, name: string) => {
-    return request.get<WarehouseInfo>(`/api/Warehouse/${organizationName}/${name}`)
-  },
-
-  // 根据ID获取仓库详情
-  getWarehouseById: async (id: string) => {
-    return request.get<WarehouseInfo>(`/api/Repository/GetRepository?id=${id}`)
-  },
-
-  // 创建Git仓库
-  createGitRepository: async (data: CreateGitRepositoryDto) => {
-    return request.post<WarehouseInfo>('/api/Repository/CreateGitRepository', data)
-  },
-
-  // 更新仓库信息
-  updateRepository: async (id: string, data: UpdateRepositoryDto) => {
-    return request.post<WarehouseInfo>(`/api/Repository/UpdateRepository?id=${id}`, data)
-  },
-
-  // 删除仓库
-  deleteWarehouse: async (id: string) => {
-    return request.post<boolean>(`/api/Repository/DeleteRepository?id=${id}`)
-  },
-
-  // 刷新仓库 (重新处理)
-  refreshWarehouse: async (id: string) => {
-    return request.post<boolean>(`/api/Repository/ResetRepository?id=${id}`)
-  },
-
-  // 批量操作仓库
-  batchOperateRepositories: async (data: BatchOperationDto) => {
-    return request.post<boolean>('/api/Repository/BatchOperate', data)
+  getRepositoryDetail: async (id: string) => {
+    return request.get<WarehouseInfo>(`/api/Repository/Repository?id=${id}`)
   },
 
   // 获取仓库统计信息
   getRepositoryStats: async () => {
-    return request.get<RepositoryStatsDto>('/api/Repository/GetRepositoryStats')
+    return request.get<RepositoryStatsDto>('/api/Warehouse/Stats')
   },
 
-  // 获取仓库权限列表
-  getRepositoryPermissions: async (repositoryId: string) => {
-    return request.get<RepositoryPermissionDto[]>(`/api/Repository/GetRepositoryPermissions?repositoryId=${repositoryId}`)
+  // 创建Git仓库
+  createGitRepository: async (data: CreateGitRepositoryDto) => {
+    return request.post<string>('/api/Repository/GitRepository', data)
   },
 
-  // 设置仓库权限
-  setRepositoryPermissions: async (repositoryId: string, permissions: RepositoryPermissionDto[]) => {
-    return request.post<boolean>(`/api/Repository/SetRepositoryPermissions?repositoryId=${repositoryId}`, permissions)
+  // 更新仓库
+  updateRepository: async (id: string, data: UpdateRepositoryDto) => {
+    return request.post<boolean>(`/api/Repository/Repository?id=${id}`, data)
   },
 
-  // 获取仓库操作日志
-  getRepositoryLogs: async (repositoryId: string, page: number = 1, pageSize: number = 10) => {
+  // 删除仓库
+  deleteRepository: async (id: string) => {
+    return request.delete<boolean>(`/api/Repository/Repository?id=${id}`)
+  },
+
+  // 批量操作仓库
+  batchOperateRepositories: async (data: BatchOperationDto) => {
+    return request.post<boolean>('/api/Warehouse/BatchOperate', data)
+  },
+
+  // 刷新仓库
+  refreshRepository: async (id: string) => {
+    return request.post<boolean>(`/api/Repository/ResetRepository?id=${id}`)
+  },
+
+  // 获取仓库权限
+  getRepositoryPermissions: async (id: string) => {
+    return request.get<RepositoryPermissionDto[]>(`/api/Warehouse/GetPermissions?id=${id}`)
+  },
+
+  // 更新仓库权限
+  updateRepositoryPermissions: async (id: string, permissions: RepositoryPermissionDto[]) => {
+    return request.post<boolean>(`/api/Warehouse/UpdatePermissions?id=${id}`, permissions)
+  },
+
+  // 获取仓库日志
+  getRepositoryLogs: async (
+    id: string,
+    page: number = 1,
+    pageSize: number = 10
+  ) => {
     const params = new URLSearchParams({
-      repositoryId,
+      id,
       page: page.toString(),
       pageSize: pageSize.toString()
     })
-    return request.get<PageDto<RepositoryLogDto>>(`/api/Repository/GetRepositoryLogs?${params}`)
+    return request.get<PageDto<RepositoryLogDto>>(`/api/Warehouse/GetLogs?${params}`)
   },
 
-  // 获取Git仓库分支列表
-  getGitBranches: async (address: string, gitUserName?: string, gitPassword?: string) => {
-    const params = new URLSearchParams({ address })
-    if (gitUserName) params.append('gitUserName', gitUserName)
-    if (gitPassword) params.append('gitPassword', gitPassword)
-    return request.get<GitBranchListDto>(`/api/Warehouse/GetBranchList?${params}`)
+  // 获取Git分支列表
+  getGitBranches: async (address: string) => {
+    return request.get<GitBranchListDto>(`/api/Warehouse/GetGitBranches?address=${encodeURIComponent(address)}`)
   },
 
-  // 导出仓库Markdown
-  exportRepositoryMarkdown: async (repositoryId: string) => {
-    return request.get(`/api/Warehouse/ExportMarkdownZip?warehouseId=${repositoryId}`, {}, {
-      responseType: 'blob'
+  // 获取文档目录树
+  getDocumentTree: async (warehouseId: string) => {
+    return request.get<TreeNode[]>(`/api/Warehouse/GetDocumentTree?warehouseId=${warehouseId}`)
+  },
+
+  // 获取文档目录列表
+  getCatalogList: async (warehouseId: string) => {
+    return request.get<DocumentCatalogDto[]>(`/api/Catalog/GetCatalogs?warehouseId=${warehouseId}`)
+  },
+
+  // 创建文档目录
+  createCatalog: async (data: CreateCatalogInput) => {
+    return request.post<string>('/api/Catalog/CreateCatalog', data)
+  },
+
+  // 更新文档目录
+  updateCatalog: async (catalogId: string, data: Partial<CreateCatalogInput>) => {
+    return request.post<boolean>(`/api/Catalog/UpdateCatalog?id=${catalogId}`, data)
+  },
+
+  // 删除文档目录
+  deleteCatalog: async (catalogId: string) => {
+    return request.post<boolean>(`/api/Catalog/DeleteCatalog?id=${catalogId}`)
+  },
+
+  // 排序文档目录
+  sortCatalogs: async (warehouseId: string, catalogIds: string[]) => {
+    return request.post<boolean>('/api/Catalog/SortCatalogs', {
+      warehouseId,
+      catalogIds
     })
   }
 }
 
-// 统计相关接口
-export interface DashboardStats {
-  totalUsers: number
-  totalRoles: number
-  totalWarehouses: number
-  activeSessions?: number
-  userGrowth?: string
-  warehouseGrowth?: string
-  roleGrowth?: string
-}
-
-// 系统性能数据接口
-export interface SystemPerformance {
-  cpuUsage: number
-  memoryUsage: number
-  diskUsage: number
-  totalMemory: number
-  usedMemory: number
-  totalDiskSpace: number
-  usedDiskSpace: number
-  systemStartTime: string
-  uptimeSeconds: number
-  activeConnections: number
-}
-
-// 仓库状态分布接口
-export interface RepositoryStatusDistribution {
-  status: string
-  count: number
-  percentage: number
-}
-
-// 用户活跃度统计接口
-export interface UserActivityStats {
-  onlineUsers: number
-  dailyActiveUsers: number
-  weeklyActiveUsers: number
-  monthlyActiveUsers: number
-  activeUserGrowthRate: number
-  recentLoginUsers: RecentLoginUser[]
-}
-
-export interface RecentLoginUser {
-  id: string
-  name: string
-  avatar?: string
-  loginTime: string
-  ipAddress?: string
-  isOnline: boolean
-}
-
-// 系统错误日志接口
-export interface SystemErrorLog {
-  id: string
-  level: string
-  message: string
-  source: string
-  userId?: string
-  userName?: string
-  createdAt: string
-  exception?: string
-  path?: string
-  method?: string
-  statusCode?: number
-}
-
-// 健康检查项接口
-export interface HealthCheckItem {
-  name: string
-  status: string
-  isHealthy: boolean
-  responseTime: number
-  error?: string
-  lastCheckTime: string
-}
-
-// 系统健康度检查接口
-export interface SystemHealthCheck {
-  overallScore: number
-  healthLevel: string
-  database: HealthCheckItem
-  aiService: HealthCheckItem
-  emailService: HealthCheckItem
-  fileStorage: HealthCheckItem
-  systemPerformance: HealthCheckItem
-  checkTime: string
-  warnings: string[]
-  errors: string[]
-}
-
-// 趋势数据接口
-export interface TrendData {
-  date: string
-  value: number
-}
-
-// 性能趋势数据接口
-export interface PerformanceTrend {
-  time: string
-  cpuUsage: number
-  memoryUsage: number
-  activeConnections: number
-}
-
-// 仪表板趋势数据接口
-export interface DashboardTrends {
-  userTrends: TrendData[]
-  repositoryTrends: TrendData[]
-  documentTrends: TrendData[]
-  viewTrends: TrendData[]
-  performanceTrends: PerformanceTrend[]
-}
-
-// 热门内容接口
-export interface PopularContent {
-  id: string
-  title: string
-  type: string
-  viewCount: number
-  lastViewAt: string
-}
-
-// 最近仓库信息接口（来自统计服务）
-export interface RecentRepository {
-  id: string
-  name: string
-  organizationName: string
-  description: string
-  createdAt: string
-  status: string
-  isRecommended: boolean
-  documentCount: number
-}
-
-// 最近用户信息接口（来自统计服务）
-export interface RecentUser {
-  id: string
-  name: string
-  email: string
-  createdAt: string
-  lastLoginAt?: string
-  roles: string[]
-  isOnline: boolean
-}
-
-// 完整的仪表板数据接口
-export interface ComprehensiveDashboard {
-  systemStats: {
-    totalUsers: number
-    totalRepositories: number
-    totalDocuments: number
-    totalViews: number
-    monthlyNewUsers: number
-    monthlyNewRepositories: number
-    monthlyNewDocuments: number
-    monthlyViews: number
-    userGrowthRate: number
-    repositoryGrowthRate: number
-    documentGrowthRate: number
-    viewGrowthRate: number
-  }
-  performance: SystemPerformance
-  repositoryStatusDistribution: RepositoryStatusDistribution[]
-  userActivity: UserActivityStats
-  recentRepositories: RecentRepository[]
-  recentUsers: RecentUser[]
-  popularContent: PopularContent[]
-  recentErrors: SystemErrorLog[]
-  healthCheck: SystemHealthCheck
-  trends: DashboardTrends
-}
-
-export const statsService = {
-  // 获取基础仪表板统计数据
-  getDashboardStats: async () => {
-    // 这个接口可能需要后端实现，现在使用聚合数据
-    const [users, roles] = await Promise.all([
-      userService.getUserList(1, 1),
-      roleService.getRoleList(1, 1)
-    ])
-
-    return {
-      totalUsers: users.total,
-      totalRoles: roles.total,
-      totalWarehouses: 0, // 需要后端接口支持
-      activeSessions: 0,
-      userGrowth: '+12%',
-      warehouseGrowth: '+8%',
-      roleGrowth: '0%'
-    } as DashboardStats
-  },
-
-  // 获取完整的仪表板数据
-  getComprehensiveDashboard: async () => {
-    return request.get<ComprehensiveDashboard>('/api/Statistics/ComprehensiveDashboard')
-  },
-
-  // 获取系统统计数据
-  getSystemStatistics: async () => {
-    return request.get('/api/Statistics/SystemStatistics')
-  },
-
-  // 获取系统性能数据
-  getSystemPerformance: async () => {
-    return request.get<SystemPerformance>('/api/Statistics/SystemPerformance')
-  },
-
-  // 获取仓库状态分布
-  getRepositoryStatusDistribution: async () => {
-    return request.get<RepositoryStatusDistribution[]>('/api/Statistics/RepositoryStatusDistribution')
-  },
-
-  // 获取用户活跃度统计
-  getUserActivityStats: async () => {
-    return request.get<UserActivityStats>('/api/Statistics/UserActivityStats')
-  },
-
-  // 获取最近创建的仓库
-  getRecentRepositories: async (count: number = 10) => {
-    return request.get<RecentRepository[]>(`/api/Statistics/RecentRepositories?count=${count}`)
-  },
-
-  // 获取最近注册的用户
-  getRecentUsers: async (count: number = 10) => {
-    return request.get<RecentUser[]>(`/api/Statistics/RecentUsers?count=${count}`)
-  },
-
-  // 获取用户趋势数据
-  getUserTrends: async (days: number = 30) => {
-    return request.get<TrendData[]>(`/api/Statistics/UserTrends?days=${days}`)
-  },
-
-  // 获取仓库趋势数据
-  getRepositoryTrends: async (days: number = 30) => {
-    return request.get<TrendData[]>(`/api/Statistics/RepositoryTrends?days=${days}`)
-  },
-
-  // 获取文档趋势数据
-  getDocumentTrends: async (days: number = 30) => {
-    return request.get<TrendData[]>(`/api/Statistics/DocumentTrends?days=${days}`)
-  },
-
-  // 获取访问量趋势数据
-  getViewTrends: async (days: number = 30) => {
-    return request.get<TrendData[]>(`/api/Statistics/ViewTrends?days=${days}`)
-  },
-
-  // 获取性能趋势数据
-  getPerformanceTrends: async (hours: number = 24) => {
-    return request.get<PerformanceTrend[]>(`/api/Statistics/PerformanceTrends?hours=${hours}`)
-  },
-
-  // 获取热门内容
-  getPopularContent: async (days: number = 7, count: number = 10) => {
-    return request.get<PopularContent[]>(`/api/Statistics/PopularContent?days=${days}&count=${count}`)
-  },
-
-  // 获取最近错误日志
-  getRecentErrorLogs: async (count: number = 10) => {
-    return request.get<SystemErrorLog[]>(`/api/Statistics/RecentErrorLogs?count=${count}`)
-  },
-
-  // 获取系统健康度检查
-  getSystemHealthCheck: async () => {
-    return request.get<SystemHealthCheck>('/api/Statistics/SystemHealthCheck')
-  },
-
-  // 获取详细统计数据
-  getDetailedStatistics: async () => {
-    return request.get<ComprehensiveDashboard>('/api/Statistics/DetailedStatistics')
-  },
-
-  // 记录访问
-  recordAccess: async (resourceType: string, resourceId: string, data?: any) => {
-    return request.post('/api/Statistics/RecordAccess', {
-      resourceType,
-      resourceId,
-      ...data
-    })
-  },
-
-  // 生成每日统计数据
-  generateDailyStatistics: async (date?: string) => {
-    const params = date ? `?date=${date}` : ''
-    return request.post<boolean>(`/api/Statistics/GenerateDailyStatistics${params}`)
-  }
-}
+// 保持向后兼容旧的仓库服务命名
+export const warehouseService = repositoryService
 
 // 系统设置管理API
 export const systemSettingsService = {
   // 获取所有系统设置分组
-  getSettingGroups: async () => {
-    return request.get<SystemSettingGroup[]>('/api/SystemSetting/groups')
+  getSettingGroups: async (): Promise<SystemSettingGroup[]> => {
+    try {
+      const response = await request.get<SystemSettingGroup[]>('/api/SystemSetting/groups')
+      // 确保返回的是数组，并且每个组都有正确的结构
+      if (Array.isArray(response)) {
+        return response.map(group => ({
+          group: group.group || '',
+          settings: Array.isArray(group.settings) ? group.settings : []
+        }))
+      }
+      return []
+    } catch (error) {
+      console.error('Failed to load setting groups:', error)
+      return []
+    }
   },
 
   // 根据分组获取系统设置
-  getSettingsByGroup: async (group: string) => {
-    return request.get<SystemSetting[]>(`/api/SystemSetting/group/${group}`)
+  getSettingsByGroup: async (group: string): Promise<SystemSetting[]> => {
+    try {
+      const response = await request.get<SystemSetting[]>(`/api/SystemSetting/group/${group}`)
+      return Array.isArray(response) ? response : []
+    } catch (error) {
+      console.error(`Failed to load settings for group ${group}:`, error)
+      return []
+    }
   },
 
   // 获取单个系统设置
-  getSetting: async (key: string) => {
-    return request.get<SystemSetting>(`/api/SystemSetting/${key}`)
+  getSetting: async (key: string): Promise<SystemSetting | null> => {
+    try {
+      return await request.get<SystemSetting>(`/api/SystemSetting/${key}`)
+    } catch (error) {
+      console.error(`Failed to load setting ${key}:`, error)
+      return null
+    }
   },
 
   // 更新单个系统设置
-  updateSetting: async (key: string, value?: string) => {
-    return request.put<boolean>(`/api/SystemSetting/${key}`, JSON.stringify(value), {
-      headers: { 'Content-Type': 'application/json' }
-    })
+  updateSetting: async (key: string, value?: string): Promise<boolean> => {
+    try {
+      // 直接发送字符串值，后端期望接收 string 类型的 body
+      return await request.put<boolean>(`/api/SystemSetting/${key}`, value || '', {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    } catch (error) {
+      console.error(`Failed to update setting ${key}:`, error)
+      return false
+    }
   },
 
   // 批量更新系统设置
-  batchUpdateSettings: async (data: BatchUpdateSystemSettings) => {
-    return request.put<boolean>('/api/SystemSetting/batch', data)
+  batchUpdateSettings: async (data: BatchUpdateSystemSettings): Promise<boolean> => {
+    try {
+      return await request.put<boolean>('/api/SystemSetting/batch', data)
+    } catch (error) {
+      console.error('Failed to batch update settings:', error)
+      return false
+    }
   },
 
   // 创建新的系统设置
-  createSetting: async (data: SystemSettingInput) => {
-    return request.post<SystemSetting>('/api/SystemSetting/', data)
+  createSetting: async (data: SystemSettingInput): Promise<SystemSetting | null> => {
+    try {
+      return await request.post<SystemSetting>('/api/SystemSetting/', data)
+    } catch (error) {
+      console.error('Failed to create setting:', error)
+      return null
+    }
   },
 
   // 删除系统设置
-  deleteSetting: async (key: string) => {
-    return request.delete<boolean>(`/api/SystemSetting/${key}`)
+  deleteSetting: async (key: string): Promise<boolean> => {
+    try {
+      return await request.delete<boolean>(`/api/SystemSetting/${key}`)
+    } catch (error) {
+      console.error(`Failed to delete setting ${key}:`, error)
+      return false
+    }
   },
 
   // 重置设置为默认值
-  resetSetting: async (key: string) => {
-    return request.post<boolean>(`/api/SystemSetting/${key}/reset`)
+  resetSetting: async (key: string): Promise<boolean> => {
+    try {
+      return await request.post<boolean>(`/api/SystemSetting/${key}/reset`)
+    } catch (error) {
+      console.error(`Failed to reset setting ${key}:`, error)
+      return false
+    }
   },
 
   // 清空配置缓存
-  clearCache: async () => {
-    return request.post('/api/SystemSetting/cache/clear')
+  clearCache: async (): Promise<void> => {
+    try {
+      await request.post('/api/SystemSetting/cache/clear')
+    } catch (error) {
+      console.error('Failed to clear cache:', error)
+    }
   },
 
   // 获取需要重启的设置项
-  getRestartRequiredSettings: async () => {
-    return request.get<string[]>('/api/SystemSetting/restart-required')
+  getRestartRequiredSettings: async (): Promise<string[]> => {
+    try {
+      const response = await request.get<string[]>('/api/SystemSetting/restart-required')
+      return Array.isArray(response) ? response : []
+    } catch (error) {
+      console.error('Failed to load restart required settings:', error)
+      return []
+    }
   },
 
   // 导出系统设置
-  exportSettings: async () => {
-    return request.get<SystemSetting[]>('/api/SystemSetting/export')
+  exportSettings: async (): Promise<SystemSetting[]> => {
+    try {
+      const response = await request.get<SystemSetting[]>('/api/SystemSetting/export')
+      return Array.isArray(response) ? response : []
+    } catch (error) {
+      console.error('Failed to export settings:', error)
+      return []
+    }
   },
 
   // 验证配置值的有效性
-  validateSettings: async (data: BatchUpdateSystemSettings) => {
-    return request.post<ValidationErrors>('/api/SystemSetting/validate', data)
+  validateSettings: async (data: BatchUpdateSystemSettings): Promise<ValidationErrors> => {
+    try {
+      const response = await request.post<ValidationErrors>('/api/SystemSetting/validate', data)
+      return response || {}
+    } catch (error) {
+      console.error('Failed to validate settings:', error)
+      return {}
+    }
   },
 
   // 测试邮件配置
-  testEmailSettings: async (params: EmailTestParams) => {
-    return request.post<SettingTestResult>('/api/SystemSetting/test/email', params)
+  testEmailSettings: async (params: EmailTestParams): Promise<SettingTestResult | null> => {
+    try {
+      return await request.post<SettingTestResult>('/api/SystemSetting/test/email', params)
+    } catch (error) {
+      console.error('Failed to test email settings:', error)
+      return null
+    }
   },
 
   // 测试AI API配置
-  testAISettings: async (params: APITestParams) => {
-    return request.post<SettingTestResult>('/api/SystemSetting/test/ai', params)
+  testAISettings: async (params: APITestParams): Promise<SettingTestResult | null> => {
+    try {
+      return await request.post<SettingTestResult>('/api/SystemSetting/test/ai', params)
+    } catch (error) {
+      console.error('Failed to test AI settings:', error)
+      return null
+    }
   },
 
   // 测试数据库连接
-  testDatabaseConnection: async () => {
-    return request.post<SettingTestResult>('/api/SystemSetting/test/database')
+  testDatabaseConnection: async (): Promise<SettingTestResult | null> => {
+    try {
+      return await request.post<SettingTestResult>('/api/SystemSetting/test/database')
+    } catch (error) {
+      console.error('Failed to test database connection:', error)
+      return null
+    }
   },
 
-  // 获取系统状态
-  getSystemStatus: async () => {
-    return request.get<SystemStatus>('/api/SystemSetting/status')
-  },
+  // 获取系统状态 - 移除此方法因为后端不提供
+  // getSystemStatus 已被移除
 
   // 获取设置变更历史
-  getChangeHistory: async (settingKey?: string, page: number = 1, pageSize: number = 20) => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      pageSize: pageSize.toString()
-    })
-    if (settingKey) {
-      params.append('settingKey', settingKey)
+  getChangeHistory: async (settingKey?: string, page: number = 1, pageSize: number = 20): Promise<PageDto<SettingChangeHistory>> => {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString()
+      })
+      if (settingKey) {
+        params.append('settingKey', settingKey)
+      }
+      const response = await request.get<PageDto<SettingChangeHistory>>(`/api/SystemSetting/history?${params}`)
+      return response || { total: 0, items: [] }
+    } catch (error) {
+      console.error('Failed to load change history:', error)
+      return { total: 0, items: [] }
     }
-    return request.get<PageDto<SettingChangeHistory>>(`/api/SystemSetting/history?${params}`)
   },
 
   // 回滚设置到指定版本
-  rollbackSetting: async (historyId: string) => {
-    return request.post<boolean>(`/api/SystemSetting/rollback/${historyId}`)
-  },
-
-  // 导入设置
-  importSettings: async (file: File, overwriteExisting: boolean = false, selectedGroups?: string[]) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('overwriteExisting', overwriteExisting.toString())
-    if (selectedGroups && selectedGroups.length > 0) {
-      formData.append('selectedGroups', JSON.stringify(selectedGroups))
+  rollbackSetting: async (historyId: string): Promise<boolean> => {
+    try {
+      return await request.post<boolean>(`/api/SystemSetting/rollback/${historyId}`)
+    } catch (error) {
+      console.error(`Failed to rollback setting ${historyId}:`, error)
+      return false
     }
-    return request.post<boolean>('/api/SystemSetting/import', formData)
   },
 
-  // 获取配置模板
-  getSettingTemplate: async (group: string) => {
-    return request.get<SystemSetting[]>(`/api/SystemSetting/template/${group}`)
-  },
+  // 重启系统 - 后端不提供此功能
+  restartSystem: async (): Promise<boolean> => {
+    console.warn('System restart is not available')
+    return false
+  }
+}
 
-  // 重启系统服务
-  restartSystem: async () => {
-    return request.post<boolean>('/api/SystemSetting/restart')
+// 统计数据接口
+export interface ComprehensiveDashboard {
+  userStats: {
+    totalUsers: number
+    activeUsers: number
+    newUsersToday: number
+    userGrowth: number
+  }
+  repositoryStats: {
+    totalRepositories: number
+    activeRepositories: number
+    newRepositoriesToday: number
+    repositoryGrowth: number
+  }
+  documentStats: {
+    totalDocuments: number
+    processedDocuments: number
+    newDocumentsToday: number
+    documentGrowth: number
+  }
+  systemStats: {
+    cpuUsage: number
+    memoryUsage: number
+    diskUsage: number
+    uptime: string
+  }
+  recentActivities: Array<{
+    id: string
+    type: string
+    description: string
+    user: string
+    timestamp: string
+  }>
+  topRepositories: Array<{
+    id: string
+    name: string
+    documentCount: number
+    lastActivity: string
+  }>
+}
+
+// 统计数据管理API
+export const statsService = {
+  // 获取综合仪表板数据
+  getComprehensiveDashboard: async (): Promise<ComprehensiveDashboard> => {
+    try {
+      const response = await request.get<ComprehensiveDashboard>('/api/stats/dashboard')
+      return response || {
+        userStats: {
+          totalUsers: 0,
+          activeUsers: 0,
+          newUsersToday: 0,
+          userGrowth: 0
+        },
+        repositoryStats: {
+          totalRepositories: 0,
+          activeRepositories: 0,
+          newRepositoriesToday: 0,
+          repositoryGrowth: 0
+        },
+        documentStats: {
+          totalDocuments: 0,
+          processedDocuments: 0,
+          newDocumentsToday: 0,
+          documentGrowth: 0
+        },
+        systemStats: {
+          cpuUsage: 0,
+          memoryUsage: 0,
+          diskUsage: 0,
+          uptime: '0d 0h 0m'
+        },
+        recentActivities: [],
+        topRepositories: []
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error)
+      return {
+        userStats: {
+          totalUsers: 0,
+          activeUsers: 0,
+          newUsersToday: 0,
+          userGrowth: 0
+        },
+        repositoryStats: {
+          totalRepositories: 0,
+          activeRepositories: 0,
+          newRepositoriesToday: 0,
+          repositoryGrowth: 0
+        },
+        documentStats: {
+          totalDocuments: 0,
+          processedDocuments: 0,
+          newDocumentsToday: 0,
+          documentGrowth: 0
+        },
+        systemStats: {
+          cpuUsage: 0,
+          memoryUsage: 0,
+          diskUsage: 0,
+          uptime: '0d 0h 0m'
+        },
+        recentActivities: [],
+        topRepositories: []
+      }
+    }
   }
 }

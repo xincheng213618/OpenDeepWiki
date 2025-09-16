@@ -19,8 +19,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  DialogTitle
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -46,17 +45,13 @@ import {
   Edit,
   Trash2,
   Copy,
-  ExternalLink,
   Settings,
   Globe,
   Key,
-  Loader2,
-  CheckCircle,
-  XCircle
+  Loader2
 } from 'lucide-react'
 import { appConfigService } from '@/services/appConfigService'
-import { warehouseService } from '@/services/warehouse.service'
-import type { AppConfigOutput, AppConfigInput, Warehouse } from '@/types'
+import type { AppConfigOutput, AppConfigInput } from '@/types'
 
 export const AppManagement: React.FC = () => {
   const toast = (opts: { title: string; description?: string; variant?: 'destructive' | string }) => {
@@ -67,7 +62,6 @@ export const AppManagement: React.FC = () => {
     }
   }
   const [apps, setApps] = useState<AppConfigOutput[]>([])
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([])
   const [loading, setLoading] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -106,21 +100,9 @@ export const AppManagement: React.FC = () => {
     }
   }
 
-  // 加载仓库列表
-  const loadWarehouses = async () => {
-    try {
-      const response = await warehouseService.getWarehouseList(1, 100)
-      if (response.items) {
-        setWarehouses(response.items)
-      }
-    } catch (error) {
-      console.error('Failed to load warehouses:', error)
-    }
-  }
 
   useEffect(() => {
     loadApps()
-    loadWarehouses()
   }, [])
 
   // 生成应用ID

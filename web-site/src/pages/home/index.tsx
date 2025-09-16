@@ -1,6 +1,6 @@
 // 首页组件
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Header } from '@/components/layout/Header'
 import { SearchBar } from '@/components/SearchBar'

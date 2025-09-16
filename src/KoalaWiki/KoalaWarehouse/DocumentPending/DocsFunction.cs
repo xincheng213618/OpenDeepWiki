@@ -44,9 +44,14 @@ public class DocsFunction
         [Description("The number of lines to read. Only provide if the file is too large to read at once.")]
         int limit = 2000)
     {
-        var lines = Content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
-        if (offset < 0 || offset >= lines.Length)
+        if (string.IsNullOrEmpty(Content))
+        {
+            return  "<system-reminder>Content cannot be empty.</system-reminder>";
+        }
+        
+        var lines = Content?.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+        
+        if (offset < 0 || offset >= lines?.Length)
         {
             // 读取所有
             return string.Join("\n", lines);

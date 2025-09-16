@@ -13,7 +13,6 @@ import {
   Save,
   Camera,
   CheckCircle,
-  Upload,
   Loader2,
   Mail,
   Bell,
@@ -294,12 +293,6 @@ export default function SettingsPage() {
         toast.success('头像删除成功')
         
         if (userInfo) {
-          const updateData: UpdateProfileRequest = {
-            name: userInfo.name,
-            email: userInfo.email,
-            avatar: '',
-          }
-          
           const updatedUser = { ...userInfo, avatar: '' }
           setUserInfo(updatedUser)
         }

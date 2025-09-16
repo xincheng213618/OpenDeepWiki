@@ -1,32 +1,31 @@
 import React, { useState } from 'react'
 import {
-  Form,
-  Input,
-  InputNumber,
-  Switch,
-  Button,
-  Space,
-  Row,
-  Col,
-  Card,
-  Typography,
-  message,
-  Modal,
-  Alert
-} from 'antd'
-import {
-  MailOutlined,
-  SendOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  InfoCircleOutlined
-} from '@ant-design/icons'
+  Mail,
+  Send,
+  CheckCircle,
+  AlertTriangle,
+  Info
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { systemSettingsService } from '@/services/admin.service'
 import type { SystemSetting, ValidationErrors, EmailTestParams } from '@/types/systemSettings'
 
-const { Title, Text, Paragraph } = Typography
-const { TextArea } = Input
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { useToast } from '@/hooks/useToast'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface EmailSettingsTabProps {
   settings: SystemSetting[]
@@ -42,6 +41,7 @@ const EmailSettingsTab: React.FC<EmailSettingsTabProps> = ({
   loading = false
 }) => {
   const { t } = useTranslation()
+  const { toast } = useToast()
   const [testModalVisible, setTestModalVisible] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testEmail, setTestEmail] = useState('')
@@ -69,7 +69,10 @@ const EmailSettingsTab: React.FC<EmailSettingsTabProps> = ({
   // 测试邮件配置
   const testEmailSettings = async () => {
     if (!testEmail) {
-      message.warning(t('settings.email.testEmailRequired'))
+      toast({
+        title: t('settings.email.testEmailRequired'),
+        variant: 'destructive',
+      })
       return
     }
 
@@ -85,301 +88,331 @@ const EmailSettingsTab: React.FC<EmailSettingsTabProps> = ({
       const result = await systemSettingsService.testEmailSettings(params)
 
       if (result.success) {
-        message.success(t('settings.email.testSuccess'))
+        toast({
+          title: t('settings.email.testSuccess'),
+        })
         setTestModalVisible(false)
       } else {
-        message.error(result.message || t('settings.email.testFailed'))
+        toast({
+          title: result.message || t('settings.email.testFailed'),
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('Email test failed:', error)
-      message.error(t('settings.email.testFailed'))
+      toast({
+        title: t('settings.email.testFailed'),
+        variant: 'destructive',
+      })
     } finally {
       setTesting(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: '800px' }}>
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div className="max-w-4xl space-y-6">
+      <div className="flex justify-between items-start">
         <div>
-          <Title level={4} style={{ marginBottom: '8px' }}>
-            {t('settings.groups.email')}
-          </Title>
-          <Text type="secondary">
+          <h3 className="text-lg font-semibold">{t('settings.groups.email')}</h3>
+          <p className="text-sm text-muted-foreground mt-2">
             {t('settings.emailDescription')}
-          </Text>
+          </p>
         </div>
         <Button
-          type="primary"
-          icon={<SendOutlined />}
           onClick={() => setTestModalVisible(true)}
           disabled={loading}
         >
+          <Send className="w-4 h-4 mr-2" />
           {t('settings.email.testConnection')}
         </Button>
       </div>
 
-      <Alert
-        message={t('settings.email.securityNote')}
-        description={t('settings.email.securityNoteDescription')}
-        type="info"
-        showIcon
-        icon={<InfoCircleOutlined />}
-        style={{ marginBottom: '24px' }}
-      />
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>{t('settings.email.securityNote')}</AlertTitle>
+        <AlertDescription>
+          {t('settings.email.securityNoteDescription')}
+        </AlertDescription>
+      </Alert>
 
-      <Form layout="vertical" disabled={loading}>
-        <Row gutter={[24, 16]}>
-          {/* SMTP服务器 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.email.smtpHost')}
-              validateStatus={validationErrors.smtpHost ? 'error' : ''}
-              help={validationErrors.smtpHost}
-              required
-            >
-              <Input
-                value={getSettingValue('smtpHost')}
-                onChange={(e) => onUpdate('smtpHost', e.target.value)}
-                placeholder={t('settings.email.smtpHostPlaceholder')}
-                size="large"
-              />
-            </Form.Item>
-          </Col>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* SMTP服务器 */}
+        <div className="space-y-2">
+          <Label htmlFor="smtpHost">{t('settings.email.smtpHost')} *</Label>
+          <Input
+            id="smtpHost"
+            value={getSettingValue('smtpHost')}
+            onChange={(e) => onUpdate('smtpHost', e.target.value)}
+            placeholder={t('settings.email.smtpHostPlaceholder')}
+            disabled={loading}
+            className={validationErrors.smtpHost ? 'border-destructive' : ''}
+          />
+          {validationErrors.smtpHost && (
+            <p className="text-sm text-destructive">{validationErrors.smtpHost}</p>
+          )}
+        </div>
 
-          {/* SMTP端口 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.email.smtpPort')}
-              validateStatus={validationErrors.smtpPort ? 'error' : ''}
-              help={validationErrors.smtpPort}
-              required
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                value={getNumberValue('smtpPort')}
-                onChange={(value) => onUpdate('smtpPort', value?.toString() || '')}
-                placeholder={t('settings.email.smtpPortPlaceholder')}
-                min={1}
-                max={65535}
-                size="large"
-              />
-            </Form.Item>
-          </Col>
+        {/* SMTP端口 */}
+        <div className="space-y-2">
+          <Label htmlFor="smtpPort">{t('settings.email.smtpPort')} *</Label>
+          <Input
+            id="smtpPort"
+            type="number"
+            value={getNumberValue('smtpPort') || ''}
+            onChange={(e) => onUpdate('smtpPort', e.target.value)}
+            placeholder={t('settings.email.smtpPortPlaceholder')}
+            min={1}
+            max={65535}
+            disabled={loading}
+            className={validationErrors.smtpPort ? 'border-destructive' : ''}
+          />
+          {validationErrors.smtpPort && (
+            <p className="text-sm text-destructive">{validationErrors.smtpPort}</p>
+          )}
+        </div>
 
-          {/* SMTP用户名 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.email.smtpUser')}
-              validateStatus={validationErrors.smtpUser ? 'error' : ''}
-              help={validationErrors.smtpUser}
-              required
-            >
-              <Input
-                value={getSettingValue('smtpUser')}
-                onChange={(e) => onUpdate('smtpUser', e.target.value)}
-                placeholder={t('settings.email.smtpUserPlaceholder')}
-                size="large"
-              />
-            </Form.Item>
-          </Col>
+        {/* SMTP用户名 */}
+        <div className="space-y-2">
+          <Label htmlFor="smtpUser">{t('settings.email.smtpUser')} *</Label>
+          <Input
+            id="smtpUser"
+            value={getSettingValue('smtpUser')}
+            onChange={(e) => onUpdate('smtpUser', e.target.value)}
+            placeholder={t('settings.email.smtpUserPlaceholder')}
+            disabled={loading}
+            className={validationErrors.smtpUser ? 'border-destructive' : ''}
+          />
+          {validationErrors.smtpUser && (
+            <p className="text-sm text-destructive">{validationErrors.smtpUser}</p>
+          )}
+        </div>
 
-          {/* SMTP密码 */}
-          <Col span={12}>
-            <Form.Item
-              label={t('settings.email.smtpPassword')}
-              validateStatus={validationErrors.smtpPassword ? 'error' : ''}
-              help={validationErrors.smtpPassword}
-              required
-            >
-              <Input.Password
-                value={getSettingValue('smtpPassword')}
-                onChange={(e) => onUpdate('smtpPassword', e.target.value)}
-                placeholder={t('settings.email.smtpPasswordPlaceholder')}
-                size="large"
-              />
-            </Form.Item>
-          </Col>
+        {/* SMTP密码 */}
+        <div className="space-y-2">
+          <Label htmlFor="smtpPassword">{t('settings.email.smtpPassword')} *</Label>
+          <Input
+            id="smtpPassword"
+            type="password"
+            value={getSettingValue('smtpPassword')}
+            onChange={(e) => onUpdate('smtpPassword', e.target.value)}
+            placeholder={t('settings.email.smtpPasswordPlaceholder')}
+            disabled={loading}
+            className={validationErrors.smtpPassword ? 'border-destructive' : ''}
+          />
+          {validationErrors.smtpPassword && (
+            <p className="text-sm text-destructive">{validationErrors.smtpPassword}</p>
+          )}
+        </div>
 
-          {/* SSL/TLS设置 */}
-          <Col span={24}>
-            <Card size="small" title={t('settings.email.securitySettings')}>
-              <Row gutter={[24, 16]}>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.email.enableSsl')}
-                    help={t('settings.email.enableSslHelp')}
-                  >
-                    <Switch
-                      checked={getBooleanValue('smtpEnableSsl')}
-                      onChange={(checked) => onUpdate('smtpEnableSsl', checked.toString())}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.email.enableTls')}
-                    help={t('settings.email.enableTlsHelp')}
-                  >
-                    <Switch
-                      checked={getBooleanValue('smtpEnableTls')}
-                      onChange={(checked) => onUpdate('smtpEnableTls', checked.toString())}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
+        {/* SSL/TLS设置 */}
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t('settings.email.securitySettings')}</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t('settings.email.enableSsl')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('settings.email.enableSslHelp')}
+                  </p>
+                </div>
+                <Switch
+                  checked={getBooleanValue('smtpEnableSsl')}
+                  onCheckedChange={(checked) => onUpdate('smtpEnableSsl', checked.toString())}
+                  disabled={loading}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t('settings.email.enableTls')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('settings.email.enableTlsHelp')}
+                  </p>
+                </div>
+                <Switch
+                  checked={getBooleanValue('smtpEnableTls')}
+                  onCheckedChange={(checked) => onUpdate('smtpEnableTls', checked.toString())}
+                  disabled={loading}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* 发件人信息 */}
-          <Col span={24}>
-            <Card size="small" title={t('settings.email.senderInfo')}>
-              <Row gutter={[24, 16]}>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.email.senderName')}
-                    validateStatus={validationErrors.senderName ? 'error' : ''}
-                    help={validationErrors.senderName}
-                  >
-                    <Input
-                      value={getSettingValue('senderName')}
-                      onChange={(e) => onUpdate('senderName', e.target.value)}
-                      placeholder={t('settings.email.senderNamePlaceholder')}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.email.senderEmail')}
-                    validateStatus={validationErrors.senderEmail ? 'error' : ''}
-                    help={validationErrors.senderEmail}
-                  >
-                    <Input
-                      type="email"
-                      value={getSettingValue('senderEmail')}
-                      onChange={(e) => onUpdate('senderEmail', e.target.value)}
-                      placeholder={t('settings.email.senderEmailPlaceholder')}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.email.replyToEmail')}
-                    validateStatus={validationErrors.replyToEmail ? 'error' : ''}
-                    help={validationErrors.replyToEmail}
-                  >
-                    <Input
-                      type="email"
-                      value={getSettingValue('replyToEmail')}
-                      onChange={(e) => onUpdate('replyToEmail', e.target.value)}
-                      placeholder={t('settings.email.replyToEmailPlaceholder')}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('settings.email.maxEmailsPerHour')}
-                    validateStatus={validationErrors.maxEmailsPerHour ? 'error' : ''}
-                    help={validationErrors.maxEmailsPerHour || t('settings.email.maxEmailsPerHourHelp')}
-                  >
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      value={getNumberValue('maxEmailsPerHour')}
-                      onChange={(value) => onUpdate('maxEmailsPerHour', value?.toString() || '')}
-                      placeholder="100"
-                      min={1}
-                      max={10000}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
+        {/* 发件人信息 */}
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t('settings.email.senderInfo')}</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="senderName">{t('settings.email.senderName')}</Label>
+                <Input
+                  id="senderName"
+                  value={getSettingValue('senderName')}
+                  onChange={(e) => onUpdate('senderName', e.target.value)}
+                  placeholder={t('settings.email.senderNamePlaceholder')}
+                  disabled={loading}
+                  className={validationErrors.senderName ? 'border-destructive' : ''}
+                />
+                {validationErrors.senderName && (
+                  <p className="text-sm text-destructive">{validationErrors.senderName}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="senderEmail">{t('settings.email.senderEmail')}</Label>
+                <Input
+                  id="senderEmail"
+                  type="email"
+                  value={getSettingValue('senderEmail')}
+                  onChange={(e) => onUpdate('senderEmail', e.target.value)}
+                  placeholder={t('settings.email.senderEmailPlaceholder')}
+                  disabled={loading}
+                  className={validationErrors.senderEmail ? 'border-destructive' : ''}
+                />
+                {validationErrors.senderEmail && (
+                  <p className="text-sm text-destructive">{validationErrors.senderEmail}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="replyToEmail">{t('settings.email.replyToEmail')}</Label>
+                <Input
+                  id="replyToEmail"
+                  type="email"
+                  value={getSettingValue('replyToEmail')}
+                  onChange={(e) => onUpdate('replyToEmail', e.target.value)}
+                  placeholder={t('settings.email.replyToEmailPlaceholder')}
+                  disabled={loading}
+                  className={validationErrors.replyToEmail ? 'border-destructive' : ''}
+                />
+                {validationErrors.replyToEmail && (
+                  <p className="text-sm text-destructive">{validationErrors.replyToEmail}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxEmailsPerHour">{t('settings.email.maxEmailsPerHour')}</Label>
+                <Input
+                  id="maxEmailsPerHour"
+                  type="number"
+                  value={getNumberValue('maxEmailsPerHour') || ''}
+                  onChange={(e) => onUpdate('maxEmailsPerHour', e.target.value)}
+                  placeholder="100"
+                  min={1}
+                  max={10000}
+                  disabled={loading}
+                  className={validationErrors.maxEmailsPerHour ? 'border-destructive' : ''}
+                />
+                {validationErrors.maxEmailsPerHour ? (
+                  <p className="text-sm text-destructive">{validationErrors.maxEmailsPerHour}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('settings.email.maxEmailsPerHourHelp')}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* 邮件模板 */}
-          <Col span={24}>
-            <Form.Item
-              label={t('settings.email.emailTemplate')}
-              validateStatus={validationErrors.emailTemplate ? 'error' : ''}
-              help={validationErrors.emailTemplate || t('settings.email.emailTemplateHelp')}
-            >
-              <TextArea
-                rows={8}
-                value={getSettingValue('emailTemplate')}
-                onChange={(e) => onUpdate('emailTemplate', e.target.value)}
-                placeholder={t('settings.email.emailTemplatePlaceholder')}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form>
+        {/* 邮件模板 */}
+        <div className="md:col-span-2 space-y-2">
+          <Label htmlFor="emailTemplate">{t('settings.email.emailTemplate')}</Label>
+          <Textarea
+            id="emailTemplate"
+            rows={8}
+            value={getSettingValue('emailTemplate')}
+            onChange={(e) => onUpdate('emailTemplate', e.target.value)}
+            placeholder={t('settings.email.emailTemplatePlaceholder')}
+            disabled={loading}
+            className={validationErrors.emailTemplate ? 'border-destructive' : ''}
+          />
+          {validationErrors.emailTemplate ? (
+            <p className="text-sm text-destructive">{validationErrors.emailTemplate}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('settings.email.emailTemplateHelp')}</p>
+          )}
+        </div>
+      </div>
 
       {/* 测试邮件弹窗 */}
-      <Modal
-        title={
-          <Space>
-            <MailOutlined />
-            {t('settings.email.testEmailSettings')}
-          </Space>
-        }
-        open={testModalVisible}
-        onCancel={() => setTestModalVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setTestModalVisible(false)}>
-            {t('common.cancel')}
-          </Button>,
-          <Button
-            key="test"
-            type="primary"
-            icon={<SendOutlined />}
-            loading={testing}
-            onClick={testEmailSettings}
-          >
-            {t('settings.email.sendTestEmail')}
-          </Button>
-        ]}
-        width={600}
-      >
-        <Form layout="vertical">
-          <Form.Item
-            label={t('settings.email.testEmailAddress')}
-            required
-          >
-            <Input
-              type="email"
-              value={testEmail}
-              onChange={(e) => setTestEmail(e.target.value)}
-              placeholder={t('settings.email.testEmailPlaceholder')}
-              size="large"
-            />
-          </Form.Item>
+      <Dialog open={testModalVisible} onOpenChange={setTestModalVisible}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              {t('settings.email.testEmailSettings')}
+            </DialogTitle>
+          </DialogHeader>
 
-          <Form.Item label={t('settings.email.testSubject')}>
-            <Input
-              value={testSubject}
-              onChange={(e) => setTestSubject(e.target.value)}
-              placeholder={t('settings.email.defaultTestSubject')}
-            />
-          </Form.Item>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="testEmail">{t('settings.email.testEmailAddress')} *</Label>
+              <Input
+                id="testEmail"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder={t('settings.email.testEmailPlaceholder')}
+              />
+            </div>
 
-          <Form.Item label={t('settings.email.testBody')}>
-            <TextArea
-              rows={4}
-              value={testBody}
-              onChange={(e) => setTestBody(e.target.value)}
-              placeholder={t('settings.email.defaultTestBody')}
-            />
-          </Form.Item>
-        </Form>
+            <div className="space-y-2">
+              <Label htmlFor="testSubject">{t('settings.email.testSubject')}</Label>
+              <Input
+                id="testSubject"
+                value={testSubject}
+                onChange={(e) => setTestSubject(e.target.value)}
+                placeholder={t('settings.email.defaultTestSubject')}
+              />
+            </div>
 
-        <Alert
-          message={t('settings.email.testNote')}
-          description={t('settings.email.testNoteDescription')}
-          type="info"
-          showIcon
-          style={{ marginTop: '16px' }}
-        />
-      </Modal>
+            <div className="space-y-2">
+              <Label htmlFor="testBody">{t('settings.email.testBody')}</Label>
+              <Textarea
+                id="testBody"
+                rows={4}
+                value={testBody}
+                onChange={(e) => setTestBody(e.target.value)}
+                placeholder={t('settings.email.defaultTestBody')}
+              />
+            </div>
+
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>{t('settings.email.testNote')}</AlertTitle>
+              <AlertDescription>
+                {t('settings.email.testNoteDescription')}
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTestModalVisible(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={testEmailSettings}
+              disabled={testing}
+            >
+              {testing ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  {t('settings.email.sending')}
+                </div>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  {t('settings.email.sendTestEmail')}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

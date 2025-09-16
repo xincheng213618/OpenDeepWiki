@@ -1,9 +1,8 @@
 // 仓库状态管理Store
 
 import { create } from 'zustand'
-import { repositoryService } from '@/services/repository.service'
 import { warehouseService } from '@/services/warehouse.service'
-import type { RepositoryInfo, PageDto, RepositoryListParams } from '@/types/repository'
+import type { RepositoryInfo,  RepositoryListParams } from '@/types/repository'
 
 interface RepositoryState {
   // 状态
