@@ -229,9 +229,12 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
-            # 从Directory.Packages.props文件中提取版本号
-            version=$(powershell -Command "[xml]\$xml = Get-Content 'Directory.Packages.props'; \$xml.Project.PropertyGroup.Version")
-            echo "version=v$version" >> $GITHUB_OUTPUT
+            # 从Directory.Packages.props文件中提取版本号并解析MSBuild变量
+            VERSION_TEMPLATE=$(grep -oP '(?<=<Version>)[^<]*' Directory.Packages.props)
+            VERSION_SUFFIX=$(grep -oP '(?<=<VersionSuffix>)[^<]*' Directory.Packages.props)
+            VERSION=$(echo "$VERSION_TEMPLATE" | sed "s/\$(VersionSuffix)/$VERSION_SUFFIX/g")
+            echo "version=v$VERSION" >> $GITHUB_OUTPUT
+            echo "Extracted version: $VERSION"
           fi
         shell: bash
       
