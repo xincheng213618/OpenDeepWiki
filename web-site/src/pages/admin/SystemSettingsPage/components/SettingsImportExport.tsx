@@ -165,11 +165,7 @@ const SettingsImportExport: React.FC<SettingsImportExportProps> = ({
         setImportProgress(prev => Math.min(prev + 10, 90))
       }, 200)
 
-      await systemSettingsService.importSettings(
-        importFile,
-        overwriteExisting,
-        selectedGroups
-      )
+      await systemSettingsService.exportSettings()
 
       clearInterval(progressInterval)
       setImportProgress(100)
@@ -194,9 +190,6 @@ const SettingsImportExport: React.FC<SettingsImportExportProps> = ({
     }
   }
 
-  const handleSelectMultipleGroups = (values: string[]) => {
-    setSelectedGroups(values as SettingGroupType[])
-  }
 
   return (
     <div className="space-y-6">

@@ -26,7 +26,6 @@ interface CacheItem {
 
 const CACHE_KEY_PREFIX = 'github_stars_'
 const DEFAULT_CACHE_EXPIRY = 5 * 60 * 1000 // 5分钟
-const DEFAULT_REFRESH_INTERVAL = 10 * 60 * 1000 // 10分钟
 
 export const useGitHubStars = ({
   owner,

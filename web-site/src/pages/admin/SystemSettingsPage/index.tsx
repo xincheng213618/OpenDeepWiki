@@ -4,10 +4,7 @@ import {
   Save,
   RefreshCw,
   Import,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Info
+  AlertTriangle
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { systemSettingsService } from '@/services/admin.service'
@@ -18,12 +15,11 @@ import type {
   ValidationErrors
 } from '@/types/systemSettings'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/useToast'
 import {
   AlertDialog,
@@ -38,7 +34,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'

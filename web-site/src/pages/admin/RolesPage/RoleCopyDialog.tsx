@@ -1,7 +1,6 @@
 // 角色复制对话框组件
 
 import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   Dialog,
   DialogContent,
@@ -19,8 +18,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Copy, Users, Shield } from 'lucide-react'
-import { roleService, RoleInfo, CreateRoleDto } from '@/services/admin.service'
+import { Copy,  Shield } from 'lucide-react'
+import { roleService, type RoleInfo, type CreateRoleDto } from '@/services/admin.service'
 import { request } from '@/utils/request'
 
 interface RoleCopyDialogProps {
@@ -36,7 +35,6 @@ const RoleCopyDialog: React.FC<RoleCopyDialogProps> = ({
   sourceRole,
   onSuccess
 }) => {
-  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',

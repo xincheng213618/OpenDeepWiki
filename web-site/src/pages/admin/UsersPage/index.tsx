@@ -31,8 +31,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Search, Plus, MoreHorizontal, Edit, Trash2, UserPlus, Filter, Key, Users } from 'lucide-react'
-import { userService, roleService, UserInfo, RoleInfo } from '@/services/admin.service'
+import { Search, Plus, MoreHorizontal, Edit, Trash2, UserPlus, Filter, Key } from 'lucide-react'
+import { userService, roleService, type UserInfo, type RoleInfo } from '@/services/admin.service'
 import { toast } from 'sonner'
 import UserDialog from '@/components/admin/UserDialog'
 import UserRoleDialog from '@/components/admin/UserRoleDialog'
@@ -62,7 +62,7 @@ const UsersPage: React.FC = () => {
   const loadUsers = async () => {
     try {
       setLoading(true)
-      const response = await userService.getUserList(currentPage, pageSize, searchQuery || undefined)
+      const response = await userService.getUserList(currentPage, pageSize, searchQuery || undefined)as any
       // 处理嵌套的data结构
       const data = response.data || response
       setUsers(data.items || [])
@@ -80,7 +80,7 @@ const UsersPage: React.FC = () => {
   // 加载角色列表
   const loadRoles = async () => {
     try {
-      const response = await roleService.getAllRoles()
+      const response = await roleService.getAllRoles() as any
       // 确保 response 是数组
       const rolesData = Array.isArray(response) ? response : (response?.data || [])
       setRoles(rolesData)

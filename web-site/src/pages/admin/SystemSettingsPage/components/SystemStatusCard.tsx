@@ -30,63 +30,6 @@ interface SystemStatusCardProps {
   className?: string
 }
 
-interface CircularProgressProps {
-  value: number
-  label: string
-  sublabel: string
-  thresholds: {
-    high: number
-    medium: number
-  }
-}
-
-const CircularProgress: React.FC<CircularProgressProps> = ({ value, label, sublabel, thresholds }) => {
-  const radius = 40
-  const strokeWidth = 8
-  const circumference = 2 * Math.PI * radius
-  const safeValue = value || 0
-  const offset = circumference - (safeValue / 100) * circumference
-
-  const getColor = () => {
-    if (safeValue > thresholds.high) return '#ef4444'
-    if (safeValue > thresholds.medium) return '#f97316'
-    return '#22c55e'
-  }
-
-  return (
-    <div className="flex flex-col items-center">
-      <svg width="100" height="100" className="transform -rotate-90">
-        <circle
-          cx="50"
-          cy="50"
-          r={radius}
-          stroke="currentColor"
-          strokeWidth={strokeWidth}
-          fill="none"
-          className="text-muted-foreground/20"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r={radius}
-          stroke={getColor()}
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className="transition-all duration-500 ease-in-out"
-        />
-      </svg>
-      <div className="text-center mt-2">
-        <div className="text-2xl font-bold">{safeValue}%</div>
-        <div className="text-sm text-muted-foreground">{label}</div>
-        <div className="text-xs text-muted-foreground">{sublabel}</div>
-      </div>
-    </div>
-  )
-}
-
 const SystemStatusCard: React.FC<SystemStatusCardProps> = ({ status, restartRequired, className }) => {
   const { t } = useTranslation()
 
@@ -157,13 +100,6 @@ const SystemStatusCard: React.FC<SystemStatusCardProps> = ({ status, restartRequ
     return t('settings.systemStatus.healthPoor')
   }
 
-  // 获取进度条颜色
-  const getProgressColor = (value: number, highThreshold: number, mediumThreshold: number) => {
-    if (value > highThreshold) return 'bg-destructive'
-    if (value > mediumThreshold) return 'bg-orange-500'
-    return 'bg-green-500'
-  }
-
   const healthScore = calculateHealthScore(status, restartRequired)
 
   return (
@@ -227,34 +163,6 @@ const SystemStatusCard: React.FC<SystemStatusCardProps> = ({ status, restartRequ
           </div>
 
           <Separator />
-
-          {/* 性能指标 */}
-          <div>
-            <h4 className="text-sm font-medium mb-4">{t('settings.systemStatus.performance')}</h4>
-            <div className="grid gap-4 md:grid-cols-3">
-              <CircularProgress
-                value={status.performance?.cpuUsage || 0}
-                label="CPU"
-                sublabel={`${status.performance?.cpuCores || 0} ${t('settings.systemStatus.cores')}`}
-                thresholds={{ high: 80, medium: 60 }}
-              />
-              <CircularProgress
-                value={status.performance?.memoryUsage || 0}
-                label={t('settings.systemStatus.memory')}
-                sublabel={`${status.performance?.totalMemory || 0} GB`}
-                thresholds={{ high: 90, medium: 70 }}
-              />
-              <CircularProgress
-                value={status.performance?.diskUsage || 0}
-                label={t('settings.systemStatus.disk')}
-                sublabel={`${status.performance?.totalDisk || 0} GB`}
-                thresholds={{ high: 85, medium: 70 }}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
           {/* 功能状态 */}
           <div>
             <h4 className="text-sm font-medium mb-4">{t('settings.systemStatus.features')}</h4>

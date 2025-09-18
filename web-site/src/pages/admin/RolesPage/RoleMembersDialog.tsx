@@ -1,7 +1,6 @@
 // 角色成员查看对话框组件
 
 import React, { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   Dialog,
   DialogContent,
@@ -34,7 +33,7 @@ import {
   Calendar,
   Shield
 } from 'lucide-react'
-import { roleService, RoleInfo, UserInfo } from '@/services/admin.service'
+import { roleService, type RoleInfo, type UserInfo } from '@/services/admin.service'
 
 interface RoleMembersDialogProps {
   open: boolean
@@ -47,7 +46,6 @@ const RoleMembersDialog: React.FC<RoleMembersDialogProps> = ({
   onOpenChange,
   role
 }) => {
-  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [members, setMembers] = useState<UserInfo[]>([])

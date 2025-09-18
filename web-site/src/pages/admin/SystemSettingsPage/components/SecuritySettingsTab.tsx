@@ -47,7 +47,7 @@ const SecuritySettingsTab: React.FC<SecuritySettingsTabProps> = ({
 
   // 获取布尔值设置
   const getBooleanValue = (key: string) => {
-    const value = getSettingValue(key)
+    const value = getSettingValue(key) as any
     return value === 'true' || value === true
   }
 

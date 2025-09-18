@@ -1,4 +1,4 @@
-import { useForm, UseFormProps, UseFormReturn, FieldValues } from 'react-hook-form'
+import { useForm, type UseFormProps, type UseFormReturn, type FieldValues } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCallback } from 'react'
@@ -39,7 +39,7 @@ export function useFormWithValidation<T extends FieldValues = FieldValues>(
   } = options
 
   const form = useForm<T>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     mode: 'onChange',
     ...formOptions
   })
@@ -55,8 +55,8 @@ export function useFormWithValidation<T extends FieldValues = FieldValues>(
       .filter(Boolean)
 
     if (errorMessages.length > 0) {
-      errorMessages.forEach(message => {
-        if (message) toast.error(message)
+      errorMessages.forEach((message:any) => {
+        if (message) toast.error(message.toString())
       })
     }
   }, [showErrorToasts])
@@ -64,7 +64,7 @@ export function useFormWithValidation<T extends FieldValues = FieldValues>(
   // 基础的表单提交处理
   const handleSubmit = useCallback((onValid: (data: T) => void | Promise<void>) => {
     return form.handleSubmit(
-      async (data) => {
+      async (data:any) => {
         try {
           await onValid(data)
           onSubmitSuccess?.(data)
@@ -116,7 +116,7 @@ export function useFormWithValidation<T extends FieldValues = FieldValues>(
     handleSubmit,
     isSubmitting,
     submitWithToast
-  }
+  } as any
 }
 
 // 预定义的常用验证模式

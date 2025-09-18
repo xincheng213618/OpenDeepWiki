@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import {
   Bot,
   Zap,
-  CheckCircle,
   AlertTriangle,
   Info,
   HelpCircle
@@ -24,7 +23,6 @@ import { useToast } from '@/hooks/useToast'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -56,8 +54,8 @@ const AISettingsTab: React.FC<AISettingsTabProps> = ({
 
   // 获取布尔值设置
   const getBooleanValue = (key: string) => {
-    const value = getSettingValue(key)
-    return value === 'true' || value === true
+    const value = getSettingValue(key) as any
+    return value === 'true' || value === true 
   }
 
   // 获取数字值设置
@@ -95,7 +93,7 @@ const AISettingsTab: React.FC<AISettingsTabProps> = ({
         model
       }
 
-      const result = await systemSettingsService.testAISettings(params)
+      const result = await systemSettingsService.testAISettings(params) as any
 
       if (result.success) {
         toast({

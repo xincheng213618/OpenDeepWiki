@@ -27,13 +27,13 @@ import {
   Globe
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { statsService, type ComprehensiveDashboard } from '@/services/admin.service'
+import { statsService } from '@/services/admin.service'
 
 const DashboardPage: React.FC = () => {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [dashboardData, setDashboardData] = useState<ComprehensiveDashboard | null>(null)
+  const [dashboardData, setDashboardData] = useState<any>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -176,7 +176,7 @@ const DashboardPage: React.FC = () => {
       documentGrowthRate: 0,
       monthlyNewDocuments: 0,
       totalViews: 0,
-      ...(dashboardData.systemStats ?? {})
+      ...(dashboardData?.systemStats ?? {})
     },
     userActivity: {
       onlineUsers: 0,
@@ -184,11 +184,11 @@ const DashboardPage: React.FC = () => {
       weeklyActiveUsers: 0,
       monthlyActiveUsers: 0,
       activeUserGrowthRate: 0,
-      ...(dashboardData.userActivity ?? {})
+      ...(dashboardData?.userActivity ?? {})
     },
-    recentUsers: dashboardData.recentUsers ?? [],
-    recentRepositories: dashboardData.recentRepositories ?? [],
-    recentErrors: dashboardData.recentErrors ?? []
+    recentUsers: dashboardData?.recentUsers ?? [],
+    recentRepositories: dashboardData?.recentRepositories ?? [],
+    recentErrors: dashboardData?.recentErrors ?? []
   }
 
 

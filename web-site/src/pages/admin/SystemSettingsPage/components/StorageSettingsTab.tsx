@@ -9,7 +9,6 @@ import {
 import { useTranslation } from 'react-i18next'
 import type { SystemSetting, ValidationErrors } from '@/types/systemSettings'
 
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,8 +18,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-
 interface StorageSettingsTabProps {
   settings: SystemSetting[]
   onUpdate: (key: string, value: any) => void
@@ -44,7 +41,7 @@ const StorageSettingsTab: React.FC<StorageSettingsTabProps> = ({
 
   // 获取布尔值设置
   const getBooleanValue = (key: string) => {
-    const value = getSettingValue(key)
+    const value = getSettingValue(key) as any
     return value === 'true' || value === true
   }
 

@@ -38,7 +38,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   AlertDialog,
@@ -74,7 +73,7 @@ import {
   Clock,
   Loader2
 } from 'lucide-react'
-import { type WarehouseInfo, type UpdateRepositoryDto, repositoryService, warehouseService } from '@/services/admin.service'
+import { type WarehouseInfo, type UpdateRepositoryDto, repositoryService } from '@/services/admin.service'
 import { toast } from 'sonner'
 
 const RepositoriesPage: React.FC = () => {

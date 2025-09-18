@@ -22,8 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Search, Plus, MoreHorizontal, Edit, Trash2, Shield, Settings, Copy, Users, Filter } from 'lucide-react'
-import { roleService, RoleInfo } from '@/services/role.service'
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Shield, Settings, Copy, Users } from 'lucide-react'
+import { roleService, type RoleInfo } from '@/services/role.service'
 import { toast } from 'sonner'
 import RoleDialog from './RoleDialog'
 import RolePermissionDialog from './RolePermissionDialog'
@@ -56,7 +56,7 @@ const RolesPage: React.FC = () => {
         pageSize: pageSize,
         keyword: searchQuery || undefined,
         isActive: statusFilter
-      })
+      }) as any
       // 处理嵌套的data结构
       const data = response.data || response
       setRoles(data.items || [])

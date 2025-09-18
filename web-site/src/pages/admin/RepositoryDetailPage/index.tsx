@@ -11,19 +11,11 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
+
 import {
   ChevronLeft,
   ChevronDown,
@@ -31,7 +23,6 @@ import {
   File,
   Save,
   RefreshCw,
-  Settings,
   FileText,
   Code,
   Image,
@@ -39,26 +30,16 @@ import {
   Search,
   Edit3,
   Trash2,
-  Play,
-  Pause,
-  Calendar,
-  Users,
-  GitBranch,
   Clock,
   Activity,
   AlertCircle,
   CheckCircle,
-  Info,
   Download,
-  Upload,
   Shield,
   Cog,
-  FileType,
   Eye,
   ExternalLink,
   Copy,
-  MoreVertical,
-  History,
   Sparkles,
   Loader2
 } from 'lucide-react'
@@ -116,24 +97,6 @@ interface SyncRecord {
   filesChanged: number
 }
 
-interface PermissionInfo {
-  roleId: string
-  roleName: string
-  isRead: boolean
-  isWrite: boolean
-  isDelete: boolean
-}
-
-interface TaskInfo {
-  id: string
-  type: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  progress: number
-  startTime: string
-  endTime?: string
-  description: string
-  error?: string
-}
 
 const RepositoryDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -1067,214 +1030,6 @@ const RepositoryDetailPage: React.FC = () => {
         </div>
       </CardContent>
     </Card>
-  )
-
-  const renderLogsTab = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>操作日志</CardTitle>
-        <CardDescription>查看仓库的操作历史记录</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {logs.length > 0 ? (
-            logs.map((log) => (
-              <div key={log.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className={cn(
-                    "w-3 h-3 rounded-full",
-                    log.success ? 'bg-green-500' : 'bg-red-500'
-                  )} />
-                  <div>
-                    <p className="text-sm font-medium">{log.operation}</p>
-                    <p className="text-sm text-muted-foreground">{log.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {log.userName} • {new Date(log.createdAt).toLocaleString('zh-CN')}
-                    </p>
-                  </div>
-                </div>
-                {log.error && (
-                  <Badge variant="destructive">
-                    有错误
-                  </Badge>
-                )}
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground">暂无操作日志</p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-
-  const renderFilesTab = () => (
-    <div className="grid grid-cols-12 gap-6 h-[calc(100vh-16rem)]">
-      {/* 文件树 */}
-      <div className="col-span-4">
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle>{t('admin.repositories.detail.tree')}</CardTitle>
-            <CardDescription>浏览和管理仓库内容</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="px-3 py-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="搜索文件..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-14 h-8 text-sm bg-accent/30 border-0 focus:bg-accent/50 transition-colors placeholder:text-muted-foreground/60"
-                />
-                <kbd className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border border-border/50 bg-background px-1 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-[10px]">⌘</span>K
-                </kbd>
-              </div>
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="px-2 py-1 space-y-1">
-                {/* 分隔线 */}
-                <div className="h-px bg-border/30 mx-2 my-3" />
-
-                {/* 文件树 */}
-                {treeData && treeData.length > 0 ? (
-                  <div className="space-y-0.5">
-                    {filteredTreeData(treeData).map(node => renderTreeNode(node))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground/60 text-center py-4 px-6">
-                    暂无文件
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 文件内容编辑器 */}
-      <div className="col-span-8">
-        <Card className="h-full flex flex-col">
-          {selectedNode ? (
-            <>
-              {/* 文件头部 */}
-              <CardHeader className="flex-shrink-0 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    {getFileIcon(selectedNode.name || selectedNode.title || '')}
-                    <div>
-                      <CardTitle className="text-lg">{selectedNode.name || selectedNode.title || 'Untitled'}</CardTitle>
-                      <CardDescription className="text-sm">
-                        {selectedNode.path && `${selectedNode.path} • `}
-                        {selectedNode.isLeaf ? '文件' : '文件夹'}
-                        {selectedNode.catalog?.isCompleted && ' • 已完成'}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {selectedNode.catalog?.isCompleted && (
-                      <Badge variant="default" className="text-xs">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        已完成
-                      </Badge>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={saving || !selectedNode.content}
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {saving ? '保存中...' : '保存'}
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-
-              {/* 文件内容区域 */}
-              <CardContent className="flex-1 p-0 overflow-hidden">
-                <div className="h-full flex flex-col">
-                  {/* 工具栏 */}
-                  <div className="flex-shrink-0 px-4 py-2 border-b bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <span>内容长度: {selectedNode.content?.length || 0} 字符</span>
-                        <Separator orientation="vertical" className="h-4" />
-                        <span>行数: {(typeof selectedNode.content === 'string' ? selectedNode.content.split('\n').length : 1) || 1}</span>
-                        {selectedNode.lastModified && (
-                          <>
-                            <Separator orientation="vertical" className="h-4" />
-                            <span>最后修改: {new Date(selectedNode.lastModified).toLocaleString('zh-CN')}</span>
-                          </>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Button variant="ghost" size="sm" className="h-7 px-2" title="预览">
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-7 px-2" title="复制">
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-7 px-2" title="在新窗口打开">
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 编辑器区域 */}
-                  <div className="flex-1 relative">
-                    <Suspense fallback={
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                          <p>加载编辑器...</p>
-                        </div>
-                      </div>
-                    }>
-                      <MarkdownEditor
-                        value={selectedNode.content || ''}
-                        onChange={handleContentChange}
-                        placeholder="文件内容..."
-                        height="100%"
-                        theme="light"
-                        language="zh-CN"
-                        onSave={(value, html) => {
-                          handleSave()
-                          toast.success('文件保存成功')
-                        }}
-                        onError={(error) => {
-                          console.error('Editor error:', error)
-                        }}
-                      />
-                    </Suspense>
-                  </div>
-                </div>
-              </CardContent>
-            </>
-          ) : (
-            <CardContent className="flex-1 flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
-                  <Code className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-foreground">选择一个文件</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    从左侧文件树中选择一个文件来查看或编辑其内容
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-      </div>
-    </div>
   )
 
   // 加载状态处理

@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { roleService, RoleInfo, CreateRoleDto, UpdateRoleDto } from '@/services/admin.service'
+import { roleService, type RoleInfo, type CreateRoleDto, type UpdateRoleDto } from '@/services/admin.service'
 
 interface RoleDialogProps {
   open: boolean

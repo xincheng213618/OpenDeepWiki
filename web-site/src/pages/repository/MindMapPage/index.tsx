@@ -255,7 +255,7 @@ export default function MindMapPage() {
           <div class="text-center">
             <p class="text-sm">Unable to render mind map</p>
             <p class="text-xs mt-1">Please try refreshing the page</p>
-            <p class="text-xs mt-1 text-red-500">Error: ${error?.message || 'Unknown error'}</p>
+            <p class="text-xs mt-1 text-red-500">Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
           </div>
         </div>
       `

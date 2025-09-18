@@ -1,6 +1,4 @@
-// About页面组件 - 简约风格
 
-import { useTranslation } from 'react-i18next'
 import { Header } from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -14,17 +12,11 @@ import {
   Languages,
   Shield,
   ArrowRight,
-  CheckCircle2,
   Users,
-  Star,
-  GitBranch,
-  Server,
   ExternalLink
 } from 'lucide-react'
 
 export const AboutPage = () => {
-  const { t } = useTranslation()
-
   const features = [
     {
       icon: <Zap className="h-5 w-5" />,

@@ -8,7 +8,6 @@ import type {
   SettingTestResult,
   EmailTestParams,
   APITestParams,
-  SystemStatus,
   SettingChangeHistory
 } from '@/types/systemSettings'
 
@@ -419,11 +418,6 @@ export const repositoryService = {
   // 创建Git仓库
   createGitRepository: async (data: CreateGitRepositoryDto) => {
     return request.post<string>('/api/Repository/GitRepository', data)
-  },
-
-  // 更新仓库
-  updateRepository: async (id: string, data: UpdateRepositoryDto) => {
-    return request.post<boolean>(`/api/Repository/Repository?id=${id}`, data)
   },
 
   // 删除仓库
@@ -855,7 +849,7 @@ export const uploadImage = async (file: File): Promise<{ url: string; fileName: 
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await api.post('/api/FileStorage/image', formData, {
+    const response = await request.post('/api/FileStorage/image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -882,7 +876,7 @@ export const uploadImages = async (files: File[]): Promise<{
       formData.append('files', file)
     })
 
-    const response = await api.post('/api/FileStorage/images', formData, {
+    const response = await request.post('/api/FileStorage/images', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -898,7 +892,7 @@ export const uploadImages = async (files: File[]): Promise<{
 // 删除图片（仅管理员可用）
 export const deleteImage = async (imageUrl: string): Promise<void> => {
   try {
-    await api.delete('/api/FileStorage/image', {
+    await request.delete('/api/FileStorage/image', {
       params: { imageUrl },
     })
   } catch (error) {

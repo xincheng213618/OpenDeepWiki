@@ -1,7 +1,6 @@
 // 角色权限配置对话框组件
 
 import React, { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   Dialog,
   DialogContent,
@@ -29,7 +28,7 @@ import {
   Edit,
   Trash2
 } from 'lucide-react'
-import { RoleInfo } from '@/services/admin.service'
+import type { RoleInfo } from '@/services/admin.service'
 import { request } from '@/utils/request'
 
 // 权限树节点数据结构
@@ -71,7 +70,6 @@ const RolePermissionDialog: React.FC<RolePermissionDialogProps> = ({
   role,
   onSuccess
 }) => {
-  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [permissionTree, setPermissionTree] = useState<WarehousePermissionTreeNode[]>([])
@@ -283,7 +281,6 @@ const RolePermissionDialog: React.FC<RolePermissionDialogProps> = ({
       <div className="flex flex-wrap items-center gap-2 mt-2">
         <div className="flex items-center space-x-1">
           <Switch
-            size="sm"
             checked={permission.isReadOnly}
             onCheckedChange={(checked) => updatePermission(permission.warehouseId, 'isReadOnly', checked)}
           />
@@ -295,7 +292,6 @@ const RolePermissionDialog: React.FC<RolePermissionDialogProps> = ({
 
         <div className="flex items-center space-x-1">
           <Switch
-            size="sm"
             checked={permission.isWrite}
             onCheckedChange={(checked) => updatePermission(permission.warehouseId, 'isWrite', checked)}
           />
@@ -307,7 +303,21 @@ const RolePermissionDialog: React.FC<RolePermissionDialogProps> = ({
 
         <div className="flex items-center space-x-1">
           <Switch
-            size="sm"
+            checked={permission.isDelete}
+            onCheckedChange={(checked) => updatePermission(permission.warehouseId, 'isDelete', checked)}
+          />
+          <Label className="text-xs flex items-center gap-1">
+            <Trash2 className="h-3 w-3" />
+            删除
+          </Label>
+          <Label className="text-xs flex items-center gap-1">
+            <Edit className="h-3 w-3" />
+            编辑
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-1">
+          <Switch
             checked={permission.isDelete}
             onCheckedChange={(checked) => updatePermission(permission.warehouseId, 'isDelete', checked)}
           />

@@ -2,7 +2,6 @@
 
 import { useEffect, useCallback } from 'react'
 import { useRepositoryStore } from '@/stores/repository.store'
-import type { RepositoryListParams } from '@/types/repository'
 
 export const useRepositories = (autoFetch = true) => {
   const {

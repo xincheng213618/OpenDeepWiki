@@ -2,8 +2,6 @@ import React, { useState } from 'react'
 import {
   Mail,
   Send,
-  CheckCircle,
-  AlertTriangle,
   Info
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -21,7 +19,6 @@ import { useToast } from '@/hooks/useToast'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -56,7 +53,7 @@ const EmailSettingsTab: React.FC<EmailSettingsTabProps> = ({
 
   // 获取布尔值设置
   const getBooleanValue = (key: string) => {
-    const value = getSettingValue(key)
+    const value = getSettingValue(key) as any
     return value === 'true' || value === true
   }
 
@@ -85,7 +82,7 @@ const EmailSettingsTab: React.FC<EmailSettingsTabProps> = ({
         body: testBody || t('settings.email.defaultTestBody')
       }
 
-      const result = await systemSettingsService.testEmailSettings(params)
+      const result = await systemSettingsService.testEmailSettings(params) as any
 
       if (result.success) {
         toast({
