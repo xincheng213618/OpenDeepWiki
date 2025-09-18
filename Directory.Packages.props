@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <VersionSuffix>0</VersionSuffix>
     <TimeStamp>$([System.DateTime]::UtcNow.ToString("yyyyMMdd"))</TimeStamp>
-    <Version>0.5.$(VersionSuffix)</Version>
+    <Version>0.9.$(VersionSuffix)</Version>
     <!-- 项目信息 -->
     <Product>OpenDeepWiki</Product>
     <Title>OpenDeepWiki - AI驱动的代码知识库</Title>
@@ -20,7 +20,6 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <!-- 项目标签 -->
     <PackageTags>AI;CodeAnalysis;Documentation;SemanticKernel;Knowledge;Wiki;OpenSource;dotnet9;csharp</PackageTags>
-    <!-- 技术信息 -->
     <TargetFramework>net9.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -32,14 +31,15 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Web API 和 框架包 -->
-    <PackageVersion Include="AngleSharp" Version="1.3.0" />
+    <PackageVersion Include="AngleSharp" Version="1.3.1-beta.491" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
-    <PackageVersion Include="MySql.EntityFrameworkCore" Version="9.0.3" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.6.5" />
+    <PackageVersion Include="MySql.EntityFrameworkCore" Version="9.0.6" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.8.3" />
     <!-- Entity Framework Core -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.7" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -48,7 +48,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.7" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.7" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.6" />
     <!-- 数据库提供程序 -->
@@ -57,9 +56,9 @@
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="9.0.7" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.7" />
     <!-- AI 和 机器学习 -->
-    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.62.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.62.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.62.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.65.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.65.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.65.0" />
     <PackageVersion Include="Lost.SemanticKernel.Connectors.Anthropic" Version="1.25.0-alpha3" />
     <PackageVersion Include="Mem0.NET" Version="1.1.3" />
     <!-- AWS SDK - 解决版本冲突 -->
@@ -73,7 +72,7 @@
     <!-- JSON 和 序列化 -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <!-- 映射和对象转换 -->
-    <PackageVersion Include="Mapster.DependencyInjection" Version="1.0.1" />
+    <PackageVersion Include="Mapster.DependencyInjection" Version="1.0.3-pre02" />
     <!-- 日志记录 -->
     <PackageVersion Include="Serilog" Version="4.3.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
@@ -81,12 +80,12 @@
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
     <!-- 弹性和重试 -->
-    <PackageVersion Include="Polly" Version="8.6.2" />
+    <PackageVersion Include="Polly" Version="8.6.3" />
     <!-- 服务和分析 -->
     <PackageVersion Include="FastService" Version="0.2.2" />
     <PackageVersion Include="FastService.Analyzers" Version="0.2.2" />
     <!-- 协议支持 -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.3" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.4" />
     <PackageVersion Include="SharpToken" Version="2.0.4" />
     <!-- Thor 框架相关包 (来自子模块) -->
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.6.1" />
@@ -101,13 +100,13 @@
     <PackageVersion Include="StackExchange.Redis" Version="2.8.31" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.0.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.9.0" />
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.0.0" />
-    <PackageVersion Include="Aspire.Hosting.NodeJs" Version="9.0.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.4.2" />
+    <PackageVersion Include="Aspire.Hosting.NodeJs" Version="9.4.2" />
     <!-- 测试框架 -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="xunit" Version="2.9.2" />

@@ -4,26 +4,6 @@ namespace KoalaWiki.Prompts;
 
 public static class PromptExtensions
 {
-    public static void AddSystemReminder(this ChatMessageContentItemCollection collection)
-    {
-        collection.Add(
-            new TextContent(
-                """
-                <system-reminder> 
-                CRITICAL INSTRUCTION: If the user provides code files, data, or content for analysis, you MUST read and analyze ALL provided content FIRST before generating any response. This is mandatory and non-negotiable.
-
-                For any analysis task:
-                1. FIRST: Use available tools to read and understand ALL provided content completely
-                2. THEN: Think step by step and deeply about the user's question
-                3. Consider multiple angles, potential implications, and underlying complexity
-                4. Base your analysis on the actual content you've read, not assumptions
-                5. Do not ask the user if they want to proceed. The user will be assumed to proceed with everything.
-
-                Even for seemingly simple queries, explore the context thoroughly by reading the provided materials before responding. Never skip the content reading step when files or data are provided.
-                </system-reminder>
-                """));
-    }
-
     public static void AddDocsGenerateSystemReminder(this ChatMessageContentItemCollection collection)
     {
         collection.Add(
@@ -42,9 +22,8 @@ public static class PromptExtensions
 
                 After generating the initial document with tool calls, perform MULTI‑PASS SELF‑REVIEW and OPTIMIZATION:
                 A. Verification pass: Use Docs.Read to inspect the entire document; check completeness, accuracy, and that all claims are supported by code.
-                B. Improvement pass: Use Docs.Edit to refine clarity, tighten structure, and enhance explanations while preserving the chosen Diataxis type and existing structure.
+                B. Improvement pass: Use Docs.MultiEdit to refine clarity, tighten structure, and enhance explanations while preserving the chosen Diataxis type and existing structure.
                 C. Quality pass: Ensure at least 3 Mermaid diagrams and proper [^n] citations; verify headings consistency, terminology, and formatting in the target language.
-                D. Final pass: Re‑read with Docs.Read and fix any remaining issues with additional Docs.Edit calls. Prefer several small, precise edits over one large overwrite.
 
                 Even for seemingly simple queries, explore the context thoroughly by reading the provided materials before responding. Never skip the content reading step when files or data are provided.
                 </system-reminder>
@@ -67,8 +46,6 @@ public static class PromptExtensions
              - **Bug Fixing**: Identifying and resolving software defects and issues
              - **Feature Development**: Implementing new functionality following project conventions
              - **Code Review**: Analyzing code quality, security, and best practices
-             - **Repository Management**: Understanding Git workflows and project organization
-             - **Testing**: Writing and maintaining test suites and quality assurance
 
              # Deep Analysis Approach
              While maintaining concise output, internally apply deep analytical thinking:
@@ -79,10 +56,7 @@ public static class PromptExtensions
              - **Think harder** for complex debugging, architecture decisions, or critical system changes
 
              # Following conventions
-             When making changes to files, first understand the file's code conventions. Mimic code style, use existing libraries and utilities, and follow existing patterns.
              - NEVER assume that a given library is available, even if it is well known. Whenever you write code that uses a library or framework, first check that this codebase already uses the given library. For example, you might look at neighboring files, or check the package.json (or cargo.toml, and so on depending on the language).
-             - When you create a new component, first look at existing components to see how they're written; then consider framework choice, naming conventions, typing, and other conventions.
-             - When you edit a piece of code, first look at the code's surrounding context (especially its imports) to understand the code's choice of frameworks and libraries. Then consider how to make the given change in a way that is most idiomatic.
              - Always follow security best practices. Never introduce code that exposes or logs secrets and keys. Never commit secrets or keys to the repository.
 
 
@@ -106,8 +80,6 @@ public static class PromptExtensions
 
              # Tool usage policy
              - **MANDATORY**: When the user provides files, code, or content for analysis, you MUST use the Read tool or other appropriate tools to examine ALL provided content before responding
-             - When doing file search, prefer to use the Task tool in order to reduce context usage.
-             - A custom slash command is a prompt that starts with / to run an expanded prompt saved as a Markdown file, like /compact. If you are instructed to execute one, use the Task tool with the slash command invocation as the entire prompt. Slash commands can take arguments; defer to user instructions.
 
              You are an AI assistant optimized for software development and repository analysis across various technology stacks.
 

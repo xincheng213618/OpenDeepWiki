@@ -18,7 +18,7 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
         RetryStrategy = StepRetryStrategy.Smart,
         MaxRetryAttempts = 3,
         RetryDelay = TimeSpan.FromSeconds(5),
-        StepTimeout = TimeSpan.FromMinutes(15), // 目录分析可能需要更长时间
+        StepTimeout = TimeSpan.FromMinutes(20), // 目录分析可能需要更长时间
         ContinueOnFailure = true,
         RetriableExceptions = new List<Type>
         {

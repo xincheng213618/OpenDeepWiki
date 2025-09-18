@@ -50,10 +50,11 @@ public static class KernelFactory
                     AllowAutoRedirect = true,
                     MaxAutomaticRedirections = 5,
                     MaxConnectionsPerServer = 200,
+                    AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Brotli | System.Net.DecompressionMethods.Deflate | System.Net.DecompressionMethods.None
                 })
                 {
                     // 添加重试
-                    Timeout = TimeSpan.FromSeconds(16000),
+                    Timeout = TimeSpan.FromSeconds(240),
                 });
         }
         else if (OpenAIOptions.ModelProvider.Equals("AzureOpenAI", StringComparison.OrdinalIgnoreCase))
@@ -101,19 +102,25 @@ public static class KernelFactory
 
         // 添加文件函数
         var fileFunction = new FileTool(gitPath, files);
-        kernelBuilder.Plugins.AddFromObject(fileFunction);
-        kernelBuilder.Plugins.AddFromType<AgentTool>();
+        kernelBuilder.Plugins.AddFromObject(fileFunction, "file");
+
+        if (DocumentOptions.EnableAgentTool)
+        {
+            kernelBuilder.Plugins.AddFromType<AgentTool>();
+            activity?.SetTag("plugins.agent_tool", "loaded");
+        }
+
         activity?.SetTag("plugins.file_function", "loaded");
 
         if (DocumentOptions.EnableCodeDependencyAnalysis)
         {
             var codeAnalyzeFunction = new CodeAnalyzeTool(gitPath);
-            kernelBuilder.Plugins.AddFromObject(codeAnalyzeFunction);
+            kernelBuilder.Plugins.AddFromObject(codeAnalyzeFunction, "git");
             activity?.SetTag("plugins.code_analyze_function", "loaded");
         }
 
         kernelBuilderAction?.Invoke(kernelBuilder);
-        
+
         var kernel = kernelBuilder.Build();
         kernel.FunctionInvocationFilters.Add(new ToolResultInterceptor());
 

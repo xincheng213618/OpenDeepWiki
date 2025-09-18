@@ -14,12 +14,6 @@
 
 我们的企业服务为寻求专业人工智能解决方案的各类企业提供全面的支持和灵活性。
 
-# 赞助商 Sponsor
-
-[![302.AI](https://github.com/user-attachments/assets/b1bcb56e-38cb-47bf-adfe-7a21d83774b4)](https://share.302.ai/jXcaTv)
-
-[302.AI](https://share.302.ai/jXcaTv) 是一个按需付费的一站式企业级AI应用平台，提供开放平台和开源生态，助力AI解决各种需求。点击[这里](https://share.302.ai/jXcaTv)获取1美元免费额度！
-
 ---
 
 # 功能 Features
@@ -130,7 +124,7 @@ services:
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # 是否启用代码依赖分析，可能影响代码质量
       - ENABLE_WAREHOUSE_COMMIT=true # 是否启用仓库提交
       - ENABLE_FILE_COMMIT=true # 是否启用文件提交
-      - REFINE_AND_ENHANCE_QUALITY=true # 是否精炼并提高质量
+      - REFINE_AND_ENHANCE_QUALITY=false # 是否精炼并提高质量
       - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=true # 是否启用仓库功能提示任务
       - ENABLE_WAREHOUSE_DESCRIPTION_TASK=true # 是否启用仓库描述任务
       - CATALOGUE_FORMAT=compact # 目录结构格式 (compact, json, pathlist, unix)

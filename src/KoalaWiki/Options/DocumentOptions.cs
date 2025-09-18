@@ -60,7 +60,7 @@ public class DocumentOptions
     /// 精炼并且提高质量
     /// </summary>
     /// <returns></returns>
-    public static bool RefineAndEnhanceQuality { get; set; } = true;
+    public static bool RefineAndEnhanceQuality { get; set; } = false;
 
     /// <summary>
     /// 是否启用仓库提交
@@ -80,7 +80,7 @@ public class DocumentOptions
     /// 限制单个AI读取的最大token上下文比例是当前模型的多少，范围0.1-1.0
     /// </summary>
     /// <returns></returns>
-    public static int ReadMaxTokens { get; set; } = 100000;
+    public static int ReadMaxTokens { get; set; } = 80000;
 
     /// <summary>
     /// Git代理设置
@@ -89,6 +89,12 @@ public class DocumentOptions
     /// </summary>
     /// <returns></returns>
     public static string? Proxy { get; set; }
+
+    /// <summary>
+    /// 是否启用Agent工具插件
+    /// </summary>
+    /// <returns></returns>
+    public static bool EnableAgentTool { get; set; } = false;
 
     public static void InitConfig(IConfiguration configuration)
     {
@@ -177,6 +183,15 @@ public class DocumentOptions
         if (!string.IsNullOrEmpty(proxy))
         {
             Proxy = proxy;
+        }
+
+        var enableAgentTool = configuration.GetValue<string>($"ENABLE_AGENT_TOOL");
+        if (!string.IsNullOrEmpty(enableAgentTool))
+        {
+            if (bool.TryParse(enableAgentTool, out var enable))
+            {
+                EnableAgentTool = enable;
+            }
         }
     }
 }

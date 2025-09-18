@@ -32,9 +32,9 @@ public partial class WarehouseProcessingTask(IServiceProvider service, ILogger<W
 
                 var dbContext = scope.ServiceProvider.GetService<IKoalaWikiContext>();
 
-                // 读取现有的仓库状态=2，并且处理时间满足一星期
+                // 读取现有的仓库状态=2，并且启用了同步，并且处理时间满足一星期
                 var warehouse = await dbContext!.Warehouses
-                    .Where(x => x.Status == WarehouseStatus.Completed)
+                    .Where(x => x.Status == WarehouseStatus.Completed && x.EnableSync)
                     .FirstOrDefaultAsync(stoppingToken);
 
                 if (warehouse == null)
@@ -63,25 +63,65 @@ public partial class WarehouseProcessingTask(IServiceProvider service, ILogger<W
                 {
                     var document = documents.FirstOrDefault(x => x.WarehouseId == warehouse.Id);
 
-                    var commitId = await HandleAnalyseAsync(warehouse, document, dbContext);
-
-                    if (string.IsNullOrEmpty(commitId))
+                    // 创建同步记录
+                    var syncRecord = new WarehouseSyncRecord
                     {
+                        Id = Guid.NewGuid().ToString(),
+                        WarehouseId = warehouse.Id,
+                        Status = WarehouseSyncStatus.InProgress,
+                        StartTime = DateTime.UtcNow,
+                        FromVersion = warehouse.Version,
+                        FileCount = documents.Count,
+                        Trigger = WarehouseSyncTrigger.Auto
+                    };
+
+                    await dbContext.WarehouseSyncRecords.AddAsync(syncRecord, stoppingToken);
+                    await dbContext.SaveChangesAsync(stoppingToken);
+
+                    try
+                    {
+                        var commitId = await HandleAnalyseAsync(warehouse, document, dbContext);
+
+                        if (string.IsNullOrEmpty(commitId))
+                        {
+                            // 同步失败，更新记录状态
+                            syncRecord.Status = WarehouseSyncStatus.Failed;
+                            syncRecord.EndTime = DateTime.UtcNow;
+                            syncRecord.ErrorMessage = "同步过程中未获取到新的提交ID";
+
+                            // 更新git记录
+                            await dbContext.Documents
+                                .Where(x => x.WarehouseId == warehouse.Id)
+                                .ExecuteUpdateAsync(x => x.SetProperty(a => a.LastUpdate, DateTime.Now), stoppingToken);
+
+                            await dbContext.SaveChangesAsync(stoppingToken);
+                            return;
+                        }
+
+                        // 同步成功，更新记录状态
+                        syncRecord.Status = WarehouseSyncStatus.Success;
+                        syncRecord.EndTime = DateTime.UtcNow;
+                        syncRecord.ToVersion = commitId;
+
                         // 更新git记录
                         await dbContext.Documents
                             .Where(x => x.WarehouseId == warehouse.Id)
                             .ExecuteUpdateAsync(x => x.SetProperty(a => a.LastUpdate, DateTime.Now), stoppingToken);
 
-                        return;
+                        await dbContext.Warehouses.Where(x => x.Id == warehouse.Id)
+                            .ExecuteUpdateAsync(x => x.SetProperty(a => a.Version, commitId), stoppingToken);
+
+                        await dbContext.SaveChangesAsync(stoppingToken);
                     }
-
-                    // 更新git记录
-                    await dbContext.Documents
-                        .Where(x => x.WarehouseId == warehouse.Id)
-                        .ExecuteUpdateAsync(x => x.SetProperty(a => a.LastUpdate, DateTime.Now), stoppingToken);
-
-                    await dbContext.Warehouses.Where(x => x.Id == warehouse.Id)
-                        .ExecuteUpdateAsync(x => x.SetProperty(a => a.Version, commitId), stoppingToken);
+                    catch (Exception ex)
+                    {
+                        // 同步异常，更新记录状态
+                        syncRecord.Status = WarehouseSyncStatus.Failed;
+                        syncRecord.EndTime = DateTime.UtcNow;
+                        syncRecord.ErrorMessage = ex.Message;
+                        await dbContext.SaveChangesAsync(stoppingToken);
+                        throw;
+                    }
                 }
             }
             catch (Exception exception)

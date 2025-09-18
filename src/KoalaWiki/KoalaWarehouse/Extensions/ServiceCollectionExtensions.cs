@@ -17,7 +17,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, ReadmeGenerationStep>();
         services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, CatalogueGenerationStep>();
         services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, ProjectClassificationStep>();
-        services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, KnowledgeGraphGenerationStep>();
         services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, DocumentStructureGenerationStep>();
         services.AddScoped<IDocumentProcessingStep<DocumentProcessingContext, DocumentProcessingContext>, DocumentContentGenerationStep>();
 

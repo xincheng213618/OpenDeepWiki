@@ -27,7 +27,8 @@ public class RepositoryService(
     IMemoryCache memoryCache,
     ILogger<RepositoryService> logger,
     IUserContext userContext,
-    IHttpContextAccessor httpContextAccessor) : FastApi
+    IHttpContextAccessor httpContextAccessor,
+    IWarehouseSyncService warehouseSyncService) : FastApi
 {
     /// <summary>
     /// 检查用户对指定仓库的访问权限
@@ -112,6 +113,7 @@ public class RepositoryService(
     /// <param name="pageSize">每页数量</param>
     /// <param name="keyword">搜索关键词</param>
     /// <returns>仓库列表</returns>
+    [HttpGet("RepositoryList")]
     public async Task<PageDto<RepositoryInfoDto>> GetRepositoryListAsync(int page, int pageSize, string? keyword)
     {
         var query = dbContext.Warehouses.AsNoTracking();
@@ -212,6 +214,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="id">仓库ID</param>
     /// <returns>仓库详情</returns>
+    [HttpGet("/Repository")]
     public async Task<ResultDto<RepositoryInfoDto>> GetRepositoryAsync(string id)
     {
         var repository = await dbContext.Warehouses
@@ -241,6 +244,7 @@ public class RepositoryService(
     /// <param name="name">仓库名称</param>
     /// <param name="branch">分支名称（可选）</param>
     /// <returns>仓库详情</returns>
+    [HttpGet("RepositoryByOwnerAndName")]
     public async Task<RepositoryInfoDto> GetRepositoryByOwnerAndNameAsync(string owner, string name,
         string? branch = null)
     {
@@ -279,6 +283,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="createDto">仓库信息</param>
     /// <returns>创建结果</returns>
+    [HttpPost("GitRepository")]
     public async Task<RepositoryInfoDto> CreateGitRepositoryAsync(CreateGitRepositoryDto createDto)
     {
         // 只有管理员可以创建新仓库
@@ -381,6 +386,7 @@ public class RepositoryService(
     /// <param name="id">仓库ID</param>
     /// <param name="updateDto">更新信息</param>
     /// <returns>更新结果</returns>
+    [HttpPost("Repository")]
     public async Task<RepositoryInfoDto> UpdateRepositoryAsync(string id, UpdateRepositoryDto updateDto)
     {
         // 检查管理权限
@@ -426,6 +432,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="id">仓库ID</param>
     /// <returns>删除结果</returns>
+    [HttpDelete("Repository")]
     [EndpointSummary("仓库管理：删除仓库")]
     public async Task<bool> DeleteRepositoryAsync(string id)
     {
@@ -471,6 +478,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="id">仓库ID</param>
     /// <returns>处理结果</returns>
+    [HttpPost("ResetRepository")]
     [EndpointSummary("仓库管理：重新处理仓库")]
     public async Task<bool> ResetRepositoryAsync(string id)
     {
@@ -503,6 +511,7 @@ public class RepositoryService(
     /// </summary>
     /// <param name="id">仓库ID</param>
     /// <returns>文件目录结构</returns>
+    [HttpGet("Files")]
     [EndpointSummary("仓库管理：获取仓库文件目录结构")]
     public async Task<List<TreeNode>> GetFilesAsync(string id)
     {
@@ -525,6 +534,7 @@ public class RepositoryService(
     /// <summary>
     /// 重命名目录
     /// </summary>
+    [HttpPost("RenameCatalog")]
     [EndpointSummary("仓库管理：重命名目录")]
     public async Task<bool> RenameCatalogAsync(string id, string newName)
     {
@@ -587,6 +597,7 @@ public class RepositoryService(
         return true;
     }
 
+    [HttpPost("CreateCatalog")]
     [EndpointSummary("仓库管理：新建目录，并且实时生成文档")]
     public async Task<bool> CreateCatalogAsync(CreateCatalogInput input)
     {
@@ -697,6 +708,7 @@ public class RepositoryService(
     /// AI智能生成文件内容
     /// </summary>
     /// <returns></returns>
+    [HttpPost("GenerateFileContent")]
     public async Task<bool> GenerateFileContentAsync(GenerateFileContentInput input)
     {
         // 使用memoryCache增加缓存，避免重复处理同一目录
@@ -805,6 +817,7 @@ public class RepositoryService(
     /// <param name="id"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
+    [HttpGet("FileContent")]
     [EndpointSummary("仓库管理：获取文件内容")]
     public async Task<string> GetFileContentAsync(string id)
     {
@@ -834,6 +847,7 @@ public class RepositoryService(
     /// <summary>
     /// 仓库管理：保存文件内容
     /// </summary>
+    [HttpPost("FileContent")]
     [EndpointSummary("仓库管理：保存文件内容")]
     public async Task<bool> FileContentAsync(SaveFileContentInput input)
     {
@@ -877,6 +891,289 @@ public class RepositoryService(
     }
 
     /// <summary>
+    /// 更新仓库基本信息
+    /// </summary>
+    /// <param name="id">仓库ID</param>
+    /// <param name="input">更新仓库输入</param>
+    /// <returns></returns>
+    [HttpPut("UpdateWarehouse")]
+    [EndpointSummary("仓库管理：更新仓库信息")]
+    public async Task<bool> UpdateWarehouseAsync(string id, UpdateWarehouseInput input)
+    {
+        // 检查仓库是否存在
+        var warehouse = await dbContext.Warehouses
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (warehouse == null)
+        {
+            throw new ArgumentException("仓库不存在");
+        }
+
+        // 检查管理权限
+        if (!await CheckWarehouseManageAccessAsync(id))
+        {
+            throw new UnauthorizedAccessException("您没有权限管理此仓库");
+        }
+
+        // 更新仓库信息
+        if (!string.IsNullOrEmpty(input.Name))
+            warehouse.Name = input.Name;
+        if (!string.IsNullOrEmpty(input.Description))
+            warehouse.Description = input.Description;
+
+        dbContext.Warehouses.Update(warehouse);
+        await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("仓库 {WarehouseId} 的信息已更新", id);
+
+        return true;
+    }
+
+    /// <summary>
+    /// 更新仓库同步设置
+    /// </summary>
+    /// <param name="id">仓库ID</param>
+    /// <param name="input">更新同步设置输入</param>
+    /// <returns></returns>
+    [HttpPost("UpdateSync")]
+    [EndpointSummary("仓库管理：更新同步设置")]
+    public async Task<bool> UpdateWarehouseSyncAsync(string id, UpdateWarehouseSyncInput input)
+    {
+        // 检查仓库是否存在
+        var warehouse = await dbContext.Warehouses
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (warehouse == null)
+        {
+            throw new ArgumentException("仓库不存在");
+        }
+
+        // 检查管理权限
+        if (!await CheckWarehouseManageAccessAsync(id))
+        {
+            throw new UnauthorizedAccessException("您没有权限管理此仓库");
+        }
+
+        // 更新同步设置
+        warehouse.EnableSync = input.EnableSync;
+        dbContext.Warehouses.Update(warehouse);
+        await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("仓库 {WarehouseId} 的同步设置已更新为 {EnableSync}", id, input.EnableSync);
+
+        return true;
+    }
+
+    /// <summary>
+    /// 手动触发仓库同步
+    /// </summary>
+    /// <param name="id">仓库ID</param>
+    /// <returns></returns>
+    [HttpPost("ManualSync")]
+    [EndpointSummary("仓库管理：手动触发同步")]
+    public async Task<bool> TriggerManualSyncAsync(string id)
+    {
+        // 检查仓库是否存在
+        var warehouse = await dbContext.Warehouses
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (warehouse == null)
+        {
+            throw new ArgumentException("仓库不存在");
+        }
+
+        // 检查管理权限
+        if (!await CheckWarehouseManageAccessAsync(id))
+        {
+            throw new UnauthorizedAccessException("您没有权限管理此仓库");
+        }
+
+        // 调用同步服务执行同步
+        var result = await warehouseSyncService.SyncWarehouseAsync(id, WarehouseSyncTrigger.Manual);
+
+        if (!result)
+        {
+            throw new Exception("触发同步失败，请检查仓库配置");
+        }
+
+        logger.LogInformation("成功触发仓库 {WarehouseId} 的手动同步", id);
+
+        return true;
+    }
+
+    /// <summary>
+    /// 获取仓库同步记录
+    /// </summary>
+    /// <param name="warehouseId">仓库ID</param>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <returns></returns>
+    [HttpGet("SyncRecords")]
+    [EndpointSummary("仓库管理：获取同步记录")]
+    public async Task<PageDto<WarehouseSyncRecordDto>> GetWarehouseSyncRecordsAsync(string warehouseId, int page = 1, int pageSize = 10)
+    {
+        // 检查访问权限
+        if (!await CheckWarehouseAccessAsync(warehouseId))
+        {
+            throw new UnauthorizedAccessException("您没有权限访问此仓库");
+        }
+
+        // 从数据库查询同步记录
+        var query = dbContext.WarehouseSyncRecords
+            .Where(x => x.WarehouseId == warehouseId)
+            .OrderByDescending(x => x.StartTime);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new WarehouseSyncRecordDto
+            {
+                Id = x.Id,
+                WarehouseId = x.WarehouseId,
+                Status = x.Status.ToString(),
+                StartTime = x.StartTime,
+                EndTime = x.EndTime,
+                FromVersion = x.FromVersion,
+                ToVersion = x.ToVersion,
+                ErrorMessage = x.ErrorMessage,
+                FileCount = x.FileCount,
+                UpdatedFileCount = x.UpdatedFileCount,
+                AddedFileCount = x.AddedFileCount,
+                DeletedFileCount = x.DeletedFileCount,
+                Trigger = x.Trigger.ToString(),
+                CreatedAt = x.CreatedAt
+            })
+            .ToListAsync();
+
+        return new PageDto<WarehouseSyncRecordDto>(totalCount, items);
+    }
+
+    /// <summary>
+    /// 获取仓库统计信息
+    /// </summary>
+    [HttpGet("RepositoryStats")]
+    [EndpointSummary("仓库管理：获取仓库统计信息")]
+    public async Task<RepositoryStatsDto> GetRepositoryStatsAsync(string id)
+    {
+        // 检查用户权限
+        if (!await CheckWarehouseAccessAsync(id))
+        {
+            throw new UnauthorizedAccessException("您没有权限访问此仓库");
+        }
+
+        var repository = await dbContext.Warehouses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (repository == null)
+        {
+            throw new ArgumentException("仓库不存在");
+        }
+
+        // 获取文档统计
+        var documentCount = await dbContext.DocumentCatalogs
+            .Where(x => x.WarehouseId == id && !x.IsDeleted)
+            .CountAsync();
+
+        var completedDocumentCount = await dbContext.DocumentCatalogs
+            .Where(x => x.WarehouseId == id && !x.IsDeleted && x.IsCompleted)
+            .CountAsync();
+
+        var fileCount = await dbContext.DocumentFileItems
+            .Where(x => dbContext.DocumentCatalogs
+                .Where(c => c.WarehouseId == id && !c.IsDeleted)
+                .Select(c => c.Id)
+                .Contains(x.DocumentCatalogId))
+            .CountAsync();
+
+        return new RepositoryStatsDto
+        {
+            TotalDocuments = documentCount,
+            CompletedDocuments = completedDocumentCount,
+            PendingDocuments = documentCount - completedDocumentCount,
+            TotalFiles = fileCount,
+            LastSyncTime = repository.CreatedAt,
+            ProcessingStatus = repository.Status.ToString()
+        };
+    }
+
+    /// <summary>
+    /// 获取仓库操作日志
+    /// </summary>
+    [HttpGet("RepositoryLogs")]
+    [EndpointSummary("仓库管理：获取仓库操作日志")]
+    public async Task<PageDto<RepositoryLogDto>> GetRepositoryLogsAsync(string repositoryId, int page = 1, int pageSize = 20)
+    {
+        // 检查用户权限
+        if (!await CheckWarehouseAccessAsync(repositoryId))
+        {
+            throw new UnauthorizedAccessException("您没有权限访问此仓库");
+        }
+
+        // 这里暂时返回空数据，实际应该从日志表查询
+        var logs = new List<RepositoryLogDto>();
+
+        return new PageDto<RepositoryLogDto>(0, logs);
+    }
+
+    /// <summary>
+    /// 批量操作仓库
+    /// </summary>
+    [HttpPost("BatchOperate")]
+    [EndpointSummary("仓库管理：批量操作仓库")]
+    public async Task<bool> BatchOperateRepositoriesAsync(BatchOperationDto data)
+    {
+        var isAdmin = httpContextAccessor.HttpContext?.User?.IsInRole("admin") ?? false;
+        if (!isAdmin)
+        {
+            throw new UnauthorizedAccessException("只有管理员可以执行批量操作");
+        }
+
+        foreach (var id in data.Ids)
+        {
+            switch (data.Operation.ToLower())
+            {
+                case "refresh":
+                    await ResetRepositoryAsync(id);
+                    break;
+                case "delete":
+                    await DeleteRepositoryAsync(id);
+                    break;
+                default:
+                    throw new ArgumentException($"不支持的操作: {data.Operation}");
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 获取仓库文档目录
+    /// </summary>
+    [HttpGet("DocumentCatalogs")]
+    [EndpointSummary("仓库管理：获取仓库文档目录")]
+    public async Task<List<TreeNode>> GetDocumentCatalogsAsync(string repositoryId)
+    {
+        // 检查用户权限
+        if (!await CheckWarehouseAccessAsync(repositoryId))
+        {
+            throw new UnauthorizedAccessException("您没有权限访问此仓库");
+        }
+
+        var catalogs = await dbContext.DocumentCatalogs
+            .AsNoTracking()
+            .Where(x => x.WarehouseId == repositoryId && !x.IsDeleted)
+            .OrderBy(x => x.Order)
+            .ToListAsync();
+
+        // 构建树形结构
+        var result = BuildDocumentCatalogTree(catalogs);
+
+        return result;
+    }
+
+    /// <summary>
     /// 构建DocumentCatalog树形结构
     /// </summary>
     private List<TreeNode> BuildDocumentCatalogTree(List<DocumentCatalog> catalogs)
@@ -896,7 +1193,8 @@ public class RepositoryService(
                 key = item.Url ?? item.Id, // 使用URL作为key，如果为空则使用ID
                 isLeaf = catalogs.All(x => x.ParentId != item.Id), // 如果没有子节点，则为叶子节点
                 children = new List<TreeNode>(),
-                Catalog = item
+                catalog = item,
+                
             };
 
             // 递归添加子节点
@@ -932,7 +1230,7 @@ public class RepositoryService(
                 key = child.Url ?? child.Id, // 使用URL作为key，如果为空则使用ID
                 isLeaf = !hasChildren, // 如果没有子节点，则为叶子节点
                 children = hasChildren ? new List<TreeNode>() : null,
-                Catalog = child
+                catalog = child
             };
 
             // 递归添加子节点
@@ -973,5 +1271,53 @@ public class TreeNode
     /// </summary>
     public List<TreeNode> children { get; set; }
 
-    public DocumentCatalog Catalog { get; set; }
+    public DocumentCatalog catalog { get; set; }
+}
+
+/// <summary>
+/// 更新仓库输入
+/// </summary>
+public class UpdateWarehouseInput
+{
+    /// <summary>
+    /// 仓库名称
+    /// </summary>
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// 仓库描述
+    /// </summary>
+    public string? Description { get; set; }
+}
+
+/// <summary>
+/// 更新仓库同步设置输入
+/// </summary>
+public class UpdateWarehouseSyncInput
+{
+    /// <summary>
+    /// 是否启用同步
+    /// </summary>
+    public bool EnableSync { get; set; }
+}
+
+/// <summary>
+/// 仓库同步记录DTO
+/// </summary>
+public class WarehouseSyncRecordDto
+{
+    public string Id { get; set; }
+    public string WarehouseId { get; set; }
+    public string Status { get; set; }
+    public DateTime StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
+    public string? FromVersion { get; set; }
+    public string? ToVersion { get; set; }
+    public string? ErrorMessage { get; set; }
+    public int FileCount { get; set; }
+    public int UpdatedFileCount { get; set; }
+    public int AddedFileCount { get; set; }
+    public int DeletedFileCount { get; set; }
+    public string Trigger { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

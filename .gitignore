@@ -482,7 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
-/web/.next
+*/.next
 /src/KoalaWiki/repositories
 /src/KoalaWiki/KoalaWiki.db
 /src/KoalaWiki/KoalaWiki.db-*
@@ -492,3 +492,4 @@ $RECYCLE.BIN/
 /history
 /repositories/aidotnet/Thor
 *lock.json
+seo-web

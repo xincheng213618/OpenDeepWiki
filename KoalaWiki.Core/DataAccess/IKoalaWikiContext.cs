@@ -52,6 +52,8 @@ public interface IKoalaWikiContext
 
     public DbSet<WarehouseInRole> WarehouseInRoles { get; set; }
 
+    public DbSet<WarehouseSyncRecord> WarehouseSyncRecords { get; set; }
+
     public DbSet<AccessRecord> AccessRecords { get; set; }
 
     public DbSet<DailyStatistics> DailyStatistics { get; set; }

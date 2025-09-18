@@ -50,6 +50,8 @@ builder.WebHost.UseKestrel((options =>
     options.Limits.MaxRequestBodySize = 1024 * 1024 * OpenAIOptions.MaxFileLimit; // 10MB
 }));
 
+builder.Services.AddResponseCompression();
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddKoalaMcp();
 builder.Services.AddSerilog(Log.Logger);
@@ -57,6 +59,8 @@ builder.Services.AddSerilog(Log.Logger);
 builder.Services.AddOpenApi();
 builder.Services.AddFastApis();
 builder.Services.AddSingleton<GitService>();
+builder.Services.AddScoped<IWarehouseSyncService, WarehouseSyncService>();
+builder.Services.AddScoped<IWarehouseSyncExecutor, WarehouseSyncExecutor>();
 
 // 添加文档处理管道架构
 builder.Services.AddDocumentProcessingPipeline();
@@ -138,7 +142,6 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorizationBuilder()
     // 添加授权策略
     .AddPolicy("RequireAdminRole", policy => policy.RequireRole("admin"))
-    // 添加授权策略
     .AddPolicy("RequireUserRole", policy => policy.RequireRole("user", "admin"));
 
 builder.Services
@@ -152,7 +155,8 @@ builder.Services
     });
 
 builder.Services.AddHostedService<WarehouseTask>();
-builder.Services.AddHostedService<WarehouseProcessingTask>();
+builder.Services.AddSingleton<WarehouseProcessingTask>();
+builder.Services.AddHostedService<WarehouseProcessingTask>(provider => provider.GetRequiredService<WarehouseProcessingTask>());
 builder.Services.AddHostedService<DataMigrationTask>();
 builder.Services.AddHostedService<Mem0Rag>();
 
@@ -169,7 +173,7 @@ builder.Services.AddHttpClient("KoalaWiki", client =>
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
-
+app.UseResponseCompression();
 // 添加自动迁移代码
 using (var scope = app.Services.CreateScope())
 {

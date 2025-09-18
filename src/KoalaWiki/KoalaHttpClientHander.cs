@@ -7,11 +7,15 @@ namespace KoalaWiki;
 
 public sealed class KoalaHttpClientHandler : HttpClientHandler
 {
+    public string Version => typeof(HttpClientHandler).Assembly.GetName().Version?.ToString() ?? "unknown";
+
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         Log.Logger.Information("HTTP {Method} {Uri}", request.Method, request.RequestUri);
+
+        request.Headers.UserAgent.ParseAdd("KoalaWiki/" + Version);
 
         var json = JsonConvert.DeserializeObject<dynamic>(await request.Content.ReadAsStringAsync(cancellationToken));
 

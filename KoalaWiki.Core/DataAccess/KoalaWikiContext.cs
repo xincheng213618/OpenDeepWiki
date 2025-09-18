@@ -50,6 +50,8 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
 
     public DbSet<WarehouseInRole> WarehouseInRoles { get; set; }
 
+    public DbSet<WarehouseSyncRecord> WarehouseSyncRecords { get; set; }
+
     public DbSet<AccessRecord> AccessRecords { get; set; }
 
     public DbSet<DailyStatistics> DailyStatistics { get; set; }
@@ -474,6 +476,35 @@ public class KoalaWikiContext<TContext>(DbContextOptions<TContext> options)
             options.Property(x => x.Value).IsRequired().HasComment("小地图数据");
             options.HasIndex(x => x.WarehouseId);
             options.HasComment("小地图表");
+        });
+
+        modelBuilder.Entity<WarehouseSyncRecord>(options =>
+        {
+            options.HasKey(x => x.Id);
+            options.Property(x => x.Id).HasComment("主键Id");
+            options.Property(x => x.WarehouseId).IsRequired().HasComment("仓库Id");
+            options.Property(x => x.Status).IsRequired().HasComment("同步状态");
+            options.Property(x => x.StartTime).IsRequired().HasComment("同步开始时间");
+            options.Property(x => x.EndTime).HasComment("同步结束时间");
+            options.Property(x => x.FromVersion).HasComment("同步前的版本");
+            options.Property(x => x.ToVersion).HasComment("同步后的版本");
+            options.Property(x => x.ErrorMessage).HasComment("错误信息");
+            options.Property(x => x.FileCount).HasComment("同步的文件数量");
+            options.Property(x => x.UpdatedFileCount).HasComment("更新的文件数量");
+            options.Property(x => x.AddedFileCount).HasComment("新增的文件数量");
+            options.Property(x => x.DeletedFileCount).HasComment("删除的文件数量");
+            options.Property(x => x.Trigger).IsRequired().HasComment("同步触发方式");
+            options.Property(x => x.CreatedAt).IsRequired().HasComment("创建时间");
+            options.HasIndex(x => x.WarehouseId);
+            options.HasIndex(x => x.Status);
+            options.HasIndex(x => x.StartTime);
+            options.HasIndex(x => x.Trigger);
+            options.HasIndex(x => x.CreatedAt);
+            options.HasOne(x => x.Warehouse)
+                .WithMany()
+                .HasForeignKey(x => x.WarehouseId)
+                .OnDelete(DeleteBehavior.Cascade);
+            options.HasComment("仓库同步记录表");
         });
     }
 }

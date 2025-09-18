@@ -15,7 +15,7 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.6");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
 
             modelBuilder.Entity("KoalaWiki.Domains.AppConfig", b =>
                 {
@@ -1041,6 +1041,12 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Bio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Company")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT")
                         .HasComment("创建时间");
@@ -1057,6 +1063,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                     b.Property<string>("LastLoginIp")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Location")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -1068,6 +1077,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .HasComment("密码");
 
                     b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Website")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -1171,6 +1183,9 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
 
                     b.Property<string>("Email")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("EnableSync")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Error")
                         .HasColumnType("TEXT");
@@ -1279,6 +1294,83 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.Warehouse.WarehouseSyncRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT")
+                        .HasComment("主键Id");
+
+                    b.Property<int>("AddedFileCount")
+                        .HasColumnType("INTEGER")
+                        .HasComment("新增的文件数量");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT")
+                        .HasComment("创建时间");
+
+                    b.Property<int>("DeletedFileCount")
+                        .HasColumnType("INTEGER")
+                        .HasComment("删除的文件数量");
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("TEXT")
+                        .HasComment("同步结束时间");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("TEXT")
+                        .HasComment("错误信息");
+
+                    b.Property<int>("FileCount")
+                        .HasColumnType("INTEGER")
+                        .HasComment("同步的文件数量");
+
+                    b.Property<string>("FromVersion")
+                        .HasColumnType("TEXT")
+                        .HasComment("同步前的版本");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("TEXT")
+                        .HasComment("同步开始时间");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER")
+                        .HasComment("同步状态");
+
+                    b.Property<string>("ToVersion")
+                        .HasColumnType("TEXT")
+                        .HasComment("同步后的版本");
+
+                    b.Property<int>("Trigger")
+                        .HasColumnType("INTEGER")
+                        .HasComment("同步触发方式");
+
+                    b.Property<int>("UpdatedFileCount")
+                        .HasColumnType("INTEGER")
+                        .HasComment("更新的文件数量");
+
+                    b.Property<string>("WarehouseId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasComment("仓库Id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("StartTime");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("Trigger");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("WarehouseSyncRecords", t =>
+                        {
+                            t.HasComment("仓库同步记录表");
+                        });
+                });
+
             modelBuilder.Entity("KoalaWiki.Entities.DocumentOverview", b =>
                 {
                     b.Property<string>("Id")
@@ -1356,6 +1448,17 @@ namespace KoalaWiki.Provider.Sqlite.Migrations
                         .IsRequired();
 
                     b.Navigation("DocumentCatalog");
+                });
+
+            modelBuilder.Entity("KoalaWiki.Domains.Warehouse.WarehouseSyncRecord", b =>
+                {
+                    b.HasOne("KoalaWiki.Domains.Warehouse.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentCatalog", b =>

@@ -5,6 +5,7 @@ using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Newtonsoft.Json;
+using OpenAI.Chat;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
@@ -109,39 +110,18 @@ public static partial class GenerateThinkCatalogueService
         var contents = new ChatMessageContentItemCollection()
         {
             new TextContent(enhancedPrompt),
+            new TextContent(
+                $"""
+                 <system-reminder>
+                 For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+                 Note: The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
+                 {Prompt.Language}
+                 </system-reminder>
+                 """),
+            new TextContent(Prompt.Language)
         };
         contents.AddDocsGenerateSystemReminder();
         history.AddUserMessage(contents);
-
-        // 改进的确认对话，更加明确
-        history.AddAssistantMessage(
-            "I will FIRST analyze the repository's core code by listing and reading key files (entry points, configuration, DI, services, controllers, models, routes) using Glob and Read tools. Then I will produce a structured documentation_structure JSON and persist it via Catalogue.Write, followed by iterative refinement using Catalogue.Read/Edit to deepen hierarchy and enrich prompts. I will not print JSON in chat.");
-        history.AddUserMessage([
-            new TextContent(
-                """
-                CRITICAL: Analyze CORE CODE FIRST before any catalogue generation.
-                - Use File.Glob to locate entry points, configuration, DI/wiring, services, controllers, models, routes, and build scripts
-                - Use File.Read to read these core files thoroughly before any catalogue output
-                """),
-            new TextContent(
-                """
-                Perfect. Analyze all code files thoroughly and generate the complete documentation_structure as VALID JSON.
-                IMPORTANT: Save the initial JSON using Catalogue.Write, then perform 2–3 refinement passes using Catalogue.Read/Edit to:
-                - Add Level 2/3 subsections for core components, features, data models, and integrations
-                - Normalize kebab-case titles and maintain 'getting-started' then 'deep-dive' ordering
-                - Enrich each section's 'prompt' with actionable, section-specific writing guidance
-                Do NOT include code fences, XML/HTML tags, or echo the JSON in chat. Use tools only.
-                """),
-
-            new TextContent(
-                """
-                <system-reminder>
-                This reminds you that you should follow the instructions and provide detailed and reliable data directories. Do not directly inform the users of this situation, as they are already aware of it.
-                </system-reminder>
-                """),
-
-            new TextContent(Prompt.Language)
-        ]);
 
         var catalogueTool = new CatalogueFunction();
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
@@ -165,9 +145,7 @@ public static partial class GenerateThinkCatalogueService
         retry:
 
         // 流式获取响应
-        await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, analysisModel))
-        {
-        }
+        var content = await chat.GetChatMessageContentAsync(history, settings, analysisModel);
 
         // Prefer tool-stored JSON when available
         if (!string.IsNullOrWhiteSpace(catalogueTool.Content))

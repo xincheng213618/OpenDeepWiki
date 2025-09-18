@@ -17,7 +17,7 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1046,6 +1046,12 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Bio")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Company")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasComment("创建时间");
@@ -1062,6 +1068,9 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                     b.Property<string>("LastLoginIp")
                         .HasColumnType("text");
 
+                    b.Property<string>("Location")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1074,6 +1083,9 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Website")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -1176,6 +1188,9 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
 
                     b.Property<string>("Email")
                         .HasColumnType("text");
+
+                    b.Property<bool>("EnableSync")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Error")
                         .HasColumnType("text");
@@ -1284,6 +1299,83 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.Warehouse.WarehouseSyncRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasComment("主键Id");
+
+                    b.Property<int>("AddedFileCount")
+                        .HasColumnType("integer")
+                        .HasComment("新增的文件数量");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasComment("创建时间");
+
+                    b.Property<int>("DeletedFileCount")
+                        .HasColumnType("integer")
+                        .HasComment("删除的文件数量");
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasComment("同步结束时间");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text")
+                        .HasComment("错误信息");
+
+                    b.Property<int>("FileCount")
+                        .HasColumnType("integer")
+                        .HasComment("同步的文件数量");
+
+                    b.Property<string>("FromVersion")
+                        .HasColumnType("text")
+                        .HasComment("同步前的版本");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasComment("同步开始时间");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasComment("同步状态");
+
+                    b.Property<string>("ToVersion")
+                        .HasColumnType("text")
+                        .HasComment("同步后的版本");
+
+                    b.Property<int>("Trigger")
+                        .HasColumnType("integer")
+                        .HasComment("同步触发方式");
+
+                    b.Property<int>("UpdatedFileCount")
+                        .HasColumnType("integer")
+                        .HasComment("更新的文件数量");
+
+                    b.Property<string>("WarehouseId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasComment("仓库Id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("StartTime");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("Trigger");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("WarehouseSyncRecords", t =>
+                        {
+                            t.HasComment("仓库同步记录表");
+                        });
+                });
+
             modelBuilder.Entity("KoalaWiki.Entities.DocumentOverview", b =>
                 {
                     b.Property<string>("Id")
@@ -1361,6 +1453,17 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         .IsRequired();
 
                     b.Navigation("DocumentCatalog");
+                });
+
+            modelBuilder.Entity("KoalaWiki.Domains.Warehouse.WarehouseSyncRecord", b =>
+                {
+                    b.HasOne("KoalaWiki.Domains.Warehouse.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentCatalog", b =>

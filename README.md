@@ -15,13 +15,6 @@
 
 Our enterprise service offers comprehensive support and flexibility for businesses seeking professional AI solutions.
 
-
-# Sponsor
-
-[![302.AI](https://github.com/user-attachments/assets/b1bcb56e-38cb-47bf-adfe-7a21d83774b4)](https://share.302.ai/jXcaTv)
-
-[302.AI](https://share.302.ai/jXcaTv) is a pay-as-you-go enterprise-level AI application platform that provides an open platform and open-source ecosystem to help AI solve various needs. Click [here](https://share.302.ai/jXcaTv) to get $1 free credit!
-
 ---
 
 # Features
@@ -132,7 +125,7 @@ services:
       - ENABLE_CODED_DEPENDENCY_ANALYSIS=false # Whether to enable code dependency analysis, may affect code quality
       - ENABLE_WAREHOUSE_COMMIT=true # Whether to enable warehouse commit
       - ENABLE_FILE_COMMIT=true # Whether to enable file commit
-      - REFINE_AND_ENHANCE_QUALITY=true # Whether to refine and enhance quality
+      - REFINE_AND_ENHANCE_QUALITY=false # Whether to refine and enhance quality
       - ENABLE_WAREHOUSE_FUNCTION_PROMPT_TASK=true # Whether to enable warehouse function prompt task
       - ENABLE_WAREHOUSE_DESCRIPTION_TASK=true # Whether to enable warehouse description task
       - CATALOGUE_FORMAT=compact # Directory structure format (compact, json, pathlist, unix)
