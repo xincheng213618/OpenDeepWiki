@@ -41,13 +41,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       
-      - name: Extract version from Directory.Packages.props
-        id: version
-        run: |
-          $versionSuffix = (Select-Xml -Path "Directory.Packages.props" -XPath "//VersionSuffix").Node.InnerText
-          $version = "0.7.$versionSuffix"
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-          echo "Version: $version"
       
       - name: Build and push koala-wiki
         uses: docker/build-push-action@v5
