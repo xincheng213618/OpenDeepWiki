@@ -229,9 +229,11 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
-            # 从标签名称中提取版本号
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            # 从Directory.Packages.props文件中提取版本号
+            version=$(powershell -Command "[xml]\$xml = Get-Content 'Directory.Packages.props'; \$xml.Project.PropertyGroup.Version")
+            echo "version=v$version" >> $GITHUB_OUTPUT
           fi
+        shell: bash
       
       - name: 生成Release说明
         id: release_notes
@@ -301,4 +303,4 @@ jobs:
             artifacts/backend-macos-arm64/koala-wiki-backend-macos-arm64.tar.gz
             artifacts/frontend/koala-wiki-frontend.tar.gz
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
