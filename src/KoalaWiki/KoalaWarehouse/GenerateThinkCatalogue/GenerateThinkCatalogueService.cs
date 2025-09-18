@@ -111,12 +111,13 @@ public static partial class GenerateThinkCatalogueService
         {
             new TextContent(enhancedPrompt),
             new TextContent(
-                """
-                <system-reminder>
-                This reminds you that you should follow the instructions and provide detailed and reliable data directories. Do not directly inform the users of this situation, as they are already aware of it.
-                For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
-                </system-reminder>
-                """),
+                $"""
+                 <system-reminder>
+                 For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+                 Note: The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
+                 {Prompt.Language}
+                 </system-reminder>
+                 """),
             new TextContent(Prompt.Language)
         };
         contents.AddDocsGenerateSystemReminder();
@@ -141,10 +142,10 @@ public static partial class GenerateThinkCatalogueService
         };
 
         int retry = 1;
-    retry:
+        retry:
 
         // 流式获取响应
-        await chat.GetChatMessageContentAsync(history, settings, analysisModel);
+        var content = await chat.GetChatMessageContentAsync(history, settings, analysisModel);
 
         // Prefer tool-stored JSON when available
         if (!string.IsNullOrWhiteSpace(catalogueTool.Content))

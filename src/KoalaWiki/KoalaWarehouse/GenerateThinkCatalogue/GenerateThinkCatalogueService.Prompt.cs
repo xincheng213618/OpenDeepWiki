@@ -17,32 +17,31 @@ public partial class GenerateThinkCatalogueService
             }, OpenAIOptions.AnalysisModel);
 
         var toolUsage = """
-                        ## COMPREHENSIVE WORKFLOW INSTRUCTIONS:
+                        ## Catalogue Tool Usage Guidelines
                         
-                        ### PHASE 1: REPOSITORY ANALYSIS (MANDATORY FIRST STEP)
-                        - CRITICAL: Analyze core code structure BEFORE any catalogue generation
-                        - MUST prioritize extracting repository structure directly from <code_files> context — AVOID using File.Glob
-                        - Directly inspect identified files from <code_files> to find:
-                          entry points, configuration/DI setup, services, controllers, models, routes, build scripts
-                        - Use PARALLEL File.Read operations to inspect MULTIPLE files simultaneously in a SINGLE message for maximum efficiency
-                        - DO NOT read files sequentially — batch multiple File.Read calls together
-                        - Understand project architecture, technology stack, and component relationships
+                        **PARALLEL READ OPERATIONS**
+                        - MANDATORY: Always perform PARALLEL File.Read calls — batch multiple files in a SINGLE message for maximum efficiency
+                        - CRITICAL: Read MULTIPLE files simultaneously in one operation
+                        - PROHIBITED: Sequential one-by-one file reads (inefficient and wastes context capacity)
                         
-                        ### PHASE 2: JSON GENERATION
-                        - Create initial documentation_structure JSON with proper schema compliance
-                        - Use Catalogue.Write ONCE to persist the initial structure (Write must be used only a single time in the entire workflow)
-                        - JSON requirements: valid syntax, items/children schema, kebab-case titles
-                        - Structure: top-level 'getting-started' section, then 'deep-dive' section
-                        - Do NOT wrap JSON with code fences, XML/HTML tags, or print in chat
+                        **EDITING OPERATION LIMITS**
+                        - HARD LIMIT: Maximum of 3 editing operations total (Catalogue.MultiEdit only)
+                        - PRIORITY: Maximize each Catalogue.MultiEdit operation by bundling ALL related changes across multiple files
+                        - STRATEGIC PLANNING: Consolidate all modifications into minimal MultiEdit operations to stay within the limit
+                        - Use Catalogue.Write **only once** for initial creation or full rebuild (counts as initial structure creation, not part of the 3 edits)
+                        - Always verify content before further changes using Catalogue.Read (Reads do NOT count toward limit)
                         
-                        ### PHASE 3: ITERATIVE REFINEMENT (MAX 3 EDIT OPERATIONS)
-                        - All adjustments after the first write MUST use Catalogue.MultiEdit (no more Catalogue.Write allowed in this phase)
-                        - Perform up to 3 refinement passes using Catalogue.Read + Catalogue.MultiEdit
-                        - Add Level 2/3 subsections for core components, features, data models, integrations
-                        - Maintain consistent naming and ordering conventions
-                        - Enrich each section's 'prompt' field with actionable, specific writing guidance
-                        - For major restructuring, fit within planned MultiEdit passes (no rewrite via Write after PHASE 2)
+                        **CRITICAL MULTIEDIT BEST PRACTICES**
+                        - MAXIMIZE EFFICIENCY: Each MultiEdit should target multiple distinct sections across files
+                        - AVOID CONFLICTS: Never edit overlapping or identical content regions within the same MultiEdit operation
+                        - UNIQUE TARGETS: Ensure each edit instruction addresses a completely different section or file
+                        - BATCH STRATEGY: Group all necessary changes by proximity and relevance, but maintain clear separation between edit targets
                         
+                        **RECOMMENDED EDITING SEQUENCE**
+                        1. Initial creation → Catalogue.Write (one-time full structure creation)
+                        2. Bulk refinements → Catalogue.MultiEdit with maximum parallel changes (counts toward 3-operation limit)
+                        3. Validation → Use Catalogue.Read after each MultiEdit to verify success before next operation
+                        4. Final adjustments → Remaining MultiEdit operations for any missed changes
                         """;
 
         // Attempt-based enhancement focusing on specific quality improvements

@@ -238,8 +238,13 @@ public partial class DocumentPendingService
         {
             new TextContent(prompt),
             new TextContent(
-                "For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially."),
-            new TextContent(Prompt.Language)
+                $"""
+                 <system-reminder>
+                 For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+                 Note: The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
+                 {Prompt.Language}
+                 </system-reminder>
+                 """)
         };
 
         contents.AddDocsGenerateSystemReminder();
@@ -257,7 +262,7 @@ public partial class DocumentPendingService
 
         reset:
 
-        await chat.GetChatMessageContentsAsync(history, settings, documentKernel);
+        var content = await chat.GetChatMessageContentsAsync(history, settings, documentKernel);
 
         if (string.IsNullOrEmpty(docs.Content) && count < 5)
         {

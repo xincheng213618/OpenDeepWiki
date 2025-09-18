@@ -401,6 +401,11 @@ export const repositoryService = {
     })
   },
 
+  // 更新仓库信息
+  updateRepository: async (id: string, data: Partial<WarehouseInfo>) => {
+    return request.put<boolean>(`/api/Repository/UpdateWarehouse?id=${id}`, data)
+  },
+
   // 导出仓库Markdown
   exportRepositoryMarkdown: async (id: string) => {
     // 这个需要根据实际后端API调整
@@ -520,6 +525,14 @@ export const repositoryService = {
   // 手动触发同步
   triggerManualSync: async (id: string) => {
     return request.post<boolean>(`/api/Repository/ManualSync?id=${id}`)
+  },
+
+  // AI生成文档内容
+  generateFileContent: async (id: string, prompt?: string) => {
+    return request.post<boolean>('/api/Repository/GenerateFileContent', {
+      id,
+      prompt
+    })
   }
 }
 

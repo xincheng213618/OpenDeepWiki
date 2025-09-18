@@ -13,28 +13,34 @@ public partial class DocumentPendingService
         string projectType = GetProjectTypeDescription(classifyType);
 
         // Add tool usage limitations to prevent context overflow
-        string toolUsageLimitations = """
-                                       ## CRITICAL TOOL USAGE LIMITATIONS (Context Overflow Prevention)
-                                       
-                                       **PARALLEL READ OPERATIONS**
-                                       - MANDATORY: Always perform PARALLEL File.Read calls — batch multiple files in a SINGLE message for maximum efficiency
-                                       - CRITICAL: Read MULTIPLE files simultaneously in one operation
-                                       - PROHIBITED: Sequential one-by-one file reads (inefficient and wastes context capacity)
-                                       
-                                       **EDITING OPERATION LIMITS**
-                                       - HARD LIMIT: Maximum of 3 editing operations total (Docs.MultiEdit + Docs.Edit combined)
-                                       - PRIORITY: Use Docs.MultiEdit for grouped, related changes — far more efficient than multiple individual edits
-                                       - STRATEGIC PLANNING: Combine adjustments into minimal edit operations to stay within the limit
-                                       - Use Docs.Write **only once** for initial creation or full rebuild (counts as initial structure creation, not part of the 3 edits)
-                                       - Always verify content before further changes using Docs.Read (Reads do NOT count toward limit)
-                                       
-                                       **RECOMMENDED EDITING SEQUENCE**
-                                       1. Initial creation → Docs.Write (one-time full structure creation)
-                                       2. Refinements → Prefer Docs.MultiEdit for bulk improvements (counts toward 3-edit limit)
-                                       3. Fallback → Use Docs.Edit only when MultiEdit isn’t viable (also counts toward limit)
-                                       4. Validation → Use Docs.Read after significant changes to confirm before next operation
-                                       
-                                       """;
+        string toolUsageLimitations =
+            """
+            ## Docs Tool Usage Guidelines
+
+            **PARALLEL READ OPERATIONS**
+            - MANDATORY: Always perform PARALLEL File.Read calls — batch multiple files in a SINGLE message for maximum efficiency
+            - CRITICAL: Read MULTIPLE files simultaneously in one operation
+            - PROHIBITED: Sequential one-by-one file reads (inefficient and wastes context capacity)
+
+            **EDITING OPERATION LIMITS**
+            - HARD LIMIT: Maximum of 3 editing operations total (Docs.MultiEdit only)
+            - PRIORITY: Maximize each Docs.MultiEdit operation by bundling ALL related changes across multiple files
+            - STRATEGIC PLANNING: Consolidate all modifications into minimal MultiEdit operations to stay within the limit
+            - Use Docs.Write **only once** for initial creation or full rebuild (counts as initial structure creation, not part of the 3 edits)
+            - Always verify content before further changes using Docs.Read (Reads do NOT count toward limit)
+
+            **CRITICAL MULTIEDIT BEST PRACTICES**
+            - MAXIMIZE EFFICIENCY: Each MultiEdit should target multiple distinct sections across files
+            - AVOID CONFLICTS: Never edit overlapping or identical content regions within the same MultiEdit operation
+            - UNIQUE TARGETS: Ensure each edit instruction addresses a completely different section or file
+            - BATCH STRATEGY: Group all necessary changes by proximity and relevance, but maintain clear separation between edit targets
+
+            **RECOMMENDED EDITING SEQUENCE**
+            1. Initial creation → Docs.Write (one-time full structure creation)
+            2. Bulk refinements → Docs.MultiEdit with maximum parallel changes (counts toward 3-operation limit)
+            3. Validation → Use Docs.Read after each MultiEdit to verify success before next operation
+            4. Final adjustments → Remaining MultiEdit operations for any missed changes                          
+            """;
 
         return await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.GenerateDocs),
             new KernelArguments()

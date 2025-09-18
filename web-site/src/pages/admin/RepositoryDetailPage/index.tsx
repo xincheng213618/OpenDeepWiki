@@ -6,16 +6,16 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -58,7 +58,9 @@ import {
   ExternalLink,
   Copy,
   MoreVertical,
-  History
+  History,
+  Sparkles,
+  Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type WarehouseInfo, type RepositoryLogDto, type WarehouseSyncRecord, repositoryService } from '@/services/admin.service'
@@ -156,6 +158,15 @@ const RepositoryDetailPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [syncRecords, setSyncRecords] = useState<WarehouseSyncRecord[]>([])
   const [updatingSyncSetting, setUpdatingSyncSetting] = useState(false)
+  const [aiGenerateDialog, setAiGenerateDialog] = useState(false)
+  const [aiGeneratePrompt, setAiGeneratePrompt] = useState('')
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [editDialog, setEditDialog] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    enableSync: false
+  })
 
   // 收集所有可展开的节点ID
   const collectExpandableNodes = useCallback((nodes: any[]): string[] => {
@@ -419,6 +430,76 @@ const RepositoryDetailPage: React.FC = () => {
       toast.success(t('admin.repositories.detail.export_success'))
     } catch (error) {
       toast.error(t('admin.repositories.detail.export_failed'))
+    }
+  }
+
+  const handleEdit = () => {
+    if (repository) {
+      setEditForm({
+        name: repository.name || '',
+        description: repository.description || '',
+        enableSync: repository.enableSync || false
+      })
+      setEditDialog(true)
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!id || !repository) return
+
+    try {
+      // 更新仓库信息
+      await repositoryService.updateRepository(id, {
+        name: editForm.name,
+        description: editForm.description
+      })
+
+      // 如果同步设置有变化，单独更新
+      if (editForm.enableSync !== repository.enableSync) {
+        await repositoryService.updateWarehouseSync(id, { enableSync: editForm.enableSync })
+      }
+
+      toast.success('仓库信息更新成功')
+      setEditDialog(false)
+
+      // 重新加载仓库信息
+      const repoResponse = await repositoryService.getRepositoryDetail(id)
+      setRepository(repoResponse)
+    } catch (error) {
+      toast.error('更新失败，请稍后重试')
+    }
+  }
+
+  const handleAiGenerate = async () => {
+    if (!selectedNode?.catalog?.id) {
+      toast.error('请先选择一个文档目录')
+      return
+    }
+
+    setAiGenerating(true)
+    try {
+      // 调用AI生成API，提示词可为空，为空时使用原有提示词
+      await repositoryService.generateFileContent(
+        selectedNode.catalog.id,
+        aiGeneratePrompt || undefined
+      )
+
+      toast.success('AI生成任务已启动，请稍后刷新查看结果')
+      setAiGenerateDialog(false)
+      setAiGeneratePrompt('')
+
+      // 5秒后自动刷新内容
+      setTimeout(async () => {
+        if (selectedNode?.catalog?.id) {
+          await loadFileContent(selectedNode.catalog.id)
+          toast.info('文档内容已刷新')
+        }
+      }, 5000)
+    } catch (error) {
+      console.error('AI生成失败:', error)
+      toast.error('AI生成失败，请稍后重试')
+    } finally {
+      setAiGenerating(false)
     }
   }
 
@@ -717,6 +798,16 @@ const RepositoryDetailPage: React.FC = () => {
                             已完成
                           </Badge>
                         )}
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => setAiGenerateDialog(true)}
+                          disabled={!selectedNode.catalog?.id}
+                          className="flex items-center gap-2"
+                        >
+                          <Sparkles className="h-4 w-4" />
+                          AI生成
+                        </Button>
                         <Button
                           size="sm"
                           onClick={handleSave}
@@ -1236,7 +1327,7 @@ const RepositoryDetailPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setEditMode(!editMode)}
+            onClick={handleEdit}
           >
             <Edit3 className="mr-2 h-4 w-4" />
             {t('admin.repositories.detail.edit')}
@@ -1306,6 +1397,131 @@ const RepositoryDetailPage: React.FC = () => {
         </TabsContent>
 
       </Tabs>
+
+      {/* 编辑仓库对话框 */}
+      <Dialog open={editDialog} onOpenChange={setEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>编辑仓库信息</DialogTitle>
+            <DialogDescription>
+              修改仓库的基本信息和同步设置
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">仓库名称</Label>
+              <Input
+                id="name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="输入仓库名称"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">仓库描述</Label>
+              <Textarea
+                id="description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="输入仓库描述"
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="enableSync">自动同步</Label>
+                <p className="text-sm text-muted-foreground">
+                  启用后系统将自动同步仓库更新
+                </p>
+              </div>
+              <Switch
+                id="enableSync"
+                checked={editForm.enableSync}
+                onCheckedChange={(checked) => setEditForm({ ...editForm, enableSync: checked })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI生成对话框 */}
+      <Dialog open={aiGenerateDialog} onOpenChange={setAiGenerateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5" />
+              AI智能生成文档内容
+            </DialogTitle>
+            <DialogDescription>
+              为当前选中的文档目录生成内容。您可以输入自定义提示词来引导AI生成，留空则使用默认提示词。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="prompt">提示词（可选）</Label>
+              <Textarea
+                id="prompt"
+                placeholder="例如：请生成详细的技术文档，包含代码示例和架构说明..."
+                value={aiGeneratePrompt}
+                onChange={(e) => setAiGeneratePrompt(e.target.value)}
+                className="min-h-[100px]"
+                disabled={aiGenerating}
+              />
+              <p className="text-sm text-muted-foreground">
+                提示：留空将使用系统默认提示词或之前保存的提示词
+              </p>
+            </div>
+            {selectedNode?.catalog && (
+              <div className="rounded-lg bg-muted p-3">
+                <p className="text-sm">
+                  <strong>目标文档：</strong>{selectedNode.title || selectedNode.name}
+                </p>
+                {selectedNode.catalog.prompt && (
+                  <p className="text-sm mt-1">
+                    <strong>当前提示词：</strong>{selectedNode.catalog.prompt}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAiGenerateDialog(false)
+                setAiGeneratePrompt('')
+              }}
+              disabled={aiGenerating}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={handleAiGenerate}
+              disabled={aiGenerating || !selectedNode?.catalog?.id}
+            >
+              {aiGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  开始生成
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

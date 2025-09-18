@@ -27,7 +27,8 @@ public class RepositoryService(
     IMemoryCache memoryCache,
     ILogger<RepositoryService> logger,
     IUserContext userContext,
-    IHttpContextAccessor httpContextAccessor) : FastApi
+    IHttpContextAccessor httpContextAccessor,
+    IWarehouseSyncService warehouseSyncService) : FastApi
 {
     /// <summary>
     /// 检查用户对指定仓库的访问权限
@@ -890,6 +891,165 @@ public class RepositoryService(
     }
 
     /// <summary>
+    /// 更新仓库基本信息
+    /// </summary>
+    /// <param name="id">仓库ID</param>
+    /// <param name="input">更新仓库输入</param>
+    /// <returns></returns>
+    [HttpPut("UpdateWarehouse")]
+    [EndpointSummary("仓库管理：更新仓库信息")]
+    public async Task<bool> UpdateWarehouseAsync(string id, UpdateWarehouseInput input)
+    {
+        // 检查仓库是否存在
+        var warehouse = await dbContext.Warehouses
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (warehouse == null)
+        {
+            throw new ArgumentException("仓库不存在");
+        }
+
+        // 检查管理权限
+        if (!await CheckWarehouseManageAccessAsync(id))
+        {
+            throw new UnauthorizedAccessException("您没有权限管理此仓库");
+        }
+
+        // 更新仓库信息
+        if (!string.IsNullOrEmpty(input.Name))
+            warehouse.Name = input.Name;
+        if (!string.IsNullOrEmpty(input.Description))
+            warehouse.Description = input.Description;
+
+        dbContext.Warehouses.Update(warehouse);
+        await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("仓库 {WarehouseId} 的信息已更新", id);
+
+        return true;
+    }
+
+    /// <summary>
+    /// 更新仓库同步设置
+    /// </summary>
+    /// <param name="id">仓库ID</param>
+    /// <param name="input">更新同步设置输入</param>
+    /// <returns></returns>
+    [HttpPost("UpdateSync")]
+    [EndpointSummary("仓库管理：更新同步设置")]
+    public async Task<bool> UpdateWarehouseSyncAsync(string id, UpdateWarehouseSyncInput input)
+    {
+        // 检查仓库是否存在
+        var warehouse = await dbContext.Warehouses
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (warehouse == null)
+        {
+            throw new ArgumentException("仓库不存在");
+        }
+
+        // 检查管理权限
+        if (!await CheckWarehouseManageAccessAsync(id))
+        {
+            throw new UnauthorizedAccessException("您没有权限管理此仓库");
+        }
+
+        // 更新同步设置
+        warehouse.EnableSync = input.EnableSync;
+        dbContext.Warehouses.Update(warehouse);
+        await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("仓库 {WarehouseId} 的同步设置已更新为 {EnableSync}", id, input.EnableSync);
+
+        return true;
+    }
+
+    /// <summary>
+    /// 手动触发仓库同步
+    /// </summary>
+    /// <param name="id">仓库ID</param>
+    /// <returns></returns>
+    [HttpPost("ManualSync")]
+    [EndpointSummary("仓库管理：手动触发同步")]
+    public async Task<bool> TriggerManualSyncAsync(string id)
+    {
+        // 检查仓库是否存在
+        var warehouse = await dbContext.Warehouses
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (warehouse == null)
+        {
+            throw new ArgumentException("仓库不存在");
+        }
+
+        // 检查管理权限
+        if (!await CheckWarehouseManageAccessAsync(id))
+        {
+            throw new UnauthorizedAccessException("您没有权限管理此仓库");
+        }
+
+        // 调用同步服务执行同步
+        var result = await warehouseSyncService.SyncWarehouseAsync(id, WarehouseSyncTrigger.Manual);
+
+        if (!result)
+        {
+            throw new Exception("触发同步失败，请检查仓库配置");
+        }
+
+        logger.LogInformation("成功触发仓库 {WarehouseId} 的手动同步", id);
+
+        return true;
+    }
+
+    /// <summary>
+    /// 获取仓库同步记录
+    /// </summary>
+    /// <param name="warehouseId">仓库ID</param>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <returns></returns>
+    [HttpGet("SyncRecords")]
+    [EndpointSummary("仓库管理：获取同步记录")]
+    public async Task<PageDto<WarehouseSyncRecordDto>> GetWarehouseSyncRecordsAsync(string warehouseId, int page = 1, int pageSize = 10)
+    {
+        // 检查访问权限
+        if (!await CheckWarehouseAccessAsync(warehouseId))
+        {
+            throw new UnauthorizedAccessException("您没有权限访问此仓库");
+        }
+
+        // 从数据库查询同步记录
+        var query = dbContext.WarehouseSyncRecords
+            .Where(x => x.WarehouseId == warehouseId)
+            .OrderByDescending(x => x.StartTime);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new WarehouseSyncRecordDto
+            {
+                Id = x.Id,
+                WarehouseId = x.WarehouseId,
+                Status = x.Status.ToString(),
+                StartTime = x.StartTime,
+                EndTime = x.EndTime,
+                FromVersion = x.FromVersion,
+                ToVersion = x.ToVersion,
+                ErrorMessage = x.ErrorMessage,
+                FileCount = x.FileCount,
+                UpdatedFileCount = x.UpdatedFileCount,
+                AddedFileCount = x.AddedFileCount,
+                DeletedFileCount = x.DeletedFileCount,
+                Trigger = x.Trigger.ToString(),
+                CreatedAt = x.CreatedAt
+            })
+            .ToListAsync();
+
+        return new PageDto<WarehouseSyncRecordDto>(totalCount, items);
+    }
+
+    /// <summary>
     /// 获取仓库统计信息
     /// </summary>
     [HttpGet("RepositoryStats")]
@@ -1112,4 +1272,52 @@ public class TreeNode
     public List<TreeNode> children { get; set; }
 
     public DocumentCatalog catalog { get; set; }
+}
+
+/// <summary>
+/// 更新仓库输入
+/// </summary>
+public class UpdateWarehouseInput
+{
+    /// <summary>
+    /// 仓库名称
+    /// </summary>
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// 仓库描述
+    /// </summary>
+    public string? Description { get; set; }
+}
+
+/// <summary>
+/// 更新仓库同步设置输入
+/// </summary>
+public class UpdateWarehouseSyncInput
+{
+    /// <summary>
+    /// 是否启用同步
+    /// </summary>
+    public bool EnableSync { get; set; }
+}
+
+/// <summary>
+/// 仓库同步记录DTO
+/// </summary>
+public class WarehouseSyncRecordDto
+{
+    public string Id { get; set; }
+    public string WarehouseId { get; set; }
+    public string Status { get; set; }
+    public DateTime StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
+    public string? FromVersion { get; set; }
+    public string? ToVersion { get; set; }
+    public string? ErrorMessage { get; set; }
+    public int FileCount { get; set; }
+    public int UpdatedFileCount { get; set; }
+    public int AddedFileCount { get; set; }
+    public int DeletedFileCount { get; set; }
+    public string Trigger { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

@@ -59,6 +59,8 @@ builder.Services.AddSerilog(Log.Logger);
 builder.Services.AddOpenApi();
 builder.Services.AddFastApis();
 builder.Services.AddSingleton<GitService>();
+builder.Services.AddScoped<IWarehouseSyncService, WarehouseSyncService>();
+builder.Services.AddScoped<IWarehouseSyncExecutor, WarehouseSyncExecutor>();
 
 // 添加文档处理管道架构
 builder.Services.AddDocumentProcessingPipeline();
@@ -153,7 +155,8 @@ builder.Services
     });
 
 builder.Services.AddHostedService<WarehouseTask>();
-builder.Services.AddHostedService<WarehouseProcessingTask>();
+builder.Services.AddSingleton<WarehouseProcessingTask>();
+builder.Services.AddHostedService<WarehouseProcessingTask>(provider => provider.GetRequiredService<WarehouseProcessingTask>());
 builder.Services.AddHostedService<DataMigrationTask>();
 builder.Services.AddHostedService<Mem0Rag>();
 
