@@ -61,7 +61,7 @@ import {
   History
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { type WarehouseInfo, type RepositoryLogDto, repositoryService } from '@/services/admin.service'
+import { type WarehouseInfo, type RepositoryLogDto, type WarehouseSyncRecord, repositoryService } from '@/services/admin.service'
 import { toast } from 'sonner'
 
 // 延迟加载 MarkdownEditor 组件
@@ -147,14 +147,15 @@ const RepositoryDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [stats, setStats] = useState<RepositoryStats | null>(null)
-  const [permissions, setPermissions] = useState<PermissionInfo[]>([])
-  const [tasks, setTasks] = useState<TaskInfo[]>([])
   const [logs, setLogs] = useState<RepositoryLogDto[]>([])
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('documents')
   const [editMode, setEditMode] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [syncDialogOpen, setSyncDialogOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [syncRecords, setSyncRecords] = useState<WarehouseSyncRecord[]>([])
+  const [updatingSyncSetting, setUpdatingSyncSetting] = useState(false)
 
   // 收集所有可展开的节点ID
   const collectExpandableNodes = useCallback((nodes: any[]): string[] => {
@@ -208,6 +209,9 @@ const RepositoryDetailPage: React.FC = () => {
         // 获取操作日志
         await loadRepositoryLogs(id)
 
+        // 获取同步记录
+        await loadSyncRecords(id)
+
       } catch (error) {
         console.error('Failed to load repository data:', error)
         toast.error(t('admin.repositories.detail.load_repository_data_failed'))
@@ -258,6 +262,15 @@ const RepositoryDetailPage: React.FC = () => {
     }
   }
 
+  const loadSyncRecords = async (warehouseId: string) => {
+    try {
+      const response = await repositoryService.getWarehouseSyncRecords(warehouseId, 1, 10)
+      setSyncRecords(response.items || [])
+    } catch (error) {
+      console.error('Failed to load sync records:', error)
+    }
+  }
+
   const handleNodeClick = useCallback((node: any, isExpandToggle: boolean = false) => {
     const nodeId = node.key || node.id || ''
     const isFolder = !node.isLeaf
@@ -293,7 +306,7 @@ const RepositoryDetailPage: React.FC = () => {
 
   const loadFileContent = async (catalogId: string) => {
     try {
-      const {data} = await repositoryService.getFileContent(catalogId) as any
+      const { data } = await repositoryService.getFileContent(catalogId) as any
       // 确保content是字符串类型
       const contentStr = typeof data === 'string' ? data : String(data || '')
       setSelectedNode(prev => prev ? { ...prev, content: contentStr } : null)
@@ -362,14 +375,30 @@ const RepositoryDetailPage: React.FC = () => {
     if (!id) return
 
     try {
-      await repositoryService.refreshWarehouse(id)
+      await repositoryService.triggerManualSync(id)
       toast.success(t('admin.repositories.detail.sync_task_started'))
       setSyncDialogOpen(false)
 
-      // 刷新统计信息
-      loadRepositoryStats(id)
+      // 刷新统计信息和同步记录
+      await loadRepositoryStats(id)
+      await loadSyncRecords(id)
     } catch (error) {
       toast.error(t('admin.repositories.detail.sync_start_failed'))
+    }
+  }
+
+  const handleSyncToggle = async (enabled: boolean) => {
+    if (!id) return
+
+    setUpdatingSyncSetting(true)
+    try {
+      await repositoryService.updateWarehouseSync(id, { enableSync: enabled })
+      setRepository(prev => prev ? { ...prev, enableSync: enabled } : null)
+      toast.success(enabled ? '已启用自动同步' : '已禁用自动同步')
+    } catch (error) {
+      toast.error('更新同步设置失败')
+    } finally {
+      setUpdatingSyncSetting(false)
     }
   }
 
@@ -602,239 +631,102 @@ const RepositoryDetailPage: React.FC = () => {
     )
   }
 
-  // 所有render函数
-  const renderOverviewTab = () => (
-    <div className="grid grid-cols-12 gap-6">
-      {/* 基本信息卡片 */}
-      <div className="col-span-8 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>基本信息</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">仓库名称</Label>
-                <p className="text-sm text-muted-foreground">{repository?.name}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">组织名称</Label>
-                <p className="text-sm text-muted-foreground">{repository?.organizationName}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">仓库地址</Label>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-muted-foreground truncate">{repository?.address}</p>
-                  <Button variant="ghost" size="sm" onClick={() => window.open(repository?.address, '_blank')}>
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">分支</Label>
-                <p className="text-sm text-muted-foreground">{repository?.branch || 'main'}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">仓库类型</Label>
-                <p className="text-sm text-muted-foreground">{repository?.type || 'git'}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">是否推荐</Label>
-                <Badge variant={repository?.isRecommended ? 'default' : 'outline'}>
-                  {repository?.isRecommended ? '是' : '否'}
-                </Badge>
-              </div>
-            </div>
-            {repository?.description && (
-              <div>
-                <Label className="text-sm font-medium">描述</Label>
-                <p className="text-sm text-muted-foreground">{repository.description}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 处理状态卡片 */}
-        {repository?.status === 'Processing' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>处理进度</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>文档生成进度</span>
-                  <span>75%</span>
-                </div>
-                <Progress value={75} className="h-2" />
-                <p className="text-sm text-muted-foreground">正在处理文档，预计还需要5分钟...</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 错误信息卡片 */}
-        {repository?.error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{repository.error}</AlertDescription>
-          </Alert>
-        )}
-      </div>
-
-      {/* 统计信息卡片 */}
-      <div className="col-span-4 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>统计信息</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">文档总数</span>
-                <Badge variant="outline">{stats?.totalDocuments || 0}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">文件总数</span>
-                <Badge variant="outline">{stats?.totalFiles || 0}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">已完成文档</span>
-                <Badge variant="outline">{stats?.completedDocuments || 0}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">待处理文档</span>
-                <Badge variant="outline">{stats?.pendingDocuments || 0}</Badge>
-              </div>
-            </div>
-            <Separator />
-            <div>
-              <Label className="text-sm font-medium">最后同步时间</Label>
-              <p className="text-sm text-muted-foreground">
-                {stats?.lastSyncTime
-                  ? new Date(stats.lastSyncTime).toLocaleString('zh-CN')
-                  : '未同步'
-                }
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 文件类型分布 */}
-        {stats?.fileTypes && (
-          <Card>
-            <CardHeader>
-              <CardTitle>文件类型分布</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {Object.entries(stats.fileTypes).map(([type, count]) => (
-                  <div key={type} className="flex justify-between items-center">
-                    <span className="text-sm capitalize">{type}</span>
-                    <Badge variant="outline">{count}</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
-  )
-
   const renderDocumentsTab = () => (
     <div className="grid grid-cols-12 gap-6 h-[calc(100vh-16rem)]">
       {/* 文档目录树 */}
-      <div className="col-span-4">
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle>文档目录</CardTitle>
-            <CardDescription>浏览和管理文档结构</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="px-3 py-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="搜索文档..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-14 h-8 text-sm bg-accent/30 border-0 focus:bg-accent/50 transition-colors placeholder:text-muted-foreground/60"
-                />
-                <kbd className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border border-border/50 bg-background px-1 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-[10px]">⌘</span>K
-                </kbd>
-              </div>
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="px-2 py-1 space-y-1">
-                {/* 分隔线 */}
-                <div className="h-px bg-border/30 mx-2 my-3" />
-
-                {/* 文档树 */}
-                {treeData && treeData.length > 0 ? (
-                  <div className="space-y-0.5">
-                    {filteredTreeData(treeData).map(node => renderTreeNode(node))}
+      {sidebarCollapsed ? (
+        <div className="col-span-1 flex items-start justify-center pt-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="h-8 w-8 p-0 hover:bg-accent/50 bg-background border border-border/50 shadow-sm"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ) : (
+        <div className="col-span-4 transition-all duration-300 ease-in-out">
+          <Card className="h-full">
+            <CardContent className="p-0">
+              <div className="px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="搜索文档..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-14 h-8 text-sm bg-accent/30 border-0 focus:bg-accent/50 transition-colors placeholder:text-muted-foreground/60"
+                    />
+                    <kbd className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border border-border/50 bg-background px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                      <span className="text-[10px]">⌘</span>K
+                    </kbd>
                   </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground/60 text-center py-4 px-6">
-                    暂无文档目录
-                  </p>
-                )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    className="h-8 w-8 p-0 hover:bg-accent/50"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
+              <ScrollArea className="flex-1">
+                <div className="px-2 py-1 space-y-1">
+                  {/* 分隔线 */}
+                  <div className="h-px bg-border/30 mx-2 my-3" />
+
+                  {/* 文档树 */}
+                  {treeData && treeData.length > 0 ? (
+                    <div className="space-y-0.5">
+                      {filteredTreeData(treeData).map(node => renderTreeNode(node))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground/60 text-center py-4 px-6">
+                      暂无文档目录
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* 文档内容 */}
-      <div className="col-span-8">
+      <div className={cn(
+        "transition-all duration-300 ease-in-out",
+        sidebarCollapsed ? "col-span-11" : "col-span-8"
+      )}>
         <Card className="h-full flex flex-col">
           {selectedNode ? (
             <>
-              {/* 文档头部 */}
-              <CardHeader className="flex-shrink-0 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    {getFileIcon(selectedNode.name || selectedNode.title || '')}
-                    <div>
-                      <CardTitle className="text-lg">{selectedNode.name || selectedNode.title || 'Untitled'}</CardTitle>
-                      <CardDescription className="text-sm">
-                        {selectedNode.path && `${selectedNode.path} • `}
-                        {selectedNode.isLeaf ? '文件' : '文件夹'}
-                        {selectedNode.catalog?.isCompleted && ' • 已完成'}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {selectedNode.catalog?.isCompleted && (
-                      <Badge variant="default" className="text-xs">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        已完成
-                      </Badge>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={saving || !selectedNode.content}
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {saving ? '保存中...' : '保存'}
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-
               {/* 文档内容区域 */}
               <CardContent className="flex-1 p-0 overflow-hidden">
                 <div className="h-full flex flex-col">
                   {/* 工具栏 */}
                   <div className="flex-shrink-0 px-4 py-2 border-b bg-muted/30">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <span>内容长度: {selectedNode.content?.length || 0} 字符</span>
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground"><div className="flex items-center space-x-2">
+                        {selectedNode.catalog?.isCompleted && (
+                          <Badge variant="default" className="text-xs">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            已完成
+                          </Badge>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={handleSave}
+                          disabled={saving || !selectedNode.content}
+                          className="flex items-center gap-2"
+                        >
+                          <Save className="h-4 w-4" />
+                          {saving ? '保存中...' : '保存'}
+                        </Button>
+                      </div>
                         {selectedNode.lastModified && (
                           <>
                             <Separator orientation="vertical" className="h-4" />
@@ -879,7 +771,6 @@ const RepositoryDetailPage: React.FC = () => {
                         }}
                         onError={(error) => {
                           console.error('Editor error:', error)
-                          toast.error(`编辑器错误: ${error.message}`)
                         }}
                       />
                     </Suspense>
@@ -963,8 +854,14 @@ const RepositoryDetailPage: React.FC = () => {
             <div className="space-y-2">
               <Label>自动同步</Label>
               <div className="flex items-center space-x-2">
-                <Switch />
-                <span className="text-sm text-muted-foreground">启用</span>
+                <Switch
+                  checked={repository?.enableSync || false}
+                  onCheckedChange={handleSyncToggle}
+                  disabled={updatingSyncSetting}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {updatingSyncSetting ? '更新中...' : (repository?.enableSync ? '已启用' : '已禁用')}
+                </span>
               </div>
             </div>
           </div>
@@ -978,30 +875,58 @@ const RepositoryDetailPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {stats?.syncHistory?.map((sync) => (
-              <div key={sync.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className={cn(
-                    "w-3 h-3 rounded-full",
-                    sync.status === 'success' ? 'bg-green-500' :
-                      sync.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
-                  )} />
-                  <div>
-                    <p className="text-sm font-medium">{sync.message}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(sync.timestamp).toLocaleString('zh-CN')}
-                    </p>
+            {syncRecords.length > 0 ? (
+              syncRecords.map((sync) => (
+                <div key={sync.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className={cn(
+                      "w-3 h-3 rounded-full",
+                      sync.status === 'Success' ? 'bg-green-500' :
+                        sync.status === 'Failed' ? 'bg-red-500' : 'bg-yellow-500'
+                    )} />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">
+                          {sync.status === 'Success' ? '同步成功' :
+                            sync.status === 'Failed' ? '同步失败' : '同步中'}
+                        </p>
+                        <Badge variant={sync.trigger === 'Manual' ? 'default' : 'outline'} className="text-xs">
+                          {sync.trigger === 'Manual' ? '手动' : '自动'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        开始: {new Date(sync.startTime).toLocaleString('zh-CN')}
+                        {sync.endTime && ` • 结束: ${new Date(sync.endTime).toLocaleString('zh-CN')}`}
+                      </p>
+                      {sync.errorMessage && (
+                        <p className="text-xs text-red-500 mt-1">{sync.errorMessage}</p>
+                      )}
+                      {sync.fromVersion && sync.toVersion && (
+                        <p className="text-xs text-muted-foreground">
+                          {sync.fromVersion.slice(0, 7)} → {sync.toVersion.slice(0, 7)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="outline" className="mb-1">
+                      {sync.fileCount} 个文件
+                    </Badge>
+                    {sync.status === 'Success' && (
+                      <div className="text-xs text-muted-foreground">
+                        <div>新增: {sync.addedFileCount}</div>
+                        <div>更新: {sync.updatedFileCount}</div>
+                        <div>删除: {sync.deletedFileCount}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <Badge variant="outline">
-                  {sync.filesChanged} 个文件
-                </Badge>
-              </div>
-            )) || (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  暂无同步历史
-                </p>
-              )}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                暂无同步历史
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -1234,7 +1159,6 @@ const RepositoryDetailPage: React.FC = () => {
                         }}
                         onError={(error) => {
                           console.error('Editor error:', error)
-                          toast.error(`编辑器错误: ${error.message}`)
                         }}
                       />
                     </Suspense>
@@ -1291,31 +1215,6 @@ const RepositoryDetailPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
-
-          <span className="inline-flex items-center space-x-2">
-            {getStatusBadge(repository.status || 'Pending')}
-          </span>
-          <p className="text-muted-foreground">
-            {repository.description || t('admin.repositories.detail.no_description')}
-          </p>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <GitBranch className="h-4 w-4" />
-              {repository.branch || 'main'}
-            </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              {t('admin.repositories.detail.created_at')} {new Date(repository.createdAt).toLocaleDateString('zh-CN')}
-            </div>
-            {repository.updatedAt && (
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {t('admin.repositories.detail.updated_at')} {new Date(repository.updatedAt).toLocaleDateString('zh-CN')}
-              </div>
-            )}
-          </div>
-        </div>
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
@@ -1370,22 +1269,16 @@ const RepositoryDetailPage: React.FC = () => {
       </div>
 
       {/* 主要内容区域 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="overview">{t('admin.repositories.detail.overview')}</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
+        <TabsList
+
+          className="grid w-full grid-cols-5">
           <TabsTrigger value="documents">{t('admin.repositories.detail.documents')}</TabsTrigger>
           <TabsTrigger value="sync">{t('admin.repositories.detail.sync')}</TabsTrigger>
           <TabsTrigger value="permissions">{t('admin.repositories.detail.permissions')}</TabsTrigger>
           <TabsTrigger value="config">{t('admin.repositories.detail.config')}</TabsTrigger>
           <TabsTrigger value="tasks">{t('admin.repositories.detail.tasks')}</TabsTrigger>
-          <TabsTrigger value="logs">{t('admin.repositories.detail.logs')}</TabsTrigger>
-          <TabsTrigger value="files">{t('admin.repositories.detail.files')}</TabsTrigger>
         </TabsList>
-
-        {/* 概览标签页 */}
-        <TabsContent value="overview" className="space-y-6">
-          {renderOverviewTab()}
-        </TabsContent>
 
         {/* 文档管理标签页 */}
         <TabsContent value="documents" className="space-y-6">
@@ -1412,15 +1305,6 @@ const RepositoryDetailPage: React.FC = () => {
           {renderTasksTab()}
         </TabsContent>
 
-        {/* 操作日志标签页 */}
-        <TabsContent value="logs" className="space-y-6">
-          {renderLogsTab()}
-        </TabsContent>
-
-        {/* 文件浏览标签页 */}
-        <TabsContent value="files" className="space-y-6">
-          {renderFilesTab()}
-        </TabsContent>
       </Tabs>
     </div>
   )

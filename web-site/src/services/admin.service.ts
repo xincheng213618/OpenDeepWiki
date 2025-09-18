@@ -54,6 +54,28 @@ export interface BatchDeleteUserDto {
   userIds: string[]
 }
 
+// 同步记录相关接口
+export interface WarehouseSyncRecord {
+  id: string
+  warehouseId: string
+  status: 'InProgress' | 'Success' | 'Failed'
+  startTime: string
+  endTime?: string
+  fromVersion?: string
+  toVersion?: string
+  errorMessage?: string
+  fileCount: number
+  updatedFileCount: number
+  addedFileCount: number
+  deletedFileCount: number
+  trigger: 'Auto' | 'Manual'
+  createdAt: string
+}
+
+export interface UpdateWarehouseSyncDto {
+  enableSync: boolean
+}
+
 // 用户管理API
 export const userService = {
   // 获取用户列表
@@ -198,6 +220,7 @@ export interface WarehouseInfo {
   createdAt: string
   updatedAt?: string
   optimizedDirectoryStructure?: string
+  enableSync?: boolean
   documentCount?: number
   type?: string
   isRecommended?: boolean
@@ -473,6 +496,30 @@ export const repositoryService = {
       warehouseId,
       catalogIds
     })
+  },
+
+  // 更新仓库同步设置
+  updateWarehouseSync: async (id: string, data: UpdateWarehouseSyncDto) => {
+    return request.post<boolean>(`/api/Repository/UpdateSync?id=${id}`, data)
+  },
+
+  // 获取仓库同步记录
+  getWarehouseSyncRecords: async (
+    warehouseId: string,
+    page: number = 1,
+    pageSize: number = 10
+  ) => {
+    const params = new URLSearchParams({
+      warehouseId,
+      page: page.toString(),
+      pageSize: pageSize.toString()
+    })
+    return request.get<PageDto<WarehouseSyncRecord>>(`/api/Repository/SyncRecords?${params}`)
+  },
+
+  // 手动触发同步
+  triggerManualSync: async (id: string) => {
+    return request.post<boolean>(`/api/Repository/ManualSync?id=${id}`)
   }
 }
 

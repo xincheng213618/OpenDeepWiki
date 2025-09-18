@@ -112,4 +112,9 @@ public class Warehouse : Entity<string>
     /// 创建用户id
     /// </summary>
     public string? UserId { get; set; }
+
+    /// <summary>
+    /// 是否启用同步
+    /// </summary>
+    public bool EnableSync { get; set; }
 }

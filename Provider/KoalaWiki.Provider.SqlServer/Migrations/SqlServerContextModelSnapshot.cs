@@ -1189,6 +1189,9 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("EnableSync")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Error")
                         .HasColumnType("nvarchar(max)");
 
@@ -1296,6 +1299,83 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KoalaWiki.Domains.Warehouse.WarehouseSyncRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("主键Id");
+
+                    b.Property<int>("AddedFileCount")
+                        .HasColumnType("int")
+                        .HasComment("新增的文件数量");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasComment("创建时间");
+
+                    b.Property<int>("DeletedFileCount")
+                        .HasColumnType("int")
+                        .HasComment("删除的文件数量");
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("datetime2")
+                        .HasComment("同步结束时间");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("错误信息");
+
+                    b.Property<int>("FileCount")
+                        .HasColumnType("int")
+                        .HasComment("同步的文件数量");
+
+                    b.Property<string>("FromVersion")
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("同步前的版本");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("datetime2")
+                        .HasComment("同步开始时间");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
+                        .HasComment("同步状态");
+
+                    b.Property<string>("ToVersion")
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("同步后的版本");
+
+                    b.Property<int>("Trigger")
+                        .HasColumnType("int")
+                        .HasComment("同步触发方式");
+
+                    b.Property<int>("UpdatedFileCount")
+                        .HasColumnType("int")
+                        .HasComment("更新的文件数量");
+
+                    b.Property<string>("WarehouseId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("仓库Id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("StartTime");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("Trigger");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("WarehouseSyncRecords", t =>
+                        {
+                            t.HasComment("仓库同步记录表");
+                        });
+                });
+
             modelBuilder.Entity("KoalaWiki.Entities.DocumentOverview", b =>
                 {
                     b.Property<string>("Id")
@@ -1373,6 +1453,17 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         .IsRequired();
 
                     b.Navigation("DocumentCatalog");
+                });
+
+            modelBuilder.Entity("KoalaWiki.Domains.Warehouse.WarehouseSyncRecord", b =>
+                {
+                    b.HasOne("KoalaWiki.Domains.Warehouse.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("KoalaWiki.Domains.DocumentFile.DocumentCatalog", b =>

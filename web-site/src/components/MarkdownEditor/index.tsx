@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react'
-import { MdEditor, config, ExposeParam, InsertContentGenerator } from 'md-editor-rt'
+import React, { useState, useCallback, useEffect } from 'react'
+import { MdEditor, config, } from 'md-editor-rt'
 import 'md-editor-rt/lib/style.css'
 import { toast } from 'sonner'
 import { uploadImage } from '@/services/admin.service'
+import { useTheme } from '@/components/theme-provider'
 
 // 配置中文语言包
 config({
@@ -100,7 +101,7 @@ interface MarkdownEditorProps {
   placeholder?: string
   height?: string
   readOnly?: boolean
-  theme?: 'light' | 'dark'
+  theme?: 'light' | 'dark' | 'auto'
   language?: string
   toolbarsExclude?: string[]
   onSave?: (value: string, html: string) => void
@@ -118,7 +119,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   placeholder = '请输入内容...',
   height = '600px',
   readOnly = false,
-  theme = 'light',
+  theme = 'auto',
   language = 'zh-CN',
   toolbarsExclude = [],
   onSave,
@@ -131,6 +132,24 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 }) => {
   const [editorId] = useState(() => `md-editor-${Date.now()}`)
   const [uploading, setUploading] = useState(false)
+
+  const { theme: globalTheme } = useTheme()
+
+  // 根据全局主题和组件props计算实际主题
+  const actualTheme = React.useMemo(() => {
+    // 如果组件props指定了具体主题，使用props主题
+    if (globalTheme === 'light' || globalTheme === 'dark') {
+      return globalTheme
+    }
+
+    // 如果组件props是auto或未指定，使用全局主题
+    if (globalTheme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    }
+
+    return globalTheme === 'light' || globalTheme === 'dark' ? globalTheme : 'light'
+  }, [globalTheme])
+
 
   // 处理图片上传
   const handleUploadImg = useCallback(async (
@@ -190,13 +209,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const handleError = useCallback((err: { name: string; message: string }) => {
     const error = new Error(err.message)
     error.name = err.name
-
-    if (err.name === 'rangeError') {
-      toast.error(`内容长度超过限制（最大 ${maxLength} 字符）`)
-    } else {
-      toast.error(`编辑器错误: ${err.message}`)
-    }
-
     if (onError) {
       onError(error)
     }
@@ -237,6 +249,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     'catalog'
   ].filter(item => !toolbarsExclude.includes(item))
 
+  console.log('MarkdownEditor theme:', actualTheme)
+
   return (
     <div className="markdown-editor-container">
       <MdEditor
@@ -244,7 +258,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         modelValue={value}
         onChange={onChange}
         language={language}
-        theme={theme}
+        theme={actualTheme}
         previewTheme={previewTheme}
         codeTheme={codeTheme}
         placeholder={placeholder}
