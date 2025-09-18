@@ -122,8 +122,7 @@ public static class KernelFactory
         kernelBuilderAction?.Invoke(kernelBuilder);
 
         var kernel = kernelBuilder.Build();
-        kernel.FunctionInvocationFilters.Add(new ToolResultInterceptor());
-
+        
         activity?.SetStatus(ActivityStatusCode.Ok);
         activity?.SetTag("kernel.created", true);
 
