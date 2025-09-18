@@ -19,7 +19,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd web-site
-          npm ci
+          npm i 
       
       - name: Build frontend
         run: |
