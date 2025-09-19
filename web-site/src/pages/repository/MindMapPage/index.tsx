@@ -198,8 +198,18 @@ export default function MindMapPage({ className }: { className?: string }) {
     }
 
     mind.init(mindElixirData)
-    mind.scaleFit()
-    mind.toCenter()
+
+    const ensureFit = () => {
+      mind.scaleFit()
+      mind.toCenter()
+    }
+
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(ensureFit)
+      setTimeout(ensureFit, 150)
+    } else {
+      ensureFit()
+    }
 
     const panState = {
       isPanning: false,
@@ -387,15 +397,13 @@ export default function MindMapPage({ className }: { className?: string }) {
     <TooltipProvider>
       <div className="h-full">
         <Card className={`
+          relative flex flex-col
           ${isFullscreen ? 'h-screen fixed top-0 left-0 w-screen z-[9999]' : 'h-[85vh]'}
           transition-all duration-300 border-border/50 shadow-sm
         `}>
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">
-              {mindMapData?.title || `${owner}/${name} 思维导图`}
-            </h2>
-            <div className="flex items-center gap-2">
+        <CardHeader>
+          <div className="flex justify-between  sm:flex-nowrap">
+            <div className="flex justify-end">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -447,6 +455,7 @@ export default function MindMapPage({ className }: { className?: string }) {
         <CardContent className={`
           ${isFullscreen ? 'h-[calc(100vh-80px)]' : 'h-[calc(85vh-80px)]'}
           p-0 relative
+          w-full
         `}>
           <div
             ref={containerRef}
