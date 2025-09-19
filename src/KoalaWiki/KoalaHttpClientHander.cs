@@ -22,7 +22,8 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
         var model = $"{json.model}";
 
         // 兼容旧模型 ( max_completion_tokens => max_tokens )
-        if (json != null && json.max_completion_tokens != null && model.StartsWith("o") == false)
+        if (json != null && json.max_completion_tokens != null && !model.StartsWith("o") &&
+            !model.StartsWith("gpt"))
         {
             json.max_tokens = json.max_completion_tokens;
             json.Remove("max_completion_tokens");
@@ -42,7 +43,8 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
         if (model.StartsWith("qwen3", StringComparison.CurrentCultureIgnoreCase)
             || model.IndexOf("/qwen3", StringComparison.CurrentCultureIgnoreCase) >= 0)
         {
-            if (request.RequestUri.ToString().StartsWith("https://dashscope.aliyuncs.com", StringComparison.CurrentCultureIgnoreCase))
+            if (request.RequestUri.ToString()
+                .StartsWith("https://dashscope.aliyuncs.com", StringComparison.CurrentCultureIgnoreCase))
             {
                 json.enable_thinking = false;
             }
