@@ -26,11 +26,6 @@ jobs:
           cd web-site
           npm run build
       
-      - name: Copy frontend build to backend wwwroot
-        run: |
-          rm -rf src/KoalaWiki/wwwroot/*
-          cp -r web-site/dist/* src/KoalaWiki/wwwroot/
-      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
