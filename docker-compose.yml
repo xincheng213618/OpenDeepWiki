@@ -22,6 +22,8 @@
       - OTEL_SERVICE_NAME=koalawiki
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
+    ports:
+        - "8080:8080"
     volumes:
       - ./repositories:/app/repositories
       - ./data:/data
