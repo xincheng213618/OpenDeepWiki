@@ -92,7 +92,7 @@ public class DataMigrationTask(IServiceProvider service) : BackgroundService
             Email = "239573049@qq.com",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            Avatar = "https://avatars.githubusercontent.com/u/61819790?v=4",
+            Avatar = "/avatar.png",
         };
 
         // 创建管理员账号
