@@ -157,7 +157,8 @@ builder.Services
 
 builder.Services.AddHostedService<WarehouseTask>();
 builder.Services.AddSingleton<WarehouseProcessingTask>();
-builder.Services.AddHostedService<WarehouseProcessingTask>(provider => provider.GetRequiredService<WarehouseProcessingTask>());
+builder.Services.AddHostedService<WarehouseProcessingTask>(provider =>
+    provider.GetRequiredService<WarehouseProcessingTask>());
 builder.Services.AddHostedService<DataMigrationTask>();
 builder.Services.AddHostedService<Mem0Rag>();
 
@@ -255,6 +256,7 @@ app.Use(async (context, next) =>
             {
                 contentType = "application/octet-stream";
             }
+
             context.Response.ContentType = contentType;
 
             await context.Response.SendFileAsync(brFilePath);
@@ -263,7 +265,15 @@ app.Use(async (context, next) =>
         // 如果原始文件存在，继续正常处理
         else if (File.Exists(originalFilePath))
         {
-            await next();
+            // 使用 ContentTypeProvider 获取内容类型
+            if (!contentTypeProvider.TryGetContentType(originalFilePath, out var contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+
+            context.Response.ContentType = contentType;
+
+            await context.Response.SendFileAsync(originalFilePath);
             return;
         }
     }
