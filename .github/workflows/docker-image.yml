@@ -61,7 +61,7 @@ jobs:
         with:
           context: .
           file: src/KoalaWiki/Dockerfile
-          platforms: linux/arm64,linux/amd64
+          platforms: linux/amd64
           push: true
           tags: |
             crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/koala-wiki:latest

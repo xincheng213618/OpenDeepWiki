@@ -152,24 +152,76 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
+      
+      - name: 设置 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
       
       - name: 安装依赖
-        working-directory: web
-        run: npm i
+        working-directory: web-site
+        run: bun install
       
       - name: 构建前端
-        working-directory: web
+        working-directory: web-site
         run: npm run build
       
       - name: 准备前端文件
         run: |
           mkdir -p frontend-dist
-          cp -r web/.next frontend-dist/
-          cp start-frontend.sh frontend-dist/
-          cp start-frontend.bat frontend-dist/
-          chmod +x frontend-dist/start-frontend.sh
+          cp -r web-site/dist frontend-dist/
+          cp start-frontend.sh frontend-dist/ 2>/dev/null || echo "start-frontend.sh not found, will create it"
+          cp start-frontend.bat frontend-dist/ 2>/dev/null || echo "start-frontend.bat not found, will create it"
+
+          # 创建启动脚本（如果不存在）
+          if [ ! -f frontend-dist/start-frontend.sh ]; then
+            cat > frontend-dist/start-frontend.sh << 'SCRIPT_EOF'
+#!/bin/bash
+# KoalaWiki Frontend Startup Script
+
+echo "Starting KoalaWiki Frontend..."
+
+# 使用Python内置HTTP服务器或Node.js静态服务器
+if command -v python3 &> /dev/null; then
+    cd dist && python3 -m http.server 3000
+elif command -v python &> /dev/null; then
+    cd dist && python -m http.server 3000
+elif command -v npx &> /dev/null; then
+    npx serve dist -l 3000
+else
+    echo "请安装Python 3或Node.js来运行前端服务器"
+    exit 1
+fi
+SCRIPT_EOF
+          fi
+
+          if [ ! -f frontend-dist/start-frontend.bat ]; then
+            cat > frontend-dist/start-frontend.bat << 'SCRIPT_EOF'
+@echo off
+echo Starting KoalaWiki Frontend...
+
+REM 检查并使用Python或Node.js启动静态服务器
+where python >nul 2>&1
+if %errorlevel% == 0 (
+    cd dist
+    python -m http.server 3000
+    goto :end
+)
+
+where npx >nul 2>&1
+if %errorlevel% == 0 (
+    npx serve dist -l 3000
+    goto :end
+)
+
+echo 请安装Python或Node.js来运行前端服务器
+pause
+
+:end
+SCRIPT_EOF
+          fi
+
+          chmod +x frontend-dist/start-frontend.sh 2>/dev/null || true
           
           # 创建README文件
           cat > frontend-dist/README.md << 'EOF'
@@ -187,10 +239,13 @@ jobs:
           ```
           
           ## 系统要求
-          - Node.js 18+ 
-          
+          - Python 3 或 Node.js（用于运行静态文件服务器）
+
           ## 访问地址
           启动后访问: http://localhost:3000
+
+          ## 说明
+          前端已构建为静态文件，位于dist目录中
           EOF
       
       - name: 创建前端压缩包
@@ -266,9 +321,9 @@ jobs:
              - Linux/macOS: 执行 `./start-backend.sh` 和 `./start-frontend.sh`
           
           ### 📋 系统要求
-          
+
           - 后端：自包含运行时，无需额外安装.NET
-          - 前端：需要Node.js 18+环境
+          - 前端：静态文件，需要Python 3或Node.js运行静态服务器
           
           ### 🔧 配置说明
           
