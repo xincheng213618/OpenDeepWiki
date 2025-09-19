@@ -1066,26 +1066,35 @@ public class WarehouseService(
                 {
                     var item = allFileItems.FirstOrDefault(x => x.DocumentCatalogId == catalog.Id);
 
-                    // 跳过空文档
-                    if (string.IsNullOrEmpty(item?.Content))
-                        continue;
-
-                    // 创建当前目录的路径
+                    // 创建当前目录的路径 - 无论是否有内容都创建目录结构
                     string dirPath = string.IsNullOrEmpty(currentPath)
                         ? catalog.Url.Replace(" ", "_")
                         : Path.Combine(currentPath, catalog.Url.Replace(" ", "_"));
 
-                    // 文档路径
-                    string entryPath = Path.Combine(dirPath, item.Title.Replace(" ", "_") + ".md");
-
-                    // 创建并写入文档内容
-                    var entry = archive.CreateEntry(entryPath.Replace('\\', '/'));
-                    await using var writer = new StreamWriter(entry.Open());
-                    await writer.WriteAsync($"# {catalog.Name}\n\n{item.Content}");
-
-                    await writer.DisposeAsync();
-
-                    // 获取并处理子目录
+                    // 如果有文档项，处理文档
+                    if (item != null)
+                    {
+                        // 文档路径
+                        string entryPath = Path.Combine(dirPath, item.Title.Replace(" ", "_") + ".md");
+                    
+                        // 创建并写入文档内容
+                        var entry = archive.CreateEntry(entryPath.Replace('\\', '/'));
+                        await using var writer = new StreamWriter(entry.Open());
+                        
+                        // 如果内容为空，只写入标题；否则写入标题和内容
+                        if (string.IsNullOrEmpty(item.Content))
+                        {
+                            await writer.WriteAsync($"# {catalog.Name}\n\n");
+                        }
+                        else
+                        {
+                            await writer.WriteAsync($"# {catalog.Name}\n\n{item.Content}");
+                        }
+                    
+                        await writer.DisposeAsync();
+                    }
+                    
+                    // 获取并处理子目录 - 无论当前目录是否有内容都处理子目录
                     var children = documentCatalogs.Where(x => x.ParentId == catalog.Id).ToList();
                     if (children.Any())
                     {
