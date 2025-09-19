@@ -493,3 +493,4 @@ $RECYCLE.BIN/
 /repositories/aidotnet/Thor
 *lock.json
 seo-web
+/src/KoalaWiki/wwwroot
