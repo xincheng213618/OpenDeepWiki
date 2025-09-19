@@ -6,6 +6,7 @@ using KoalaWiki.Mem0;
 using KoalaWiki.Options;
 using KoalaWiki.Services;
 using KoalaWiki.Services.Feishu.Feishu;
+using Microsoft.AspNetCore.StaticFiles;
 using OpenDeepWiki.CodeFoundation;
 
 AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
@@ -199,8 +200,86 @@ app.UseSerilogRequestLogging();
 
 app.UseCors("AllowAll");
 
+// 创建 ContentTypeProvider 实例
+var contentTypeProvider = new FileExtensionContentTypeProvider();
+
+// 配置静态文件选项以支持 Brotli 压缩
+var staticFileOptions = new StaticFileOptions
+{
+    ContentTypeProvider = contentTypeProvider,
+    OnPrepareResponse = ctx =>
+    {
+        // 设置缓存控制
+        const int durationInSeconds = 60 * 60 * 24 * 7; // 7 days
+        ctx.Context.Response.Headers["Cache-Control"] = $"public, max-age={durationInSeconds}";
+    }
+};
+
 // 添加静态文件服务
-app.UseStaticFiles();
+app.UseStaticFiles(staticFileOptions);
+
+// 自定义中间件：处理 Brotli 压缩文件优先和 SPA 回退
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value;
+
+    // 检查是否是 API 路由，如果是则跳过
+    if (path != null && (path.StartsWith("/api") || path.StartsWith("/mcp")))
+    {
+        await next();
+        return;
+    }
+
+    // 如果请求支持 Brotli 编码
+    if (context.Request.Headers.AcceptEncoding.ToString().Contains("br"))
+    {
+        var wwwrootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+        var requestPath = path?.TrimStart('/') ?? "";
+
+        // 如果是根路径或目录，尝试 index.html
+        if (string.IsNullOrEmpty(requestPath) || requestPath.EndsWith("/"))
+        {
+            requestPath = Path.Combine(requestPath, "index.html");
+        }
+
+        var brFilePath = Path.Combine(wwwrootPath, requestPath + ".br");
+        var originalFilePath = Path.Combine(wwwrootPath, requestPath);
+
+        // 检查 .br 文件是否存在
+        if (File.Exists(brFilePath))
+        {
+            context.Response.Headers["Content-Encoding"] = "br";
+
+            // 使用 ContentTypeProvider 获取内容类型
+            if (!contentTypeProvider.TryGetContentType(requestPath, out var contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+            context.Response.ContentType = contentType;
+
+            await context.Response.SendFileAsync(brFilePath);
+            return;
+        }
+        // 如果原始文件存在，继续正常处理
+        else if (File.Exists(originalFilePath))
+        {
+            await next();
+            return;
+        }
+    }
+
+    await next();
+
+    // SPA 回退：如果是 404 且不是 API 调用，返回 index.html
+    if (context.Response.StatusCode == 404 &&
+        !Path.HasExtension(context.Request.Path.Value) &&
+        path != null && !path.StartsWith("/api"))
+    {
+        context.Response.StatusCode = 200;
+        context.Response.ContentType = "text/html";
+        await context.Response.SendFileAsync(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "index.html"));
+    }
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

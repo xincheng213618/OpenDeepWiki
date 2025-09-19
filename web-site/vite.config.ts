@@ -2,10 +2,34 @@ import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import viteCompression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    // Gzip 压缩
+    viteCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240, // 10KB 以上的文件才压缩
+      algorithm: 'gzip',
+      ext: '.gz',
+    }),
+    // Brotli 压缩
+    viteCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240, // 10KB 以上的文件才压缩
+      algorithm: 'brotliCompress',
+      ext: '.br',
+      compressionOptions: {
+        level: 11,
+      },
+      deleteOriginFile: false,
+    })
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
