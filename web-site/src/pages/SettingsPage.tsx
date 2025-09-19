@@ -182,7 +182,7 @@ export default function SettingsPage() {
       const updateData: UpdateProfileRequest = {
         name: values.name,
         email: values.email,
-        avatar: avatarUrl,
+        avatar: userInfo.avatar || '',
       }
 
       const response = await updateCurrentUserProfile(updateData)

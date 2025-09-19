@@ -154,15 +154,6 @@ const SystemSettingsPage: React.FC<SystemSettingsPageProps> = () => {
           value: setting.value
         }))
 
-      const errors = await systemSettingsService.validateSettings({ settings: updateItems })
-      if (Object.keys(errors).length > 0) {
-        setValidationErrors(errors)
-        toast({
-          title: t('settings.validationFailed'),
-          variant: 'destructive',
-        })
-        return
-      }
 
       await systemSettingsService.batchUpdateSettings({ settings: updateItems })
 

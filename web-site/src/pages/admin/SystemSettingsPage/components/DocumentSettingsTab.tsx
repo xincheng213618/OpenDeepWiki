@@ -239,7 +239,7 @@ const DocumentSettingsTab: React.FC<DocumentSettingsTabProps> = ({
                 {validationErrors.defaultLanguage ? (
                   <p className="text-sm text-destructive">{validationErrors.defaultLanguage}</p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">{t('settings.document.defaultLanguageHelp')}</p>
+                  <p className="text-sm text-muted-foreground">设置生成文档时使用的默认语言，而非编程语言</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -270,29 +270,6 @@ const DocumentSettingsTab: React.FC<DocumentSettingsTabProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>{t('settings.document.enableSmartFilter')}</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t('settings.document.enableSmartFilterHelp')}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={getBooleanValue('EnableSmartFilter')}
-                    onCheckedChange={(checked) => onUpdate('EnableSmartFilter', checked.toString())}
-                    disabled={loading}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      {t('settings.document.smartFilterNote')}
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              </div>
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -376,19 +353,6 @@ const DocumentSettingsTab: React.FC<DocumentSettingsTabProps> = ({
                     disabled={loading}
                   />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>{t('settings.document.enableAgentTool')}</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t('settings.document.enableAgentToolHelp')}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={getBooleanValue('EnableAgentTool')}
-                    onCheckedChange={(checked) => onUpdate('EnableAgentTool', checked.toString())}
-                    disabled={loading}
-                  />
-                </div>
               </div>
               <div className="space-y-2">
                 <Label>{t('settings.document.supportedLanguages')}</Label>
@@ -454,19 +418,6 @@ const DocumentSettingsTab: React.FC<DocumentSettingsTabProps> = ({
                 <Switch
                   checked={getBooleanValue('EnableWarehouseFunctionPromptTask')}
                   onCheckedChange={(checked) => onUpdate('EnableWarehouseFunctionPromptTask', checked.toString())}
-                  disabled={loading}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t('settings.document.enableWarehouseDescriptionTask')}</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {t('settings.document.enableWarehouseDescriptionTaskHelp')}
-                  </p>
-                </div>
-                <Switch
-                  checked={getBooleanValue('EnableWarehouseDescriptionTask')}
-                  onCheckedChange={(checked) => onUpdate('EnableWarehouseDescriptionTask', checked.toString())}
                   disabled={loading}
                 />
               </div>

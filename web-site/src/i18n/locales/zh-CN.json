@@ -24,6 +24,7 @@
     "expand": "展开",
     "collapse": "收起",
     "reset": "重置",
+    "retry": "重试",
     "viewOnGithub": "在 GitHub 上查看",
     "upload": "上传",
     "download": "下载",
@@ -39,7 +40,14 @@
     "disabled": "已禁用",
     "unknown": "未知",
     "notSet": "未设置",
-    "more": "更多"
+    "more": "更多",
+    "export": "导出",
+    "fullscreen": "全屏",
+    "exitFullscreen": "退出全屏",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "resetZoom": "重置缩放",
+    "fitToScreen": "适应屏幕"
   },
   "nav": {
     "home": "首页",
@@ -259,6 +267,7 @@
       "searchNodes": "搜索节点",
       "totalNodes": "总节点数",
       "visibleNodes": "可见节点",
+      "mindMapHints": "点击节点打开链接 • 鼠标滚轮缩放 • 拖拽移动",
       "zoomLevel": "缩放级别",
       "zoomIn": "放大",
       "zoomOut": "缩小",
@@ -285,6 +294,12 @@
       "manualTocDescription": "此文档内容较少，目录已手动启用。您可以随时关闭它。",
       "loadFailed": "加载文档失败",
       "notFound": "文档不存在"
+    },
+    "mindMap": {
+      "loading": "正在加载思维导图...",
+      "loadFailed": "思维导图加载失败",
+      "renderFailed": "思维导图渲染失败",
+      "error": "思维导图错误"
     },
     "detail": {
       "cloneCommand": "克隆命令",

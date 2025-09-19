@@ -91,7 +91,7 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
     set({ loadingBranches: true, error: null })
 
     try {
-      // 先获取文档目录，它会返回分支列表
+      // 获取文档目录来获取分支列表
       const response = await warehouseService.getDocumentCatalog(owner, name)
 
       if (response) {
@@ -105,25 +105,11 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
             selectedBranch: defaultBranch,
             defaultBranch: defaultBranch,
             loadingBranches: false,
-            error: null, // 成功时清除错误状态
+            error: null,
           })
 
-          // 处理文档目录
-          if (response.items) {
-            const nodes = convertToTreeNodes(response.items)
-            set({
-              documentNodes: nodes,
-              loadingDocuments: false
-            })
-
-            // 自动选择第一个文件节点
-            if (nodes.length > 0) {
-              const firstFileNode = findFirstFileNode(nodes)
-              if (firstFileNode) {
-                get().selectNode(firstFileNode)
-              }
-            }
-          }
+          // 获取分支后立即获取文档目录
+          get().fetchDocumentCatalog(defaultBranch)
         } else {
           // 使用默认分支
           set({
@@ -131,14 +117,11 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
             selectedBranch: 'main',
             defaultBranch: 'main',
             loadingBranches: false,
-            error: null, // 成功时清除错误状态
+            error: null,
           })
 
-          // 处理文档目录
-          if (response.items) {
-            const nodes = convertToTreeNodes(response.items)
-            set({ documentNodes: nodes, loadingDocuments: false })
-          }
+          // 获取默认分支的文档目录
+          get().fetchDocumentCatalog('main')
         }
       } else {
         // 如果没有响应，使用默认值
@@ -147,8 +130,11 @@ export const useRepositoryDetailStore = create<RepositoryDetailState>((set, get)
           selectedBranch: 'main',
           defaultBranch: 'main',
           loadingBranches: false,
-          error: null, // 成功时清除错误状态
+          error: null,
         })
+
+        // 尝试获取默认分支的文档目录
+        get().fetchDocumentCatalog('main')
       }
     } catch (error: any) {
       console.error('Failed to fetch branches:', error)
@@ -283,13 +269,7 @@ function convertToTreeNodes(items: any[]): DocumentNode[] {
 // 辅助函数：查找第一个文件节点
 function findFirstFileNode(nodes: DocumentNode[]): DocumentNode | null {
   for (const node of nodes) {
-    if (node.type === 'file') {
-      return node
-    }
-    if (node.children) {
-      const found = findFirstFileNode(node.children)
-      if (found) return found
-    }
+    return node
   }
   return null
 }

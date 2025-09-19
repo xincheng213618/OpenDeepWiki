@@ -1,341 +1,609 @@
+
 import { useEffect, useState, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Loader2, AlertCircle, TreeDeciduous } from 'lucide-react'
-import { warehouseService } from '@/services/warehouse.service'
+import { Loader2, AlertCircle, RefreshCw, Maximize, Minimize, Download } from 'lucide-react'
+import { useRepositoryDetailStore } from '@/stores/repositoryDetail.store'
+import { fetchService } from '@/services/fetch'
 import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import mermaid from 'mermaid'
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
+import 'mind-elixir/style'
 
-interface MindMapNode {
-  id?: string
+interface MiniMapResult {
   title: string
-  url?: string
-  nodes: MindMapNode[]
-}
-
-interface MindMapResult {
-  nodes: MindMapNode[]
+  url: string
+  nodes: MiniMapResult[]
 }
 
 interface MindMapResponse {
   code: number
   message: string
-  data: MindMapResult
+  data: MiniMapResult
 }
 
-interface ProcessedNode {
+interface MindElixirNode {
+  topic: string
   id: string
-  name: string
-  url?: string
-  level: number
-  parent?: string
-  children: string[]
+  root?: boolean
+  expanded?: boolean
+  hyperLink?: string
+  children?: MindElixirNode[]
 }
 
-export default function MindMapPage() {
-  const { t } = useTranslation()
-  const { owner, name } = useParams<{ owner: string; name: string }>()
-  const [mindMapData, setMindMapData] = useState<MindMapResult | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [processedNodes, setProcessedNodes] = useState<ProcessedNode[]>([])
-  const [mermaidDiagram, setMermaidDiagram] = useState('')
-  const mermaidRef = useRef<HTMLDivElement>(null)
+class MindMapService {
+  async getMindMap(
+    owner: string,
+    repo: string,
+    branch?: string,
+    languageCode?: string
+  ): Promise<MindMapResponse> {
+    try {
+      const params = new URLSearchParams({
+        owner,
+        name: repo
+      })
 
-  // 转换后端数据格式为前端期望格式
-  const convertBackendToFrontend = (backendNodes: any[]): MindMapNode[] => {
-    return backendNodes.map((node, index) => ({
-      id: `node_${index}_${Date.now()}`,
-      title: node.Title || node.title || '',
-      url: node.Url || node.url || '',
-      nodes: node.Nodes ? convertBackendToFrontend(node.Nodes) : []
-    }))
+      if (branch) {
+        params.append('branch', branch)
+      }
+
+      if (languageCode) {
+        params.append('languageCode', languageCode)
+      }
+
+      const response = await fetchService.get<MindMapResponse>(
+        `/api/Warehouse/MiniMap?${params.toString()}`
+      )
+      return response
+    } catch (error) {
+      console.error('Failed to fetch mind map:', error)
+      throw error
+    }
+  }
+}
+
+const mindMapService = new MindMapService()
+
+// 转换为 mind-elixir 数据格式
+const convertToMindElixirData = (miniMapData: MiniMapResult): MindElixirNode => {
+  let nodeIdCounter = 0
+
+  const buildMindNode = (node: MiniMapResult, isRoot = false): MindElixirNode => {
+    const mindNode: MindElixirNode = {
+      topic: node.title,
+      id: isRoot ? 'root' : `node_${nodeIdCounter++}`,
+      hyperLink: node.url
+    }
+
+    if (isRoot) {
+      mindNode.root = true
+    }
+
+    if (node.nodes && node.nodes.length > 0) {
+      mindNode.expanded = true
+      mindNode.children = node.nodes.map(child => buildMindNode(child))
+    }
+
+    return mindNode
   }
 
-  useEffect(() => {
-    // Initialize Mermaid
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'default',
-      securityLevel: 'loose',
-      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-      suppressErrorRendering: true,
-      logLevel: 'warn',
-      mindmap: {
-        padding: 10,
-      },
-      flowchart: {
-        htmlLabels: true,
-        curve: 'basis',
-      },
-    })
+  return buildMindNode(miniMapData, true)
+}
 
-    // Reset all states when owner or name changes
-    setMindMapData(null)
-    setError(null)
-    setProcessedNodes([])
-    setMermaidDiagram('')
 
-    if (owner && name) {
-      fetchMindMapData()
-    }
-  }, [owner, name])
 
-  useEffect(() => {
-    if (mindMapData && mindMapData.nodes) {
-      // 转换后端数据格式为前端期望格式
-      const convertedNodes = convertBackendToFrontend(mindMapData.nodes)
-      processNodesData(convertedNodes)
-    }
-  }, [mindMapData])
+export default function MindMapPage({ className }: { className?: string }) {
+  const { owner, name } = useParams<{ owner: string; name: string }>()
+  const [searchParams] = useSearchParams()
+  const { t, i18n } = useTranslation()
+  const { selectedBranch } = useRepositoryDetailStore()
+  const [loading, setLoading] = useState(true)
+  const [mindMapData, setMindMapData] = useState<MiniMapResult | null>(null)
+  const [error, setError] = useState<string>('')
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mindRef = useRef<any>(null)
+  const panCleanupRef = useRef<(() => void) | null>(null)
 
-  useEffect(() => {
-    if (processedNodes.length > 0) {
-      generateMermaidDiagram()
-    }
-  }, [processedNodes])
+  const branch = searchParams.get('branch') || selectedBranch || 'main'
 
-  const fetchMindMapData = async () => {
+  const fetchMindMap = async () => {
+    if (!owner || !name) return
+
+    setLoading(true)
     try {
-      setLoading(true)
-      setError(null)
+      const response = await mindMapService.getMindMap(
+        owner,
+        name,
+        branch,
+        i18n.language
+      )
 
-      const response: MindMapResponse = await warehouseService.getMiniMap(owner!, name!)
-
-      if (response.code === 200) {
+      if (response.code === 200 && response.data) {
         setMindMapData(response.data)
+        const mindData = convertToMindElixirData(response.data)
+        setTimeout(() => initMindElixir(mindData), 100)
       } else {
-        setError(response.message || t('repository.layout.mindMapLoadFailed'))
+        setError(response.message || t('repository.mindMap.loadFailed'))
       }
-    } catch (err) {
-      console.error('Failed to fetch mind map data:', err)
-      setError(t('repository.layout.mindMapLoadFailed'))
+    } catch (err: any) {
+      console.error('Failed to fetch mind map:', err)
+      setError(err?.message || t('repository.mindMap.loadFailed'))
     } finally {
       setLoading(false)
     }
   }
 
-  const processNodesData = (nodes: MindMapNode[]) => {
-    const processed: ProcessedNode[] = []
-    let nodeCounter = 0
 
-    const processNode = (node: MindMapNode, level: number = 0, parentId?: string): string => {
-      const nodeId = `node_${nodeCounter++}`
-      const cleanName = node.title?.replace(/[^\w\s\-\u4e00-\u9fa5]/g, '').trim() || node.title?.trim() || 'Unknown'
+  // 初始化 Mind Elixir
+  const initMindElixir = async (mindData: MindElixirNode) => {
+    if (!containerRef.current) return
 
-      const processedNode: ProcessedNode = {
-        id: nodeId,
-        name: cleanName,
-        url: node.url,
-        level,
-        parent: parentId,
-        children: []
-      }
+    // 动态导入 mind-elixir
+    const MindElixir = (await import('mind-elixir')).default
 
-      processed.push(processedNode)
-
-      // Process children
-      if (node.nodes && node.nodes.length > 0) {
-        node.nodes.forEach(child => {
-          const childId = processNode(child, level + 1, nodeId)
-          processedNode.children.push(childId)
-        })
-      }
-
-      return nodeId
+    // 销毁旧实例
+    if (panCleanupRef.current) {
+      panCleanupRef.current()
+      panCleanupRef.current = null
     }
 
-    nodes.forEach(node => processNode(node))
-    setProcessedNodes(processed)
+    if (mindRef.current) {
+      mindRef.current.destroy?.()
+    }
+
+    const options = {
+      el: containerRef.current,
+      direction: MindElixir.SIDE,
+      draggable: true,
+      contextMenu: true,
+      toolBar: false,
+      nodeMenu: true,
+      keypress: true,
+      locale: 'en' as const,
+      overflowHidden: false,
+      mainLinkStyle: 2,
+      mouseSelectionButton: 0 as const,
+      allowFreeTransform: true,
+      mouseMoveThreshold: 5,
+      primaryLinkStyle: 1,
+      primaryNodeHorizontalGap: 65,
+      primaryNodeVerticalGap: 25,
+      theme: {
+        name: 'Minimal',
+        palette: [
+          '#0f172a', '#475569', '#64748b', '#94a3b8',
+          '#cbd5e1', '#e2e8f0', '#f1f5f9', '#f8fafc',
+          '#0ea5e9', '#06b6d4'
+        ],
+        cssVar: {
+          '--main-color': '#0f172a',
+          '--main-bgcolor': '#2f2020',
+          '--color': '#1e293b',
+          '--bgcolor': '#f8fafc',
+          '--panel-color': '255, 255, 255',
+          '--panel-bgcolor': '248, 250, 252',
+        },
+      },
+    }
+
+    const mind = new MindElixir(options)
+
+    const mindElixirData = {
+      nodeData: mindData,
+      linkData: {}
+    }
+
+    mind.init(mindElixirData)
+    mind.scaleFit()
+    mind.toCenter()
+
+    const panState = {
+      isPanning: false,
+      lastX: 0,
+      lastY: 0
+    }
+
+    const isNodeElement = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false
+      return Boolean(
+        target.closest('me-root') ||
+          target.closest('me-parent') ||
+          target.closest('me-tpc') ||
+          target.closest('#input-box')
+      )
+    }
+
+    const handleMouseDown = (event: MouseEvent) => {
+      if (event.button !== 0) return
+      if (isNodeElement(event.target)) return
+
+      panState.isPanning = true
+      panState.lastX = event.clientX
+      panState.lastY = event.clientY
+      if (mind.container) {
+        mind.container.style.cursor = 'grabbing'
+        mind.container.classList.add('grabbing')
+      }
+      event.preventDefault()
+    }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!panState.isPanning) return
+
+      const dx = event.clientX - panState.lastX
+      const dy = event.clientY - panState.lastY
+
+      if (dx !== 0 || dy !== 0) {
+        mind.move(dx, dy)
+        panState.lastX = event.clientX
+        panState.lastY = event.clientY
+      }
+    }
+
+    const stopPanning = () => {
+      if (!panState.isPanning) return
+      panState.isPanning = false
+      if (mind.container) {
+        mind.container.style.cursor = 'grab'
+        mind.container.classList.remove('grabbing')
+      }
+    }
+
+    mind.container?.addEventListener('mousedown', handleMouseDown)
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', stopPanning)
+    mind.container?.addEventListener('mouseleave', stopPanning)
+
+    panCleanupRef.current = () => {
+      mind.container?.removeEventListener('mousedown', handleMouseDown)
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', stopPanning)
+      mind.container?.removeEventListener('mouseleave', stopPanning)
+      if (mind.container) {
+        mind.container.style.cursor = ''
+        mind.container.classList.remove('grabbing')
+      }
+    }
+
+    if (mind.container) {
+      mind.container.style.cursor = 'grab'
+      mind.container.classList.remove('grabbing')
+    }
+
+    mind.bus.addListener('selectNode', (node: any) => {
+      if (node.hyperLink) {
+        window.open(node.hyperLink, '_blank')
+      }
+    })
+
+    mind.bus.addListener('operation', (operation: any) => {
+      console.log('Mind map operation:', operation)
+    })
+
+    mindRef.current = mind
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (mind && containerRef.current) {
+        mind.refresh()
+      }
+    })
+
+    resizeObserver.observe(containerRef.current)
+
+    return () => {
+      resizeObserver.disconnect()
+      if (panCleanupRef.current) {
+        panCleanupRef.current()
+        panCleanupRef.current = null
+      }
+      if (mind) {
+        mind.destroy?.()
+      }
+    }
   }
 
-  const generateMermaidDiagram = () => {
-    if (processedNodes.length === 0) {
-      // Generate a simple test diagram if no nodes
-      const testDiagram = `flowchart TD
-    A["${owner || 'Owner'}/${name || 'Repository'}"]
-    B["No documents found"]
-    A --> B`
-      setMermaidDiagram(testDiagram)
+  // 全屏切换
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen)
+    setTimeout(() => {
+      if (mindRef.current && containerRef.current) {
+        mindRef.current.refresh()
+      }
+    }, 100)
+  }
+
+  // 导出为图片
+  const exportImage = async () => {
+    if (!mindRef.current) {
+      console.error('思维导图未初始化')
       return
     }
 
     try {
-      // Generate flowchart with real data
-      let diagram = 'flowchart TD\n'
-      const rootId = 'ROOT'
-      const rootName = `${owner}/${name}`.replace(/["\[\]]/g, '')
-      diagram += `    ${rootId}["${rootName}"]\n`
-
-      // Add nodes with simple sequential IDs
-      const nodeIdMap = new Map<string, string>()
-      processedNodes.forEach((node, index) => {
-        const simpleId = `N${index}`
-        nodeIdMap.set(node.id, simpleId)
-
-        // Clean node name for display
-        const cleanName = node.name
-          .replace(/["\[\]]/g, '')
-          .replace(/[^\w\s\u4e00-\u9fa5.-]/g, ' ')
-          .trim() || `Node${index}`
-
-        diagram += `    ${simpleId}["${cleanName}"]\n`
-      })
-
-      // Add connections from root to level 0 nodes
-      const rootNodes = processedNodes.filter(node => node.level === 0)
-      if (rootNodes.length === 0) {
-        // If no level 0 nodes, connect first few nodes directly
-        processedNodes.slice(0, Math.min(5, processedNodes.length)).forEach(node => {
-          const nodeId = nodeIdMap.get(node.id)
-          if (nodeId) {
-            diagram += `    ${rootId} --> ${nodeId}\n`
-          }
-        })
-      } else {
-        // Connect root nodes and their children
-        rootNodes.forEach(node => {
-          const nodeId = nodeIdMap.get(node.id)
-          if (nodeId) {
-            diagram += `    ${rootId} --> ${nodeId}\n`
-
-            // Add child connections
-            const children = processedNodes.filter(n => n.parent === node.id)
-            children.forEach(child => {
-              const childId = nodeIdMap.get(child.id)
-              if (childId) {
-                diagram += `    ${nodeId} --> ${childId}\n`
-              }
-            })
-          }
-        })
+      const blob = await mindRef.current.exportPng()
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${owner}-${name}-mindmap.png`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
       }
-
-      setMermaidDiagram(diagram)
     } catch (error) {
-      console.error('Error in generateMermaidDiagram:', error)
-      // Fallback to simple diagram
-      const fallbackDiagram = `flowchart TD
-    A["${owner}/${name}"]
-    B["Error generating diagram"]
-    A --> B`
-      setMermaidDiagram(fallbackDiagram)
-    }
-  }
-
-
-
-  const renderMermaidDiagram = async () => {
-    if (!mermaidRef.current || !mermaidDiagram) return
-
-    try {
-      // Clear previous content
-      mermaidRef.current.innerHTML = ''
-
-      // Basic validation - just check if we have content
-      if (!mermaidDiagram || mermaidDiagram.trim().length < 5) {
-        throw new Error('No diagram content')
-      }
-
-      const { svg } = await mermaid.render('mindmap-diagram', mermaidDiagram)
-      mermaidRef.current.innerHTML = svg
-
-      // Clean up any error elements that might have been added to the DOM
-      setTimeout(() => {
-        const errorElements = document.querySelectorAll('[id^="d-"][id$="-error"], .mermaidTooltip')
-        errorElements.forEach(el => el.remove())
-      }, 100)
-    } catch (error) {
-      console.error('Error rendering mermaid diagram:', error)
-
-      // Show user-friendly error instead of letting Mermaid render to DOM
-      mermaidRef.current.innerHTML = `
-        <div class="flex items-center justify-center h-64 text-muted-foreground">
-          <div class="text-center">
-            <p class="text-sm">Unable to render mind map</p>
-            <p class="text-xs mt-1">Please try refreshing the page</p>
-            <p class="text-xs mt-1 text-red-500">Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
-          </div>
-        </div>
-      `
-
-      // Clean up any error elements immediately
-      setTimeout(() => {
-        const errorElements = document.querySelectorAll('[id^="d-"][id$="-error"], .mermaidTooltip, .mermaid-parse-error')
-        errorElements.forEach(el => el.remove())
-      }, 50)
+      console.error('Export error:', error)
     }
   }
 
   useEffect(() => {
-    if (mermaidDiagram) {
-      renderMermaidDiagram()
-    }
-  }, [mermaidDiagram])
+    fetchMindMap()
+  }, [owner, name, branch, i18n.language])
 
+  useEffect(() => {
+    return () => {
+      if (panCleanupRef.current) {
+        panCleanupRef.current()
+        panCleanupRef.current = null
+      }
+      if (mindRef.current) {
+        mindRef.current.destroy?.()
+      }
+    }
+  }, [])
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-          <p className="text-sm text-muted-foreground">{t('repository.layout.loadingMindMap')}</p>
-        </div>
+      <div className="flex justify-center items-center h-[60vh]">
+        <Skeleton className="w-32 h-32" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Alert className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error}
-          </AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
-
-  if (!mindMapData || !mindMapData.nodes || mindMapData.nodes.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center space-y-3">
-          <TreeDeciduous className="h-12 w-12 text-muted-foreground mx-auto" />
-          <div className="space-y-1">
-            <h3 className="font-medium">{t('repository.layout.noMindMapData')}</h3>
-            <p className="text-sm text-muted-foreground">{t('repository.layout.mindMapGenerating')}</p>
-          </div>
-          <Button onClick={fetchMindMapData} variant="outline" size="sm">
-            {t('common.refresh')}
-          </Button>
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <div className="text-center space-y-2">
+          <p className="text-lg font-medium">{t('repository.mindMap.error')}</p>
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <p className="text-xs text-muted-foreground">
+            {owner}/{name} - {branch}
+          </p>
         </div>
+        <Button onClick={fetchMindMap} variant="outline" className="gap-2">
+          <RefreshCw className="h-4 w-4" />
+          {t('common.retry')}
+        </Button>
       </div>
     )
   }
 
   return (
-    <div className="w-full h-screen overflow-auto bg-muted/20 relative">
-      <div
-        ref={mermaidRef}
-        className="w-full h-full flex items-center justify-center"
-        style={{ minHeight: '100%' }}
-      />
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="text-center space-y-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-            <p className="text-sm text-muted-foreground">{t('repository.layout.loadingMindMap')}</p>
+    <TooltipProvider>
+      <div className="h-full">
+        <Card className={`
+          ${isFullscreen ? 'h-screen fixed top-0 left-0 w-screen z-[9999]' : 'h-[85vh]'}
+          transition-all duration-300 border-border/50 shadow-sm
+        `}>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">
+              {mindMapData?.title || `${owner}/${name} 思维导图`}
+            </h2>
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={fetchMindMap}
+                    className="h-8 w-8"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>刷新</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={exportImage}
+                    className="h-8 w-8"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>导出图片</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleFullscreen}
+                    className="h-8 w-8"
+                  >
+                    {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isFullscreen ? "退出全屏" : "全屏"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
-        </div>
-      )}
-      {!mermaidDiagram && processedNodes.length > 0 && !loading && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      )}
-    </div>
+        </CardHeader>
+        <CardContent className={`
+          ${isFullscreen ? 'h-[calc(100vh-80px)]' : 'h-[calc(85vh-80px)]'}
+          p-0 relative
+        `}>
+          <div
+            ref={containerRef}
+            className={`
+              w-full h-full relative select-none
+              bg-gradient-to-br from-slate-50 to-slate-200
+              ${isFullscreen ? 'rounded-none' : 'rounded-lg'}
+            `}
+            style={{
+              touchAction: 'none',
+              WebkitUserSelect: 'none',
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault()
+            }}
+            onMouseDown={(e) => {
+              if (e.button === 2) {
+                e.preventDefault()
+              }
+            }}
+            onTouchStart={(e) => {
+              if (e.touches.length > 1) {
+                e.preventDefault()
+              }
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault()
+            }}
+            onDragStart={(e) => {
+              e.preventDefault()
+            }}
+          />
+
+          <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-2 rounded text-xs z-[1000]">
+            鼠标左键拖动 • 滚轮缩放 • 双击节点查看详情 • 右键菜单编辑
+          </div>
+        </CardContent>
+      </Card>
+
+      <style jsx global>{`
+        .mind-elixir {
+          width: 100%;
+          height: 100%;
+          touch-action: none !important;
+          user-select: none !important;
+          WebkitUserSelect: none !important;
+          MozUserSelect: none !important;
+          MsUserSelect: none !important;
+        }
+
+        .mind-elixir .map-container {
+          background: transparent !important;
+          touch-action: none !important;
+          -ms-touch-action: none !important;
+          -webkit-touch-callout: none !important;
+          cursor: grab;
+        }
+
+        .mind-elixir .map-container.is-panning,
+        .mind-elixir .map-container.grabbing {
+          cursor: grabbing !important;
+        }
+
+        .mind-elixir .node-container {
+          cursor: pointer;
+          touch-action: none !important;
+        }
+
+        .mind-elixir .node-container:hover {
+          opacity: 0.9;
+          transform: scale(1.02);
+          transition: all 0.2s ease-in-out;
+        }
+
+        .mind-elixir .line {
+          stroke: #475569;
+          stroke-width: 1.5;
+        }
+
+        .mind-elixir .node {
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          touch-action: none !important;
+          font-family: inherit;
+        }
+
+        .mind-elixir .root {
+          background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+          color: white !important;
+          font-weight: 600;
+          font-size: 16px;
+          border: none !important;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .mind-elixir .primary {
+          background: #f8fafc !important;
+          border-color: #cbd5e1 !important;
+          color: #334155 !important;
+          font-weight: 500;
+        }
+
+        .mind-elixir .context-menu {
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          border: 1px solid #e2e8f0;
+          z-index: 9999 !important;
+          background: white;
+        }
+
+        html {
+          -ms-touch-action: none !important;
+          touch-action: none !important;
+        }
+
+        body {
+          -ms-touch-action: manipulation !important;
+          touch-action: manipulation !important;
+        }
+
+        * {
+          -webkit-touch-callout: none !important;
+          -webkit-user-select: none !important;
+          -khtml-user-select: none !important;
+          -moz-user-select: none !important;
+          -ms-user-select: none !important;
+        }
+
+        input, textarea, [contenteditable] {
+          -webkit-user-select: text !important;
+          -moz-user-select: text !important;
+          -ms-user-select: text !important;
+          user-select: text !important;
+        }
+
+        .mind-elixir ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+
+        .mind-elixir ::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 3px;
+        }
+
+        .mind-elixir ::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+
+        .mind-elixir ::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
+      </div>
+    </TooltipProvider>
   )
 }

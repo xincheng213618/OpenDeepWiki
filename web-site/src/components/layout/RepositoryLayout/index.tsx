@@ -104,12 +104,24 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
     }
   }
 
+  // 检查是否为固定路由（不需要加载文档数据）
+  const isFixedRoute = () => {
+    const currentPath = location.pathname
+    const basePath = `/${owner}/${name}`
+    const subPath = currentPath.replace(basePath, '').replace(/^\//, '')
+
+    // 固定路由列表
+    const fixedRoutes = ['mindmap']
+    return fixedRoutes.includes(subPath)
+  }
+
   // 初始化
   useEffect(() => {
     if (owner && name) {
       // 清除之前的错误状态
       clearError()
       setRepository(owner, name)
+      // 始终加载分支和文档数据（左侧菜单需要）
       fetchBranches()
     }
 
@@ -123,9 +135,9 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
   useEffect(() => {
     // 只在仓库页面（不是具体文档页面）且有文档数据时执行自动跳转
     const isRepositoryRoot = location.pathname === `/${owner}/${name}` || location.pathname === `/${owner}/${name}/`
-
     if (
       isRepositoryRoot &&
+      !isFixedRoute() &&
       !hasNavigatedToFirstDoc &&
       documentNodes.length > 0 &&
       !loadingDocuments &&
@@ -352,7 +364,7 @@ export const RepositoryLayout: React.FC<RepositoryLayoutProps> = ({ children }) 
           </Button>
 
           <div className="flex-1 overflow-hidden">
-            {error ? (
+            {error && !isFixedRoute() ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-3">
                   <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />

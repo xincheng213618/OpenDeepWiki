@@ -126,27 +126,6 @@ const AISettingsTab: React.FC<AISettingsTabProps> = ({
     { value: 'Custom', label: t('settings.ai.customProvider') }
   ]
 
-  // 常用模型选项
-  const commonModels = {
-    OpenAI: [
-      'gpt-4',
-      'gpt-4-turbo',
-      'gpt-3.5-turbo',
-      'gpt-3.5-turbo-16k'
-    ],
-    Anthropic: [
-      'claude-3-opus-20240229',
-      'claude-3-sonnet-20240229',
-      'claude-3-haiku-20240307'
-    ],
-    Google: [
-      'gemini-pro',
-      'gemini-pro-vision'
-    ]
-  }
-
-  const currentProvider = getSettingValue('ModelProvider')
-  const providerModels = commonModels[currentProvider as keyof typeof commonModels] || []
 
   return (
     <TooltipProvider>
@@ -252,66 +231,42 @@ const AISettingsTab: React.FC<AISettingsTabProps> = ({
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="chatModel">{t('settings.ai.chatModel')}</Label>
-                  <Select
+                  <Input
+                    id="chatModel"
                     value={getSettingValue('ChatModel')}
-                    onValueChange={(value) => onUpdate('ChatModel', value)}
+                    onChange={(e) => onUpdate('ChatModel', e.target.value)}
+                    placeholder={t('settings.ai.chatModelPlaceholder')}
                     disabled={loading}
-                  >
-                    <SelectTrigger className={validationErrors.ChatModel ? 'border-destructive' : ''}>
-                      <SelectValue placeholder={t('settings.ai.chatModelPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {providerModels.map(model => (
-                        <SelectItem key={model} value={model}>
-                          {model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className={validationErrors.ChatModel ? 'border-destructive' : ''}
+                  />
                   {validationErrors.ChatModel && (
                     <p className="text-sm text-destructive">{validationErrors.ChatModel}</p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="analysisModel">{t('settings.ai.analysisModel')}</Label>
-                  <Select
+                  <Input
+                    id="analysisModel"
                     value={getSettingValue('AnalysisModel')}
-                    onValueChange={(value) => onUpdate('AnalysisModel', value)}
+                    onChange={(e) => onUpdate('AnalysisModel', e.target.value)}
+                    placeholder={t('settings.ai.analysisModelPlaceholder')}
                     disabled={loading}
-                  >
-                    <SelectTrigger className={validationErrors.AnalysisModel ? 'border-destructive' : ''}>
-                      <SelectValue placeholder={t('settings.ai.analysisModelPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {providerModels.map(model => (
-                        <SelectItem key={model} value={model}>
-                          {model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className={validationErrors.AnalysisModel ? 'border-destructive' : ''}
+                  />
                   {validationErrors.AnalysisModel && (
                     <p className="text-sm text-destructive">{validationErrors.AnalysisModel}</p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="deepResearchModel">{t('settings.ai.deepResearchModel')}</Label>
-                  <Select
+                  <Input
+                    id="deepResearchModel"
                     value={getSettingValue('DeepResearchModel')}
-                    onValueChange={(value) => onUpdate('DeepResearchModel', value)}
+                    onChange={(e) => onUpdate('DeepResearchModel', e.target.value)}
+                    placeholder={t('settings.ai.deepResearchModelPlaceholder')}
                     disabled={loading}
-                  >
-                    <SelectTrigger className={validationErrors.DeepResearchModel ? 'border-destructive' : ''}>
-                      <SelectValue placeholder={t('settings.ai.deepResearchModelPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {providerModels.map(model => (
-                        <SelectItem key={model} value={model}>
-                          {model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className={validationErrors.DeepResearchModel ? 'border-destructive' : ''}
+                  />
                   {validationErrors.DeepResearchModel && (
                     <p className="text-sm text-destructive">{validationErrors.DeepResearchModel}</p>
                   )}

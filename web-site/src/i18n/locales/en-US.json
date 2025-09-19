@@ -24,7 +24,15 @@
     "expand": "Expand",
     "collapse": "Collapse",
     "reset": "Reset",
-    "viewOnGithub": "View on GitHub"
+    "retry": "Retry",
+    "viewOnGithub": "View on GitHub",
+    "export": "Export",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit Fullscreen",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "resetZoom": "Reset Zoom",
+    "fitToScreen": "Fit to Screen"
   },
   "nav": {
     "home": "Home",
@@ -244,6 +252,7 @@
       "searchNodes": "Search nodes",
       "totalNodes": "Total Nodes",
       "visibleNodes": "Visible",
+      "mindMapHints": "Click nodes to open links \u2022 Mouse wheel to zoom \u2022 Drag to pan",
       "zoomLevel": "Zoom Level",
       "zoomIn": "Zoom In",
       "zoomOut": "Zoom Out",
@@ -261,6 +270,12 @@
       "tableOfContents": "Table of Contents",
       "loadFailed": "Failed to load document",
       "notFound": "Document not found"
+    },
+    "mindMap": {
+      "loading": "Loading mind map...",
+      "loadFailed": "Failed to load mind map",
+      "renderFailed": "Failed to render mind map",
+      "error": "Mind Map Error"
     },
     "detail": {
       "cloneCommand": "Clone Command",

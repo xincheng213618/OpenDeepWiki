@@ -345,9 +345,15 @@ export const FumadocsSidebar: React.FC<FumadocsSidebarProps> = React.memo(({
       <ScrollArea className="flex-1">
         <div className="px-2 py-1 space-y-1">
           <button
-            className="w-full flex items-center px-3 py-1.5 text-sm text-muted-foreground hover:text-accent-foreground hover:bg-accent/50 rounded-md transition-all duration-150"
+            className={cn(
+              "w-full flex items-center px-3 py-1.5 text-sm rounded-md transition-all duration-150",
+              window.location.pathname.includes('/mindmap')
+                ? "bg-accent text-accent-foreground font-medium"
+                : "text-muted-foreground hover:text-accent-foreground hover:bg-accent/50"
+            )}
             onClick={() => navigate(`/${owner}/${name}/mindmap`)}
           >
+            <Hash className="mr-2 h-3.5 w-3.5 flex-shrink-0" />
             {t('repository.layout.mindMap')}
           </button>
 
