@@ -95,6 +95,11 @@ public class DocumentOptions
     /// </summary>
     /// <returns></returns>
     public static bool EnableAgentTool { get; set; } = false;
+    
+    /// <summary>
+    /// 是否启用Wiki功能
+    /// </summary>
+    public static bool EnableWiki { get; set; } = true;
 
     public static void InitConfig(IConfiguration configuration)
     {
@@ -191,6 +196,15 @@ public class DocumentOptions
             if (bool.TryParse(enableAgentTool, out var enable))
             {
                 EnableAgentTool = enable;
+            }
+        }
+        
+        var enableWiki = configuration.GetValue<string>($"ENABLE_WIKI");
+        if (!string.IsNullOrEmpty(enableWiki))
+        {
+            if (bool.TryParse(enableWiki, out var enable))
+            {
+                EnableWiki = enable;
             }
         }
     }

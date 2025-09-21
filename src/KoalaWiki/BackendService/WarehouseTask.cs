@@ -10,10 +10,16 @@ public class WarehouseTask(
     IServiceProvider service)
     : BackgroundService
 {
-    private static readonly ActivitySource s_activitySource = new("KoalaWiki.Warehouse");
+    private static readonly ActivitySource SActivitySource = new("KoalaWiki.Warehouse");
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!DocumentOptions.EnableWiki)
+        {
+            logger.LogInformation("Wiki功能未启用，仓库处理任务停止运行。");
+            return;
+        }
+
         // 读取现有的仓库
         await Task.Delay(1000, stoppingToken);
 
@@ -35,7 +41,7 @@ public class WarehouseTask(
                 continue;
             }
 
-            using var activity = s_activitySource.CreateActivity("仓库处理任务", ActivityKind.Server);
+            using var activity = SActivitySource.CreateActivity("仓库处理任务", ActivityKind.Server);
             activity?.SetTag("warehouse.id", value.Id);
             activity?.SetTag("warehouse.name", value.Name);
             activity?.SetTag("warehouse.type", value.Type);
