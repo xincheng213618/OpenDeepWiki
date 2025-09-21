@@ -259,10 +259,19 @@ public partial class DocumentPendingService
         };
 
         int count = 1;
+        int inputTokenCount = 0;
+        int outputTokenCount = 0;
 
         reset:
 
-        var content = await chat.GetChatMessageContentsAsync(history, settings, documentKernel);
+        await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
+        {
+            if (item.InnerContent is StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content)
+            {
+                inputTokenCount += content.Usage.InputTokenCount;
+                outputTokenCount += content.Usage.OutputTokenCount;
+            }
+        }
 
         if (string.IsNullOrEmpty(docs.Content) && count < 5)
         {

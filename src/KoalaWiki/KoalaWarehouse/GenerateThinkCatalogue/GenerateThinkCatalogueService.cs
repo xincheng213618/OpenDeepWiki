@@ -113,6 +113,7 @@ public static partial class GenerateThinkCatalogueService
             new TextContent(
                 $"""
                  <system-reminder>
+                 **CRITICAL FIRST STEP: You MUST begin every research task by calling the 'think' tool to analyze the query complexity. This is mandatory and must be the very first action you take, regardless of the query type or complexity.**
                  For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
                  Note: The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
                  {Prompt.Language}
@@ -125,7 +126,7 @@ public static partial class GenerateThinkCatalogueService
 
         var catalogueTool = new CatalogueFunction();
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
-            OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, true, null,
+            OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false, null,
             builder => { builder.Plugins.AddFromObject(catalogueTool, "Catalogue"); });
 
         var chat = analysisModel.Services.GetService<IChatCompletionService>();
@@ -142,19 +143,29 @@ public static partial class GenerateThinkCatalogueService
         };
 
         int retry = 1;
-        retry:
 
+        var inputTokenCount = 0;
+        var outputTokenCount = 0;
+        
+        retry:
         // 流式获取响应
-        var content = await chat.GetChatMessageContentAsync(history, settings, analysisModel);
+        await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, analysisModel))
+        {
+            if (item.InnerContent is StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content)
+            {
+                inputTokenCount += content.Usage.InputTokenCount;
+                outputTokenCount += content.Usage.OutputTokenCount;
+            }
+        }
 
         // Prefer tool-stored JSON when available
         if (!string.IsNullOrWhiteSpace(catalogueTool.Content))
         {
             // 质量增强逻辑
-            if (!DocumentOptions.RefineAndEnhanceQuality || attemptNumber >= 4) // 前几次尝试才进行质量增强
+            if (!DocumentOptions.RefineAndEnhanceQuality || attemptNumber >= 3) // 前几次尝试才进行质量增强
                 return ExtractAndParseJson(catalogueTool.Content);
 
-            await RefineResponse(history, chat, settings, analysisModel, catalogueTool, attemptNumber);
+            await RefineResponse(history, chat, settings, analysisModel);
 
             return ExtractAndParseJson(catalogueTool.Content);
         }
@@ -171,21 +182,21 @@ public static partial class GenerateThinkCatalogueService
     }
 
     private static async Task RefineResponse(ChatHistory history, IChatCompletionService chat,
-        OpenAIPromptExecutionSettings settings, Kernel kernel, CatalogueFunction catalogueTool, int attemptNumber)
+        OpenAIPromptExecutionSettings settings, Kernel kernel)
     {
         try
         {
             // 根据尝试次数调整细化策略
-            var refinementPrompt = """
-                                       Refine the stored documentation_structure JSON iteratively using tools only:
-                                       - Use Catalogue.Read to inspect the current JSON.
-                                       - Apply several Catalogue.Edit operations to:
-                                         • add Level 2/3 subsections for core components, features, data models, integrations
-                                         • normalize kebab-case titles and maintain 'getting-started' then 'deep-dive' ordering
-                                         • enrich each section's 'prompt' with actionable guidance (scope, code areas, outputs)
-                                       - Prefer localized edits; only use Catalogue.Write for a complete rewrite if necessary.
-                                       - Never print JSON in chat; use tools exclusively.
-                                   """;
+            const string refinementPrompt = """
+                                                Refine the stored documentation_structure JSON iteratively using tools only:
+                                                - Use Catalogue.Read to inspect the current JSON.
+                                                - Apply several Catalogue.Edit operations to:
+                                                  • add Level 2/3 subsections for core components, features, data models, integrations
+                                                  • normalize kebab-case titles and maintain 'getting-started' then 'deep-dive' ordering
+                                                  • enrich each section's 'prompt' with actionable guidance (scope, code areas, outputs)
+                                                - Prefer localized edits; only use Catalogue.Write for a complete rewrite if necessary.
+                                                - Never print JSON in chat; use tools exclusively.
+                                            """;
 
             history.AddUserMessage(refinementPrompt);
 
@@ -200,107 +211,9 @@ public static partial class GenerateThinkCatalogueService
 
     private static DocumentResultCatalogue? ExtractAndParseJson(string responseText)
     {
-        var extractedJson = JsonSerializer.Deserialize<DocumentResultCatalogue>(responseText);
+        var extractedJson = JsonConvert.DeserializeObject<DocumentResultCatalogue>(responseText);
 
         return extractedJson;
-    }
-
-
-    private static DocumentResultCatalogue? ParseJsonWithFallback(
-        string jsonContent, string warehouseName, int attemptNumber)
-    {
-        var parsers = new List<Func<string, DocumentResultCatalogue?>>
-        {
-            // 解析器1: Newtonsoft.Json (更宽松)
-            json =>
-            {
-                try
-                {
-                    return JsonConvert.DeserializeObject<DocumentResultCatalogue>(json);
-                }
-                catch
-                {
-                    return null;
-                }
-            },
-
-            // 解析器2: 修复常见JSON问题后解析
-            json =>
-            {
-                try
-                {
-                    var fixedJson = FixCommonJsonIssues(json);
-                    return JsonConvert.DeserializeObject<DocumentResultCatalogue>(fixedJson);
-                }
-                catch
-                {
-                    return null;
-                }
-            },
-
-            // 解析器3: 激进修复后解析
-            json =>
-            {
-                try
-                {
-                    var aggressivelyFixedJson = AggressiveJsonFix(json);
-                    return JsonConvert.DeserializeObject<DocumentResultCatalogue>(aggressivelyFixedJson);
-                }
-                catch
-                {
-                    return null;
-                }
-            }
-        };
-
-        foreach (var parser in parsers)
-        {
-            try
-            {
-                var result = parser(jsonContent);
-                if (result != null)
-                {
-                    Log.Logger.Information("成功解析JSON，仓库：{warehouse}，尝试次数：{attempt}",
-                        warehouseName, attemptNumber + 1);
-                    return result;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug("JSON解析尝试失败：{error}", ex.Message);
-            }
-        }
-
-        Log.Logger.Error("所有JSON解析策略都失败了，原始内容：{content}", jsonContent);
-        return null;
-    }
-
-    private static string FixCommonJsonIssues(string json)
-    {
-        return json
-            .Replace("\\n", "\n")
-            .Replace("\\\"", "\"")
-            .Replace("\n", " ")
-            .Replace("\r", " ")
-            .Replace("\t", " ")
-            .Trim();
-    }
-
-    private static string AggressiveJsonFix(string json)
-    {
-        var f = FixCommonJsonIssues(json);
-
-        // 移除注释
-        f = Regex.Replace(f, @"//.*$", "", RegexOptions.Multiline);
-        f = Regex.Replace(f, @"/\*.*?\*/", "", RegexOptions.Singleline);
-
-        // 修复尾随逗号
-        f = Regex.Replace(f, @",(\s*[}\]])", "$1");
-
-        // 确保字符串被正确引用
-        f = Regex.Replace(f, @":\s*([^""\[\{][^,\}\]]*)", ": \"$1\"");
-
-        return f;
     }
 
     private static ErrorType ClassifyError(Exception ex)

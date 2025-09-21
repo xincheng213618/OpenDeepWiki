@@ -34,32 +34,30 @@ public class WarehouseClassify
         {
             var jsonContent = JsonSerializer.Deserialize<OpenAIResponse>(ModelReaderWriter.Write(i.InnerContent));
 
-            if (jsonContent?.choices.Length > 0)
+            if (!(jsonContent?.choices.Length > 0)) continue;
+            if (string.IsNullOrEmpty(jsonContent.choices[0].message?.reasoning_content) &&
+                string.IsNullOrEmpty(jsonContent.choices[0].delta?.reasoning_content))
             {
-                if (string.IsNullOrEmpty(jsonContent.choices[0].message?.reasoning_content) &&
-                    string.IsNullOrEmpty(jsonContent.choices[0].delta?.reasoning_content))
+                if (isDeep)
                 {
-                    if (isDeep)
-                    {
-                        result += "</think>";
-                        isDeep = false;
-                    }
-
-                    result += i.ToString();
-                    continue;
+                    result += "</think>";
+                    isDeep = false;
                 }
 
-                if (isDeep == false)
-                {
-                    result += "<think>";
-
-                    isDeep = true;
-                }
-
-                // 提取分类结果
-                result += jsonContent.choices[0].message?.reasoning_content ??
-                          jsonContent.choices[0].delta?.reasoning_content;
+                result += i.ToString();
+                continue;
             }
+
+            if (isDeep == false)
+            {
+                result += "<think>";
+
+                isDeep = true;
+            }
+
+            // 提取分类结果
+            result += jsonContent.choices[0].message?.reasoning_content ??
+                      jsonContent.choices[0].delta?.reasoning_content;
         }
 
         // 提取分类结果正则表达式<classify>(.*?)</classify>

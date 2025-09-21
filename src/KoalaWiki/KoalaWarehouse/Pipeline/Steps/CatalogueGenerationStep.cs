@@ -20,13 +20,13 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
         RetryDelay = TimeSpan.FromSeconds(5),
         StepTimeout = TimeSpan.FromMinutes(20), // 目录分析可能需要更长时间
         ContinueOnFailure = true,
-        RetriableExceptions = new List<Type>
-        {
+        RetriableExceptions =
+        [
             typeof(HttpRequestException),
             typeof(TaskCanceledException),
             typeof(InvalidOperationException),
             typeof(TimeoutException)
-        },
+        ],
         NonRetriableExceptions = new List<Type>
         {
             typeof(DirectoryNotFoundException),
@@ -89,7 +89,7 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
             }
         }
 
-        return input;
+        return await Task.FromResult(input);
     }
 
     public override async Task<bool> IsHealthyAsync(DocumentProcessingContext input)
@@ -108,7 +108,7 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
             {
                 _ = Directory.GetDirectories(input.Document.GitPath);
                 _ = Directory.GetFiles(input.Document.GitPath);
-                return true;
+                return await Task.FromResult(true);
             }
             catch (UnauthorizedAccessException)
             {
