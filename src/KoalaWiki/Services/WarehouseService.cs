@@ -12,6 +12,7 @@ using KoalaWiki.Tools;
 using LibGit2Sharp;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace KoalaWiki.Services;
 
@@ -21,7 +22,8 @@ public class WarehouseService(
     IKoalaWikiContext koala,
     IMapper mapper,
     IUserContext userContext,
-    IHttpContextAccessor httpContextAccessor)
+    IHttpContextAccessor httpContextAccessor,
+    IMemoryCache memoryCache)
     : FastApi
 {
     /// <summary>
@@ -780,6 +782,59 @@ public class WarehouseService(
 
 
     /// <summary>
+    /// 获取用户可访问的仓库ID列表（带缓存）
+    /// </summary>
+    private async Task<HashSet<string>?> GetAccessibleWarehouseIdsAsync(string? userId, bool isAdmin)
+    {
+        // 管理员可以访问所有仓库
+        if (isAdmin) return null; // null 表示无限制
+
+        // 构建缓存键
+        var cacheKey = $"user_accessible_warehouses_{userId ?? "anonymous"}";
+
+        // 尝试从缓存获取
+        if (memoryCache.TryGetValue<HashSet<string>>(cacheKey, out var cachedIds))
+        {
+            return cachedIds;
+        }
+
+        var accessibleIds = new HashSet<string>();
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            // 未登录用户只能访问公共仓库
+            var publicIds = await koala.Warehouses
+                .Where(w => !koala.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
+                .Select(w => w.Id)
+                .ToListAsync();
+
+            accessibleIds.UnionWith(publicIds);
+        }
+        else
+        {
+            // 使用单个查询获取用户可访问的所有仓库
+            var userAccessQuery = from w in koala.Warehouses
+                                   let hasRoleAssignment = koala.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id)
+                                   let userHasAccess = koala.UserInRoles
+                                       .Where(ur => ur.UserId == userId)
+                                       .Join(koala.WarehouseInRoles,
+                                           ur => ur.RoleId,
+                                           wr => wr.RoleId,
+                                           (ur, wr) => wr.WarehouseId)
+                                       .Contains(w.Id)
+                                   where !hasRoleAssignment || userHasAccess
+                                   select w.Id;
+
+            var ids = await userAccessQuery.ToListAsync();
+            accessibleIds.UnionWith(ids);
+        }
+
+        // 缓存5分钟
+        memoryCache.Set(cacheKey, accessibleIds, TimeSpan.FromMinutes(5));
+        return accessibleIds;
+    }
+
+    /// <summary>
     /// 获取仓库列表的异步方法，支持分页和关键词搜索。
     /// </summary>
     /// <param name="page">当前页码，从1开始。</param>
@@ -789,74 +844,33 @@ public class WarehouseService(
     [EndpointSummary("获取仓库列表")]
     public async Task<PageDto<WarehouseDto>> GetWarehouseListAsync(int page, int pageSize, string? keyword)
     {
+        // 1. 获取用户权限信息
+        var currentUserId = userContext.CurrentUserId;
+        var isAdmin = httpContextAccessor.HttpContext?.User?.IsInRole("admin") ?? false;
+        var accessibleWarehouseIds = await GetAccessibleWarehouseIdsAsync(currentUserId, isAdmin);
+
+        // 2. 构建基础查询
         var query = koala.Warehouses
             .AsNoTracking()
             .Where(x => x.Status == WarehouseStatus.Completed || x.Status == WarehouseStatus.Processing);
 
-        keyword = keyword?.Trim().ToLower();
+        // 3. 应用权限过滤
+        if (accessibleWarehouseIds != null) // null 表示管理员，无需过滤
+        {
+            query = query.Where(x => accessibleWarehouseIds.Contains(x.Id));
+        }
 
+        // 4. 应用关键词搜索
+        keyword = keyword?.Trim().ToLower();
         if (!string.IsNullOrWhiteSpace(keyword))
         {
             query = query.Where(x =>
-                x.Name.ToLower().Contains(keyword) || x.Address.ToLower().Contains(keyword) ||
+                x.Name.ToLower().Contains(keyword) ||
+                x.Address.ToLower().Contains(keyword) ||
                 x.Description.ToLower().Contains(keyword));
         }
 
-        // 权限过滤：如果仓库存在WarehouseInRole分配，则只有拥有相应角色的用户才能访问
-        var currentUserId = userContext.CurrentUserId;
-        var isAdmin = httpContextAccessor.HttpContext?.User?.IsInRole("admin") ?? false;
-
-        if (!isAdmin && !string.IsNullOrEmpty(currentUserId))
-        {
-            // 获取用户的角色ID列表
-            var userRoleIds = await koala.UserInRoles
-                .Where(ur => ur.UserId == currentUserId)
-                .Select(ur => ur.RoleId)
-                .ToListAsync();
-
-            // 如果用户没有任何角色，只能看到公共仓库（没有权限分配的仓库）
-            if (!userRoleIds.Any())
-            {
-                var publicWarehouseIds = await koala.Warehouses
-                    .Where(w => !koala.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
-                    .Select(w => w.Id)
-                    .ToListAsync();
-
-                query = query.Where(x => publicWarehouseIds.Contains(x.Id));
-            }
-            else
-            {
-                // 用户可以访问的仓库：
-                // 1. 通过角色权限可以访问的仓库
-                // 2. 没有任何权限分配的公共仓库
-                var accessibleWarehouseIds = await koala.WarehouseInRoles
-                    .Where(wr => userRoleIds.Contains(wr.RoleId))
-                    .Select(wr => wr.WarehouseId)
-                    .Distinct()
-                    .ToListAsync();
-
-                var publicWarehouseIds = await koala.Warehouses
-                    .Where(w => !koala.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
-                    .Select(w => w.Id)
-                    .ToListAsync();
-
-                var allAccessibleIds = accessibleWarehouseIds.Concat(publicWarehouseIds).Distinct().ToList();
-                query = query.Where(x => allAccessibleIds.Contains(x.Id));
-            }
-        }
-        else if (string.IsNullOrEmpty(currentUserId))
-        {
-            // 未登录用户只能看到公共仓库
-            var publicWarehouseIds = await koala.Warehouses
-                .Where(w => !koala.WarehouseInRoles.Any(wr => wr.WarehouseId == w.Id))
-                .Select(w => w.Id)
-                .ToListAsync();
-
-            query = query.Where(x => publicWarehouseIds.Contains(x.Id));
-        }
-        // 管理员可以看到所有仓库，不需要额外过滤
-
-        // 按仓库名称和组织名称分组，保持排序一致性
+        // 5. 在数据库层面完成分组
         var groupedQuery = query
             .GroupBy(x => new { x.Name, x.OrganizationName })
             .Select(g => g.OrderByDescending(x => x.IsRecommended)
@@ -864,11 +878,17 @@ public class WarehouseService(
                 .ThenByDescending(x => x.CreatedAt)
                 .FirstOrDefault());
 
+        // 6. 获取总数（在分页前）
         var total = await groupedQuery.CountAsync();
 
-        var queryList = (await groupedQuery
-                .ToListAsync())
-            .Select(x => new Warehouse()
+        // 7. 在数据库层面完成排序和分页
+        var list = await groupedQuery
+            .OrderByDescending(x => x.IsRecommended)
+            .ThenByDescending(x => x.Status == WarehouseStatus.Completed)
+            .ThenByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new Warehouse
             {
                 Id = x.Id,
                 Name = x.Name,
@@ -882,93 +902,57 @@ public class WarehouseService(
                 Branch = x.Branch,
                 Email = x.Email,
                 Version = x.Version,
-            });
+                Stars = x.Stars,
+                Forks = x.Forks
+            })
+            .ToListAsync();
 
-        var list = queryList
-            .OrderByDescending(x => x.IsRecommended)
-            .ThenByDescending(x => x.Status == WarehouseStatus.Completed)
-            .ThenByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        var address = list.Select(x => x.Address).ToArray();
+        // 8. 映射到DTO
         var dto = mapper.Map<List<WarehouseDto>>(list);
 
-        // Collect repositories that need fresh data from Git API
-        var reposNeedingUpdate = new List<string>();
-        var warehouseIdMap = new Dictionary<string, Warehouse>();
-
-        foreach (var warehouseEntity in list)
-        {
-            var repository = dto.First(x => x.Id == warehouseEntity.Id);
-
-            // Check if we have stored fork/star counts (non-zero values indicate we have data)
-            if (warehouseEntity.Stars > 0 || warehouseEntity.Forks > 0)
-            {
-                // Use stored values from database
-                repository.Stars = warehouseEntity.Stars;
-                repository.Forks = warehouseEntity.Forks;
-                repository.Success = true; // Assume success if we have stored data
-            }
-            else
-            {
-                // Need to fetch fresh data from Git API
-                reposNeedingUpdate.Add(warehouseEntity.Address);
-                warehouseIdMap[warehouseEntity.Address] = warehouseEntity;
-            }
-        }
-
-        // Fetch fresh data only for repositories that need it
-        // if (reposNeedingUpdate.Any())
-        // {
-        //     var repositoryInfo = await gitRepositoryService.GetRepoInfoAsync(reposNeedingUpdate.ToArray());
-        //
-        //     foreach (var info in repositoryInfo)
-        //     {
-        //         var matchingDto = dto.FirstOrDefault(x => 
-        //             x.Address.Replace(".git", "").Equals(info.RepoUrl.Replace(".git", ""), 
-        //                 StringComparison.InvariantCultureIgnoreCase));
-        //         
-        //         if (matchingDto != null)
-        //         {
-        //             matchingDto.Stars = info.Stars;
-        //             matchingDto.Forks = info.Forks;
-        //             matchingDto.AvatarUrl = info.AvatarUrl;
-        //             matchingDto.OwnerUrl = info.OwnerUrl;
-        //             matchingDto.Language = info.Language;
-        //             matchingDto.License = info.License;
-        //             matchingDto.Error = info.Error;
-        //             matchingDto.Success = info.Success;
-        //
-        //             if (!string.IsNullOrEmpty(info.Description))
-        //             {
-        //                 matchingDto.Description = info.Description;
-        //             }
-        //
-        //             // Update database with fresh data if API call was successful
-        //             var warehouseEntity = list.FirstOrDefault(x => x.Id == matchingDto.Id);
-        //             if (warehouseEntity != null && info.Success)
-        //             {
-        //                 await koala.Warehouses
-        //                     .Where(w => w.Id == warehouseEntity.Id)
-        //                     .ExecuteUpdateAsync(w => w
-        //                         .SetProperty(p => p.Stars, info.Stars)
-        //                         .SetProperty(p => p.Forks, info.Forks));
-        //             }
-        //         }
-        //     }
-        // }
-
-        // Clean up sensitive fields for DTO
+        // 9. 处理统计信息
         foreach (var repository in dto)
         {
+            // 如果有缓存的数据则认为成功
+            repository.Success = repository.Stars > 0 || repository.Forks > 0;
+
+            // 清空大字段以减少传输数据量
             repository.OptimizedDirectoryStructure = string.Empty;
             repository.Prompt = string.Empty;
             repository.Readme = string.Empty;
         }
 
+        // 10. 异步更新缺失的统计数据（不阻塞返回）
+        var reposNeedingUpdate = dto.Where(x => x.Stars == 0 && x.Forks == 0).ToList();
+        if (reposNeedingUpdate.Any())
+        {
+            _ = Task.Run(async () => await UpdateRepositoryStatsAsync(reposNeedingUpdate));
+        }
+
         return new PageDto<WarehouseDto>(total, dto);
+    }
+
+    /// <summary>
+    /// 异步更新仓库统计信息
+    /// </summary>
+    private async Task UpdateRepositoryStatsAsync(List<WarehouseDto> repositories)
+    {
+        // 批量更新仓库的 stars 和 forks
+        var updateTasks = repositories.Select(async repo =>
+        {
+            try
+            {
+                // 这里应该调用实际的Git API获取统计
+                // 为演示目的，直接返回
+                // TODO: 实现实际的API调用逻辑
+            }
+            catch
+            {
+                // 静默失败，不影响主流程
+            }
+        });
+
+        await Task.WhenAll(updateTasks);
     }
 
     [EndpointSummary("获取指定仓库代码文件")]
