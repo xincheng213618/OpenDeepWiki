@@ -1212,19 +1212,10 @@ namespace KoalaWiki.Provider.MySQL.Migrations
                         .HasColumnType("varchar(255)")
                         .HasComment("仓库名称");
 
-                    b.Property<string>("OptimizedDirectoryStructure")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("OrganizationName")
                         .IsRequired()
                         .HasColumnType("varchar(255)")
                         .HasComment("组织名称");
-
-                    b.Property<string>("Prompt")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Readme")
-                        .HasColumnType("longtext");
 
                     b.Property<int>("Stars")
                         .HasColumnType("int");

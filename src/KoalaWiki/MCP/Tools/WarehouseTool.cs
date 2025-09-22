@@ -76,21 +76,12 @@ public sealed class WarehouseTool(IKoalaWikiContext koala)
 
         var readme = await DocumentsService.GenerateReadMe(warehouse, document.GitPath, koala);
 
-        var catalogue = warehouse.OptimizedDirectoryStructure;
-        if (string.IsNullOrWhiteSpace(catalogue))
-        {
-            catalogue = await DocumentsService.GetCatalogueSmartFilterAsync(document.GitPath, readme);
-            if (!string.IsNullOrWhiteSpace(catalogue))
-            {
-                await koala.Warehouses.Where(x => x.Id == warehouse.Id)
-                    .ExecuteUpdateAsync(x => x.SetProperty(y => y.OptimizedDirectoryStructure, catalogue));
-            }
-        }
+        var catalogue = document.GetCatalogueSmartFilterOptimized();
 
         history.AddUserMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.Responses),
             new KernelArguments()
             {
-                ["catalogue"] = warehouse.OptimizedDirectoryStructure,
+                ["catalogue"] = catalogue,
                 ["repository_url"] = warehouse.Address,
                 ["question"] = question,
             }, OpenAIOptions.ChatModel));

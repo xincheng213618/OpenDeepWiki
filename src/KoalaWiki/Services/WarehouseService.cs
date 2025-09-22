@@ -477,11 +477,9 @@ public class WarehouseService(
             Description = string.Empty,
             Version = string.Empty,
             Error = string.Empty,
-            Prompt = string.Empty,
             Branch = string.Empty,
             Type = "file",
             CreatedAt = DateTime.UtcNow,
-            OptimizedDirectoryStructure = string.Empty,
             Id = Guid.NewGuid().ToString(),
             UserId = userContext.CurrentUserId,
             Stars = 0,
@@ -581,11 +579,9 @@ public class WarehouseService(
             entity.Description = string.Empty;
             entity.Version = string.Empty;
             entity.Error = string.Empty;
-            entity.Prompt = string.Empty;
             entity.Branch = input.Branch;
             entity.Type = "git";
             entity.CreatedAt = DateTime.UtcNow;
-            entity.OptimizedDirectoryStructure = string.Empty;
             entity.UserId = userContext.CurrentUserId;
             entity.Id = Guid.NewGuid().ToString();
             entity.Stars = 0;
@@ -674,11 +670,9 @@ public class WarehouseService(
             entity.Description = string.Empty;
             entity.Version = string.Empty;
             entity.Error = string.Empty;
-            entity.Prompt = string.Empty;
             entity.Branch = input.Branch;
             entity.Type = "git";
             entity.CreatedAt = DateTime.UtcNow;
-            entity.OptimizedDirectoryStructure = string.Empty;
             entity.Id = Guid.NewGuid().ToString();
             entity.Stars = 0;
             entity.Forks = 0;
@@ -870,47 +864,38 @@ public class WarehouseService(
                 x.Description.ToLower().Contains(keyword));
         }
 
-        // 5. 在数据库层面完成分组
-        var groupedQuery = query
+        // 5. 获取所有符合条件的数据到内存中进行分组
+        var allWarehouses = await query
+            .OrderByDescending(x => x.IsRecommended)
+            .ThenByDescending(x => x.Status == WarehouseStatus.Completed)
+            .ThenByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
+        // 6. 在内存中进行分组，选择每组中最优先的仓库
+        var groupedWarehouses = allWarehouses
             .GroupBy(x => new { x.Name, x.OrganizationName })
             .Select(g => g.OrderByDescending(x => x.IsRecommended)
                 .ThenByDescending(x => x.Status == WarehouseStatus.Completed)
                 .ThenByDescending(x => x.CreatedAt)
-                .FirstOrDefault());
+                .First())
+            .ToList();
 
-        // 6. 获取总数（在分页前）
-        var total = await groupedQuery.CountAsync();
-
-        // 7. 在数据库层面完成排序和分页
-        var list = await groupedQuery
+        // 7. 重新排序并进行分页
+        var list = groupedWarehouses
             .OrderByDescending(x => x.IsRecommended)
             .ThenByDescending(x => x.Status == WarehouseStatus.Completed)
             .ThenByDescending(x => x.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => new Warehouse
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Address = x.Address,
-                Description = x.Description,
-                CreatedAt = x.CreatedAt,
-                Status = x.Status,
-                IsRecommended = x.IsRecommended,
-                OrganizationName = x.OrganizationName,
-                Type = x.Type,
-                Branch = x.Branch,
-                Email = x.Email,
-                Version = x.Version,
-                Stars = x.Stars,
-                Forks = x.Forks
-            })
-            .ToListAsync();
+            .ToList();
 
-        // 8. 映射到DTO
+        // 8. 获取总数
+        var total = groupedWarehouses.Count;
+
+        // 9. 映射到DTO
         var dto = mapper.Map<List<WarehouseDto>>(list);
 
-        // 9. 处理统计信息
+        // 10. 处理统计信息
         foreach (var repository in dto)
         {
             // 如果有缓存的数据则认为成功
@@ -922,7 +907,7 @@ public class WarehouseService(
             repository.Readme = string.Empty;
         }
 
-        // 10. 异步更新缺失的统计数据（不阻塞返回）
+        // 11. 异步更新缺失的统计数据（不阻塞返回）
         var reposNeedingUpdate = dto.Where(x => x.Stars == 0 && x.Forks == 0).ToList();
         if (reposNeedingUpdate.Any())
         {

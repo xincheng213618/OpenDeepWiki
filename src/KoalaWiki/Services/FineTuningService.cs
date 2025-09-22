@@ -293,7 +293,7 @@ public class FineTuningService(IKoalaWikiContext koala, IUserContext userContext
             }
 
             // 在prompt的头部增加<catalogue>标签
-            prompt += $"<catalogue>\n{warehouse?.OptimizedDirectoryStructure}\n</catalogue>";
+            prompt += $"<catalogue>\n{document.GetCatalogueSmartFilterOptimized()}\n</catalogue>";
 
             // 这里可以实现实际的微调训练逻辑
             var history = new ChatHistory();

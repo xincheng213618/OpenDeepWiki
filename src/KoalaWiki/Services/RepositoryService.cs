@@ -359,14 +359,12 @@ public class RepositoryService(
             Description = string.Empty,
             Version = string.Empty,
             Error = string.Empty,
-            Prompt = string.Empty,
             Branch = createDto.Branch,
             Type = "git",
             GitUserName = createDto.GitUserName,
             GitPassword = createDto.GitPassword,
             Email = createDto.Email,
             CreatedAt = DateTime.UtcNow,
-            OptimizedDirectoryStructure = string.Empty,
             Status = WarehouseStatus.Pending
         };
 
@@ -410,11 +408,6 @@ public class RepositoryService(
         if (updateDto.IsRecommended.HasValue)
         {
             repository.IsRecommended = updateDto.IsRecommended.Value;
-        }
-
-        if (updateDto.Prompt != null)
-        {
-            repository.Prompt = updateDto.Prompt;
         }
 
         // 保存更改
@@ -678,7 +671,7 @@ public class RepositoryService(
         // 对当前单目录进行分析
         var (catalogs, fileItem, files)
             = await DocumentPendingService.ProcessDocumentAsync(catalog, fileKernel,
-                warehouse.OptimizedDirectoryStructure,
+                document.GetCatalogueSmartFilterOptimized(),
                 warehouse.Address, warehouse.Branch, document.GitPath, null, warehouse.Classify);
 
         // 处理完成后，更新目录状态
@@ -773,7 +766,7 @@ public class RepositoryService(
                 // 对当前单目录进行分析
                 var (catalogs, fileItem, files)
                     = await DocumentPendingService.ProcessDocumentAsync(catalog, fileKernel,
-                        warehouse.OptimizedDirectoryStructure,
+                        document.GetCatalogueSmartFilterOptimized(),
                         warehouse.Address, warehouse.Branch, document.GitPath, null, warehouse.Classify);
 
                 // 处理完成后，更新目录状态
@@ -1010,7 +1003,8 @@ public class RepositoryService(
     /// <returns></returns>
     [HttpGet("SyncRecords")]
     [EndpointSummary("仓库管理：获取同步记录")]
-    public async Task<PageDto<WarehouseSyncRecordDto>> GetWarehouseSyncRecordsAsync(string warehouseId, int page = 1, int pageSize = 10)
+    public async Task<PageDto<WarehouseSyncRecordDto>> GetWarehouseSyncRecordsAsync(string warehouseId, int page = 1,
+        int pageSize = 10)
     {
         // 检查访问权限
         if (!await CheckWarehouseAccessAsync(warehouseId))
@@ -1103,7 +1097,8 @@ public class RepositoryService(
     /// </summary>
     [HttpGet("RepositoryLogs")]
     [EndpointSummary("仓库管理：获取仓库操作日志")]
-    public async Task<PageDto<RepositoryLogDto>> GetRepositoryLogsAsync(string repositoryId, int page = 1, int pageSize = 20)
+    public async Task<PageDto<RepositoryLogDto>> GetRepositoryLogsAsync(string repositoryId, int page = 1,
+        int pageSize = 20)
     {
         // 检查用户权限
         if (!await CheckWarehouseAccessAsync(repositoryId))
@@ -1194,7 +1189,6 @@ public class RepositoryService(
                 isLeaf = catalogs.All(x => x.ParentId != item.Id), // 如果没有子节点，则为叶子节点
                 children = new List<TreeNode>(),
                 catalog = item,
-                
             };
 
             // 递归添加子节点

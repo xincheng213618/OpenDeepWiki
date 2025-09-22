@@ -48,12 +48,12 @@ public sealed class MiniMapBackgroundService(IServiceProvider service) : Backgro
                 {
                     Log.Logger.Information("开始处理仓库 {WarehouseName}", item.Name);
 
-                    var documents = await context.Documents
+                    var document = await context.Documents
                         .Where(d => d.WarehouseId == item.Id)
                         .FirstOrDefaultAsync(stoppingToken);
 
-                    var miniMap = await MiniMapService.GenerateMiniMap(item.OptimizedDirectoryStructure,
-                        item, documents.GitPath);
+                    var miniMap = await MiniMapService.GenerateMiniMap(document.GetCatalogueSmartFilterOptimized(),
+                        item, document.GitPath);
                     if (miniMap != null)
                     {
                         context.MiniMaps.Add(new MiniMap

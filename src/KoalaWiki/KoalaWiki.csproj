@@ -106,9 +106,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="KoalaWarehouse\DocumentsService.Commit.cs">
-        <DependentUpon>DocumentsService.cs</DependentUpon>
-      </Compile>
       <Compile Update="KoalaWarehouse\GenerateThinkCatalogue\GenerateThinkCatalogueService.Prompt.cs">
         <DependentUpon>GenerateThinkCatalogueService.cs</DependentUpon>
       </Compile>

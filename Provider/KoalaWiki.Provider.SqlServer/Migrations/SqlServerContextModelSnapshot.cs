@@ -1215,19 +1215,10 @@ namespace KoalaWiki.Provider.SqlServer.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasComment("仓库名称");
 
-                    b.Property<string>("OptimizedDirectoryStructure")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("OrganizationName")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)")
                         .HasComment("组织名称");
-
-                    b.Property<string>("Prompt")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Readme")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Stars")
                         .HasColumnType("int");

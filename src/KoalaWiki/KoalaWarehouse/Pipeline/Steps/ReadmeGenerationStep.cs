@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using KoalaWiki.Options;
+using KoalaWiki.Tools;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
@@ -8,7 +9,9 @@ namespace KoalaWiki.KoalaWarehouse.Pipeline.Steps;
 
 public class ReadmeGenerationStep : DocumentProcessingStepBase<DocumentProcessingContext, DocumentProcessingContext>
 {
-    public ReadmeGenerationStep(ILogger<ReadmeGenerationStep> logger) : base(logger) { }
+    public ReadmeGenerationStep(ILogger<ReadmeGenerationStep> logger) : base(logger)
+    {
+    }
 
     public override string StepName => "读取生成README";
 
@@ -45,13 +48,13 @@ public class ReadmeGenerationStep : DocumentProcessingStepBase<DocumentProcessin
 
         try
         {
-            var readme = await GenerateReadMe(context.Warehouse, context.Document.GitPath, context.DbContext);
+            var readme = await GenerateReadMe(context.Warehouse, context.Document.GitPath);
             context.Readme = readme;
-            
+
             activity?.SetTag("readme.length", readme?.Length ?? 0);
             context.SetStepResult(StepName, readme);
-            
-            Logger.LogInformation("完成 {StepName} 步骤，README长度: {Length}", 
+
+            Logger.LogInformation("完成 {StepName} 步骤，README长度: {Length}",
                 StepName, readme?.Length ?? 0);
         }
         catch (Exception ex)
@@ -65,28 +68,15 @@ public class ReadmeGenerationStep : DocumentProcessingStepBase<DocumentProcessin
     }
 
     public override async Task<DocumentProcessingContext> HandleErrorAsync(
-        DocumentProcessingContext input, 
-        Exception exception, 
+        DocumentProcessingContext input,
+        Exception exception,
         int attemptCount)
     {
         Logger.LogWarning("README生成失败，尝试使用备选方案，异常: {Exception}", exception.Message);
-        
-        // README生成失败时，使用仓库现有的README或生成默认值
-        if (string.IsNullOrEmpty(input.Readme))
-        {
-            var fallbackReadme = input.Warehouse.Readme;
-            
-            if (string.IsNullOrEmpty(fallbackReadme))
-            {
-                // 生成一个基础的README模板
-                fallbackReadme = GenerateFallbackReadme(input.Warehouse, input.GitRepository);
-            }
-            
-            input.Readme = fallbackReadme;
-            Logger.LogInformation("使用备选README内容，长度: {Length}", fallbackReadme?.Length ?? 0);
-        }
-        
-        return input;
+
+        input.Readme = "暂无README文件";
+
+        return await Task.FromResult(input);
     }
 
     public override async Task<bool> IsHealthyAsync(DocumentProcessingContext input)
@@ -100,7 +90,7 @@ public class ReadmeGenerationStep : DocumentProcessingStepBase<DocumentProcessin
                 Logger.LogWarning("Git路径不存在: {Path}", input.Document.GitPath);
                 return false;
             }
-            
+
             // 检查是否有基本的文件读取权限
             var testFile = Path.Combine(input.Document.GitPath, "README.md");
             if (File.Exists(testFile))
@@ -115,7 +105,7 @@ public class ReadmeGenerationStep : DocumentProcessingStepBase<DocumentProcessin
                     return false;
                 }
             }
-            
+
             return true;
         }
         catch (Exception ex)
@@ -125,46 +115,13 @@ public class ReadmeGenerationStep : DocumentProcessingStepBase<DocumentProcessin
         }
     }
 
-    public override async Task<string[]> GetDependenciesAsync()
-    {
-        // README生成不依赖其他步骤
-        return Array.Empty<string>();
-    }
-
     protected override void SetActivityTags(Activity? activity, DocumentProcessingContext input)
     {
         activity?.SetTag("warehouse.id", input.Warehouse.Id);
         activity?.SetTag("path", input.Document.GitPath);
     }
 
-    private string GenerateFallbackReadme(Warehouse warehouse, string gitRepository)
-    {
-        var repoName = !string.IsNullOrEmpty(gitRepository) 
-            ? Path.GetFileNameWithoutExtension(gitRepository.Split('/').Last().Replace(".git", ""))
-            : warehouse.Name;
-        
-        return $@"# {repoName}
-
-## 项目概述
-
-这是一个代码仓库的自动生成文档。
-
-## 仓库信息
-
-- **仓库名称**: {warehouse.Name}
-- **仓库类型**: {warehouse.Type}
-- **分支**: {warehouse.Branch}
-
-## 说明
-
-此README文档由系统自动生成。如需更详细的项目说明，请查看项目源代码或联系项目维护者。
-
----
-*此文档由 KoalaWiki 自动生成*
-";
-    }
-
-    private static async Task<string> GenerateReadMe(Warehouse warehouse, string path, IKoalaWikiContext koalaWikiContext)
+    private static async Task<string> GenerateReadMe(Warehouse warehouse, string path)
     {
         using var activity = new ActivitySource("KoalaWiki.Warehouse").StartActivity("生成README文档", ActivityKind.Server);
         activity?.SetTag("warehouse.id", warehouse.Id);
@@ -173,9 +130,8 @@ public class ReadmeGenerationStep : DocumentProcessingStepBase<DocumentProcessin
 
         var readme = await DocumentsHelper.ReadMeFile(path);
         activity?.SetTag("existing_readme_found", !string.IsNullOrEmpty(readme));
-        activity?.SetTag("warehouse_readme_exists", !string.IsNullOrEmpty(warehouse.Readme));
 
-        if (string.IsNullOrEmpty(readme) && string.IsNullOrEmpty(warehouse.Readme))
+        if (string.IsNullOrEmpty(readme))
         {
             activity?.SetTag("action", "generate_new_readme");
 
@@ -217,21 +173,12 @@ public class ReadmeGenerationStep : DocumentProcessingStepBase<DocumentProcessin
             {
                 activity?.SetTag("extraction_method", "raw_content");
             }
-
-            await koalaWikiContext.Warehouses.Where(x => x.Id == warehouse.Id)
-                .ExecuteUpdateAsync(x => x.SetProperty(y => y.Readme, readme));
-        }
-        else
-        {
-            activity?.SetTag("action", "use_existing_readme");
-            await koalaWikiContext.Warehouses.Where(x => x.Id == warehouse.Id)
-                .ExecuteUpdateAsync(x => x.SetProperty(y => y.Readme, readme));
         }
 
         if (string.IsNullOrEmpty(readme))
         {
             activity?.SetTag("fallback_to_warehouse_readme", true);
-            return warehouse.Readme;
+            return "暂无README文件";
         }
 
         activity?.SetTag("final_readme.length", readme?.Length ?? 0);

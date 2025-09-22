@@ -259,23 +259,7 @@ public class FeishuBotService(
 
             var chat = kernel.GetRequiredService<IChatCompletionService>();
 
-            string tree = string.Empty;
-
-            try
-            {
-                var ignoreFiles = DocumentsHelper.GetIgnoreFiles(path);
-                var pathInfos = new List<PathInfo>();
-
-                // 递归扫描目录所有文件和目录
-                DocumentsHelper.ScanDirectory(path, pathInfos, ignoreFiles);
-
-                var fileTree = FileTreeBuilder.BuildTree(pathInfos, path);
-                tree = FileTreeBuilder.ToCompactString(fileTree);
-            }
-            catch (Exception)
-            {
-                tree = warehouse.OptimizedDirectoryStructure;
-            }
+            string tree = document.GetCatalogueSmartFilterOptimized();
 
             history.AddSystemMessage(await PromptContext.Chat(nameof(PromptConstant.Chat.Responses),
                 new KernelArguments()

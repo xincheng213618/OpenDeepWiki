@@ -45,9 +45,7 @@ public class CatalogueGenerationStep : DocumentProcessingStepBase<DocumentProces
 
         try
         {
-            var catalogue = DocumentsService.GetCatalogueSmartFilterOptimizedAsync(
-                context.Document.GitPath,
-                context.Readme ?? string.Empty);
+            var catalogue = context.Document.GetCatalogueSmartFilterOptimized();
 
             activity?.SetTag("catalogue.length", catalogue?.Length ?? 0);
             context.SetStepResult(StepName, catalogue);

@@ -25,7 +25,7 @@ public partial class WarehouseProcessingTask
 
             // 1. 更新仓库
             var (commits, commitId) = GitService.PullRepository(document.GitPath, warehouse.Version,
-                warehouse.Branch,warehouse.GitUserName, warehouse.GitPassword);
+                warehouse.Branch, warehouse.GitUserName, warehouse.GitPassword);
 
             logger.LogInformation("仓库更新完成，获取到 {CommitCount} 个提交记录", commits?.Count ?? 0);
             if (commits == null || commits.Count == 0)
@@ -88,7 +88,7 @@ public partial class WarehouseProcessingTask
                 .Replace("{{git_repository}}", warehouse.Address.Replace(".git", ""))
                 .Replace("{{document_catalogue}}", JsonSerializer.Serialize(catalogues, JsonSerializerOptions.Web))
                 .Replace("{{git_commit}}", commitPrompt.ToString())
-                .Replace("{{catalogue}}", warehouse.OptimizedDirectoryStructure);
+                .Replace("{{catalogue}}", document.GetCatalogueSmartFilterOptimized());
 
             history.AddUserMessage(prompt);
 
@@ -195,13 +195,15 @@ public partial class WarehouseProcessingTask
 
             await DocumentPendingService.HandlePendingDocumentsAsync(documents.Select(x => x.Item2).ToList(),
                 fileKernel,
-                warehouse.OptimizedDirectoryStructure,
+                document.GetCatalogueSmartFilterOptimized(),
                 warehouse.Address, warehouse, document.GitPath, dbContext, warehouse.Classify);
 
             logger.LogInformation("仓库 {WarehouseName} 分析完成", warehouse.Name);
 
-            var commitResult = await GenerateUpdateLogAsync(document.GitPath, warehouse, warehouse.Readme,
-                warehouse.Address, warehouse.Branch, dbContext);
+            var readme = await DocumentsHelper.ReadMeFile(document.GitPath);
+
+            var commitResult = await GenerateUpdateLogAsync(document.GitPath, warehouse,
+                readme, warehouse.Address, warehouse.Branch, dbContext);
 
             await dbContext.DocumentCommitRecords.AddRangeAsync(commitResult.Select(x => new DocumentCommitRecord()
             {
@@ -213,7 +215,7 @@ public partial class WarehouseProcessingTask
                 Title = x.title,
                 LastUpdate = x.date,
             }));
-            
+
             await dbContext.SaveChangesAsync();
 
 

@@ -62,11 +62,6 @@ public class Warehouse : Entity<string>
     public string? Error { get; set; }
 
     /// <summary>
-    /// 构建提示词
-    /// </summary>
-    public string? Prompt { get; set; }
-
-    /// <summary>
     /// 仓库版本
     /// </summary>
     public string? Version { get; set; }
@@ -82,17 +77,6 @@ public class Warehouse : Entity<string>
     /// <returns></returns>
     public bool IsRecommended { get; set; }
 
-    /// <summary>
-    /// 优化过的代码目录结构
-    /// </summary>
-    /// <returns></returns>
-    public string? OptimizedDirectoryStructure { get; set; }
-    
-    /// <summary>
-    /// 当前仓库的文档（默认使用仓库，如果没有则动态生成）
-    /// </summary>
-    public string? Readme { get; set; } 
-    
     /// <summary>
     /// 仓库类别
     /// </summary>

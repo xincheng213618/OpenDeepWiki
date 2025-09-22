@@ -1215,19 +1215,10 @@ namespace KoalaWiki.Provider.PostgreSQL.Migrations
                         .HasColumnType("text")
                         .HasComment("仓库名称");
 
-                    b.Property<string>("OptimizedDirectoryStructure")
-                        .HasColumnType("text");
-
                     b.Property<string>("OrganizationName")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasComment("组织名称");
-
-                    b.Property<string>("Prompt")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Readme")
-                        .HasColumnType("text");
 
                     b.Property<int>("Stars")
                         .HasColumnType("integer");

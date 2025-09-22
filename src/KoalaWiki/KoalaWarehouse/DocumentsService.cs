@@ -6,15 +6,9 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace KoalaWiki.KoalaWarehouse;
 
-public partial class DocumentsService
+public class DocumentsService(IDocumentProcessingOrchestrator orchestrator)
 {
-    private static readonly ActivitySource s_activitySource = new("KoalaWiki.Warehouse");
-    private readonly IDocumentProcessingOrchestrator _orchestrator;
-
-    public DocumentsService(IDocumentProcessingOrchestrator orchestrator)
-    {
-        _orchestrator = orchestrator;
-    }
+    private static readonly ActivitySource SActivitySource = new("KoalaWiki.Warehouse");
 
     /// <summary>
     /// Handles the asynchronous processing of a document within a specified warehouse, including parsing directory structures, generating update logs, and saving results to the database.
@@ -27,62 +21,32 @@ public partial class DocumentsService
     public async Task HandleAsync(Document document, Warehouse warehouse, IKoalaWikiContext dbContext,
         string gitRepository)
     {
-        using var activity = s_activitySource.StartActivity(ActivityKind.Server);
+        using var activity = SActivitySource.StartActivity(ActivityKind.Server);
         activity?.SetTag("warehouse.id", warehouse.Id);
         activity?.SetTag("warehouse.name", warehouse.Name);
         activity?.SetTag("document.id", document.Id);
         activity?.SetTag("git.repository", gitRepository);
 
-        var result = await _orchestrator.ProcessDocumentAsync(
-            document, 
-            warehouse, 
-            dbContext, 
+        var result = await orchestrator.ProcessDocumentAsync(
+            document,
+            warehouse,
+            dbContext,
             gitRepository);
 
         if (!result.Success)
         {
             activity?.SetTag("processing.failed", true);
             activity?.SetTag("error", result.ErrorMessage);
-            
+
             if (result.Exception != null)
             {
                 throw result.Exception;
             }
-            
+
             throw new InvalidOperationException($"文档处理失败: {result.ErrorMessage}");
         }
 
         activity?.SetTag("processing.completed", true);
-    }
-
-    /// <summary>
-    /// 获取智能过滤的优化树形目录结构
-    /// </summary>
-    /// <param name="path">扫描路径</param>
-    /// <param name="readme">README内容</param>
-    /// <param name="format">输出格式</param>
-    /// <returns>优化后的目录结构</returns>
-    public static string GetCatalogueSmartFilterOptimizedAsync(string path, string readme,
-        string format = "compact")
-    {
-        using var activity = s_activitySource.StartActivity("智能过滤优化目录结构", ActivityKind.Server);
-        activity?.SetTag("path", path);
-        activity?.SetTag("format", format);
-
-        var ignoreFiles = DocumentsHelper.GetIgnoreFiles(path);
-        var pathInfos = new List<PathInfo>();
-
-        // 递归扫描目录所有文件和目录
-        DocumentsHelper.ScanDirectory(path, pathInfos, ignoreFiles);
-        activity?.SetTag("total_files", pathInfos.Count);
-        
-        var fileTree = FileTreeBuilder.BuildTree(pathInfos, path);
-        return format.ToLower() switch
-        {
-            "json" => FileTreeBuilder.ToCompactJson(fileTree),
-            "pathlist" => string.Join("\n", FileTreeBuilder.ToPathList(fileTree)),
-            "compact" or _ => FileTreeBuilder.ToCompactString(fileTree)
-        };
     }
 
     /// <summary>
@@ -208,16 +172,15 @@ public partial class DocumentsService
     public static async Task<string> GenerateReadMe(Warehouse warehouse, string path,
         IKoalaWikiContext koalaWikiContext)
     {
-        using var activity = s_activitySource.StartActivity("生成README文档", ActivityKind.Server);
+        using var activity = SActivitySource.StartActivity("生成README文档", ActivityKind.Server);
         activity?.SetTag("warehouse.id", warehouse.Id);
         activity?.SetTag("warehouse.name", warehouse.Name);
         activity?.SetTag("path", path);
 
         var readme = await DocumentsHelper.ReadMeFile(path);
         activity?.SetTag("existing_readme_found", !string.IsNullOrEmpty(readme));
-        activity?.SetTag("warehouse_readme_exists", !string.IsNullOrEmpty(warehouse.Readme));
 
-        if (string.IsNullOrEmpty(readme) && string.IsNullOrEmpty(warehouse.Readme))
+        if (string.IsNullOrEmpty(readme))
         {
             activity?.SetTag("action", "generate_new_readme");
 
@@ -262,21 +225,12 @@ public partial class DocumentsService
             {
                 activity?.SetTag("extraction_method", "raw_content");
             }
-
-            await koalaWikiContext.Warehouses.Where(x => x.Id == warehouse.Id)
-                .ExecuteUpdateAsync(x => x.SetProperty(y => y.Readme, readme));
-        }
-        else
-        {
-            activity?.SetTag("action", "use_existing_readme");
-            await koalaWikiContext.Warehouses.Where(x => x.Id == warehouse.Id)
-                .ExecuteUpdateAsync(x => x.SetProperty(y => y.Readme, readme));
         }
 
         if (string.IsNullOrEmpty(readme))
         {
             activity?.SetTag("fallback_to_warehouse_readme", true);
-            return warehouse.Readme;
+            return "暂无仓库说明文档";
         }
 
         activity?.SetTag("final_readme.length", readme?.Length ?? 0);
