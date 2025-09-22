@@ -49,12 +49,34 @@ jobs:
         id: version
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           [xml]$xml = Get-Content -Raw "Directory.Packages.props"
-          $v = $xml.Project.PropertyGroup.Version
-          if (-not $v) { throw "Version not found in Directory.Packages.props" }
-          echo "PKG_VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          echo "RELEASE_TAG=v$($v)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "Using version: $v"
+          $pg = $xml.Project.PropertyGroup
+          $versionTemplate = [string]$pg.Version
+          if ([string]::IsNullOrWhiteSpace($versionTemplate)) { throw "Version not found in Directory.Packages.props" }
+          # Build a property map from PropertyGroup
+          $props = @{}
+          foreach ($n in $pg.ChildNodes) {
+            if ($n.NodeType -eq [System.Xml.XmlNodeType]::Element) {
+              $props[$n.Name] = [string]$n.InnerText
+            }
+          }
+          # Provide concrete TimeStamp replacement (UTC yyyyMMdd) if used
+          $props['TimeStamp'] = (Get-Date -AsUTC).ToString('yyyyMMdd')
+          # Replace $(Property) tokens (e.g., $(VersionSuffix), $(TimeStamp))
+          $unresolved = New-Object System.Collections.Generic.List[string]
+          $finalVersion = [regex]::Replace($versionTemplate, '\$\(([A-Za-z0-9_.-]+)\)', {
+            param($m)
+            $name = $m.Groups[1].Value
+            if ($props.ContainsKey($name) -and -not [string]::IsNullOrWhiteSpace($props[$name])) { $props[$name] } else { $unresolved.Add($name) | Out-Null; '' }
+          })
+          if ($unresolved.Count -gt 0) { Write-Host "[warn] Unresolved version tokens -> $($unresolved -join ', '); replaced with empty string." }
+          if ([string]::IsNullOrWhiteSpace($finalVersion)) { throw "Resolved version is empty" }
+          "PKG_VERSION=$finalVersion" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RELEASE_TAG=v$finalVersion" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "version=$finalVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Version template: $versionTemplate"
+          Write-Host "Final version: $finalVersion"
 
       - name: Build frontend (Vite -> src/KoalaWiki/wwwroot)
         working-directory: ${{ env.FRONTEND_DIR }}
