@@ -30,7 +30,7 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
         }
 
         // GPT o系列不能传递温度
-        if (model.StartsWith("o"))
+        if (model.StartsWith("o") || model.StartsWith("gpt-5"))
         {
             json.Remove("temperature");
         }
