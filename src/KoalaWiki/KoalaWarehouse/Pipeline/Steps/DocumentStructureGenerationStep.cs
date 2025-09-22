@@ -24,7 +24,7 @@ public sealed class DocumentStructureGenerationStep(ILogger<DocumentStructureGen
                 context.Document.GitPath,
                 context.Catalogue ?? string.Empty,
                 context.Warehouse,
-                context.Classification);
+                context.Classification).ConfigureAwait(false);
 
             var documentCatalogs = new List<DocumentCatalog>();
 

@@ -59,7 +59,6 @@ public static class PromptExtensions
              - NEVER assume that a given library is available, even if it is well known. Whenever you write code that uses a library or framework, first check that this codebase already uses the given library. For example, you might look at neighboring files, or check the package.json (or cargo.toml, and so on depending on the language).
              - Always follow security best practices. Never introduce code that exposes or logs secrets and keys. Never commit secrets or keys to the repository.
 
-
              # Code style
 
              - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked

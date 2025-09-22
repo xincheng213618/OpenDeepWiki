@@ -91,7 +91,7 @@ public partial class DocumentPendingService
 
             try
             {
-                var (catalog, fileItem, files) = await completedTask;
+                var (catalog, fileItem, files) = await completedTask.ConfigureAwait(false);
 
                 if (fileItem == null)
                 {
@@ -145,33 +145,215 @@ public partial class DocumentPendingService
         const int retries = 5;
         var files = new List<string>();
 
-        while (true)
+        for (var i = 0; i < 3; i++)
         {
             try
             {
                 if (semaphore != null)
-                {
                     await semaphore.WaitAsync();
-                }
 
                 Log.Logger.Information("处理仓库；{path} ,处理标题：{name}", path, catalog.Name);
-                var fileItem = await ProcessCatalogueItems(catalog, catalogue, gitRepository, branch, path,
-                    classifyType, files);
-                // ProcessCatalogueItems内部已经进行了质量验证，这里只做最终检查
-                if (fileItem == null)
+
+                DocumentContext.DocumentStore = new DocumentStore();
+
+                var docs = new DocsFunction();
+                // 为每个文档处理创建独立的Kernel实例，避免状态管理冲突
+                var documentKernel = KernelFactory.GetKernel(
+                    OpenAIOptions.Endpoint,
+                    OpenAIOptions.ChatApiKey,
+                    path,
+                    OpenAIOptions.ChatModel,
+                    false, // 文档生成不需要代码分析功能
+                    files, (builder => { builder.Plugins.AddFromObject(docs, "Docs"); })
+                );
+
+                var chat = documentKernel.Services.GetService<IChatCompletionService>();
+
+                string prompt = await
+                    GetDocumentPendingPrompt(classifyType, catalogue, gitRepository, branch, catalog.Name,
+                        catalog.Prompt);
+
+                var history = new ChatHistory();
+
+                history.AddSystemEnhance();
+
+                var contents = new ChatMessageContentItemCollection
                 {
-                    throw new InvalidOperationException("文档生成失败：返回内容为空");
+                    new TextContent(prompt),
+                    new TextContent(
+                        $"""
+                         <system-reminder>
+                         For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+                         Note: The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
+                         Below is an example of the directory structure of the warehouse, where /D represents a directory and /F represents a file:
+                         server/D
+                           src/D
+                             Main/F
+                         web/D
+                           components/D
+                             Header.tsx/F
+
+
+                         {Prompt.Language}
+                         </system-reminder>
+                         """)
+                };
+
+                contents.AddDocsGenerateSystemReminder();
+                history.AddUserMessage(contents);
+
+                var settings = new OpenAIPromptExecutionSettings()
+                {
+                    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+                    MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel),
+                };
+
+                int count = 1;
+                int inputTokenCount = 0;
+                int outputTokenCount = 0;
+
+                reset:
+
+                await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
+                {
+                    switch (item.InnerContent)
+                    {
+                        case StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content:
+                            inputTokenCount += content.Usage.InputTokenCount;
+                            outputTokenCount += content.Usage.OutputTokenCount;
+                            break;
+                        case StreamingChatCompletionUpdate tool when tool.ToolCallUpdates.Count > 0:
+                            Console.Write("[Tool Call]");
+                            break;
+                        case StreamingChatCompletionUpdate value:
+                            Console.Write(value.ContentUpdate.FirstOrDefault()?.Text);
+                            break;
+                    }
                 }
 
+                if (string.IsNullOrEmpty(docs.Content) && count < 5)
+                {
+                    count++;
+                    goto reset;
+                }
+
+
+                if (DocumentOptions.RefineAndEnhanceQuality)
+                {
+                    try
+                    {
+                        var refineContents = new ChatMessageContentItemCollection
+                        {
+                            new TextContent(
+                                """
+                                Please refine and enhance the previous documentation content while maintaining its structure and approach. Focus on:
+
+                                **Enhancement Areas:**
+                                - Deepen existing architectural explanations with more technical detail
+                                - Expand code analysis with additional insights from the repository
+                                - Strengthen existing Mermaid diagrams with more comprehensive representations
+                                - Improve clarity and readability of existing explanations
+                                - Add more specific code references and examples where appropriate
+                                - Enhance existing sections with additional technical depth
+
+                                **Quality Standards:**
+                                - Maintain the 90-10 description-to-code ratio established in the original
+                                - Ensure all additions are evidence-based from the actual code files
+                                - Preserve the Microsoft documentation style approach
+                                - Enhance conceptual understanding through improved explanations
+                                - Strengthen the progressive learning structure
+
+                                **Refinement Protocol (tools only):**
+                                1) Use Docs.Read to review the current document thoroughly.
+                                2) Plan improvements that preserve structure and voice.
+                                3) Apply multiple small, precise Docs.MultiEdit operations to improve clarity, add missing details, and strengthen diagrams/citations.
+                                4) After each edit, re-run Docs.Read to verify changes and continue iterating (at least 2–3 passes).
+                                5) Avoid full overwrites; prefer targeted edits that enhance existing content.
+
+                                Build upon the solid foundation that exists to create even more comprehensive and valuable documentation.
+                                """),
+                            new TextContent(
+                                """
+                                <system-reminder>
+                                CRITICAL: You are now in document refinement phase. Your task is to ENHANCE and IMPROVE the EXISTING documentation content that was just generated, NOT to create completely new content.
+
+                                MANDATORY REQUIREMENTS:
+                                1. PRESERVE the original document structure and organization
+                                2. ENHANCE existing explanations with more depth and clarity
+                                3. IMPROVE technical accuracy and completeness based on actual code analysis
+                                4. EXPAND existing sections with more detailed architectural analysis
+                                5. REFINE language for better readability while maintaining technical precision
+                                6. STRENGTHEN existing Mermaid diagrams or add complementary ones
+                                7. ENSURE all enhancements are based on the code files analyzed in the original generation
+
+                                FORBIDDEN ACTIONS:
+                                - Do NOT restructure or reorganize the document completely
+                                - Do NOT remove existing sections or content
+                                - Do NOT add content not based on the analyzed code files
+                                - Do NOT change the fundamental approach or style established in the original
+
+                                Your goal is to take the good foundation that exists and make it BETTER, MORE DETAILED, and MORE COMPREHENSIVE while preserving its core structure and insights.
+                                </system-reminder>
+                                """),
+                            new TextContent(Prompt.Language)
+                        };
+                        history.AddUserMessage(refineContents);
+
+                        int reset1 = 1;
+                        reset1:
+
+                        await chat.GetChatMessageContentAsync(history, settings, documentKernel);
+
+                        if (string.IsNullOrEmpty(docs.Content) && reset1 < 3)
+                        {
+                            reset1++;
+                            goto reset1;
+                        }
+
+                        // 检查精炼后的内容是否有效
+                        if (!string.IsNullOrWhiteSpace(docs.Content))
+                        {
+                            Log.Logger.Information("文档精炼成功，文档：{name}", catalog.Name);
+                        }
+                        else
+                        {
+                            Log.Logger.Warning("文档精炼后内容为空，使用原始内容，文档：{name}", catalog.Name);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Logger.Error("文档精炼失败，使用原始内容，文档：{name}，错误：{error}", catalog.Name, ex.Message);
+                    }
+                }
+
+
+                var fileItem = new DocumentFileItem()
+                {
+                    Content = docs.Content,
+                    DocumentCatalogId = catalog.Id,
+                    Description = string.Empty,
+                    Extra = new Dictionary<string, string>(),
+                    Metadata = new Dictionary<string, string>(),
+                    Source = [],
+                    CommentCount = 0,
+                    RequestToken = 0,
+                    CreatedAt = DateTime.Now,
+                    Id = Guid.NewGuid().ToString("N"),
+                    ResponseToken = 0,
+                    Size = 0,
+                    Title = catalog.Name,
+                };
+
                 Log.Logger.Information("处理仓库；{path} ,处理标题：{name} 完成！", path, catalog.Name);
+
                 semaphore?.Release();
 
                 return (catalog, fileItem, files);
             }
             catch (Exception ex)
             {
-                Log.Logger.Error("处理仓库；{path} ,处理标题：{name} 失败:{ex}", path, catalog.Name, ex.ToString());
                 semaphore?.Release();
+                Log.Logger.Error("处理仓库；{path} ,处理标题：{name} 失败:{ex}", path, catalog.Name, ex.ToString());
 
                 retryCount++;
                 if (retryCount >= retries)
@@ -202,196 +384,11 @@ public partial class DocumentPendingService
                 }
             }
         }
+
+
+        throw new Exception("处理失败，重试多次仍未成功: " + catalog.Name);
     }
 
-
-    /// <summary>
-    /// 处理每一个标题产生文件内容
-    /// </summary>
-    private static async Task<DocumentFileItem> ProcessCatalogueItems(DocumentCatalog catalog,
-        string codeFiles,
-        string gitRepository, string branch, string path, ClassifyType? classify, List<string> files)
-    {
-        DocumentContext.DocumentStore = new DocumentStore();
-
-        var docs = new DocsFunction();
-        // 为每个文档处理创建独立的Kernel实例，避免状态管理冲突
-        var documentKernel = KernelFactory.GetKernel(
-            OpenAIOptions.Endpoint,
-            OpenAIOptions.ChatApiKey,
-            path,
-            OpenAIOptions.ChatModel,
-            false, // 文档生成不需要代码分析功能
-            files, (builder => { builder.Plugins.AddFromObject(docs, "Docs"); })
-        );
-
-        var chat = documentKernel.Services.GetService<IChatCompletionService>();
-
-        string prompt = await
-            GetDocumentPendingPrompt(classify, codeFiles, gitRepository, branch, catalog.Name, catalog.Prompt);
-
-        var history = new ChatHistory();
-
-        history.AddSystemEnhance();
-
-        var contents = new ChatMessageContentItemCollection
-        {
-            new TextContent(prompt),
-            new TextContent(
-                $"""
-                 <system-reminder>
-                 For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
-                 Note: The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
-                 {Prompt.Language}
-                 </system-reminder>
-                 """)
-        };
-
-        contents.AddDocsGenerateSystemReminder();
-        history.AddUserMessage(contents);
-
-        var sr = new StringBuilder();
-
-        var settings = new OpenAIPromptExecutionSettings()
-        {
-            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-            MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel),
-        };
-
-        int count = 1;
-        int inputTokenCount = 0;
-        int outputTokenCount = 0;
-
-        reset:
-
-        await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
-        {
-            if (item.InnerContent is StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content)
-            {
-                inputTokenCount += content.Usage.InputTokenCount;
-                outputTokenCount += content.Usage.OutputTokenCount;
-            }
-        }
-
-        if (string.IsNullOrEmpty(docs.Content) && count < 5)
-        {
-            count++;
-            goto reset;
-        }
-
-
-        if (DocumentOptions.RefineAndEnhanceQuality)
-        {
-            try
-            {
-                var refineContents = new ChatMessageContentItemCollection
-                {
-                    new TextContent(
-                        """
-                        Please refine and enhance the previous documentation content while maintaining its structure and approach. Focus on:
-
-                        **Enhancement Areas:**
-                        - Deepen existing architectural explanations with more technical detail
-                        - Expand code analysis with additional insights from the repository
-                        - Strengthen existing Mermaid diagrams with more comprehensive representations
-                        - Improve clarity and readability of existing explanations
-                        - Add more specific code references and examples where appropriate
-                        - Enhance existing sections with additional technical depth
-
-                        **Quality Standards:**
-                        - Maintain the 90-10 description-to-code ratio established in the original
-                        - Ensure all additions are evidence-based from the actual code files
-                        - Preserve the Microsoft documentation style approach
-                        - Enhance conceptual understanding through improved explanations
-                        - Strengthen the progressive learning structure
-
-                        **Refinement Protocol (tools only):**
-                        1) Use Docs.Read to review the current document thoroughly.
-                        2) Plan improvements that preserve structure and voice.
-                        3) Apply multiple small, precise Docs.MultiEdit operations to improve clarity, add missing details, and strengthen diagrams/citations.
-                        4) After each edit, re-run Docs.Read to verify changes and continue iterating (at least 2–3 passes).
-                        5) Avoid full overwrites; prefer targeted edits that enhance existing content.
-
-                        Build upon the solid foundation that exists to create even more comprehensive and valuable documentation.
-                        """),
-                    new TextContent(
-                        """
-                        <system-reminder>
-                        CRITICAL: You are now in document refinement phase. Your task is to ENHANCE and IMPROVE the EXISTING documentation content that was just generated, NOT to create completely new content.
-
-                        MANDATORY REQUIREMENTS:
-                        1. PRESERVE the original document structure and organization
-                        2. ENHANCE existing explanations with more depth and clarity
-                        3. IMPROVE technical accuracy and completeness based on actual code analysis
-                        4. EXPAND existing sections with more detailed architectural analysis
-                        5. REFINE language for better readability while maintaining technical precision
-                        6. STRENGTHEN existing Mermaid diagrams or add complementary ones
-                        7. ENSURE all enhancements are based on the code files analyzed in the original generation
-
-                        FORBIDDEN ACTIONS:
-                        - Do NOT restructure or reorganize the document completely
-                        - Do NOT remove existing sections or content
-                        - Do NOT add content not based on the analyzed code files
-                        - Do NOT change the fundamental approach or style established in the original
-
-                        Your goal is to take the good foundation that exists and make it BETTER, MORE DETAILED, and MORE COMPREHENSIVE while preserving its core structure and insights.
-                        </system-reminder>
-                        """),
-                    new TextContent(Prompt.Language)
-                };
-                history.AddUserMessage(refineContents);
-
-                var refinedContent = new StringBuilder();
-                int reset1 = 1;
-                reset1:
-
-                await chat.GetChatMessageContentAsync(history, settings, documentKernel);
-
-                if (string.IsNullOrEmpty(docs.Content) && reset1 < 3)
-                {
-                    reset1++;
-                    goto reset1;
-                }
-
-                // 检查精炼后的内容是否有效
-                if (!string.IsNullOrWhiteSpace(refinedContent.ToString()))
-                {
-                    sr.Clear();
-                    sr.Append(refinedContent.ToString());
-                    Log.Logger.Information("文档精炼成功，文档：{name}", catalog.Name);
-                }
-                else
-                {
-                    Log.Logger.Warning("文档精炼后内容为空，使用原始内容，文档：{name}", catalog.Name);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Error("文档精炼失败，使用原始内容，文档：{name}，错误：{error}", catalog.Name, ex.Message);
-                // sr已经包含原始内容，无需额外操作
-            }
-        }
-
-
-        var fileItem = new DocumentFileItem()
-        {
-            Content = docs.Content,
-            DocumentCatalogId = catalog.Id,
-            Description = string.Empty,
-            Extra = new Dictionary<string, string>(),
-            Metadata = new Dictionary<string, string>(),
-            Source = [],
-            CommentCount = 0,
-            RequestToken = 0,
-            CreatedAt = DateTime.Now,
-            Id = Guid.NewGuid().ToString("N"),
-            ResponseToken = 0,
-            Size = 0,
-            Title = catalog.Name,
-        };
-
-        return fileItem;
-    }
 
     /// <summary>
     /// 计算文档质量评分

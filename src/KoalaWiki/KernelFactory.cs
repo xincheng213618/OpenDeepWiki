@@ -46,15 +46,13 @@ public static class KernelFactory
             kernelBuilder.AddOpenAIChatCompletion(model, new Uri(chatEndpoint), apiKey,
                 httpClient: new HttpClient(new KoalaHttpClientHandler()
                 {
-                    //添加重试试
-                    AllowAutoRedirect = true,
-                    MaxAutomaticRedirections = 5,
-                    MaxConnectionsPerServer = 200,
-                    AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Brotli | System.Net.DecompressionMethods.Deflate | System.Net.DecompressionMethods.None
+                    AutomaticDecompression = System.Net.DecompressionMethods.GZip |
+                                             System.Net.DecompressionMethods.Brotli |
+                                             System.Net.DecompressionMethods.Deflate |
+                                             System.Net.DecompressionMethods.None
                 })
                 {
-                    // 添加重试
-                    Timeout = TimeSpan.FromSeconds(240),
+                    Timeout = TimeSpan.FromSeconds(60),
                 });
         }
         else if (OpenAIOptions.ModelProvider.Equals("AzureOpenAI", StringComparison.OrdinalIgnoreCase))
@@ -62,14 +60,13 @@ public static class KernelFactory
             kernelBuilder.AddAzureOpenAIChatCompletion(model, chatEndpoint, apiKey, httpClient: new HttpClient(
                 new KoalaHttpClientHandler()
                 {
-                    //添加重试试
-                    AllowAutoRedirect = true,
-                    MaxAutomaticRedirections = 5,
-                    MaxConnectionsPerServer = 200,
+                    AutomaticDecompression = System.Net.DecompressionMethods.GZip |
+                                             System.Net.DecompressionMethods.Brotli |
+                                             System.Net.DecompressionMethods.Deflate |
+                                             System.Net.DecompressionMethods.None
                 })
             {
-                // 添加重试
-                Timeout = TimeSpan.FromSeconds(16000),
+                Timeout = TimeSpan.FromSeconds(60),
             });
         }
         else if (OpenAIOptions.ModelProvider.Equals("Anthropic", StringComparison.OrdinalIgnoreCase))
@@ -77,14 +74,13 @@ public static class KernelFactory
             kernelBuilder.AddAnthropicChatCompletion(model, apiKey, httpClient: new HttpClient(
                 new KoalaHttpClientHandler()
                 {
-                    //添加重试试
-                    AllowAutoRedirect = true,
-                    MaxAutomaticRedirections = 5,
-                    MaxConnectionsPerServer = 200,
+                    AutomaticDecompression = System.Net.DecompressionMethods.GZip |
+                                             System.Net.DecompressionMethods.Brotli |
+                                             System.Net.DecompressionMethods.Deflate |
+                                             System.Net.DecompressionMethods.None
                 })
             {
-                // 添加重试
-                Timeout = TimeSpan.FromSeconds(16000),
+                Timeout = TimeSpan.FromSeconds(60),
             });
         }
         else
@@ -119,7 +115,7 @@ public static class KernelFactory
         kernelBuilderAction?.Invoke(kernelBuilder);
 
         var kernel = kernelBuilder.Build();
-        
+
         activity?.SetStatus(ActivityStatusCode.Ok);
         activity?.SetTag("kernel.created", true);
 

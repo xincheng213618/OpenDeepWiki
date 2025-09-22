@@ -63,10 +63,54 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
             System.Text.Encoding.UTF8, "application/json");
 
         // 1. 启动计时
+        HttpResponseMessage response = null!;
         var stopwatch = Stopwatch.StartNew();
-        // 2. 发送请求
-        var response = await base.SendAsync(request, cancellationToken)
-            .ConfigureAwait(false);
+        for (int i = 0; i < 3; i++)
+        {
+            // 2. 发送请求
+            try
+            {
+                response = await base.SendAsync(request, cancellationToken)
+                    .ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    // 成功返回响应
+                    break;
+                }
+                else
+                {
+                    // 如果是400系列错误，不重试
+                    if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+                    {
+                        break;
+                    }
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    Log.Logger.Warning("HTTP request failed, attempt {Attempt}: {StatusCode} {ErrorMessage}",
+                        i + 1, (int)response.StatusCode, errorContent);
+                    if (i == 2)
+                    {
+                        // 最后一次失败，抛出异常
+                        throw new HttpRequestException(
+                            $"Request failed with status code {(int)response.StatusCode}: {errorContent}");
+                    }
+
+                    await Task.Delay(3000 * i, cancellationToken); // 等待一秒后重试
+                    continue;
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Warning("HTTP request failed, attempt {Attempt}: {ErrorMessage}", i + 1, e.Message);
+                if (i == 2)
+                {
+                    throw; // 最后一次失败，抛出异常
+                }
+
+                await Task.Delay(3000, cancellationToken); // 等待一秒后重试
+                continue;
+            }
+        }
+
         // 3. 停止计时
         stopwatch.Stop();
 

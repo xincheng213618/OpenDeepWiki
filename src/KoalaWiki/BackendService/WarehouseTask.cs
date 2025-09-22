@@ -98,6 +98,10 @@ public class WarehouseTask(
                     {
                         document = await dbContext.Documents.FirstAsync(x => x.WarehouseId == value.Id,
                             stoppingToken);
+                        
+                        document.GitPath = info.LocalPath;
+                        document.LastUpdate = DateTime.UtcNow;
+                        document.Status = WarehouseStatus.Processing;
                         logger.LogInformation("获取现有文档记录，文档ID：{Id}", document.Id);
                     }
                     else
@@ -122,7 +126,7 @@ public class WarehouseTask(
 
                     // 调用文档处理服务，其Activity将作为当前Activity的子Activity
                     await documentsService.HandleAsync(document, value, dbContext,
-                        value.Address.Replace(".git", string.Empty));
+                        value.Address.Replace(".git", string.Empty)).ConfigureAwait(false);
                 }
                 else if (value?.Type?.Equals("file", StringComparison.OrdinalIgnoreCase) == true)
                 {
@@ -162,7 +166,7 @@ public class WarehouseTask(
 
                     // 调用文档处理服务，其Activity将作为当前Activity的子Activity
                     await documentsService.HandleAsync(document, value, dbContext,
-                        value.Address.Replace(".git", string.Empty));
+                        value.Address.Replace(".git", string.Empty)).ConfigureAwait(false);
                 }
                 else
                 {

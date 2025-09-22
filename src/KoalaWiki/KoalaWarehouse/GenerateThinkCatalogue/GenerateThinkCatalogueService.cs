@@ -41,7 +41,7 @@ public static partial class GenerateThinkCatalogueService
             try
             {
                 var result =
-                    await ExecuteSingleAttempt(path, catalogue, classify, retryCount);
+                    await ExecuteSingleAttempt(path, catalogue, classify, retryCount).ConfigureAwait(false);
 
                 if (result != null)
                 {
@@ -117,38 +117,45 @@ public static partial class GenerateThinkCatalogueService
                  - MANDATORY: Always perform PARALLEL File.Read calls — batch multiple files in a SINGLE message for maximum efficiency
                  - CRITICAL: Read MULTIPLE files simultaneously in one operation
                  - PROHIBITED: Sequential one-by-one file reads (inefficient and wastes context capacity)
-                 
+
                  **EDITING OPERATION LIMITS**
                  - HARD LIMIT: Maximum of 3 editing operations total (catalog.MultiEdit only)
                  - PRIORITY: Maximize each catalog.MultiEdit operation by bundling ALL related changes across multiple files
                  - STRATEGIC PLANNING: Consolidate all modifications into minimal MultiEdit operations to stay within the limit
                  - Use catalog.Write **only once** for initial creation or full rebuild (counts as initial structure creation, not part of the 3 edits)
                  - Always verify content before further changes using catalog.Read (Reads do NOT count toward limit)
-                 
+
                  **CRITICAL MULTIEDIT BEST PRACTICES**
                  - MAXIMIZE EFFICIENCY: Each MultiEdit should target multiple distinct sections across files
                  - AVOID CONFLICTS: Never edit overlapping or identical content regions within the same MultiEdit operation
                  - UNIQUE TARGETS: Ensure each edit instruction addresses a completely different section or file
                  - BATCH STRATEGY: Group all necessary changes by proximity and relevance, but maintain clear separation between edit targets
-                 
+
                  **RECOMMENDED EDITING SEQUENCE**
                  1. catalog.Write (one-time full structure creation)
                  2. catalog.MultiEdit with maximum parallel changes (counts toward 3-operation limit)
                  3. Use catalog.Read after each MultiEdit to verify success before next operation
                  4. Remaining MultiEdit operations for any missed changes
                  </catalog_tool_usage_guidelines>
-                 
-                 
+
+
                  ## Execution steps requirements:
                  1. Before performing any other operations, you must first invoke the 'agent-think' tool to plan the analytical steps. This is a necessary step for completing each research task.
                  2. Then, the code structure provided in the code_file must be utilized by calling file.Read to read the code for in-depth analysis, and then use catalog.Write to write the results of the analysis into the catalog directory.
                  3. If necessary, some parts that need to be optimized can be edited through catalog.MultiEdit.
-                 
+
                  For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
                  The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
-                 
+                 Below is an example of the directory structure of the warehouse, where /D represents a directory and /F represents a file:
+                    server/D
+                      src/D
+                        Main/F
+                    web/D
+                      components/D
+                        Header.tsx/F
+
                  {Prompt.Language}
-                 
+
                  </system-reminder>
                  """),
             new TextContent(Prompt.Language)
@@ -183,10 +190,18 @@ public static partial class GenerateThinkCatalogueService
         // 流式获取响应
         await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, analysisModel))
         {
-            if (item.InnerContent is StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content)
+            switch (item.InnerContent)
             {
-                inputTokenCount += content.Usage.InputTokenCount;
-                outputTokenCount += content.Usage.OutputTokenCount;
+                case StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content:
+                    inputTokenCount += content.Usage.InputTokenCount;
+                    outputTokenCount += content.Usage.OutputTokenCount;
+                    break;
+                case StreamingChatCompletionUpdate tool when tool.ToolCallUpdates.Count > 0:
+                    Console.Write("[Tool Call]");
+                    break;
+                case StreamingChatCompletionUpdate value:
+                    Console.Write(value.ContentUpdate.FirstOrDefault()?.Text);
+                    break;
             }
         }
 

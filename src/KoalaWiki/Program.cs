@@ -3,11 +3,8 @@ using KoalaWiki.BackendService;
 using KoalaWiki.Generate;
 using KoalaWiki.KoalaWarehouse.Extensions;
 using KoalaWiki.Mem0;
-using KoalaWiki.Options;
-using KoalaWiki.Services;
 using KoalaWiki.Services.Feishu.Feishu;
 using Microsoft.AspNetCore.StaticFiles;
-using OpenDeepWiki.CodeFoundation;
 
 AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
 
