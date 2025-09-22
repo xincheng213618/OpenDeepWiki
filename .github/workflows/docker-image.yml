@@ -14,12 +14,12 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'web-site/package.json'
+          cache-dependency-path: 'web-site/package-lock.json'
       
       - name: Install frontend dependencies
         run: |
           cd web-site
-          npm i 
+          npm ci
       
       - name: Build frontend
         run: |
@@ -38,18 +38,32 @@ jobs:
       
       - name: Extract version from Directory.Packages.props
         id: get_version
+        shell: pwsh
         run: |
-          # Extract Version and VersionSuffix from Directory.Packages.props
-          VERSION_TEMPLATE=$(grep -oP '(?<=<Version>)[^<]*' Directory.Packages.props)
-          VERSION_SUFFIX=$(grep -oP '(?<=<VersionSuffix>)[^<]*' Directory.Packages.props)
-          
-          # Replace $(VersionSuffix) with actual value
-          VERSION=$(echo "$VERSION_TEMPLATE" | sed "s/\$(VersionSuffix)/$VERSION_SUFFIX/g")
-          
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Extracted version template: $VERSION_TEMPLATE"
-          echo "Version suffix: $VERSION_SUFFIX"
-          echo "Final version: $VERSION"
+          $ErrorActionPreference = 'Stop'
+          [xml]$xml = Get-Content -Raw 'Directory.Packages.props'
+          $pg = $xml.Project.PropertyGroup
+          $versionTemplate = [string]$pg.Version
+          if ([string]::IsNullOrWhiteSpace($versionTemplate)) { throw 'Version not found in Directory.Packages.props' }
+          $props = @{}
+          foreach ($n in $pg.ChildNodes) {
+            if ($n.NodeType -eq [System.Xml.XmlNodeType]::Element) {
+              $props[$n.Name] = [string]$n.InnerText
+            }
+          }
+          # Provide concrete TimeStamp (UTC yyyyMMdd) in case used in Version
+          $props['TimeStamp'] = (Get-Date -AsUTC).ToString('yyyyMMdd')
+          $unresolved = New-Object System.Collections.Generic.List[string]
+          $finalVersion = [regex]::Replace($versionTemplate, '\$\(([A-Za-z0-9_.-]+)\)', {
+            param($m)
+            $name = $m.Groups[1].Value
+            if ($props.ContainsKey($name) -and -not [string]::IsNullOrWhiteSpace($props[$name])) { $props[$name] } else { $unresolved.Add($name) | Out-Null; '' }
+          })
+          if ($unresolved.Count -gt 0) { Write-Host "[warn] Unresolved version tokens -> $($unresolved -join ', ')" }
+          if ([string]::IsNullOrWhiteSpace($finalVersion)) { throw 'Resolved version is empty' }
+          "version=$finalVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Version template: $versionTemplate"
+          Write-Host "Final version: $finalVersion"
       
       - name: Build and push koala-wiki
         uses: docker/build-push-action@v5
