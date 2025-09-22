@@ -22,7 +22,7 @@ public class GitService
 
 
         // 对于 GitLab，最后一个段是仓库名，前面的都是组织/子组织  
-        repositoryName = segments[segments.Length - 1].Trim('/').Replace(".git", "");
+        repositoryName = segments[^1].Trim('/').Replace(".git", "");
 
         // 组织名包含所有中间路径，用下划线连接以避免路径冲突  
         var orgParts = new List<string>();

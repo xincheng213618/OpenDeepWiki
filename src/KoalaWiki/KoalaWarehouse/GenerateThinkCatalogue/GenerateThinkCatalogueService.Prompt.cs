@@ -5,56 +5,17 @@ namespace KoalaWiki.KoalaWarehouse.GenerateThinkCatalogue;
 public partial class GenerateThinkCatalogueService
 {
     public static async Task<string> GenerateThinkCataloguePromptAsync(ClassifyType? classifyType,
-        string catalogue, int attemptNumber)
+        string catalogue)
     {
         var projectType = GetProjectTypeDescription(classifyType);
         var basePrompt = await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.AnalyzeCatalogue),
             new KernelArguments()
             {
                 ["code_files"] = catalogue,
-                ["projectType"] = projectType,
-                ["language"] = Prompt.Language
+                ["projectType"] = projectType
             }, OpenAIOptions.AnalysisModel);
 
-        var toolUsage = """
-                        ## Catalogue Tool Usage Guidelines
-                        
-                        **PARALLEL READ OPERATIONS**
-                        - MANDATORY: Always perform PARALLEL File.Read calls — batch multiple files in a SINGLE message for maximum efficiency
-                        - CRITICAL: Read MULTIPLE files simultaneously in one operation
-                        - PROHIBITED: Sequential one-by-one file reads (inefficient and wastes context capacity)
-                        
-                        **EDITING OPERATION LIMITS**
-                        - HARD LIMIT: Maximum of 3 editing operations total (Catalogue.MultiEdit only)
-                        - PRIORITY: Maximize each Catalogue.MultiEdit operation by bundling ALL related changes across multiple files
-                        - STRATEGIC PLANNING: Consolidate all modifications into minimal MultiEdit operations to stay within the limit
-                        - Use Catalogue.Write **only once** for initial creation or full rebuild (counts as initial structure creation, not part of the 3 edits)
-                        - Always verify content before further changes using Catalogue.Read (Reads do NOT count toward limit)
-                        
-                        **CRITICAL MULTIEDIT BEST PRACTICES**
-                        - MAXIMIZE EFFICIENCY: Each MultiEdit should target multiple distinct sections across files
-                        - AVOID CONFLICTS: Never edit overlapping or identical content regions within the same MultiEdit operation
-                        - UNIQUE TARGETS: Ensure each edit instruction addresses a completely different section or file
-                        - BATCH STRATEGY: Group all necessary changes by proximity and relevance, but maintain clear separation between edit targets
-                        
-                        **RECOMMENDED EDITING SEQUENCE**
-                        1. Initial creation → Catalogue.Write (one-time full structure creation)
-                        2. Bulk refinements → Catalogue.MultiEdit with maximum parallel changes (counts toward 3-operation limit)
-                        3. Validation → Use Catalogue.Read after each MultiEdit to verify success before next operation
-                        4. Final adjustments → Remaining MultiEdit operations for any missed changes
-                        """;
-
-        // Attempt-based enhancement focusing on specific quality improvements
-        var enhancementLevel = Math.Min(attemptNumber, 3);
-        var enhancement = enhancementLevel switch
-        {
-            0 => "\n\nATTEMPT 1 FOCUS: Prioritize thorough code analysis and solid JSON foundation.",
-            1 => "\n\nATTEMPT 2 FOCUS: Emphasize structural depth and component relationships.",
-            2 => "\n\nATTEMPT 3 FOCUS: Optimize prompt specificity and actionable guidance.",
-            _ => "\n\nFINAL ATTEMPT: Address any remaining gaps and ensure completeness."
-        };
-
-        return toolUsage + basePrompt + enhancement;
+        return basePrompt;
     }
 
 

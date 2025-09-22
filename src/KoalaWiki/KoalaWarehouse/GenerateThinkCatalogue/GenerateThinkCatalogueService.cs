@@ -41,7 +41,7 @@ public static partial class GenerateThinkCatalogueService
             try
             {
                 var result =
-                    await ExecuteSingleAttempt(path, catalogue, warehouse, classify, retryCount);
+                    await ExecuteSingleAttempt(path, catalogue, classify, retryCount);
 
                 if (result != null)
                 {
@@ -97,11 +97,10 @@ public static partial class GenerateThinkCatalogueService
     }
 
     private static async Task<DocumentResultCatalogue?> ExecuteSingleAttempt(
-        string path, string catalogue,
-        Warehouse warehouse, ClassifyType? classify, int attemptNumber)
+        string path, string catalogue, ClassifyType? classify, int attemptNumber)
     {
         // 根据尝试次数调整提示词策略
-        var enhancedPrompt = await GenerateThinkCataloguePromptAsync(classify, catalogue, attemptNumber);
+        var enhancedPrompt = await GenerateThinkCataloguePromptAsync(classify, catalogue);
 
         var history = new ChatHistory();
 
@@ -113,10 +112,43 @@ public static partial class GenerateThinkCatalogueService
             new TextContent(
                 $"""
                  <system-reminder>
-                 **CRITICAL FIRST STEP: You MUST begin every research task by calling the 'think' tool to analyze the query complexity. This is mandatory and must be the very first action you take, regardless of the query type or complexity.**
+                 <catalog_tool_usage_guidelines>
+                 **PARALLEL READ OPERATIONS**
+                 - MANDATORY: Always perform PARALLEL File.Read calls — batch multiple files in a SINGLE message for maximum efficiency
+                 - CRITICAL: Read MULTIPLE files simultaneously in one operation
+                 - PROHIBITED: Sequential one-by-one file reads (inefficient and wastes context capacity)
+                 
+                 **EDITING OPERATION LIMITS**
+                 - HARD LIMIT: Maximum of 3 editing operations total (catalog.MultiEdit only)
+                 - PRIORITY: Maximize each catalog.MultiEdit operation by bundling ALL related changes across multiple files
+                 - STRATEGIC PLANNING: Consolidate all modifications into minimal MultiEdit operations to stay within the limit
+                 - Use catalog.Write **only once** for initial creation or full rebuild (counts as initial structure creation, not part of the 3 edits)
+                 - Always verify content before further changes using catalog.Read (Reads do NOT count toward limit)
+                 
+                 **CRITICAL MULTIEDIT BEST PRACTICES**
+                 - MAXIMIZE EFFICIENCY: Each MultiEdit should target multiple distinct sections across files
+                 - AVOID CONFLICTS: Never edit overlapping or identical content regions within the same MultiEdit operation
+                 - UNIQUE TARGETS: Ensure each edit instruction addresses a completely different section or file
+                 - BATCH STRATEGY: Group all necessary changes by proximity and relevance, but maintain clear separation between edit targets
+                 
+                 **RECOMMENDED EDITING SEQUENCE**
+                 1. catalog.Write (one-time full structure creation)
+                 2. catalog.MultiEdit with maximum parallel changes (counts toward 3-operation limit)
+                 3. Use catalog.Read after each MultiEdit to verify success before next operation
+                 4. Remaining MultiEdit operations for any missed changes
+                 </catalog_tool_usage_guidelines>
+                 
+                 
+                 ## Execution steps requirements:
+                 1. Before performing any other operations, you must first invoke the 'agent-think' tool to plan the analytical steps. This is a necessary step for completing each research task.
+                 2. Then, the code structure provided in the code_file must be utilized by calling file.Read to read the code for in-depth analysis, and then use catalog.Write to write the results of the analysis into the catalog directory.
+                 3. If necessary, some parts that need to be optimized can be edited through catalog.MultiEdit.
+                 
                  For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
-                 Note: The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
+                 The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
+                 
                  {Prompt.Language}
+                 
                  </system-reminder>
                  """),
             new TextContent(Prompt.Language)
@@ -127,7 +159,7 @@ public static partial class GenerateThinkCatalogueService
         var catalogueTool = new CatalogueFunction();
         var analysisModel = KernelFactory.GetKernel(OpenAIOptions.Endpoint,
             OpenAIOptions.ChatApiKey, path, OpenAIOptions.AnalysisModel, false, null,
-            builder => { builder.Plugins.AddFromObject(catalogueTool, "Catalogue"); });
+            builder => { builder.Plugins.AddFromObject(catalogueTool, "catalog"); });
 
         var chat = analysisModel.Services.GetService<IChatCompletionService>();
         if (chat == null)
@@ -146,7 +178,7 @@ public static partial class GenerateThinkCatalogueService
 
         var inputTokenCount = 0;
         var outputTokenCount = 0;
-        
+
         retry:
         // 流式获取响应
         await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, analysisModel))
@@ -196,6 +228,7 @@ public static partial class GenerateThinkCatalogueService
                                                   • enrich each section's 'prompt' with actionable guidance (scope, code areas, outputs)
                                                 - Prefer localized edits; only use Catalogue.Write for a complete rewrite if necessary.
                                                 - Never print JSON in chat; use tools exclusively.
+                                                - Start by editing some parts that need optimization through catalog.MultiEdit.
                                             """;
 
             history.AddUserMessage(refinementPrompt);

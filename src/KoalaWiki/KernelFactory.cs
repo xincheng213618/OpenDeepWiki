@@ -104,11 +104,8 @@ public static class KernelFactory
         var fileFunction = new FileTool(gitPath, files);
         kernelBuilder.Plugins.AddFromObject(fileFunction, "file");
 
-        if (DocumentOptions.EnableAgentTool)
-        {
-            kernelBuilder.Plugins.AddFromType<AgentTool>();
-            activity?.SetTag("plugins.agent_tool", "loaded");
-        }
+        kernelBuilder.Plugins.AddFromType<AgentTool>();
+        activity?.SetTag("plugins.agent_tool", "loaded");
 
         activity?.SetTag("plugins.file_function", "loaded");
 
