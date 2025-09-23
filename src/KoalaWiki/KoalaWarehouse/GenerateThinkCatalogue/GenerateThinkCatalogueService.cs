@@ -182,27 +182,71 @@ public static partial class GenerateThinkCatalogueService
         };
 
         int retry = 1;
-
         var inputTokenCount = 0;
         var outputTokenCount = 0;
 
+        // 添加超时控制
+        var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+
         retry:
-        // 流式获取响应
-        await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, analysisModel))
+        try
         {
-            switch (item.InnerContent)
+            // 流式获取响应 - 添加取消令牌和异常处理
+            await foreach (var item in chat.GetStreamingChatMessageContentsAsync(
+                               history,
+                               settings,
+                               analysisModel,
+                               cts.Token).ConfigureAwait(false))
             {
-                case StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content:
-                    inputTokenCount += content.Usage.InputTokenCount;
-                    outputTokenCount += content.Usage.OutputTokenCount;
-                    break;
-                case StreamingChatCompletionUpdate tool when tool.ToolCallUpdates.Count > 0:
-                    Console.Write("[Tool Call]");
-                    break;
-                case StreamingChatCompletionUpdate value:
-                    Console.Write(value.ContentUpdate.FirstOrDefault()?.Text);
-                    break;
+                // 定期检查取消
+                cts.Token.ThrowIfCancellationRequested();
+
+                switch (item.InnerContent)
+                {
+                    case StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content:
+                        inputTokenCount += content.Usage.InputTokenCount;
+                        outputTokenCount += content.Usage.OutputTokenCount;
+                        break;
+
+                    case StreamingChatCompletionUpdate tool when tool.ToolCallUpdates.Count > 0:
+                        Console.Write("[Tool Call]");
+                        break;
+
+                    case StreamingChatCompletionUpdate value:
+                        var text = value.ContentUpdate.FirstOrDefault()?.Text;
+                        if (!string.IsNullOrEmpty(text))
+                        {
+                            Console.Write(text);
+                        }
+
+                        break;
+                }
             }
+        }
+        catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
+        {
+            retry++;
+            if (retry <= 3)
+            {
+                Console.WriteLine($"超时，正在重试 ({retry}/3)...");
+                await Task.Delay(2000, CancellationToken.None);
+
+                // 正确地重置超时令牌
+                cts.Dispose();
+                cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)); // 重新赋值给cts
+                goto retry;
+            }
+
+            throw new TimeoutException("流式处理超时");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"流式处理错误: {ex.Message}");
+            throw;
+        }
+        finally
+        {
+            cts?.Dispose(); // 确保资源被释放
         }
 
         // Prefer tool-stored JSON when available
@@ -219,7 +263,7 @@ public static partial class GenerateThinkCatalogueService
         else
         {
             retry++;
-            if (retry > 5)
+            if (retry > 3)
             {
                 throw new Exception("AI生成目录的时候重复多次响应空内容");
             }

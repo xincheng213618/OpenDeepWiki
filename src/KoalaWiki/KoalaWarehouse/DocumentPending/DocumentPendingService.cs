@@ -193,7 +193,6 @@ public partial class DocumentPendingService
                            components/D
                              Header.tsx/F
 
-
                          {Prompt.Language}
                          </system-reminder>
                          """)
@@ -207,29 +206,138 @@ public partial class DocumentPendingService
                     ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
                     MaxTokens = DocumentsHelper.GetMaxTokens(OpenAIOptions.ChatModel),
                 };
-
                 int count = 1;
                 int inputTokenCount = 0;
                 int outputTokenCount = 0;
-                var token = new CancellationTokenSource(TimeSpan.FromSeconds(1800)); // 每个文档处理最长30分钟
+                int maxRetries = 3;
+                CancellationTokenSource token = null;
 
                 reset:
 
-                await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel, token.Token))
+                try
                 {
-                    switch (item.InnerContent)
+                    // 创建新的取消令牌（每次重试都重新创建）
+                    token?.Dispose();
+                    token = new CancellationTokenSource(TimeSpan.FromMinutes(10)); // 30分钟超时
+
+                    Console.WriteLine($"开始处理文档 (尝试 {count}/{maxRetries + 1})，超时设置: 30分钟");
+
+                    try
                     {
-                        case StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content:
-                            inputTokenCount += content.Usage.InputTokenCount;
-                            outputTokenCount += content.Usage.OutputTokenCount;
-                            break;
-                        case StreamingChatCompletionUpdate tool when tool.ToolCallUpdates.Count > 0:
-                            Console.Write("[Tool Call]");
-                            break;
-                        case StreamingChatCompletionUpdate value:
-                            Console.Write(value.ContentUpdate.FirstOrDefault()?.Text);
-                            break;
+                        var hasReceivedContent = false;
+                        var lastActivityTime = DateTime.UtcNow;
+
+                        await foreach (var item in chat.GetStreamingChatMessageContentsAsync(
+                                           history,
+                                           settings,
+                                           documentKernel,
+                                           token.Token).ConfigureAwait(false))
+                        {
+                            // 检查是否被取消
+                            token.Token.ThrowIfCancellationRequested();
+
+                            // 更新最后活动时间
+                            lastActivityTime = DateTime.UtcNow;
+                            hasReceivedContent = true;
+
+                            switch (item.InnerContent)
+                            {
+                                case StreamingChatCompletionUpdate { Usage.InputTokenCount: > 0 } content:
+                                    inputTokenCount += content.Usage.InputTokenCount;
+                                    outputTokenCount += content.Usage.OutputTokenCount;
+                                    Console.WriteLine($"[Token统计] 输入: {inputTokenCount}, 输出: {outputTokenCount}");
+                                    break;
+
+                                case StreamingChatCompletionUpdate tool when tool.ToolCallUpdates.Count > 0:
+                                    Console.Write("[Tool Call]");
+                                    break;
+
+                                case StreamingChatCompletionUpdate value:
+                                    var text = value.ContentUpdate.FirstOrDefault()?.Text;
+                                    if (!string.IsNullOrEmpty(text))
+                                    {
+                                        Console.Write(text);
+                                    }
+
+                                    break;
+
+                                default:
+                                    // 记录未知的内容类型用于调试
+                                    Console.WriteLine($"[DEBUG] 未处理的内容类型: {item.InnerContent?.GetType().Name}");
+                                    break;
+                            }
+                        }
+
+                        // 处理完成
+                        Console.WriteLine($"\n文档处理完成! 最终Token统计 - 输入: {inputTokenCount}, 输出: {outputTokenCount}");
+
+                        // 检查是否实际接收到了内容
+                        if (!hasReceivedContent)
+                        {
+                            Console.WriteLine("警告: 没有接收到任何流式内容");
+                        }
                     }
+                    catch (OperationCanceledException) when (token.Token.IsCancellationRequested)
+                    {
+                        Console.WriteLine("操作被取消 (超时或手动取消)");
+
+                        count++;
+                        if (count <= maxRetries)
+                        {
+                            Console.WriteLine($"正在重试... ({count}/{maxRetries})");
+
+                            // 指数退避延迟
+                            var delayMs = Math.Min(1000 * (int)Math.Pow(2, count - 1), 10000); // 最大10秒
+                            await Task.Delay(delayMs, CancellationToken.None);
+
+                            goto reset;
+                        }
+                        else
+                        {
+                            Console.WriteLine("已达到最大重试次数，处理失败");
+                            throw new TimeoutException($"文档处理在 {maxRetries} 次重试后仍然超时");
+                        }
+                    }
+                    catch (HttpRequestException httpEx)
+                    {
+                        Console.WriteLine($"网络错误: {httpEx.Message}");
+
+                        count++;
+                        if (count <= maxRetries)
+                        {
+                            Console.WriteLine($"网络错误，正在重试... ({count}/{maxRetries})");
+
+                            // 网络错误时增加延迟
+                            await Task.Delay(3000 * count, CancellationToken.None);
+                            goto reset;
+                        }
+
+                        Console.WriteLine("网络错误重试失败");
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"处理流式响应时发生未知错误: {ex.Message}");
+                        Console.WriteLine($"异常类型: {ex.GetType().Name}");
+                        Console.WriteLine($"堆栈跟踪: {ex.StackTrace}");
+
+                        // 对于未知错误，也可以尝试重试一次
+                        count++;
+                        if (count <= maxRetries)
+                        {
+                            Console.WriteLine($"未知错误，尝试重试... ({count}/{maxRetries})");
+                            await Task.Delay(5000, CancellationToken.None); // 5秒延迟
+                            goto reset;
+                        }
+
+                        throw; // 重新抛出异常
+                    }
+                }
+                finally
+                {
+                    // 确保资源被正确释放
+                    token?.Dispose();
+                    Console.WriteLine("资源清理完成");
                 }
 
                 if (string.IsNullOrEmpty(docs.Content) && count < 5)
