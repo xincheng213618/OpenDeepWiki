@@ -211,10 +211,11 @@ public partial class DocumentPendingService
                 int count = 1;
                 int inputTokenCount = 0;
                 int outputTokenCount = 0;
+                var token = new CancellationTokenSource(TimeSpan.FromSeconds(1800)); // 每个文档处理最长30分钟
 
                 reset:
 
-                await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel))
+                await foreach (var item in chat.GetStreamingChatMessageContentsAsync(history, settings, documentKernel, token.Token))
                 {
                     switch (item.InnerContent)
                     {
