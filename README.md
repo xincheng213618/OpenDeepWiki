@@ -73,7 +73,19 @@ Example configuration:
 {
   "mcpServers": {
     "OpenDeepWiki":{
-      "url": "http://Your OpenDeepWiki service IP:port/sse?owner=AIDotNet&name=OpenDeepWiki"
+      "url": "http://Your OpenDeepWiki service IP:port/api/mcp?owner=AIDotNet&name=OpenDeepWiki"
+    }
+  }
+}
+```
+
+If mcp streamable http is not supported, use the following format: 
+```json
+
+{
+  "mcpServers": {
+    "OpenDeepWiki":{
+      "url": "http://Your OpenDeepWiki service IP:port/api/mcp/sse?owner=AIDotNet&name=OpenDeepWiki"
     }
   }
 }
