@@ -72,7 +72,20 @@ OpenDeepWiki支持MCP协议：
 {
   "mcpServers": {
     "OpenDeepWiki":{
-      "url": "http://Your OpenDeepWiki service IP:port/sse?owner=AIDotNet&name=OpenDeepWiki"
+      "url": "http://Your OpenDeepWiki service IP:port/api/mcp?owner=AIDotNet&name=OpenDeepWiki"
+    }
+  }
+}
+```
+
+如果不支持mcp streamable http则使用下面格式：
+
+```json
+{
+  "mcpServers": {
+    "OpenDeepWiki":{
+      "url": "http://Your OpenDeepWiki service IP:port/api/mcp/sse?owner=AIDotNet&name=OpenDeepWiki",
+      "supportsStreamableHttp": false
     }
   }
 }
