@@ -1,5 +1,4 @@
 ﻿using KoalaWiki.KoalaWarehouse;
-using Microsoft.SemanticKernel;
 
 namespace KoalaWiki.plugins;
 

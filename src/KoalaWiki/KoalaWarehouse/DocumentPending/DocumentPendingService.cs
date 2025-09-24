@@ -1,14 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Text;
-using System.Text.RegularExpressions;
-using KoalaWiki.Core.Extensions;
-using KoalaWiki.Domains.DocumentFile;
-using KoalaWiki.Prompts;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
-using OpenAI.Chat;
-
-namespace KoalaWiki.KoalaWarehouse.DocumentPending;
+﻿namespace KoalaWiki.KoalaWarehouse.DocumentPending;
 
 public partial class DocumentPendingService
 {
@@ -175,7 +165,7 @@ public partial class DocumentPendingService
 
                 var history = new ChatHistory();
 
-                history.AddSystemEnhance();
+                history.AddSystemDocs();
 
                 var contents = new ChatMessageContentItemCollection
                 {
@@ -218,9 +208,9 @@ public partial class DocumentPendingService
                 {
                     // 创建新的取消令牌（每次重试都重新创建）
                     token?.Dispose();
-                    token = new CancellationTokenSource(TimeSpan.FromMinutes(10)); // 30分钟超时
+                    token = new CancellationTokenSource(TimeSpan.FromMinutes(20)); // 20分钟超时
 
-                    Console.WriteLine($"开始处理文档 (尝试 {count}/{maxRetries + 1})，超时设置: 30分钟");
+                    Console.WriteLine($"开始处理文档 (尝试 {count}/{maxRetries + 1})，超时设置: 20分钟");
 
                     try
                     {
@@ -258,7 +248,6 @@ public partial class DocumentPendingService
                                     {
                                         Console.Write(text);
                                     }
-
                                     break;
 
                                 default:

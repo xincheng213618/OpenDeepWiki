@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Dto;
 using KoalaWiki.Prompts;
-using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 

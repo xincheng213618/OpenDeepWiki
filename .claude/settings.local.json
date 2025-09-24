@@ -1,18 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd OpenDeepWiki)",
-      "Bash(dotnet ef migrations add AddStarsAndForksToWarehouse --project src/KoalaWiki)",
-      "Bash(dotnet ef migrations add AddStarsAndForksToWarehouse --project src/KoalaWiki.Provider.Sqlite --startup-project src/KoalaWiki)",
-      "Bash(dotnet ef migrations add AddStarsAndForksToWarehouse --project src/KoalaWiki --context KoalaWikiContext)",
-      "Bash(dotnet ef migrations add AddStarsAndForksToWarehouse --project src/KoalaWiki --context IKoalaWikiContext)",
-      "Bash(find OpenDeepWiki -type f -name \"*.cs\")",
-      "Bash(git add:*)",
-      "WebFetch(domain:docs.anthropic.com)",
-      "WebFetch(domain:learn.microsoft.com)",
-      "Bash(dotnet build:*)",
-      "Bash(npm run build:*)"
+      "Bash(find:*)"
     ],
-    "deny": []
+    "deny": [],
+    "ask": []
   }
 }

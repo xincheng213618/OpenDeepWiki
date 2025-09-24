@@ -1,7 +1,6 @@
 ﻿using KoalaWiki.Domains;
 using KoalaWiki.Options;
 using KoalaWiki.Prompts;
-using Microsoft.SemanticKernel;
 
 namespace KoalaWiki.KoalaWarehouse.DocumentPending;
 
@@ -12,36 +11,6 @@ public partial class DocumentPendingService
     {
         string projectType = GetProjectTypeDescription(classifyType);
 
-        // Add tool usage limitations to prevent context overflow
-        string toolUsageLimitations =
-            """
-            ## Docs Tool Usage Guidelines
-
-            **PARALLEL READ OPERATIONS**
-            - MANDATORY: Always perform PARALLEL File.Read calls — batch multiple files in a SINGLE message for maximum efficiency
-            - CRITICAL: Read MULTIPLE files simultaneously in one operation
-            - PROHIBITED: Sequential one-by-one file reads (inefficient and wastes context capacity)
-
-            **EDITING OPERATION LIMITS**
-            - HARD LIMIT: Maximum of 3 editing operations total (Docs.MultiEdit only)
-            - PRIORITY: Maximize each Docs.MultiEdit operation by bundling ALL related changes across multiple files
-            - STRATEGIC PLANNING: Consolidate all modifications into minimal MultiEdit operations to stay within the limit
-            - Use Docs.Write **only once** for initial creation or full rebuild (counts as initial structure creation, not part of the 3 edits)
-            - Always verify content before further changes using Docs.Read (Reads do NOT count toward limit)
-
-            **CRITICAL MULTIEDIT BEST PRACTICES**
-            - MAXIMIZE EFFICIENCY: Each MultiEdit should target multiple distinct sections across files
-            - AVOID CONFLICTS: Never edit overlapping or identical content regions within the same MultiEdit operation
-            - UNIQUE TARGETS: Ensure each edit instruction addresses a completely different section or file
-            - BATCH STRATEGY: Group all necessary changes by proximity and relevance, but maintain clear separation between edit targets
-
-            **RECOMMENDED EDITING SEQUENCE**
-            1. Initial creation → Docs.Write (one-time full structure creation)
-            2. Bulk refinements → Docs.MultiEdit with maximum parallel changes (counts toward 3-operation limit)
-            3. Validation → Use Docs.Read after each MultiEdit to verify success before next operation
-            4. Final adjustments → Remaining MultiEdit operations for any missed changes                          
-            """;
-
         return await PromptContext.Warehouse(nameof(PromptConstant.Warehouse.GenerateDocs),
             new KernelArguments()
             {
@@ -50,8 +19,7 @@ public partial class DocumentPendingService
                 ["git_repository"] = gitRepository.Replace(".git", ""),
                 ["branch"] = branch,
                 ["title"] = title,
-                ["language"] = Prompt.Language,
-                ["projectType"] = projectType + toolUsageLimitations
+                ["projectType"] = projectType
             }, OpenAIOptions.ChatModel);
     }
 
@@ -86,11 +54,6 @@ public partial class DocumentPendingService
                    - **Maintenance Methodology**: Analysis of operational procedures, troubleshooting approaches, and maintenance strategies
                    - **Integration Ecosystem**: Comprehensive explanation of external dependencies, API design philosophy, and integration patterns
 
-                   **DOCUMENTATION QUALITY STANDARDS:**
-                   - **Concept-First Approach**: Begin every section with comprehensive conceptual explanation before any implementation details
-                   - **Understanding-Focused Content**: Prioritize explaining 'why' and 'how' systems work over showing what they do
-                   - **Architectural Reasoning**: Extensive analysis of design decisions, trade-offs, and implementation rationale
-                   - **Minimal Code Policy**: Use code snippets sparingly and only to illustrate critical concepts or configurations
                    """;
         }
 
@@ -123,11 +86,6 @@ public partial class DocumentPendingService
                    - **Performance & Optimization**: Performance tuning guides, resource optimization, and scaling considerations
                    - **Community & Ecosystem**: Third-party integration guides, community resources, and contribution procedures
 
-                   **FRAMEWORK DOCUMENTATION STANDARDS:**
-                   - **Conceptual Mastery**: Focus on explaining framework philosophy, design patterns, and architectural principles
-                   - **Progressive Understanding**: Content must build conceptual understanding from basic principles to advanced patterns
-                   - **Framework Philosophy**: Comprehensively explain the framework's design philosophy, trade-offs, and intended usage patterns
-                   - **Developer Mental Models**: Help developers build correct mental models of framework behavior and capabilities
                    """;
         }
 
@@ -160,11 +118,6 @@ public partial class DocumentPendingService
                    - **Compatibility & Migration**: Version compatibility, upgrade procedures, and breaking change documentation
                    - **Integration Examples**: Real-world integration scenarios, framework compatibility, and ecosystem usage
 
-                   **LIBRARY DOCUMENTATION STANDARDS:**
-                   - **Conceptual API Understanding**: Explain the library's design philosophy, patterns, and intended usage concepts
-                   - **API Design Rationale**: Comprehensive explanation of API design decisions, parameter choices, and method organization
-                   - **Integration Philosophy**: Focus on understanding integration patterns, architectural considerations, and design implications
-                   - **Performance Concepts**: Explain performance characteristics, optimization principles, and resource management approaches
                    """;
         }
 
@@ -197,11 +150,6 @@ public partial class DocumentPendingService
                    - **Performance Optimization**: Tool performance tuning, resource management, and efficiency optimization
                    - **Troubleshooting & Support**: Common issue resolution, debugging procedures, and performance problem diagnosis
 
-                   **TOOL DOCUMENTATION STANDARDS:**
-                   - **Step-by-Step Procedures**: All setup and usage procedures must include detailed, sequential instructions
-                   - **Real-World Examples**: Include practical examples that demonstrate actual development workflow scenarios
-                   - **Integration Verification**: All integration claims must be supported by actual implementation examples
-                   - **Productivity Focus**: Emphasize practical productivity improvements and workflow optimization techniques
                    """;
         }
 
@@ -234,11 +182,6 @@ public partial class DocumentPendingService
                    - **CI/CD Integration**: Continuous integration usage, automated deployment, and build process integration
                    - **Advanced Usage Patterns**: Complex workflows, advanced features, and power-user techniques
 
-                   **CLI DOCUMENTATION STANDARDS:**
-                   - **Executable Examples**: All command examples must be complete, runnable, and produce documented results
-                   - **Comprehensive Command Coverage**: Document every command, option, and usage pattern with examples
-                   - **Automation Focus**: Emphasize scripting capabilities and automation workflow integration
-                   - **Error Handling Documentation**: Include comprehensive error message explanations and resolution procedures
                    """;
         }
 
@@ -271,11 +214,6 @@ public partial class DocumentPendingService
                    - **Operational Procedures**: Maintenance workflows, backup procedures, disaster recovery, and incident response protocols
                    - **Scaling & Optimization**: Scaling procedures, performance optimization, and resource efficiency improvement techniques
 
-                   **DEVOPS DOCUMENTATION STANDARDS:**
-                   - **Executable Procedures**: All deployment and operational procedures must include complete, step-by-step instructions
-                   - **Configuration Completeness**: Document every configuration option, environment variable, and customization capability
-                   - **Security Integration**: Include comprehensive security procedures and compliance requirement documentation
-                   - **Operational Excellence**: Focus on production-ready procedures and enterprise-grade operational practices
                    """;
         }
 
@@ -308,11 +246,6 @@ public partial class DocumentPendingService
                    - **Automation & Integration**: Automated testing, content generation, and publication automation
                    - **Maintenance Procedures**: Content update workflows, link validation, and accuracy maintenance procedures
 
-                   **DOCUMENTATION PROJECT STANDARDS:**
-                   - **Process Completeness**: Document every aspect of the documentation creation, review, and maintenance process
-                   - **Contributor Experience**: Focus on enabling easy contribution and effective collaboration
-                   - **Quality Framework**: Include comprehensive quality assurance procedures and measurement standards
-                   - **Sustainability Focus**: Emphasize long-term maintainability and scalable documentation practices
                    """;
         }
 
@@ -342,12 +275,6 @@ public partial class DocumentPendingService
                - **Contributing Guidelines**: Contribution procedures, code standards, testing requirements, and submission workflows
                - **Architecture & Design**: Internal architecture documentation, design principles, and development guidelines
                - **Maintenance & Operations**: Deployment procedures, operational guidelines, and maintenance workflows
-
-               **UNIVERSAL DOCUMENTATION STANDARDS:**
-               - **Complete Implementation Examples**: All documentation must include complete, executable examples and configuration samples
-               - **Step-by-Step Guidance**: Every procedure must be documented with detailed, sequential instructions
-               - **Evidence-Based Content**: All technical claims must be supported by actual code references and implementation examples
-               - **Multi-Audience Approach**: Address the needs of users, developers, and operators with appropriate depth and focus
                """;
     }
 }

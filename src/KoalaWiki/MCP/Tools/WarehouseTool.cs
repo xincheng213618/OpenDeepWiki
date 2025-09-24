@@ -4,7 +4,6 @@ using KoalaWiki.Domains.MCP;
 using KoalaWiki.Functions;
 using KoalaWiki.Prompts;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using ModelContextProtocol.Server;

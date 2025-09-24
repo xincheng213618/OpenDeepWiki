@@ -1,6 +1,4 @@
-﻿using Microsoft.SemanticKernel;
-
-namespace KoalaWiki.Prompts;
+﻿namespace KoalaWiki.Prompts;
 
 public class PromptContext
 {

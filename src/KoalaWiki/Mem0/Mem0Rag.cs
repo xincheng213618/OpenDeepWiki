@@ -4,7 +4,6 @@ using KoalaWiki.Domains.Warehouse;
 using KoalaWiki.Prompts;
 using Mem0.NET;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.SemanticKernel;
 
 namespace KoalaWiki.Mem0;
 

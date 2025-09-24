@@ -1,13 +1,7 @@
-﻿using System.ClientModel;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using KoalaWiki.Functions;
-using KoalaWiki.Options;
+﻿using System.Diagnostics;
+using System.Net;
 using KoalaWiki.plugins;
 using KoalaWiki.Tools;
-using Microsoft.SemanticKernel;
-using OpenAI;
-using Serilog;
 
 #pragma warning disable SKEXP0070
 
@@ -46,10 +40,10 @@ public static class KernelFactory
             kernelBuilder.AddOpenAIChatCompletion(model, new Uri(chatEndpoint), apiKey,
                 httpClient: new HttpClient(new KoalaHttpClientHandler()
                 {
-                    AutomaticDecompression = System.Net.DecompressionMethods.GZip |
-                                             System.Net.DecompressionMethods.Brotli |
-                                             System.Net.DecompressionMethods.Deflate |
-                                             System.Net.DecompressionMethods.None
+                    AutomaticDecompression = DecompressionMethods.GZip |
+                                             DecompressionMethods.Brotli |
+                                             DecompressionMethods.Deflate |
+                                             DecompressionMethods.None
                 })
                 {
                     Timeout = TimeSpan.FromSeconds(60),
@@ -60,24 +54,10 @@ public static class KernelFactory
             kernelBuilder.AddAzureOpenAIChatCompletion(model, chatEndpoint, apiKey, httpClient: new HttpClient(
                 new KoalaHttpClientHandler()
                 {
-                    AutomaticDecompression = System.Net.DecompressionMethods.GZip |
-                                             System.Net.DecompressionMethods.Brotli |
-                                             System.Net.DecompressionMethods.Deflate |
-                                             System.Net.DecompressionMethods.None
-                })
-            {
-                Timeout = TimeSpan.FromSeconds(60),
-            });
-        }
-        else if (OpenAIOptions.ModelProvider.Equals("Anthropic", StringComparison.OrdinalIgnoreCase))
-        {
-            kernelBuilder.AddAnthropicChatCompletion(model, apiKey, httpClient: new HttpClient(
-                new KoalaHttpClientHandler()
-                {
-                    AutomaticDecompression = System.Net.DecompressionMethods.GZip |
-                                             System.Net.DecompressionMethods.Brotli |
-                                             System.Net.DecompressionMethods.Deflate |
-                                             System.Net.DecompressionMethods.None
+                    AutomaticDecompression = DecompressionMethods.GZip |
+                                             DecompressionMethods.Brotli |
+                                             DecompressionMethods.Deflate |
+                                             DecompressionMethods.None
                 })
             {
                 Timeout = TimeSpan.FromSeconds(60),

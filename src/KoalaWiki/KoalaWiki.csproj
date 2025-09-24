@@ -12,7 +12,6 @@
         <PackageReference Include="FastService" />
         <PackageReference Include="FastService.Analyzers" />
         <PackageReference Include="LibGit2Sharp" />
-        <PackageReference Include="Lost.SemanticKernel.Connectors.Anthropic" />
         <PackageReference Include="Mapster.DependencyInjection" />
         <PackageReference Include="Mem0.NET" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
@@ -116,6 +115,12 @@
 
     <ItemGroup>
       <Folder Include="plugins\CodeAnalysis\GenerateDescription\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.SemanticKernel.Abstractions">
+        <HintPath>bin\Debug\net9.0\Microsoft.SemanticKernel.Abstractions.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>

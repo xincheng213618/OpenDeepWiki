@@ -1,6 +1,5 @@
 using KoalaWiki.KoalaWarehouse.Pipeline;
 using KoalaWiki.KoalaWarehouse.Pipeline.Steps;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace KoalaWiki.KoalaWarehouse.Extensions;
 

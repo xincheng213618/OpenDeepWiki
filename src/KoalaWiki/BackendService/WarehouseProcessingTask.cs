@@ -8,9 +8,11 @@ public partial class WarehouseProcessingTask(IServiceProvider service, ILogger<W
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        
+        return;
         await Task.Delay(1000, stoppingToken);
 
-        if (DocumentOptions.EnableIncrementalUpdate == false)
+        if (!DocumentOptions.EnableIncrementalUpdate)
         {
             logger.LogWarning("增量更新未启用，跳过增量更新任务");
             return;

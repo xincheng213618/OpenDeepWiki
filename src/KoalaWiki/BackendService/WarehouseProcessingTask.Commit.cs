@@ -2,7 +2,6 @@
 using KoalaWiki.Domains.Warehouse;
 using LibGit2Sharp;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.SemanticKernel;
 using Newtonsoft.Json;
 
 namespace KoalaWiki.BackendService;

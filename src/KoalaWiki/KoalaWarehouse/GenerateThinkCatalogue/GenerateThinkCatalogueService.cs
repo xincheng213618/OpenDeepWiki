@@ -1,6 +1,4 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
-using KoalaWiki.Core.Extensions;
+﻿using KoalaWiki.Core.Extensions;
 using KoalaWiki.Prompts;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
@@ -160,7 +158,6 @@ public static partial class GenerateThinkCatalogueService
                  """),
             new TextContent(Prompt.Language)
         };
-        contents.AddDocsGenerateSystemReminder();
         history.AddUserMessage(contents);
 
         var catalogueTool = new CatalogueFunction();
@@ -186,7 +183,7 @@ public static partial class GenerateThinkCatalogueService
         var outputTokenCount = 0;
 
         // 添加超时控制
-        var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+        var cts = new CancellationTokenSource(TimeSpan.FromMinutes(20));
 
         retry:
         try
