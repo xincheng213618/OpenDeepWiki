@@ -206,7 +206,6 @@ public static partial class GenerateThinkCatalogueService
                         break;
 
                     case StreamingChatCompletionUpdate tool when tool.ToolCallUpdates.Count > 0:
-                        Console.Write("[Tool Call]");
                         break;
 
                     case StreamingChatCompletionUpdate value:
