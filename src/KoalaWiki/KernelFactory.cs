@@ -46,7 +46,7 @@ public static class KernelFactory
                                              DecompressionMethods.None
                 })
                 {
-                    Timeout = TimeSpan.FromSeconds(60),
+                    Timeout = TimeSpan.FromSeconds(240),
                 });
         }
         else if (OpenAIOptions.ModelProvider.Equals("AzureOpenAI", StringComparison.OrdinalIgnoreCase))
@@ -60,7 +60,7 @@ public static class KernelFactory
                                              DecompressionMethods.None
                 })
             {
-                Timeout = TimeSpan.FromSeconds(60),
+                Timeout = TimeSpan.FromSeconds(240),
             });
         }
         else

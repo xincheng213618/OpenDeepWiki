@@ -84,7 +84,10 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
                     {
                         break;
                     }
-                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    var sendToken = new CancellationTokenSource();
+                    sendToken.CancelAfter(20000); // 10秒超时
+                    var errorContent = await response.Content.ReadAsStringAsync(sendToken.Token);
                     Log.Logger.Warning("HTTP request failed, attempt {Attempt}: {StatusCode} {ErrorMessage}",
                         i + 1, (int)response.StatusCode, errorContent);
                     if (i == 2)
@@ -106,7 +109,7 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
                     throw; // 最后一次失败，抛出异常
                 }
 
-                await Task.Delay(3000, cancellationToken); // 等待一秒后重试
+                await Task.Delay(1000, cancellationToken); // 等待一秒后重试
                 continue;
             }
         }
