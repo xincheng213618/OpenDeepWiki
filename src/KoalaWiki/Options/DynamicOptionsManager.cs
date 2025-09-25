@@ -54,7 +54,6 @@ public class DynamicOptionsManager
         OpenAIOptions.ChatApiKey = await _configService.GetValueAsync<string>("ChatApiKey") ?? "";
         OpenAIOptions.Endpoint = await _configService.GetValueAsync<string>("Endpoint") ?? "";
         OpenAIOptions.ModelProvider = await _configService.GetValueAsync<string>("ModelProvider") ?? "OpenAI";
-        OpenAIOptions.MaxFileLimit = await _configService.GetValueAsync<int>("MaxFileLimit", 10);
         OpenAIOptions.DeepResearchModel = await _configService.GetValueAsync<string>("DeepResearchModel") ?? "";
         OpenAIOptions.EnableMem0 = await _configService.GetValueAsync<bool>("EnableMem0", false);
         OpenAIOptions.Mem0ApiKey = await _configService.GetValueAsync<string>("Mem0ApiKey") ?? "";
