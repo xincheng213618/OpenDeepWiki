@@ -86,7 +86,7 @@ public sealed class KoalaHttpClientHandler : HttpClientHandler
                     }
 
                     var sendToken = new CancellationTokenSource();
-                    sendToken.CancelAfter(20000); // 10秒超时
+                    sendToken.CancelAfter(30000); // 30秒超时
                     var errorContent = await response.Content.ReadAsStringAsync(sendToken.Token);
                     Log.Logger.Warning("HTTP request failed, attempt {Attempt}: {StatusCode} {ErrorMessage}",
                         i + 1, (int)response.StatusCode, errorContent);
