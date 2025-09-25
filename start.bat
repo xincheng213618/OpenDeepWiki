@@ -26,4 +26,15 @@ SET DEEP_RESEARCH_MODEL=
 REM 是否启用增量更新
 SET ENABLE_INCREMENTAL_UPDATE=true
 
+REM 构建前端项目
+echo Building frontend...
+cd web-site
+if not exist node_modules (
+    echo Installing frontend dependencies...
+    npm install
+)
+echo Building frontend project...
+npm run build
+cd ..
+
 "KoalaWiki.exe"

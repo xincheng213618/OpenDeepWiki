@@ -19,6 +19,7 @@
   koalawiki:
     image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/koala-wiki
     environment:
+      - TZ=Asia/Shanghai
       - KOALAWIKI_REPOSITORIES=/repositories
       - TASK_MAX_SIZE_PER_USER=5 # 每个用户AI处理文档生成的最大数量
       - REPAIR_MERMAID=1 # 是否进行Mermaid修复，1修复，其余不修复
@@ -51,30 +52,12 @@
     ports:
       - "8090:8080"
 
-
-  koalawiki-web:
-    image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/koala-wiki-web
-    command: ["/app/start.sh"]
-    environment:
-      - NEXT_PUBLIC_API_URL=http://koalawiki:8080 # 用于提供给server的地址
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-      
-  nginx: # 需要nginx将前端和后端代理到一个端口
-    image: crpi-j9ha7sxwhatgtvj4.cn-shenzhen.personal.cr.aliyuncs.com/koala-ai/nginx:alpine
-    ports:
-      - 8090:80
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - koalawiki
-      - koalawiki-web
-  
   aspire-dashboard:
     image: mcr.microsoft.com/dotnet/aspire-dashboard
     container_name: aspire-dashboard
     restart: always
+    ports:
+      - "18888:18888"
     environment:
       - TZ=Asia/Shanghai
       - Dashboard:ApplicationName=Aspire

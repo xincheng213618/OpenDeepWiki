@@ -28,4 +28,15 @@ export DEEP_RESEARCH_MODEL=
 # 是否启用增量更新
 export ENABLE_INCREMENTAL_UPDATE=true
 
-./KoalaWiki 
+# 构建前端项目
+echo "Building frontend..."
+cd web-site
+if [ ! -d "node_modules" ]; then
+    echo "Installing frontend dependencies..."
+    npm install
+fi
+echo "Building frontend project..."
+npm run build
+cd ..
+
+./KoalaWiki
