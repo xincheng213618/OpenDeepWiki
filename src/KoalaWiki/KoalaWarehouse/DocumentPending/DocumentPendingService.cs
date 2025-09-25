@@ -172,46 +172,64 @@ public partial class DocumentPendingService
                     new TextContent(prompt),
                     new TextContent(
                         $"""
-                         <system-reminder>
-                         For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
-                         Note: The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
-                         Below is an example of the directory structure of the warehouse, where /D represents a directory and /F represents a file:
-                         server/D
-                           src/D
-                             Main/F
-                         web/D
-                           components/D
-                             Header.tsx/F
-
-                         {Prompt.Language}
-                         
-                         ## Docs Tool Usage Guidelines
-                         
-                         **PARALLEL READ OPERATIONS**
-                         - MANDATORY: Always perform PARALLEL File.Read calls — batch multiple files in a SINGLE message for maximum efficiency
-                         - CRITICAL: Read MULTIPLE files simultaneously in one operation
-                         - PROHIBITED: Sequential one-by-one file reads (inefficient and wastes context capacity)
-                         
-                         **EDITING OPERATION LIMITS**
-                         - HARD LIMIT: Maximum of 3 editing operations total (Docs.MultiEdit only)
-                         - PRIORITY: Maximize each Docs.MultiEdit operation by bundling ALL related changes across multiple files
-                         - STRATEGIC PLANNING: Consolidate all modifications into minimal MultiEdit operations to stay within the limit
-                         - Use Docs.Write **only once** for initial creation or full rebuild (counts as initial structure creation, not part of the 3 edits)
-                         - Always verify content before further changes using Docs.Read (Reads do NOT count toward limit)
-                         
-                         **CRITICAL MULTIEDIT BEST PRACTICES**
-                         - MAXIMIZE EFFICIENCY: Each MultiEdit should target multiple distinct sections across files
-                         - AVOID CONFLICTS: Never edit overlapping or identical content regions within the same MultiEdit operation
-                         - UNIQUE TARGETS: Ensure each edit instruction addresses a completely different section or file
-                         - BATCH STRATEGY: Group all necessary changes by proximity and relevance, but maintain clear separation between edit targets
-                         
-                         **RECOMMENDED EDITING SEQUENCE**
-                         1. Initial creation → Docs.Write (one-time full structure creation)
-                         2. Bulk refinements → Docs.MultiEdit with maximum parallel changes (counts toward 3-operation limit)
-                         3. Validation → Use Docs.Read after each MultiEdit to verify success before next operation
-                         4. Final adjustments → Remaining MultiEdit operations for any missed changes                       
-                         </system-reminder>
-                         """)
+                          ```xml
+                          <system-reminder>
+                          For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+                          Note: The repository's directory structure has been provided in <code_files>. Please utilize the provided structure directly for file navigation and reading operations, rather than relying on glob patterns or filesystem traversal methods.
+                          Below is an example of the directory structure of the warehouse, where /D represents a directory and /F represents a file:
+                          server/D
+                            src/D
+                              Main/F
+                          web/D
+                            components/D
+                              Header.tsx/F
+                          
+                          {Prompt.Language}
+                          
+                          ## Docs Tool Usage Guidelines
+                          
+                          **MANDATORY TOOL USAGE**
+                          - ABSOLUTE REQUIREMENT: ALL document generation, creation, editing, and output MUST use Docs tools exclusively
+                          - STRICTLY PROHIBITED: Direct output of document content in chat responses
+                          - CRITICAL: Never display document content directly in conversation - always use Docs.Write, Docs.MultiEdit, or Docs.Create
+                          - ENFORCEMENT: Any document-related task must result in actual Docs tool invocation, not chat-based content delivery
+                          
+                          **PARALLEL READ OPERATIONS**
+                          - MANDATORY: Always perform PARALLEL File.Read calls — batch multiple files in a SINGLE message for maximum efficiency
+                          - CRITICAL: Read MULTIPLE files simultaneously in one operation
+                          - PROHIBITED: Sequential one-by-one file reads (inefficient and wastes context capacity)
+                          
+                          **EDITING OPERATION LIMITS**
+                          - HARD LIMIT: Maximum of 3 editing operations total (Docs.MultiEdit only)
+                          - PRIORITY: Maximize each Docs.MultiEdit operation by bundling ALL related changes across multiple files
+                          - STRATEGIC PLANNING: Consolidate all modifications into minimal MultiEdit operations to stay within the limit
+                          - Use Docs.Write **only once** for initial creation or full rebuild (counts as initial structure creation, not part of the 3 edits)
+                          - Always verify content before further changes using Docs.Read (Reads do NOT count toward limit)
+                          
+                          **CRITICAL MULTIEDIT BEST PRACTICES**
+                          - MAXIMIZE EFFICIENCY: Each MultiEdit should target multiple distinct sections across files
+                          - AVOID CONFLICTS: Never edit overlapping or identical content regions within the same MultiEdit operation
+                          - UNIQUE TARGETS: Ensure each edit instruction addresses a completely different section or file
+                          - BATCH STRATEGY: Group all necessary changes by proximity and relevance, but maintain clear separation between edit targets
+                          
+                          **DOCUMENT OUTPUT ENFORCEMENT**
+                          - ZERO TOLERANCE: Never output complete documents or substantial document content directly in chat
+                          - TOOL-FIRST APPROACH: Every document creation request must immediately trigger Docs tool usage
+                          - NO EXCEPTIONS: Even for "previews," "examples," or "demonstrations" - use Docs tools to create actual files
+                          - VERIFICATION METHOD: After tool usage, only provide brief status updates and file location information
+                          
+                          **RECOMMENDED EDITING SEQUENCE**
+                          1. Initial creation → Docs.Write (one-time full structure creation)
+                          2. Bulk refinements → Docs.MultiEdit with maximum parallel changes (counts toward 3-operation limit)
+                          3. Validation → Use Docs.Read after each MultiEdit to verify success before next operation
+                          4. Final adjustments → Remaining MultiEdit operations for any missed changes
+                          
+                          **COMPLIANCE VERIFICATION**
+                          - SELF-CHECK: Before responding, verify that no substantial document content appears in your response
+                          - TOOL CONFIRMATION: Ensure every document-related request results in actual Docs tool invocation
+                          - STATUS REPORTING: Provide only brief summaries of what was created/modified, never the full content
+                          </system-reminder>
+                          """)
                 };
 
                 contents.AddDocsGenerateSystemReminder();
